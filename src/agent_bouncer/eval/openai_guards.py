@@ -75,13 +75,67 @@ _CLASSIFY_SYSTEM = (
     '{"decision": "safe" or "unsafe", "hazard": one hazard name or "none"}.'
 )
 
+#: Reasoning-model families reject `temperature`/`max_tokens` and take
+#: `reasoning_effort` + `max_completion_tokens` instead.
+_REASONING_PREFIXES = ("gpt-5", "o1", "o3", "o4")
+
+
+def is_reasoning_model(model: str) -> bool:
+    m = model.lower()
+    return any(m.startswith(p) for p in _REASONING_PREFIXES)
+
+
+def is_content_policy_error(exc: Exception) -> bool:
+    """True when OpenAI rejected the prompt at the API layer for safety reasons.
+
+    The Chat/Responses API can return 400 ``invalid_prompt`` for sufficiently
+    harmful inputs (e.g. some JailbreakBench behaviors). For a *guard*, a provider
+    refusing the content is itself an ``unsafe`` verdict — so callers convert this
+    to a blocked decision rather than letting the whole eval crash."""
+    code = getattr(exc, "code", None)
+    if code in {"invalid_prompt", "content_policy_violation", "content_filter"}:
+        return True
+    msg = str(exc).lower()
+    return "invalid_prompt" in msg or "limited access to this content" in msg
+
+
+def build_chat_kwargs(
+    model: str,
+    text: str,
+    *,
+    reasoning_effort: str | None = None,
+) -> dict:
+    """Build the Chat Completions kwargs, routing reasoning vs. standard models.
+
+    Pure (no network) so the routing is unit-testable. Reasoning models get
+    `reasoning_effort` + a generous `max_completion_tokens` (low effort still
+    spends hidden reasoning tokens before the JSON); standard chat models get
+    deterministic `temperature=0` and a tight `max_tokens`.
+    """
+    messages = [
+        {"role": "system", "content": _CLASSIFY_SYSTEM},
+        {"role": "user", "content": text},
+    ]
+    if reasoning_effort is not None or is_reasoning_model(model):
+        kwargs = {"model": model, "messages": messages, "max_completion_tokens": 2048}
+        if reasoning_effort is not None:
+            kwargs["reasoning_effort"] = reasoning_effort
+        return kwargs
+    return {"model": model, "messages": messages, "temperature": 0, "max_tokens": 40}
+
 
 class OpenAIChatGuard:
-    """A small OpenAI chat model used as an LLM-judge guardrail."""
+    """An OpenAI chat model used as an LLM-judge guardrail.
 
-    def __init__(self, model: str = "gpt-4o-mini") -> None:
+    Handles both standard chat models (``gpt-4o-mini``) and reasoning models
+    (``gpt-5.2`` with ``reasoning_effort="low"``) through one interface.
+    """
+
+    def __init__(self, model: str = "gpt-4o-mini", *, reasoning_effort: str | None = None) -> None:
         self.model = model
-        self.name = f"openai-{model}"
+        self.reasoning_effort = reasoning_effort
+        # e.g. "openai-gpt-5.2-low" so the scoreboard names the reasoning setting.
+        self.name = f"openai-{model}" + (f"-{reasoning_effort}" if reasoning_effort else "")
         self._client = None
 
     def predict(self, text: str, *, surface: Surface = Surface.USER_PROMPT) -> Verdict:
@@ -89,16 +143,18 @@ class OpenAIChatGuard:
             from openai import OpenAI
 
             self._client = OpenAI()
+        kwargs = build_chat_kwargs(self.model, text, reasoning_effort=self.reasoning_effort)
         start = time.perf_counter()
-        resp = self._client.chat.completions.create(
-            model=self.model,
-            temperature=0,
-            max_tokens=40,
-            messages=[
-                {"role": "system", "content": _CLASSIFY_SYSTEM},
-                {"role": "user", "content": text},
-            ],
-        )
+        try:
+            resp = self._client.chat.completions.create(**kwargs)
+        except Exception as exc:  # noqa: BLE001 - provider content-policy refusal = unsafe
+            if is_content_policy_error(exc):
+                return Verdict(
+                    decision=Decision.UNSAFE, hazard=Hazard.NON_VIOLENT_CRIMES, score=1.0,
+                    rationale="provider refused prompt (content policy)",
+                    surface=surface, latency_ms=(time.perf_counter() - start) * 1000, model=self.name,
+                )
+            raise
         content = resp.choices[0].message.content or ""
         latency = (time.perf_counter() - start) * 1000
         verdict = parse_verdict(content, surface=surface, latency_ms=latency, model=self.name)

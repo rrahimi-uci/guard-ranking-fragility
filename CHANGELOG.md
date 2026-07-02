@@ -23,3 +23,51 @@ All notable changes to this project are documented here. The format follows
 - Verified end-to-end: fine-tuned distilbert (Regime A) beats the keyword baseline
   ~100× on F1 (0.007 → 0.703) on a held-out BeaverTails test set — see
   `docs/benchmarks.md`. Reproduce with `make data-demo && make demo`.
+- **Standard benchmark suite (phase 8):** registry-driven multi-benchmark runner
+  (`eval/benchmarks.py`) over 7 ungated benchmarks — BeaverTails, OpenAI-Moderation,
+  ToxicChat (guardrail); deepset prompt-injections, jailbreak-classification,
+  JailbreakBench (red-teaming); XSTest (over-refusal) — with loaders/normalizers,
+  balanced subsampling, and a per-axis Markdown report generator. `scripts/run_benchmarks.py`,
+  `scripts/download_full_benchmarks.py`, `scripts/render_benchmarks.py`, `make bench`.
+- **Live LLM-judge comparison:** `OpenAIChatGuard` now supports reasoning models
+  (**GPT-5.2 with `reasoning_effort="low"`**) alongside GPT-4o-mini, and treats an
+  OpenAI content-policy prompt refusal as an `unsafe` verdict (so red-team benchmarks
+  never crash the run). Full 6-guard × 7-benchmark scoreboard in `outputs/BENCHMARKS.md`.
+- **Real GRPO (RLVR) from the SFT checkpoint** (`configs/model/grpo_from_sft.yaml`):
+  completions stay short/terminal (0% clipped), live verifiable reward, KL stable; the
+  RL model merges + loads as a standalone guard and is scored in the suite.
+- **Benchmark Studio dashboard** (`serve/api.py` + `serve/dashboard.html`): a FastAPI web
+  UI to pick benchmarks / models + tuning technique / test-set size, launch the pipeline
+  as a subprocess, and **stream each step over Server-Sent Events** — with live
+  Precision / Recall / F1, over-blocking (FPR), latency, and **ROC / AUC** charts
+  (Chart.js, vendored). Runs merge into the scoreboard rather than clobbering it.
+- **ROC / PR / AUC** (`eval/curves.py`, pure + unit-tested): tie-corrected Mann–Whitney
+  AUC + curve points; `scripts/compute_curves.py` writes `outputs/curves.json`.
+- **`start.sh` / `stop.sh`** — one-command background launch/stop of the Studio (PID file,
+  readiness wait, auto-open, idempotent).
+- **`notebooks/agent_bouncer_studio.ipynb`** — a single self-contained notebook to configure,
+  (optionally) fine-tune/RL, run the benchmark suite, and plot P/R/F1 + ROC/AUC — no CLI.
+- **Docs** — rewritten `README.md` and a detailed `docs/architecture.md` with **mermaid**
+  diagrams (request path, `Verdict` contract, repo map, data unification, guards, GRPO loop,
+  eval harness, serving sequence). `notebook` extra added to `pyproject.toml`.
+
+- **Training subsystem + experiment lifecycle:** a model registry (`models_registry.py`)
+  adding **DeepSeek-R1-1.5B, SmolLM2-1.7B, and Gemma-1B** alongside the Qwen3 SLMs (same
+  SFT/GRPO/DPO); **model versioning** + **experiment tracking** (`experiments.py`, JSON store);
+  **hardware capture** (`hardware.py`: CPU/GPU/memory/runtime); **train/test separation** with
+  anti-leakage guards (`split.py`); and orchestration (`training_runner.py`,
+  `scripts/run_training.py`, `scripts/run_testing.py`) that records params, data, hardware,
+  git, and metrics for every run. Leakage-checked testing drops+reports train∩test overlap.
+- **Metrics:** added **P90 latency** and **throughput** to `GuardMetrics`.
+- **Benchmark Studio lifecycle UI:** new **Train & Test** and **Experiments** tabs — model +
+  version + param selection, live streamed training/testing, **P90 & throughput graphs**,
+  a **hardware panel**, model comparison, and experiment history. New API endpoints
+  (`/api/models`, `/api/experiments`, `/api/train`, `/api/test`, `/api/hardware`).
+- **GitHub Pages** landing page (`docs/index.md` + `_config.yml`).
+
+### Fixed
+
+- `DecoderGuard`: truncate inputs (`max_input_tokens`) and select device (MPS/CPU) to
+  bound latency; disable HF tokenizer parallelism in the runners to avoid a rayon
+  deadlock when a decoder is scored in a loop.
+- `run_grpo` now merges the LoRA adapter (like SFT) so the RL model loads standalone.
