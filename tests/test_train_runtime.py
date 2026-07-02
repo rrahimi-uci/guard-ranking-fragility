@@ -1,6 +1,6 @@
 import torch
 
-from agent_bouncer.train.runtime import decoder_bf16_enabled, decoder_model_load_kwargs
+from agent_bouncer.training.runtime import decoder_bf16_enabled, decoder_model_load_kwargs
 
 
 def test_decoder_training_defaults_to_bf16_on_mps():
