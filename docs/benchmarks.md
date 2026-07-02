@@ -44,11 +44,23 @@ pipeline smoke, not convergence — completions clip at max length (the base mod
 doesn't yet emit terminal JSON), so a real run needs many more steps, a GPU, and
 ideally GRPO *from the SFT checkpoint*. See `configs/model/grpo_qwen3_1_7b.yaml`.
 
-### Not runnable here
+### Comparing against incumbents (`make incumbents`, needs credentials)
 
-The gated incumbents — Llama Guard 3, ShieldGemma, PromptGuard2 — require `HF_TOKEN`
-(confirmed 401 in this environment). Their `Guard` wrappers are implemented and their
-output parsers unit-tested; run `make baselines` with a token to add their rows.
+`make incumbents` scores every reachable guard on the test subset and reports
+**precision / recall / F1 / FPR**. It runs whatever `.env` allows and skips the rest
+with a clear message (never fabricated):
+
+- **OpenAI** (needs `OPENAI_API_KEY`): the Moderation API (`omni-moderation-latest`)
+  and a mini chat model (default `gpt-4o-mini`) as an LLM-judge — see
+  `eval/openai_guards.py`.
+- **Gated HF** (needs `HF_TOKEN` *and* accepting each model's license on HF): Llama
+  Guard 3, ShieldGemma, PromptGuard2 — see `eval/baselines.py`.
+
+In this environment `.env` was empty and no keys were set, so those rows are
+**pending credentials**; the guard wrappers and their output parsers are
+unit-tested and skip cleanly when a key is absent. (Note: the OpenAI Moderation API
+classifies *content* harmfulness, so on BeaverTails — which labels *response*
+safety — expect lower recall than an LLM-judge prompted for this task.)
 
 Caveats bound the *absolute* numbers (not the relative comparison, which uses one
 test set + harness for all guards): BeaverTails labels *response* safety, so

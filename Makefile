@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup install data data-demo demo report train-sft train-grpo train-dpo eval bench baselines serve test lint format clean
+.PHONY: help setup install data data-demo demo report train-sft train-grpo train-dpo eval bench baselines incumbents serve test lint format clean
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -39,6 +39,9 @@ bench:  ## Run the standard benchmarks (GuardBench / PINT / XSTest)
 
 baselines:  ## Score incumbent guards (Llama Guard / ShieldGemma) on our harness
 	python -m agent_bouncer.eval.baselines
+
+incumbents:  ## Compare vs OpenAI + gated incumbents on the test subset (uses .env keys)
+	python scripts/run_incumbents.py $(if $(limit),--limit $(limit),)
 
 serve:  ## Start the FastAPI screening server
 	uvicorn agent_bouncer.serve.api:app --reload
