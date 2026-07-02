@@ -45,7 +45,10 @@ def main() -> None:
     n = min(len(unsafe), len(safe), args.per_class)
     print(f"unsafe={len(unsafe)} safe={len(safe)} -> {n} per class")
 
-    records = [{"text": t, "label": "unsafe", "hazard": "non_violent_crimes", "source": "beavertails"} for t in unsafe[:n]]
+    records = [
+        {"text": t, "label": "unsafe", "hazard": "non_violent_crimes", "source": "beavertails"}
+        for t in unsafe[:n]
+    ]
     records += [{"text": t, "label": "safe", "hazard": "none", "source": "beavertails"} for t in safe[:n]]
     rng.shuffle(records)
 

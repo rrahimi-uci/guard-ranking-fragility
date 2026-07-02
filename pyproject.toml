@@ -26,6 +26,7 @@ dependencies = [
 train = ["torch", "transformers", "datasets", "trl", "peft", "accelerate"]
 mlx = ["mlx-lm"]
 eval = ["mlflow>=2.9"]
+openai = ["openai>=1.40"]
 serve = ["fastapi", "uvicorn"]
 dev = ["pytest>=8.0", "pytest-cov", "ruff>=0.5"]
 

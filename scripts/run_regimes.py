@@ -77,7 +77,11 @@ def main() -> None:
     guards = [
         ("keyword-baseline", "0", KeywordGuard()),
         ("encoder-distilbert", "66M", EncoderGuard("outputs/demo-encoder", name="encoder-distilbert")),
-        (f"decoder-sft-{short}", args.decoder_params, DecoderGuard(decoder_dir, mode="sft", name=f"decoder-sft-{short}")),
+        (
+            f"decoder-sft-{short}",
+            args.decoder_params,
+            DecoderGuard(decoder_dir, mode="sft", name=f"decoder-sft-{short}"),
+        ),
     ]
 
     data = json.load(open(SWEEP_PATH)) if os.path.exists(SWEEP_PATH) else {"test_n": len(test), "results": {}}
