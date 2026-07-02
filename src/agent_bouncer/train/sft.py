@@ -150,6 +150,7 @@ def train_decoder(cfg: dict[str, Any]) -> str:
     sft_config = SFTConfig(
         output_dir=out_dir,
         num_train_epochs=float(t.get("epochs", 2)),
+        max_steps=int(t.get("max_steps", -1)),  # >0 caps the run (bounded runs for big models)
         per_device_train_batch_size=int(t.get("batch_size", 8)),
         gradient_accumulation_steps=int(t.get("grad_accum", 1)),
         learning_rate=float(t.get("lr", 2e-4)),

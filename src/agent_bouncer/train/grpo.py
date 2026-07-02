@@ -123,6 +123,15 @@ def run_grpo(config_path: str | Path) -> str:
         peft_config=peft_config,
     )
     trainer.train()
-    trainer.save_model(out_dir)
-    print(f"[grpo] saved to {out_dir}")
+    # When LoRA is used, merge the adapter into the base weights so the guard loads
+    # as a standalone model (mirrors sft.train_decoder); otherwise save as-is.
+    from transformers import AutoTokenizer
+
+    if peft_config is not None and hasattr(trainer.model, "merge_and_unload"):
+        merged = trainer.model.merge_and_unload()
+        merged.save_pretrained(out_dir)
+    else:
+        trainer.save_model(out_dir)
+    AutoTokenizer.from_pretrained(cfg["base_model"]).save_pretrained(out_dir)
+    print(f"[grpo] merged + saved to {out_dir}")
     return out_dir

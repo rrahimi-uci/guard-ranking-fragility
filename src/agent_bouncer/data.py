@@ -78,6 +78,19 @@ AEGIS_MAP: dict[str, Hazard] = {
 }
 
 
+# OpenAI moderation eval flag columns -> our taxonomy (checked in this order).
+OPENAI_MOD_EVAL_MAP: dict[str, Hazard] = {
+    "S": Hazard.SEXUAL_CONTENT,  # sexual
+    "H": Hazard.HATE,  # hate
+    "V": Hazard.VIOLENT_CRIMES,  # violence
+    "HR": Hazard.HATE,  # harassment
+    "SH": Hazard.SUICIDE_SELF_HARM,  # self-harm
+    "S3": Hazard.CHILD_EXPLOITATION,  # sexual/minors
+    "H2": Hazard.HATE,  # hate/threatening
+    "V2": Hazard.VIOLENT_CRIMES,  # violence/graphic
+}
+
+
 # ---------------------------------------------------------------------- helpers
 def _record(text: str, label: Decision, hazard: Hazard, source: str) -> dict:
     return {"text": text, "label": label.value, "hazard": hazard.value, "source": source}
@@ -85,6 +98,13 @@ def _record(text: str, label: Decision, hazard: Hazard, source: str) -> dict:
 
 def _text(row: dict, field: str) -> str:
     return (row.get(field) or row.get("text") or "").strip()
+
+
+def _is_true(value: object) -> bool:
+    """Coerce a dataset flag (bool / int / '0'|'1' / 'true'|'yes') to bool."""
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "unsafe", "harmful"}
+    return bool(value)
 
 
 # ------------------------------------------------------------------ normalizers
@@ -150,11 +170,95 @@ def normalize_xstest(row: dict, text_field: str = "prompt", source: str = "xstes
     )
 
 
+def normalize_prompt_injection(
+    row: dict, text_field: str = "text", source: str = "prompt_injections"
+) -> dict | None:
+    """deepset/prompt-injections: ``label`` 1 = injection attempt (unsafe), 0 = benign."""
+    text = _text(row, text_field)
+    if not text:
+        return None
+    unsafe = _is_true(row.get("label"))
+    return _record(
+        text,
+        Decision.UNSAFE if unsafe else Decision.SAFE,
+        Hazard.PROMPT_INJECTION if unsafe else Hazard.NONE,
+        source,
+    )
+
+
+def normalize_jailbreak_classification(
+    row: dict, text_field: str = "prompt", source: str = "jailbreak_classification"
+) -> dict | None:
+    """jackhhao/jailbreak-classification: ``type`` in {benign, jailbreak}."""
+    text = _text(row, text_field)
+    if not text:
+        return None
+    unsafe = (row.get("type") or "").strip().lower() == "jailbreak"
+    return _record(
+        text,
+        Decision.UNSAFE if unsafe else Decision.SAFE,
+        Hazard.JAILBREAK if unsafe else Hazard.NONE,
+        source,
+    )
+
+
+def normalize_openai_moderation(
+    row: dict, text_field: str = "prompt", source: str = "openai_moderation"
+) -> dict | None:
+    """mmathys/openai-moderation-api-evaluation: 8 category flag columns; a row is
+    unsafe iff any category is set. The first set category picks the hazard."""
+    text = _text(row, text_field)
+    if not text:
+        return None
+    hazard = Hazard.NONE
+    for code, hz in OPENAI_MOD_EVAL_MAP.items():
+        if _is_true(row.get(code)):
+            hazard = hz
+            break
+    unsafe = hazard is not Hazard.NONE
+    return _record(text, Decision.UNSAFE if unsafe else Decision.SAFE, hazard, source)
+
+
+def normalize_toxicchat(row: dict, text_field: str = "user_input", source: str = "toxicchat") -> dict | None:
+    """lmsys/toxic-chat: ``toxicity`` 0/1 is the headline label (a separate
+    ``jailbreaking`` column exists; we key on toxicity to match the standard task)."""
+    text = _text(row, text_field)
+    if not text:
+        return None
+    unsafe = _is_true(row.get("toxicity"))
+    return _record(
+        text,
+        Decision.UNSAFE if unsafe else Decision.SAFE,
+        DEFAULT_UNSAFE_HAZARD if unsafe else Hazard.NONE,
+        source,
+    )
+
+
+def normalize_jailbreakbench(
+    row: dict, *, unsafe: bool, text_field: str = "Goal", source: str = "jailbreakbench"
+) -> dict | None:
+    """JailbreakBench/JBB-Behaviors: the label comes from the split (harmful/benign),
+    not the row, so the loader passes ``unsafe`` explicitly. ``Goal`` holds the prompt."""
+    text = _text(row, text_field)
+    if not text:
+        return None
+    return _record(
+        text,
+        Decision.UNSAFE if unsafe else Decision.SAFE,
+        DEFAULT_UNSAFE_HAZARD if unsafe else Hazard.NONE,
+        source,
+    )
+
+
 _NORMALIZERS = {
     "beavertails": normalize_beavertails,
     "wildguardmix": normalize_wildguard,
     "aegis": normalize_aegis,
     "xstest": normalize_xstest,
+    "prompt_injections": normalize_prompt_injection,
+    "jailbreak_classification": normalize_jailbreak_classification,
+    "openai_moderation": normalize_openai_moderation,
+    "toxicchat": normalize_toxicchat,
 }
 
 
@@ -227,9 +331,52 @@ def load_xstest(split: str = "prompts", text_field: str = "prompt") -> list[dict
     return unify_to_taxonomy(ds, "xstest", text_field=text_field)
 
 
+def load_prompt_injections(split: str = "test", text_field: str = "text") -> list[dict]:
+    # deepset/prompt-injections — ungated prompt-injection detection benchmark.
+    ds = _load_hf("deepset/prompt-injections", split)
+    return unify_to_taxonomy(ds, "prompt_injections", text_field=text_field)
+
+
+def load_jailbreak_classification(split: str = "test", text_field: str = "prompt") -> list[dict]:
+    # jackhhao/jailbreak-classification — ungated jailbreak detection benchmark.
+    ds = _load_hf("jackhhao/jailbreak-classification", split)
+    return unify_to_taxonomy(ds, "jailbreak_classification", text_field=text_field)
+
+
+def load_openai_moderation(split: str = "train", text_field: str = "prompt") -> list[dict]:
+    # mmathys/openai-moderation-api-evaluation — content-moderation eval set.
+    ds = _load_hf("mmathys/openai-moderation-api-evaluation", split)
+    return unify_to_taxonomy(ds, "openai_moderation", text_field=text_field)
+
+
+def load_toxicchat(split: str = "test", text_field: str = "user_input") -> list[dict]:
+    # lmsys/toxic-chat (toxicchat0124) — toxicity detection. Non-commercial license:
+    # use for internal evaluation only, not for training a released model.
+    ds = _load_hf("lmsys/toxic-chat", split, config="toxicchat0124")
+    return unify_to_taxonomy(ds, "toxicchat", text_field=text_field)
+
+
+def load_jailbreakbench(text_field: str = "Goal") -> list[dict]:
+    # JailbreakBench/JBB-Behaviors — 100 harmful + 100 benign red-teaming behaviors.
+    # The label lives in the split name, so we build records per split directly.
+    out: list[dict] = []
+    for split, unsafe in (("harmful", True), ("benign", False)):
+        ds = _load_hf("JailbreakBench/JBB-Behaviors", split, config="behaviors")
+        for row in ds:
+            rec = normalize_jailbreakbench(row, unsafe=unsafe, text_field=text_field)
+            if rec is not None:
+                out.append(rec)
+    return out
+
+
 LOADERS = {
     "wildguardmix": load_wildguardmix,
     "beavertails": load_beavertails,
     "aegis": load_aegis,
     "xstest": load_xstest,
+    "prompt_injections": load_prompt_injections,
+    "jailbreak_classification": load_jailbreak_classification,
+    "openai_moderation": load_openai_moderation,
+    "toxicchat": load_toxicchat,
+    "jailbreakbench": load_jailbreakbench,
 }

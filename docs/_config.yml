@@ -1,0 +1,5 @@
+# GitHub Pages (serve from /docs). Enable in Settings → Pages → Source: main /docs.
+title: Agent Bouncer
+description: A tiny, fast SLM safety guardrail for LLMs & agents — fine-tuned, RL-tuned, and benchmarked.
+theme: jekyll-theme-cayman
+show_downloads: false

@@ -9,7 +9,6 @@ description = "A tiny, fast safety bouncer for LLMs and agents — screens promp
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Reza Rahimi", email = "145064767+rrahimi-uci@users.noreply.github.com" }]
 keywords = ["llm", "agent", "guardrail", "safety", "prompt-injection", "moderation", "slm"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -25,15 +24,12 @@ dependencies = [
 [project.optional-dependencies]
 train = ["torch", "transformers", "datasets", "trl", "peft", "accelerate"]
 mlx = ["mlx-lm"]
-eval = ["mlflow>=2.9"]
+eval = ["torch", "transformers", "datasets", "openai>=1.40"]
+mlflow = ["mlflow>=2.9"]
 openai = ["openai>=1.40"]
 serve = ["fastapi", "uvicorn"]
+notebook = ["jupyter", "matplotlib"]
 dev = ["pytest>=8.0", "pytest-cov", "ruff>=0.5"]
-
-[project.urls]
-Homepage = "https://github.com/rezarahimi/agent-bouncer"
-Repository = "https://github.com/rezarahimi/agent-bouncer"
-Issues = "https://github.com/rezarahimi/agent-bouncer/issues"
 
 [project.scripts]
 agent-bouncer = "agent_bouncer.cli:main"

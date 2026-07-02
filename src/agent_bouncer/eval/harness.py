@@ -1,8 +1,8 @@
-"""The evaluation harness — runs any `Guard` over a labeled set and logs to MLflow.
+"""The evaluation harness — runs any `Guard` over a labeled set.
 
 This works today with the reference KeywordGuard, so `make eval` is green from
 day one; swap in a trained guard once training lands. MLflow is optional: if it is
-not installed, metrics are still computed and returned.
+installed, metrics are also logged; otherwise they are just computed and returned.
 """
 
 from __future__ import annotations
