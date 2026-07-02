@@ -3,10 +3,12 @@ mlflow:
   experiment_name: agent-bouncer
   tracking_uri: null   # null -> local ./mlruns
 
+# Standard benchmark suite (ungated; run via scripts/run_benchmarks.py).
+# Grouped by axis; gated sets (WildGuardMix/HarmBench/AdvBench/PINT) need HF_TOKEN.
 benchmarks:
-  guardbench: true
-  pint: true
-  xstest: true
+  guardrail: [beavertails, openai_moderation, toxicchat]
+  red_team: [prompt_injections, jailbreak_classification, jailbreakbench]
+  over_refusal: [xstest]
 
 # Guards to score (paths to trained checkpoints or baseline ids)
 guards:

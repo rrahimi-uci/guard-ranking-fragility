@@ -3,7 +3,7 @@
 Eval-driven: we build the scoreboard first, then climb it.
 
 - [x] **Phase 0 — Scaffold + eval harness.** Package, taxonomy, `Verdict`, reference
-  guard, metrics (incl. `fpr_on_benign`), MLflow harness, CLI, tests, CI.
+  guard, metrics (incl. `fpr_on_benign`), eval harness, optional MLflow logging, CLI, tests, CI.
 - [x] **Phase 1 — Data.** Unification code + tests (`data.py`; WildGuardMix /
   BeaverTails / Aegis / XSTest normalizers, deterministic splits). Ran a live
   BeaverTails download for the demo dataset (`scripts/prepare_beavertails_demo.py`).
@@ -14,24 +14,30 @@ Eval-driven: we build the scoreboard first, then climb it.
   **Encoder trained for real** (see benchmarks.md); decoder SFT **smoke-verified**
   end-to-end on a tiny model (`scripts/smoke_train.py`).
 - [x] **Phase 4 — GRPO.** Reasoning guard with verifiable reward; reward adapter
-  unit-tested and the full GRPOTrainer wiring **smoke-verified** end-to-end.
+  unit-tested. **Ran real GRPO from the SFT checkpoint** (`configs/model/grpo_from_sft.yaml`):
+  completions stay short/terminal (0% clipped), live reward, KL stable; the RL model
+  merges + loads as a standalone guard and is **scored in the benchmark suite**.
 - [x] **Phase 5 — DPO.** Preference-pair builder (unit-tested) + DPOTrainer wiring.
 - [x] **Phase 6 — Deploy.** GGUF/MLX command builders + ONNX export + latency
   measurement (`deploy.py`), with tests.
 - [x] **Phase 7 — Ship.** Results-table + model-card generators (`eval/report.py`,
   tested); `scripts/make_report.py`. Remaining: push to GitHub + Hugging Face release.
+- [x] **Phase 8 — Standard benchmark suite.** Registry-driven multi-benchmark runner
+  (`eval/benchmarks.py`) over **7 ungated standard benchmarks** across guardrail /
+  red-teaming / over-refusal axes; **live comparison vs GPT-4o-mini and GPT-5.2 (low
+  reasoning)** + OpenAI Moderation. `make bench` → `outputs/BENCHMARKS.md`.
 
 ### Verified in-session
-- Encoder fine-tune (distilbert, 2 epochs, 73 s on M4 Max) **beat the keyword
-  baseline ~100× on F1** (0.007 → 0.703) on a held-out test set.
-- Real decoder SFT size sweep on Qwen3 **0.6B and 1.7B** — the tiny encoder stays the
-  best F1/latency tradeoff (decoders ≤ its F1 at 70–160× the latency). See benchmarks.md.
-- Bounded GRPO on real Qwen3-0.6B (LoRA) runs end-to-end with a live verifiable reward
-  — validates the RLVR loop (not a converged model).
+- **7-benchmark suite, one harness:** GPT-5.2 (low) leads on macro-F1 *and* over-blocking
+  (FPR 0.19); the **66M encoder ties OpenAI Moderation on macro-F1 at ~22× lower latency**;
+  red-teaming (prompt-injection) is the hard axis for all guards. See benchmarks.md.
+- Encoder fine-tune (distilbert, 2 epochs, 73 s) **beat the keyword baseline ~100× on F1**.
+- Real decoder SFT size sweep on Qwen3 **0.6B and 1.7B**; real GRPO from the SFT checkpoint.
 
 ### Follow-ups needing external access
-- Score the gated incumbents (Llama Guard / ShieldGemma) — needs `HF_TOKEN`.
-- Full-scale GRPO run on Qwen3 (heavier compute).
+- Score the gated incumbents + benchmarks (Llama Guard / ShieldGemma / WildGuardMix /
+  HarmBench / Lakera PINT) — needs `HF_TOKEN` + license acceptance.
+- Full-scale **GPU** GRPO run + red-team training data to close the injection-recall gap.
 - Publish repo + model.
 
 ## Minimum viable *visible* release

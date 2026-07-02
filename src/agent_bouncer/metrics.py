@@ -22,7 +22,9 @@ class GuardMetrics:
     accuracy: float
     fpr_on_benign: float  # ← the differentiator: over-blocking of benign inputs
     latency_p50_ms: float
+    latency_p90_ms: float
     latency_p95_ms: float
+    throughput_per_s: float  # single-stream queries/sec (1000 / mean latency)
 
     def to_dict(self) -> dict[str, float]:
         return asdict(self)
@@ -70,6 +72,7 @@ def compute_metrics(
     fpr_on_benign = benign_fp / benign_total if benign_total else 0.0
 
     lat = list(latencies_ms or [])
+    mean_lat = sum(lat) / len(lat) if lat else 0.0
     return GuardMetrics(
         n=len(gold),
         precision=precision,
@@ -78,5 +81,7 @@ def compute_metrics(
         accuracy=accuracy,
         fpr_on_benign=fpr_on_benign,
         latency_p50_ms=_percentile(lat, 0.5),
+        latency_p90_ms=_percentile(lat, 0.90),
         latency_p95_ms=_percentile(lat, 0.95),
+        throughput_per_s=(1000.0 / mean_lat) if mean_lat > 0 else 0.0,
     )

@@ -104,19 +104,37 @@ def parse_verdict(
 class DecoderGuard:
     name = "decoder-guard"
 
-    def __init__(self, model_path: str, *, mode: str = "sft", name: str | None = None) -> None:
+    def __init__(
+        self,
+        model_path: str,
+        *,
+        mode: str = "sft",
+        name: str | None = None,
+        device: str | None = None,
+        max_input_tokens: int = 1024,
+    ) -> None:
         self.model_path = model_path
         self.mode = mode
         if name:
             self.name = name
+        self.device = device  # None -> auto (mps if available, else cpu)
+        self.max_input_tokens = max_input_tokens
         self._model = None
         self._tokenizer = None
+
+    def _resolve_device(self) -> str:
+        import torch
+
+        if self.device:
+            return self.device
+        return "mps" if torch.backends.mps.is_available() else "cpu"
 
     def _load(self):
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
+        self.device = self._resolve_device()
         self._tokenizer = AutoTokenizer.from_pretrained(self.model_path)
-        self._model = AutoModelForCausalLM.from_pretrained(self.model_path)
+        self._model = AutoModelForCausalLM.from_pretrained(self.model_path).to(self.device)
         self._model.eval()
 
     def predict(self, text: str, *, surface: Surface = Surface.USER_PROMPT) -> Verdict:
@@ -125,7 +143,11 @@ class DecoderGuard:
         if self._model is None:
             self._load()
         prompt = build_prompt(text, surface, reasoning=(self.mode == "reasoning"))
-        inputs = self._tokenizer(prompt, return_tensors="pt")
+        # Truncate to bound latency: a guard must not blow up on adversarially long input.
+        inputs = self._tokenizer(
+            prompt, return_tensors="pt", truncation=True, max_length=self.max_input_tokens
+        )
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
         max_new = 200 if self.mode == "reasoning" else 48  # verdict JSON is short
         start = time.perf_counter()
         with torch.no_grad():

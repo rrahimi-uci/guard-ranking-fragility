@@ -29,3 +29,16 @@ def test_length_mismatch_raises():
 def test_latency_percentiles():
     m = compute_metrics([S, S], [S, S], [10.0, 20.0])
     assert m.latency_p50_ms == 15.0
+
+
+def test_p90_throughput_and_ordering():
+    lat = [float(i) for i in range(1, 11)]  # 1..10 ms
+    m = compute_metrics([S] * 10, [S] * 10, lat)
+    assert m.latency_p50_ms <= m.latency_p90_ms <= m.latency_p95_ms
+    assert m.latency_p90_ms == 9.1  # interpolated 90th pct of 1..10
+    # throughput = 1000 / mean latency (mean = 5.5 ms) -> ~181.8 q/s
+    assert round(m.throughput_per_s, 1) == 181.8
+
+
+def test_throughput_zero_without_latency():
+    assert compute_metrics([S], [S]).throughput_per_s == 0.0
