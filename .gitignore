@@ -35,3 +35,6 @@ wandb/
 .DS_Store
 .idea/
 .vscode/
+
+# Benchmark Studio runtime
+.studio.pid

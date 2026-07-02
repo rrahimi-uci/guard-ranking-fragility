@@ -7,8 +7,9 @@ We pledge to make participation in our community a harassment-free experience fo
 everyone. Examples of unacceptable behavior include harassment, insulting comments,
 and publishing others' private information.
 
-Instances of abuse may be reported to the maintainer at **reza.rahimi@jazzx.ai**.
-All complaints will be reviewed and investigated promptly and fairly.
+Instances of abuse may be reported to the active project maintainers through the
+repository's designated contact channel. All complaints will be reviewed and
+investigated promptly and fairly.
 
 The full text is available at
 https://www.contributor-covenant.org/version/2/1/code_of_conduct/.
