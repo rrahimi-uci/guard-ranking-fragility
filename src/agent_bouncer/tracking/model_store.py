@@ -6,10 +6,11 @@ version, timestamp, and the on-disk ``path`` to the weights. The weights themsel
 disk (never inside the DB); this store keeps the *metadata* and a pointer to them.
 
 Two interchangeable backends behind one API:
-* ``sqlite`` (default) — a single ``models.db`` file; queryable by base model / technique.
-* ``fs`` — one JSON document per model under the store root.
+* ``fs`` (default) — one JSON document per model under the store root, so **every artifact
+  lives as an inspectable file on disk** (alongside weights, experiments, and datasets).
+* ``sqlite`` — a single ``models.db`` file; queryable by base model / technique.
 
-Both are dependency-free (stdlib ``sqlite3`` / ``json``) and take a ``root`` dir, so tests
+Both are dependency-free (stdlib ``json`` / ``sqlite3``) and take a ``root`` dir, so tests
 can point them at a temp directory.
 """
 
@@ -55,7 +56,7 @@ class ModelRecord:
 
 
 class ModelStore:
-    def __init__(self, backend: str = "sqlite", root: str = DEFAULT_ROOT) -> None:
+    def __init__(self, backend: str = "fs", root: str = DEFAULT_ROOT) -> None:
         if backend not in BACKENDS:
             raise ValueError(f"unknown backend {backend!r}; use one of {BACKENDS}")
         self.backend = backend

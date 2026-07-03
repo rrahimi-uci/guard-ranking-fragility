@@ -16,7 +16,7 @@ flowchart LR
     C --> D["④ Build dataset<br/>(leakage-safe)"]
     D --> E["⑤ Train<br/>SFT/GRPO/DPO → versioned"]
     E --> F["⑥ Test<br/>leakage-guarded metrics"]
-    F --> G["⑦ Save<br/>model store (SQLite/FS)"]
+    F --> G["⑦ Save<br/>model store (files)"]
     G --> H["⑧ Compare / Evaluate-only"]
 ```
 
@@ -60,9 +60,10 @@ only; decoders → SFT/GRPO/DPO.
 ## 7 · Save (model persistence)
 
 Trained models are persisted to the **model store**
-([`tracking/model_store.py`](../src/agent_bouncer/tracking/model_store.py)) — **SQLite** (default)
-or the **filesystem** — with full metadata: source benchmarks, sampling strategy, split,
-technique, evaluation metrics, version, timestamp, git commit, and the weights path.
+([`tracking/model_store.py`](../src/agent_bouncer/tracking/model_store.py)) — the **filesystem**
+(default: one JSON per model) or **SQLite** — with full metadata: source benchmarks, sampling
+strategy, split, technique, evaluation metrics, version, timestamp, git commit, and the weights
+path. Everything (datasets, weights, experiments, results, model records) lives as files on disk.
 `GET/POST/DELETE /api/saved_models`.
 
 ## 8 · Evaluate-only & compare
