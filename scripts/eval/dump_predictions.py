@@ -47,7 +47,7 @@ def build_guard(name: str, device: str, path: str | None = None, arch: str = "de
         from agent_bouncer.models.encoder import EncoderGuard
         return EncoderGuard("outputs/demo-encoder", name=name)
     decoders = {"decoder-sft-0.6B": ("outputs/demo-decoder-sft", "sft"),
-                "decoder-grpo-0.6B": ("outputs/grpo-qwen3-0.6b", "sft"),
+                "decoder-grpo-0.6B": ("outputs/grpo-qwen3-0.6b", "reasoning"),
                 "decoder-sft-1.7B": ("outputs/decoder-sft-Qwen3-1.7B", "sft")}
     if name in decoders:
         from agent_bouncer.models.decoder import DecoderGuard
@@ -55,6 +55,7 @@ def build_guard(name: str, device: str, path: str | None = None, arch: str = "de
         return DecoderGuard(path, mode=mode, name=name, device=device)
     if name.startswith("openai-"):
         import re
+
         from agent_bouncer.evaluation.openai_guards import OpenAIChatGuard, OpenAIModerationGuard
         if name == "openai-moderation":
             return OpenAIModerationGuard()

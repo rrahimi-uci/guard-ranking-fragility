@@ -621,15 +621,17 @@ def _build_commands(cfg: RunConfig) -> list[list[str]]:
         main.append("--no-openai")
     cmds = [main]
 
+    # name -> (checkpoint path, decode mode, param count). GRPO is a reasoning model, so it
+    # must be scored in "reasoning" mode (SFT mode truncates its <think> trace → fails closed).
     decoders = {
-        "decoder-sft-0.6B": ("outputs/demo-decoder-sft", "sft"),
-        "decoder-sft-1.7B": ("outputs/decoder-sft-Qwen3-1.7B", "sft"),
-        "decoder-grpo-0.6B": ("outputs/grpo-qwen3-0.6b", "sft"),
+        "decoder-sft-0.6B": ("outputs/demo-decoder-sft", "sft", "0.6B"),
+        "decoder-sft-1.7B": ("outputs/decoder-sft-Qwen3-1.7B", "sft", "1.7B"),
+        "decoder-grpo-0.6B": ("outputs/grpo-qwen3-0.6b", "reasoning", "0.6B"),
     }
-    for name, (path, mode) in decoders.items():
+    for name, (path, mode, params) in decoders.items():
         if name in guards and (ROOT / path).is_dir():
             cmds.append([py, "scripts/eval/eval_added_guard.py", "--path", path, "--arch",
-                         "decoder", "--mode", mode, "--name", name, "--params", "0.6B"])
+                         "decoder", "--mode", mode, "--name", name, "--params", params])
     cmds.append([py, "scripts/report/compute_curves.py"])
     return cmds
 

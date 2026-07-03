@@ -95,7 +95,9 @@ def main() -> None:
 
     params.update(GUARD_PARAMS)
     params[args.name] = args.params
-    order = [g for g in CANON_ORDER if any(g in results[b] for b in results)]
+    present = {g for b in results for g in results[b]}
+    # canonical order first, then any other scored guards (incl. the just-added --name) so none are dropped
+    order = [g for g in CANON_ORDER if g in present] + sorted(present - set(CANON_ORDER))
 
     report = render_benchmark_report(results, meta, params, guard_order=order, gated=GATED_BENCHMARKS)
     header = (

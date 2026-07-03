@@ -84,7 +84,6 @@ def _fmt(value: float | None, decimals: int) -> str:
 def build_html(blob: dict, sort: str = "f1", *, generated: str = "") -> str:
     """Build the standalone HTML leaderboard report from a benchmark_results blob."""
     results = blob.get("results", {})
-    meta = blob.get("meta", {})
     per_class = blob.get("per_class")
     summary = macro_average(results)
     benches = sorted(results.keys())
@@ -165,13 +164,15 @@ def build_html(blob: dict, sort: str = "f1", *, generated: str = "") -> str:
   tr.cat td {{ background: #f4f6fb; color: #6b7896; font-size: 9.5px; text-transform: uppercase;
     letter-spacing: .07em; font-weight: 700; padding-top: 9px; }}
   .note {{ color: #7a879f; font-size: 10.5px; margin-top: 10px; line-height: 1.5; }}
-  .foot {{ margin-top: 20px; color: #9aa6bd; font-size: 10px; border-top: 1px solid #e5e9f2; padding-top: 8px; }}
+  .foot {{ margin-top: 20px; color: #9aa6bd; font-size: 10px;
+    border-top: 1px solid #e5e9f2; padding-top: 8px; }}
 </style></head><body>
   <h1>Agent Bouncer — Model Leaderboard</h1>
   <div class="meta"><span>{subtitle}</span>{gen_line}</div>
   <table><thead><tr><th>Model</th><th class="hi">Params</th>{head}</tr></thead>
     <tbody>{"".join(rows_html)}</tbody></table>
-  <p class="note">Sorted by <b>{html.escape(sort)}</b>. Best value per column in <b style="color:#0a8f5b">green</b>.
+  <p class="note">Sorted by <b>{html.escape(sort)}</b>.
+    Best value per column in <b style="color:#0a8f5b">green</b>.
     AUC for hard-decision guards (GPT, keyword) is the single-point estimate (recall+1−FPR)/2;
     the encoder &amp; threshold-swept ensembles use a true swept AUC.</p>
   <h2>Per-benchmark F1</h2>

@@ -35,7 +35,6 @@ from concurrent.futures import ThreadPoolExecutor  # noqa: E402
 
 from agent_bouncer.core.guard import KeywordGuard  # noqa: E402
 from agent_bouncer.core.schema import Decision, Surface  # noqa: E402
-from agent_bouncer.evaluation.ensembles import PRED_DIR  # noqa: E402
 from agent_bouncer.data import read_jsonl, write_jsonl  # noqa: E402
 from agent_bouncer.evaluation.benchmarks import (  # noqa: E402
     BENCHMARKS,
@@ -43,6 +42,7 @@ from agent_bouncer.evaluation.benchmarks import (  # noqa: E402
     class_counts,
     load_benchmark,
 )
+from agent_bouncer.evaluation.ensembles import PRED_DIR  # noqa: E402
 from agent_bouncer.evaluation.metrics import compute_metrics  # noqa: E402
 from agent_bouncer.evaluation.report import render_benchmark_report  # noqa: E402
 from agent_bouncer.models.decoder import DecoderGuard  # noqa: E402

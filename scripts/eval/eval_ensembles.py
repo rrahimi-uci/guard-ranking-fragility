@@ -28,7 +28,7 @@ RESULTS = "outputs/benchmark_results.json"
 OUT = "outputs/ensemble_results.json"
 
 # Ensemble specs: name -> (members, strategy, kwargs). Members must have dumped predictions.
-_ENC, _SFT, _GRPO, _MOD, _KW = ("encoder-modernbert-large", "decoder-sft-0.6B",
+_ENC, _SFT, _GRPO, _MOD, _KW = ("encoder-distilbert", "decoder-sft-0.6B",
                                 "decoder-grpo-0.6B", "openai-moderation", "keyword-baseline")
 _SFT17 = "decoder-sft-1.7B"
 ENSEMBLES = {
@@ -141,7 +141,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--merge", nargs="*", default=None, help="ensemble names to merge into the scoreboard")
     ap.add_argument("--merge-members", action="store_true",
-                    help="also merge each individual member's metrics (from its predictions) into the scoreboard")
+                    help="also merge each member's own metrics (from its predictions) into the scoreboard")
     args = ap.parse_args()
 
     preds = load_preds()
