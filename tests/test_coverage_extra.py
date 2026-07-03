@@ -31,7 +31,7 @@ def test_aegis_list_categories_join():
 
 
 def test_training_device_selects_accelerator(monkeypatch):
-    import torch
+    torch = pytest.importorskip("torch")  # skip off the ML stack (e.g. light CI)
 
     import agent_bouncer.training.runtime as rt
     monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
