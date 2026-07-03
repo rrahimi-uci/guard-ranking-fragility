@@ -1,5 +1,5 @@
 """Tiny `.env` loader so credentials (OPENAI_API_KEY, HF_TOKEN) are picked up
-consistently by the CLI, scripts, notebook, and server — without a dependency.
+consistently by the CLI, scripts, and server — without a dependency.
 
 `datasets` / `huggingface_hub` read ``HF_TOKEN`` from the *environment*, so all this
 does is copy ``.env`` KEY=VALUE lines into ``os.environ`` (with ``setdefault`` — a real

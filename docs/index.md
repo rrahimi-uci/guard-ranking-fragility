@@ -69,7 +69,7 @@ git clone <your-repo-url> agent-bouncer && cd agent-bouncer
 make setup && ./start.sh          # → http://127.0.0.1:8000  (Benchmark Studio)
 ```
 
-Or drive everything from a notebook: [`notebooks/agent_bouncer_studio.ipynb`](../notebooks/agent_bouncer_studio.ipynb).
+Or drive everything from the CLI / `make` targets — see the [README](https://github.com/rrahimi-uci/agent-bouncer#readme).
 
 ---
 <sub>Apache-2.0 · a **defensive** security tool · no guardrail catches everything — pair with alignment + human review.</sub>

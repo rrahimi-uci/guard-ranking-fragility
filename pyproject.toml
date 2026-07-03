@@ -31,7 +31,6 @@ eval = ["torch", "transformers", "datasets", "openai>=1.40"]
 mlflow = ["mlflow>=2.9"]
 openai = ["openai>=1.40"]
 serve = ["fastapi", "uvicorn"]
-notebook = ["jupyter", "matplotlib"]
 dev = ["pytest>=8.0", "pytest-cov", "ruff>=0.5"]
 
 [project.scripts]

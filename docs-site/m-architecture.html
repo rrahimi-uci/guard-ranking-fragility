@@ -327,7 +327,7 @@
     s3 --&gt; s4["compute_curves → curves.json"]
     s4 --&gt; s5["render → BENCHMARKS.md"]
     s5 --&gt; s6["make serve / ./start.sh&lt;br/&gt;→ Benchmark Studio"]</pre></div>
-<p>Everything is seeded and deterministic; benchmark subsets are cached; API guards are skipped (never faked) when a key is absent. The notebook <code>notebooks/agent_bouncer_studio.ipynb</code> drives the same path from a single file.</p>
+<p>Everything is seeded and deterministic; benchmark subsets are cached; API guards are skipped (never faked) when a key is absent. The CLI, the <code>make</code> targets, and the Benchmark Studio all drive the same path.</p>
 <p>---</p>
 <h2 id="11-extending-it">11 · Extending it<a class="anchor" href="#11-extending-it" aria-hidden="true" tabindex="-1">#</a></h2>
 <ul><li><strong>Add a benchmark</strong> — write a pure <code>normalize_*</code> in <code>data/loaders.py</code> (+ a loader), register a <code>Benchmark(name, loader, axis, description)</code> in <code>evaluation/benchmarks.py</code>. It flows into the suite, the report, and the dashboard automatically.</li><li><strong>Add a guard</strong> — implement <code>.name</code> + <code>.predict(text, *, surface) -&gt; Verdict</code>. It's immediately scorable and comparable.</li><li><strong>Add a dataset for training</strong> — a <code>normalize_*</code> + loader, then point a training config's <code>data:</code> at the JSONL.</li><li><strong>Tune the reward</strong> — edit <code>RewardWeights</code> (e.g. raise <code>false_positive_penalty</code> to push over-blocking down further).</li></ul>

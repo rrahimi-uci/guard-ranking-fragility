@@ -393,9 +393,8 @@ flowchart LR
 ```
 
 Everything is seeded and deterministic; benchmark subsets are cached; API guards are skipped
-(never faked) when a key is absent. The notebook
-[`notebooks/agent_bouncer_studio.ipynb`](../notebooks/agent_bouncer_studio.ipynb) drives the
-same path from a single file.
+(never faked) when a key is absent. The CLI, the `make` targets, and the Benchmark Studio all
+drive the same path.
 
 ---
 

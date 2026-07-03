@@ -27,6 +27,12 @@ All notable changes to this project are documented here. The format follows
 ### Changed
 
 - Renamed the web UI to **Agent Bouncer — Benchmark Studio**.
+- Adopted `agent-bouncer.png` as the project logo across the app, docs site, and README.
+
+### Removed
+
+- The Jupyter notebook workflow (`notebooks/`) and the `notebook` install extra — the CLI,
+  `make` targets, and the Benchmark Studio cover the same paths.
 
 ### Fixed
 

@@ -2,7 +2,9 @@
 
 <img src="agent-bouncer.png" alt="Agent Bouncer — Benchmark Studio" width="360">
 
-# Agent Bouncer
+# Agent Bouncer — Benchmark Studio
+
+**Train, benchmark &amp; compare small-model safety guardrails for LLMs &amp; agents.**
 
 **A tiny, fast safety bouncer for LLMs and agents.**
 Screens prompts, tool calls, and outputs *before* they reach your model — and doesn't hassle the regulars.
@@ -22,7 +24,7 @@ Screens prompts, tool calls, and outputs *before* they reach your model — and 
 
 ## Contents
 
-[Why](#why) · [How it works](#how-it-works) · [Quickstart — 3 ways](#quickstart--three-ways-to-use-it) · [Benchmark Studio](#benchmark-studio-the-ui) · [Results](#results) · [The benchmark suite](#the-benchmark-suite) · [The three regimes](#the-three-regimes-fine-tuning--rl) · [Project layout](#project-layout) · [Reproduce](#reproduce) · [Architecture](docs/architecture.md)
+[Why](#why) · [How it works](#how-it-works) · [Quickstart — 2 ways](#quickstart--two-ways-to-use-it) · [Benchmark Studio](#benchmark-studio-the-ui) · [Results](#results) · [The benchmark suite](#the-benchmark-suite) · [The three regimes](#the-three-regimes-fine-tuning--rl) · [Project layout](#project-layout) · [Reproduce](#reproduce) · [Architecture](docs/architecture.md)
 
 ## Why
 
@@ -67,7 +69,7 @@ flowchart LR
 > The full picture — request path, the `Verdict` contract, the GRPO loop, the serving
 > sequence — is in **[`docs/architecture.md`](docs/architecture.md)** (with mermaid diagrams).
 
-## Quickstart — three ways to use it
+## Quickstart — two ways to use it
 
 ```bash
 git clone <your-repo-url> agent-bouncer && cd agent-bouncer
@@ -92,14 +94,7 @@ make test                        # green
   "surface": "user_prompt", "latency_ms": 0.05, "model": "keyword-baseline" }
 ```
 
-**2 · Notebook** — configure & run everything from one file, no CLI:
-
-```bash
-pip install -e '.[eval,serve,notebook]'
-jupyter lab notebooks/agent_bouncer_studio.ipynb     # edit CONFIG → Run All
-```
-
-**3 · Studio (web UI)** — see below.
+**2 · Studio (web UI)** — see below.
 
 ## Benchmark Studio (the UI)
 
@@ -233,7 +228,7 @@ src/agent_bouncer/
 └── __init__.py   # re-exports Verdict/Decision/Hazard; auto-loads .env
 
 scripts/     # grouped entry points → data/ · train/ · eval/ · report/
-notebooks/   # agent_bouncer_studio.ipynb — run & configure everything from a notebook
+docs-site/   # dependency-free static-site generator for the GitHub Pages docs
 configs/  docs/  tests/  start.sh  stop.sh
 ```
 
