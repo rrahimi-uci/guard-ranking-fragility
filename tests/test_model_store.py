@@ -18,6 +18,16 @@ def store(request, tmp_path):
     return ModelStore(backend=request.param, root=str(tmp_path / "store"))
 
 
+def test_default_backend_saves_to_filesystem(tmp_path):
+    import os
+    root = tmp_path / "s"
+    store = ModelStore(root=str(root))                 # no backend -> default
+    assert store.backend == "fs"                        # all artifacts on disk, no DB
+    mid = store.save(_rec())
+    assert os.path.exists(root / f"{mid}.json")          # inspectable JSON per model
+    assert not os.path.exists(root / "models.db")
+
+
 def test_save_autofills_and_roundtrips(store):
     mid = store.save(_rec())
     assert mid  # id auto-generated
