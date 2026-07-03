@@ -175,7 +175,10 @@ def curves() -> JSONResponse:
 @app.get("/api/report")
 def report(sort: str = "f1") -> FileResponse:
     """Render the leaderboard (macro-average scoreboard) to a PDF and return it for download."""
+    import tempfile
     from datetime import datetime, timezone
+
+    from starlette.background import BackgroundTask
 
     from agent_bouncer.serving.leaderboard_report import build_html, render_pdf
 
@@ -186,14 +189,19 @@ def report(sort: str = "f1") -> FileResponse:
         raise HTTPException(404, "No benchmark results yet — run the suite to populate the leaderboard.")
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     html_str = build_html(blob, sort=sort, generated=stamp)
-    out = ROOT / "outputs" / "leaderboard-report.pdf"
+    # Render to a temp file (deleted after the response is sent) so the report never
+    # litters outputs/.
+    fd, out = tempfile.mkstemp(prefix="ab-leaderboard-", suffix=".pdf")
+    os.close(fd)
     try:
-        render_pdf(html_str, str(out))
+        render_pdf(html_str, out)
     except RuntimeError as exc:
+        os.remove(out)
         raise HTTPException(501, str(exc)) from exc
-    return FileResponse(str(out), media_type="application/pdf",
+    return FileResponse(out, media_type="application/pdf",
                         filename="agent-bouncer-leaderboard.pdf",
-                        headers={"Cache-Control": "no-store"})
+                        headers={"Cache-Control": "no-store"},
+                        background=BackgroundTask(lambda: os.path.exists(out) and os.remove(out)))
 
 
 # ---------------------------------------------------------------- ensemble builder
