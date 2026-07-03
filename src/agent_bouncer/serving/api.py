@@ -16,9 +16,11 @@ import asyncio
 import json
 import os
 import re
+import signal
 import sys
 import uuid
 from collections import Counter
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from agent_bouncer.core.guard import KeywordGuard
@@ -60,7 +62,17 @@ def _load_dotenv(path: Path = ROOT / ".env") -> None:
 
 _load_dotenv()
 
-app = FastAPI(title="Agent Bouncer — Benchmark Studio", version="0.1.0")
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    yield
+    # On shutdown (e.g. ./stop.sh → SIGTERM), kill every in-flight training/eval subprocess
+    # tree so nothing keeps running orphaned in the background.
+    await asyncio.gather(*(_terminate_run(r) for r in list(_RUNS.values())),
+                         return_exceptions=True)
+
+
+app = FastAPI(title="Agent Bouncer — Benchmark Studio", version="0.1.0", lifespan=_lifespan)
 app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
 _guard = KeywordGuard()
 
@@ -388,6 +400,41 @@ class RunConfig(BaseModel):
 
 _RUNS: dict[str, dict] = {}
 
+
+def _signal_group(proc, sig: int) -> None:
+    """Send ``sig`` to the subprocess's whole process group — so dataloader workers and any
+    other grandchildren die with it — falling back to the single process if the group can't
+    be resolved (or on platforms without process groups)."""
+    if proc is None or proc.pid is None:
+        return
+    try:
+        os.killpg(os.getpgid(proc.pid), sig)   # subprocess is a session leader (see _run)
+    except (ProcessLookupError, PermissionError, OSError, AttributeError):
+        try:
+            proc.send_signal(sig)
+        except (ProcessLookupError, OSError):
+            pass
+
+
+async def _terminate_run(run: dict, *, grace: float = 4.0) -> bool:
+    """Stop a run's subprocess tree: SIGTERM, then SIGKILL if it hasn't exited within ``grace``
+    seconds. Marks the run user-stopped. Returns True if a live process was signalled."""
+    run["stopped"] = True
+    proc = run.get("proc")
+    if proc is None or proc.returncode is not None:
+        return False
+    _signal_group(proc, signal.SIGTERM)
+    try:
+        await asyncio.wait_for(proc.wait(), timeout=grace)
+    except asyncio.TimeoutError:
+        _signal_group(proc, signal.SIGKILL)
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=2.0)
+        except asyncio.TimeoutError:
+            pass
+    return True
+
+
 _RESULT_RE = re.compile(
     r"\[([a-z_]+)\]\s+([\w.\-]+):\s+P=([\d.]+)\s+R=([\d.]+)\s+F1=([\d.]+)\s+FPR=([\d.]+)\s+p50=([\d.]+)ms"
 )
@@ -448,7 +495,7 @@ def _parse_progress(text: str) -> dict:
 
 # Leading glyphs of the rich console banners emitted by the runner (train/eval headers,
 # config, device, ETA, save name, done) — surfaced as highlighted "info" lines in the UI.
-_INFO_PREFIXES = ("🚀", "📚", "🎛", "🖥", "⏱", "🏷", "✅", "🎯", "🧠", "🔧", "⚙", "📈", "⚖", "⚠")
+_INFO_PREFIXES = ("🚀", "📚", "🎛", "🖥", "⏱", "🏷", "✅", "🎯", "🧠", "🔧", "⚙", "📈", "⚖", "⚠", "⏹")
 
 
 def _build_commands(cfg: RunConfig) -> list[list[str]]:
@@ -489,15 +536,21 @@ async def _run(run_id: str, commands: list[list[str]], stop_on_error: bool = Fal
     total, failures = len(commands), 0
     try:
         for i, cmd in enumerate(commands, 1):
+            if run.get("stopped"):        # user pressed Stop between jobs — run no more
+                break
             await q.put({"type": "step", "index": i, "total": total,
                          "text": " ".join(Path(c).name if "/" in c else c for c in cmd)})
             rc, err = -1, None
             try:
+                # start_new_session=True → the child leads its own process group, so a single
+                # killpg tears down the whole tree (dataloader workers, tokenizers, …) on stop.
                 proc = await asyncio.create_subprocess_exec(
-                    *cmd, cwd=str(ROOT), env=env,
+                    *cmd, cwd=str(ROOT), env=env, start_new_session=True,
                     stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
                 )
                 run["proc"] = proc
+                if run.get("stopped"):    # Stop arrived before the process was recorded
+                    _signal_group(proc, signal.SIGKILL)
                 assert proc.stdout is not None
                 async for raw in proc.stdout:
                     line = raw.decode(errors="replace").rstrip()
@@ -507,6 +560,9 @@ async def _run(run_id: str, commands: list[list[str]], stop_on_error: bool = Fal
                 rc = proc.returncode
             except Exception as exc:  # noqa: BLE001 - a launch failure shouldn't kill the batch
                 err = f"{type(exc).__name__}: {exc}"
+            if run.get("stopped"):        # killed by the user — report it and stop the batch
+                await q.put({"type": "info", "text": "⏹️ Stopped by user — training/testing killed."})
+                break
             if rc != 0:
                 failures += 1
                 msg = f"step {i}/{total} failed" + (f": {err}" if err else f" (exit {rc})")
@@ -516,7 +572,8 @@ async def _run(run_id: str, commands: list[list[str]], stop_on_error: bool = Fal
     except Exception as exc:  # noqa: BLE001 - surface any unexpected failure to the UI
         await q.put({"type": "error", "text": f"{type(exc).__name__}: {exc}"})
     finally:
-        await q.put({"type": "done", "failures": failures, "total": total})
+        await q.put({"type": "done", "failures": failures, "total": total,
+                     "stopped": bool(run.get("stopped"))})
         run["done"] = True
 
 
@@ -633,6 +690,17 @@ async def start_build(cfg: BuildConfig) -> dict:
     if cfg.holdout_ratio is not None:
         cmd += ["--holdout", str(cfg.holdout_ratio)]
     return {"run_id": _launch([cmd]), "steps": 1}
+
+
+@app.post("/api/run/{run_id}/stop")
+async def stop_run(run_id: str) -> dict:
+    """Stop a run: kill its current training/testing subprocess tree and skip any remaining
+    jobs. Idempotent — stopping an already-finished run is a no-op."""
+    run = _RUNS.get(run_id)
+    if run is None:
+        raise HTTPException(404, "unknown run")
+    killed = await _terminate_run(run)
+    return {"run_id": run_id, "stopped": True, "killed_process": killed}
 
 
 @app.get("/api/run/{run_id}/events")
