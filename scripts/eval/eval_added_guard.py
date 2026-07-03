@@ -28,8 +28,10 @@ from agent_bouncer.models.encoder import EncoderGuard
 
 # Canonical scoreboard order (present guards are filtered from this).
 CANON_ORDER = [
-    "keyword-baseline", "encoder-distilbert", "decoder-sft-0.6B", "decoder-sft-1.7B",
-    "decoder-grpo-0.6B", "openai-moderation", "openai-gpt-4o-mini", "openai-gpt-5.2-low",
+    "keyword-baseline", "encoder-distilbert", "encoder-modernbert-large",
+    "decoder-sft-0.6B", "decoder-sft-1.7B", "decoder-grpo-0.6B",
+    "openai-moderation", "openai-gpt-4o-mini",
+    "openai-gpt-5.2-low", "openai-gpt-5.2-medium", "openai-gpt-5.2-high",
 ]
 
 

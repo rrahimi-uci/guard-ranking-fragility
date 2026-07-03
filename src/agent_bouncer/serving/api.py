@@ -172,6 +172,30 @@ def curves() -> JSONResponse:
     return JSONResponse({})
 
 
+@app.get("/api/report")
+def report(sort: str = "f1") -> FileResponse:
+    """Render the leaderboard (macro-average scoreboard) to a PDF and return it for download."""
+    from datetime import datetime, timezone
+
+    from agent_bouncer.serving.leaderboard_report import build_html, render_pdf
+
+    if not RESULTS_JSON.exists():
+        raise HTTPException(404, "No benchmark results yet — run the suite to populate the leaderboard.")
+    blob = json.loads(RESULTS_JSON.read_text())
+    if not blob.get("results"):
+        raise HTTPException(404, "No benchmark results yet — run the suite to populate the leaderboard.")
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    html_str = build_html(blob, sort=sort, generated=stamp)
+    out = ROOT / "outputs" / "leaderboard-report.pdf"
+    try:
+        render_pdf(html_str, str(out))
+    except RuntimeError as exc:
+        raise HTTPException(501, str(exc)) from exc
+    return FileResponse(str(out), media_type="application/pdf",
+                        filename="agent-bouncer-leaderboard.pdf",
+                        headers={"Cache-Control": "no-store"})
+
+
 # ------------------------------------------------------- training / experiments API
 @app.get("/api/models")
 def models() -> dict:

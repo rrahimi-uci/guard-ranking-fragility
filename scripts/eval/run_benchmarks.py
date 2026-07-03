@@ -53,8 +53,10 @@ REPORT_MD = "outputs/BENCHMARKS.md"
 
 # Canonical guard display order for the report.
 GUARD_ORDER = [
-    "keyword-baseline", "encoder-distilbert", "decoder-sft-0.6B", "decoder-sft-1.7B",
-    "decoder-grpo-0.6B", "openai-moderation", "openai-gpt-4o-mini", "openai-gpt-5.2-low",
+    "keyword-baseline", "encoder-distilbert", "encoder-modernbert-large",
+    "decoder-sft-0.6B", "decoder-sft-1.7B", "decoder-grpo-0.6B",
+    "openai-moderation", "openai-gpt-4o-mini",
+    "openai-gpt-5.2-low", "openai-gpt-5.2-medium", "openai-gpt-5.2-high",
 ]
 
 # Guard display order + parameter counts for the report.
@@ -174,10 +176,12 @@ def build_guards(args) -> list[tuple[str, object, int]]:
         guards.append(("openai-moderation", OpenAIModerationGuard(), args.workers))
         chat = OpenAIChatGuard(args.chat_model)
         guards.append((chat.name, chat, args.workers))
-        reasoning = OpenAIChatGuard(args.reasoning_model, reasoning_effort="low")
-        guards.append((reasoning.name, reasoning, args.workers))
-        for g in (chat.name, reasoning.name):
-            GUARD_PARAMS.setdefault(g, "api")
+        GUARD_PARAMS.setdefault(chat.name, "api")
+        # One reasoning guard per effort tier (low/medium/high) — same model, different budget.
+        for effort in args.reasoning_efforts:
+            reasoning = OpenAIChatGuard(args.reasoning_model, reasoning_effort=effort)
+            guards.append((reasoning.name, reasoning, args.workers))
+            GUARD_PARAMS.setdefault(reasoning.name, "api")
     else:
         print("!! OpenAI guards skipped (no key or --no-openai)")
 
@@ -194,6 +198,8 @@ def main() -> None:
     ap.add_argument("--full", action="store_true", help="evaluate on the FULL benchmarks (no subsampling)")
     ap.add_argument("--chat-model", default="gpt-4o-mini")
     ap.add_argument("--reasoning-model", default="gpt-5.2")
+    ap.add_argument("--reasoning-efforts", nargs="*", default=["low", "medium", "high"],
+                    help="reasoning_effort tiers to score for the reasoning model (default: all three)")
     ap.add_argument("--workers", type=int, default=8, help="concurrency for API guards")
     ap.add_argument("--no-openai", action="store_true")
     ap.add_argument("--skip-decoder", action="store_true",
