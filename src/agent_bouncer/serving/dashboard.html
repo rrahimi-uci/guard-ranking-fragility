@@ -219,8 +219,10 @@
           <div class="form" style="margin-top:14px">
             <div class="frow">
               <label>Set name<input id="dsName" type="text" value="my-trainset"></label>
-              <label>Examples / class<input id="dsPerClass" type="number" value="200" min="20"></label>
+              <label>Test split %<input id="dsHoldout" type="number" value="30" min="5" max="90"></label>
+              <label>Examples / class (0 = use all)<input id="dsPerClass" type="number" value="0" min="0"></label>
             </div>
+            <div class="mnote" id="dsSplitNote"></div>
             <div class="mnote" id="dsNote"></div>
             <button type="button" class="runbtn" id="buildBtn">🧪  Build training set</button>
           </div>
@@ -474,6 +476,13 @@ function syncDatasetSourceState(){
   const spec=datasetStrategySpec(),count=chosen.length,ok=count>=1;
   $('#srcHint').textContent='Pick any benchmarks to draw from — one or more.';
   $('#buildBtn').disabled=!curStrat||!ok;
+  // describe the train/test split that will be produced
+  const pcEl=$('#dsPerClass'),hoEl=$('#dsHoldout');
+  const ho=hoEl?(Number(hoEl.value)||30):30, pc=pcEl?pcEl.value:'0';
+  const pct=(pc===''||Number(pc)<=0);
+  if($('#dsSplitNote'))$('#dsSplitNote').textContent=pct
+    ? `Percentage split — ${100-ho}% train / ${ho}% test over ALL selected data (stratified, disjoint · no leakage).`
+    : `Balanced ${Number(pc)}/class train · ${ho}% held-out test (disjoint · no leakage).`;
   let note=spec.desc||'';
   note+=count?` Selected ${count} source${count===1?'':'s'}.`:' Pick at least one source.';
   $('#dsNote').textContent=note;
@@ -486,22 +495,24 @@ function renderDatasets(){
   if(!dsSources.size&&DATA.sources[0])dsSources=new Set([DATA.sources[0].name]);
   $('#srcPick').innerHTML=DATA.sources.map(s=>`<label class="${dsSources.has(s.name)?'sel':''}"><input type="checkbox" value="${s.name}" ${dsSources.has(s.name)?'checked':''}><span class="axd" style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${AXIS[s.axis].c}"></span>${s.name}</label>`).join('');
   $$('#srcPick label').forEach(l=>l.querySelector('input').onchange=()=>syncDatasetSourceState());
+  ['dsHoldout','dsPerClass'].forEach(id=>{const el=$('#'+id);if(el)el.oninput=syncDatasetSourceState;});
   syncDatasetSourceState();renderSetsList();
 }
 function renderSetsList(){
   const ts=DATA.train_sets;$('#nSets').textContent=ts.length;
-  $('#setsList').innerHTML=ts.length?`<table><thead><tr><th>Name</th><th>Strategy</th><th>Train</th><th>Test</th><th>Sources</th></tr></thead><tbody>`+
-    ts.map(t=>`<tr><td class="name">${t.name}</td><td>${t.strategy}</td><td class="mono">${t.n_train} <span style="color:var(--faint)">(${t.train_safe}/${t.train_unsafe})</span></td><td class="mono">${t.n_test}</td><td style="font-size:11px">${(t.sources||[]).join(', ')}</td></tr>`).join('')+'</tbody></table>'
+  $('#setsList').innerHTML=ts.length?`<table><thead><tr><th>Name</th><th>Split</th><th>Train</th><th>Test</th><th>Sources</th></tr></thead><tbody>`+
+    ts.map(t=>`<tr><td class="name">${t.name}</td><td style="font-size:11px">${t.split_mode==='percentage'?`${100-(t.test_pct||30)}/${t.test_pct||30}%`:t.strategy}</td><td class="mono">${t.n_train} <span style="color:var(--faint)">(${t.train_safe}/${t.train_unsafe})</span></td><td class="mono">${t.n_test}</td><td style="font-size:11px">${(t.sources||[]).join(', ')}</td></tr>`).join('')+'</tbody></table>'
     :'<div class="empty"><div class="big">🗂️</div>None yet — build one on the left.</div>';
 }
 async function buildDataset(){
-  const sources=selectedDatasetSources(),spec=datasetStrategySpec();
+  const sources=selectedDatasetSources();
   const name=$('#dsName').value.trim()||'my-trainset';
   if(!curStrat||!sources.length){toast('Pick a strategy and at least one source.');return;}
-  if(!datasetSelectionOk(spec,sources)){toast(`${curStrat} needs ${datasetSourceBoundsText(spec)}; selected ${sources.length}.`);syncDatasetSourceState();return;}
+  const pc=$('#dsPerClass').value===''?0:Number($('#dsPerClass').value);   // 0 = use all (percentage split)
+  const ho=(Number($('#dsHoldout').value)||30)/100;
   const btn=$('#buildBtn');btn.disabled=true;btn.textContent='● Building…';
   const con=$('#buildConsole');con.style.display='block';con.innerHTML='';
-  let resp;try{resp=await fetch('/api/dataset/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({strategy:curStrat,name,sources,per_class:Number($('#dsPerClass').value)||200})});}
+  let resp;try{resp=await fetch('/api/dataset/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({strategy:curStrat,name,sources,per_class:pc,holdout_ratio:ho})});}
   catch(e){toast('build failed to start');btn.disabled=false;btn.textContent='🧪  Build training set';return;}
   let payload={};try{payload=await resp.json();}catch(e){}
   if(!resp.ok){toast(payload.detail||'build failed');btn.disabled=false;btn.textContent='🧪  Build training set';syncDatasetSourceState();return;}

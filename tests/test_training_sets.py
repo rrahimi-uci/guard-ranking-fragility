@@ -48,6 +48,24 @@ def test_build_mixed_accepts_many_sources(tmp_path, monkeypatch):
     assert srcs == set(names)
 
 
+def test_build_percentage_split_over_all_data(tmp_path, monkeypatch):
+    monkeypatch.setattr(TS, "OUT_DIR", str(tmp_path))
+
+    def loader(src):
+        n = 100 if src == "a" else 200          # two sources: 100 + 200 = 300 total
+        return ([{"text": f"{src}-safe-{i}", "label": "safe", "hazard": "none"} for i in range(n // 2)]
+                + [{"text": f"{src}-bad-{i}", "label": "unsafe", "hazard": "hate"} for i in range(n // 2)])
+
+    m = TS.build_training_set("balanced", ["a", "b"], name="pct", per_class=0,
+                              holdout_ratio=0.3, loader=loader)
+    assert m["split_mode"] == "percentage" and m["test_pct"] == 30
+    assert m["n_train"] + m["n_test"] == 300      # uses ALL data
+    assert 80 <= m["n_test"] <= 100               # ~30% of 300 held out for test
+    from agent_bouncer.data import read_jsonl
+    tr, te = read_jsonl(m["train_path"]), read_jsonl(m["test_path"])
+    assert not find_leakage(tr, te)               # disjoint train/test
+
+
 def test_build_accepts_any_source_count_but_needs_one(monkeypatch, tmp_path):
     monkeypatch.setattr(TS, "OUT_DIR", str(tmp_path))
     # every strategy now accepts any number of sources — e.g. balanced with several

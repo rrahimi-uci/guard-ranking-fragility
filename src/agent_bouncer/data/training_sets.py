@@ -108,20 +108,35 @@ def build_training_set(
     rng = random.Random(seed)
     train: list[dict] = []
     test: list[dict] = []
-    per_source_pc = max(1, per_class // max(1, len(sources)))
-    for src in sources:
-        recs = loader(src)
-        tr, te = train_test_split(recs, test_ratio=holdout_ratio, seed=seed)
-        train += _balanced(tr, per_source_pc, rng)
-        test += _balanced(te, max(1, per_source_pc // 2), rng)
+    # per_class <= 0  ->  PERCENTAGE mode: use ALL pooled data, split X% test / (100-X)% train
+    #                     (stratified, the typical ML train/test split).
+    # per_class  > 0  ->  COUNT mode: a balanced subset of `per_class` per class, then a holdout.
+    full_split = not per_class or per_class <= 0
+    if full_split:
+        from agent_bouncer.data.sampling import ratio_split
+        pooled: list[dict] = []
+        for src in sources:
+            pooled += loader(src)
+        train, test = ratio_split(pooled, test_ratio=holdout_ratio, stratified=True, seed=seed)
+        aug_n = max(10, len(train) // 10)
+    else:
+        per_source_pc = max(1, per_class // max(1, len(sources)))
+        for src in sources:
+            recs = loader(src)
+            tr, te = train_test_split(recs, test_ratio=holdout_ratio, seed=seed)
+            train += _balanced(tr, per_source_pc, rng)
+            test += _balanced(te, max(1, per_source_pc // 2), rng)
+        aug_n = per_source_pc
 
-    # over-refusal augmentation: add extra safe (benign) prompts to the TRAIN set only
+    # over-refusal augmentation: add extra benign prompts to TRAIN only, excluding anything
+    # already in train/test so the split stays leakage-free.
     if strategy == "over_refusal_aware":
         try:
-            extra = loader("xstest")
-            safes = [r for r in extra if r["label"] == "safe"]
-            rng.shuffle(safes)
-            train += safes[: per_source_pc]
+            from agent_bouncer.data.split import _key
+            seen = {_key(r) for r in train} | {_key(r) for r in test}
+            extra = [r for r in loader("xstest") if r["label"] == "safe" and _key(r) not in seen]
+            rng.shuffle(extra)
+            train += extra[:aug_n]
         except Exception:  # noqa: BLE001 - augmentation is best-effort
             pass
 
@@ -137,6 +152,8 @@ def build_training_set(
     meta = {
         "name": name, "strategy": strategy, "sources": sources, "seed": seed,
         "per_class": per_class, "holdout_ratio": holdout_ratio,
+        "split_mode": "percentage" if full_split else "balanced_count",
+        "test_pct": round(holdout_ratio * 100),
         "n_train": len(train), "n_test": len(test),
         "train_safe": n_safe, "train_unsafe": len(train) - n_safe,
         "train_path": os.path.join(out, "train.jsonl"),
