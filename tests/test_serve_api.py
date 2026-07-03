@@ -117,6 +117,83 @@ def test_experiments_endpoint_shape():
     assert client.get("/api/experiment/does-not-exist").status_code == 404
 
 
+def test_models_endpoint_includes_validity_matrix():
+    d = client.get("/api/models").json()
+    assert "matrix" in d
+    assert d["matrix"]["distilbert"] == ["sft"]  # encoder: SFT only
+    assert set(d["matrix"]["qwen3-0.6b"]) == {"sft", "grpo", "dpo"}
+
+
+def test_sampling_endpoint_lists_strategies():
+    d = client.get("/api/sampling").json()
+    assert {s["key"] for s in d["sampling"]} == {"random", "stratified"}
+    assert {s["key"] for s in d["split"]} == {"ratio", "kfold"}
+    assert all("desc" in s for s in d["sampling"])
+
+
+def test_saved_models_crud(monkeypatch, tmp_path):
+    from agent_bouncer.tracking.model_store import ModelRecord, ModelStore
+    store = ModelStore(backend="fs", root=str(tmp_path / "ms"))
+    monkeypatch.setattr(api, "_store", lambda: store)
+
+    assert client.get("/api/saved_models").json()["models"] == []
+    mid = store.save(ModelRecord(base_model="qwen3-0.6b", technique="sft", path="/m/x"))
+    lst = client.get("/api/saved_models").json()["models"]
+    assert len(lst) == 1 and lst[0]["base_model"] == "qwen3-0.6b"
+    assert client.get(f"/api/saved_models/{mid}").json()["id"] == mid
+    assert client.get("/api/saved_models/nope").status_code == 404
+    assert client.delete(f"/api/saved_models/{mid}").json()["deleted"] == mid
+    assert client.delete(f"/api/saved_models/{mid}").status_code == 404
+
+
+def test_eval_endpoint_launches_eval_only(monkeypatch):
+    launched = {}
+
+    def fake_launch(cmds):
+        launched["c"] = cmds
+        return "er"
+
+    monkeypatch.setattr(api, "_launch", fake_launch)
+    r = client.post("/api/eval", json={"model_id": "m1", "benchmarks": ["xstest"], "device": "mps"})
+    assert r.json()["run_id"] == "er"
+    cmd = " ".join(launched["c"][0])
+    assert "run_eval_only.py" in cmd and "--model-id m1" in cmd and "--device mps" in cmd
+    assert "--benchmarks xstest" in cmd
+
+
+def test_save_model_endpoint(monkeypatch, tmp_path):
+    from agent_bouncer.tracking.model_store import ModelStore
+    store = ModelStore(backend="fs", root=str(tmp_path / "ms"))
+    monkeypatch.setattr(api, "_store", lambda: store)
+    exps = {
+        "t1": {"model_key": "qwen3-0.6b", "technique": "sft", "version": "v1",
+               "output_dir": "/m/x", "params": {"arch": "decoder"}, "data": {"n_train": 100}},
+        "e1": {"metrics_summary": {"f1": 0.7}, "metrics": {"beavertails": {"f1": 0.7}}},
+    }
+    monkeypatch.setattr(api.X, "get", lambda i: exps.get(i))
+    r = client.post("/api/saved_models", json={"train_exp": "t1", "eval_exp": "e1",
+                    "sampling": "stratified", "split": "ratio",
+                    "benchmarks": ["beavertails"], "test_ratio": 0.3})
+    assert r.status_code == 200
+    rec = store.get(r.json()["saved"])
+    assert rec.base_model == "qwen3-0.6b" and rec.metrics["f1"] == 0.7
+    assert rec.sampling == "stratified" and rec.benchmarks == ["beavertails"]
+    assert client.post("/api/saved_models", json={"train_exp": "nope"}).status_code == 404
+
+
+def test_build_endpoint_passes_holdout(monkeypatch):
+    launched = {}
+
+    def fake_launch(cmds):
+        launched["c"] = cmds
+        return "r"
+
+    monkeypatch.setattr(api, "_launch", fake_launch)
+    client.post("/api/dataset/build", json={"strategy": "balanced", "name": "y",
+                                            "sources": ["beavertails"], "holdout_ratio": 0.3})
+    assert "--holdout 0.3" in " ".join(launched["c"][0])
+
+
 def test_train_and_test_build_valid_launch(monkeypatch):
     launched = {}
 
