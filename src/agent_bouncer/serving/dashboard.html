@@ -233,23 +233,17 @@
 
     <!-- BENCHMARKS -->
     <section class="view" id="v-benchmarks">
-      <h2 class="vh">Benchmarks</h2><p class="vs">Click a benchmark to view its contents and per-model results.</p>
+      <h2 class="vh">Benchmarks</h2><p class="vs">Click a benchmark in the toolbar to explore its contents — search, filter safe/unsafe, and inspect hazard labels.</p>
       <div class="btoolbar" id="btoolbar"></div>
       <div id="benchHead"></div>
-      <div class="grid2">
-        <div class="chartcard" style="margin:0">
-          <div class="row-between" style="margin-bottom:8px"><h3 id="samplesTitle">Contents</h3>
-            <div class="vtools">
-              <input type="text" id="sampleSearch" placeholder="search prompts…" style="width:170px"/>
-              <div class="seg" id="labelSeg"><button data-f="all" class="on">All</button><button data-f="safe">Safe</button><button data-f="unsafe">Unsafe</button></div>
-            </div>
+      <div class="chartcard" style="margin:0">
+        <div class="row-between" style="margin-bottom:8px"><h3 id="samplesTitle">Contents</h3>
+          <div class="vtools">
+            <input type="text" id="sampleSearch" placeholder="search prompts…" style="width:170px"/>
+            <div class="seg" id="labelSeg"><button data-f="all" class="on">All</button><button data-f="safe">Safe</button><button data-f="unsafe">Unsafe</button></div>
           </div>
-          <div class="samples" id="samples"></div>
         </div>
-        <div class="chartcard" style="margin:0"><h3>Model results on this benchmark</h3><p class="sub" id="benchResSub">Precision / Recall / F1 per guard</p>
-          <div class="cbox"><canvas id="cBench"></canvas></div>
-          <div id="benchTable" style="margin-top:12px"></div>
-        </div>
+        <div class="samples" id="samples"></div>
       </div>
     </section>
 
@@ -423,21 +417,13 @@ async function selectBenchmark(name){
     <p class="sub" style="margin:4px 0 0">${d.description} · <code>${d.hf_id}</code> · <b>${d.n_safe}</b> safe + <b>${d.n_unsafe}</b> unsafe (n=${d.total})</p></div></div></div>`;
   $('#samplesTitle').textContent=`Contents — ${d.total} prompts`;
   window._samples=d.samples;sampleFilter='all';$$('#labelSeg button').forEach(b=>b.classList.toggle('on',b.dataset.f==='all'));$('#sampleSearch').value='';
-  renderSamples(); drawBenchResults(name);
+  renderSamples();
 }
 function renderSamples(){
   const q=$('#sampleSearch').value.toLowerCase();const rows=(window._samples||[]).filter(s=>(sampleFilter==='all'||s.label===sampleFilter)&&(!q||s.text.toLowerCase().includes(q)));
   $('#samples').innerHTML=rows.length?rows.map(s=>`<div class="scard"><span class="lbl ${s.label}">${s.label}</span><div class="txt">${esc(s.text)}</div>${s.hazard&&s.hazard!=='none'?`<span class="hz">${s.hazard}</span>`:''}</div>`).join(''):'<div class="empty">No matching prompts.</div>';
 }
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
-function drawBenchResults(b){
-  const gm=(RESULTS.results||{})[b]||{};const gs=ORDER.filter(g=>gm[g]);
-  destroy('cBench');
-  if(!gs.length){$('#benchTable').innerHTML='<div class="empty" style="padding:20px">No model results yet.</div>';return;}
-  charts.cBench=new Chart($('#cBench'),{type:'bar',data:{labels:gs.map(gLabel),datasets:['precision','recall','f1'].map(k=>({label:k[0].toUpperCase()+k.slice(1),data:gs.map(g=>gm[g][k]),backgroundColor:METRIC[k],borderRadius:5,maxBarThickness:22}))},options:barOpts(1)});
-  $('#benchTable').innerHTML=`<table><thead><tr><th>Guard</th><th>P</th><th>R</th><th>F1</th><th>AUC</th><th>FPR ↓</th><th>p90 ↓</th></tr></thead><tbody>`+
-    gs.map(g=>{const m=gm[g];return `<tr><td class="name">${gLabel(g)}</td><td class="mono">${fmt(m.precision)}</td><td class="mono">${fmt(m.recall)}</td><td class="mono">${fmt(m.f1)}</td><td class="mono">${fmt(m.roc_auc)}</td><td class="mono">${fmt(m.fpr_on_benign)}</td><td class="mono">${m.latency_p90_ms==null?'—':(m.latency_p90_ms<10?fmt(m.latency_p90_ms,1):Math.round(m.latency_p90_ms))}</td></tr>`;}).join('')+'</tbody></table>';
-}
 
 /* ---------- datasets ---------- */
 function renderDatasets(){
