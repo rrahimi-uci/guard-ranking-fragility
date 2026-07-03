@@ -140,6 +140,12 @@
     font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.65}
   .console .l{color:var(--muted);white-space:pre-wrap;word-break:break-word}
   .console .l.res{color:#bfe3c8} .console .l.step{color:#9dc0ff;font-weight:600} .console .l.err{color:#ffb4b4}
+  .console .l.load{color:#8aa0c6} .console .l.ok{color:#7fe0a6}
+  .runstatus{position:sticky;top:-12px;margin:-12px -14px 8px;padding:9px 14px;background:linear-gradient(90deg,#0c1322,#0a0f1a);
+    border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-weight:600;color:#cdd8ef;z-index:2}
+  .runstatus .spin{color:var(--accent);font-size:14px} .runstatus.done{color:#7fe0a6} .runstatus.fail{color:#ffb4b4}
+  .runstatus .el{margin-left:auto;color:var(--faint);font-weight:500;font-variant-numeric:tabular-nums}
+  .runstatus .stp{color:var(--faint);font-weight:500}
   .empty{text-align:center;color:var(--faint);padding:60px 20px}.empty .big{font-size:38px;margin-bottom:10px;opacity:.7}
   .kv{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;font-size:12.5px;margin:6px 0}.kv .k{color:var(--faint)}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:50;background:var(--raise);border:1px solid var(--line);
@@ -567,11 +573,41 @@ function fillTestData(){
 }
 function setTestMode(m){testMode=m;$$('#testModeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
   $('#tTestSetWrap').style.display=m==='set'?'':'none';$('#tBenchWrap').style.display=m==='bench'?'':'none';}
-function streamRun(run_id,con,onEvt,onDone){const es=new EventSource(`/api/run/${run_id}/events`);
-  es.onmessage=ev=>{const e=JSON.parse(ev.data);if(e.type==='done'){es.close();onDone&&onDone();return;}
-    const cls=e.type==='error'?'err':(e.type==='result'||e.type==='test_result')?'res':e.type==='step'?'step':'l';
-    const d=document.createElement('div');d.className='l '+cls;d.textContent=(e.text||'').trim()||JSON.stringify(e);con.appendChild(d);con.scrollTop=con.scrollHeight;onEvt&&onEvt(e);};
-  es.onerror=()=>{es.close();onDone&&onDone();};}
+const SPIN=['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
+const fmtElapsed=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+function fmtRunLine(e){
+  const d=document.createElement('div');d.className='l';
+  const f=(x,n=2)=>x==null?'—':Number(x).toFixed(n);
+  if(e.type==='step'){d.className='l step';d.textContent='▸ '+(e.text||'').replace(/^\S*python\S*\s*/,'').trim();}
+  else if(e.type==='result'||e.type==='test_result'){d.className='l res';
+    d.textContent=`✓ ${e.benchmark} · ${e.guard} — F1 ${f(e.f1)} · P ${f(e.precision)} · R ${f(e.recall)} · FPR ${f(e.fpr_on_benign)}`;}
+  else if(e.type==='loading'){d.className='l load';d.textContent=`⋯ loading ${e.benchmark}`;}
+  else if(e.type==='experiment'){d.className='l ok';d.textContent=`✓ experiment ${e.exp_id}`;}
+  else if(e.type==='dataset'){d.className='l ok';d.textContent=`✓ dataset ${e.name}`;}
+  else if(e.type==='error'){d.className='l err';d.textContent='✗ '+(e.text||'error');}
+  else{const t=(e.text||'').trim();if(!t)return null;d.textContent=t;if(/saved|done|complete|merged/i.test(t))d.className='l ok';}
+  return d;
+}
+function streamRun(run_id,con,onEvt,onDone){
+  con.innerHTML='';
+  const status=document.createElement('div');status.className='runstatus';con.appendChild(status);
+  const t0=Date.now();let si=0,steps=0,failed=false,finished=false;
+  const paint=(txt,cls)=>{const el=Math.floor((Date.now()-t0)/1000);
+    status.className='runstatus'+(cls?' '+cls:'');
+    status.innerHTML=(cls?'':`<span class="spin">${SPIN[si=(si+1)%SPIN.length]}</span> `)+
+      `<span>${txt}</span>`+(steps?`<span class="stp">· step ${steps}</span>`:'')+`<span class="el">⏱ ${fmtElapsed(el)}</span>`;};
+  paint('Starting…');
+  const tick=setInterval(()=>{if(!finished)paint(failed?'Failed…':'Running…',failed?'fail':'');},130);
+  const es=new EventSource(`/api/run/${run_id}/events`);
+  const end=(txt,cls)=>{if(finished)return;finished=true;clearInterval(tick);paint(txt,cls);try{es.close();}catch(e){}onDone&&onDone();};
+  es.onmessage=ev=>{const e=JSON.parse(ev.data);
+    if(e.type==='done'){end(failed?'Failed':'Done ✓',failed?'fail':'done');return;}
+    if(e.type==='step')steps++;
+    if(e.type==='error')failed=true;
+    const line=fmtRunLine(e);if(line){con.appendChild(line);con.scrollTop=con.scrollHeight;}
+    onEvt&&onEvt(e);};
+  es.onerror=()=>end(failed?'Failed':'Stream closed',failed?'fail':'done');
+}
 async function runTrain(){
   const jobs=[...trainJobs].map(k=>{const [model,technique]=k.split('::');return {model,technique};});
   if(!jobs.length){toast('Select at least one model × technique.');return;}
