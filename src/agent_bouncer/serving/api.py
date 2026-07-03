@@ -23,11 +23,13 @@ from pathlib import Path
 from agent_bouncer.core.guard import KeywordGuard
 from agent_bouncer.core.schema import Surface, Verdict
 from agent_bouncer.data import read_jsonl
+from agent_bouncer.data.sampling import SAMPLING_STRATEGIES, SPLIT_STRATEGIES
 from agent_bouncer.data.training_sets import STRATEGIES, list_training_sets
 from agent_bouncer.evaluation.benchmarks import BENCHMARKS, GATED_BENCHMARKS
-from agent_bouncer.models.registry import TECHNIQUES, catalog
+from agent_bouncer.models.registry import TECHNIQUES, catalog, technique_matrix
 from agent_bouncer.tracking import experiments as X
 from agent_bouncer.tracking.hardware import hardware_info, hardware_label
+from agent_bouncer.tracking.model_store import ModelStore
 
 try:
     from fastapi import FastAPI, HTTPException
@@ -144,8 +146,19 @@ def curves() -> JSONResponse:
 # ------------------------------------------------------- training / experiments API
 @app.get("/api/models")
 def models() -> dict:
-    """Base-model catalog + tuning techniques for the training UI."""
-    return {"models": catalog(), "techniques": TECHNIQUES}
+    """Base-model catalog + tuning techniques + the model×technique validity matrix.
+
+    ``matrix`` lets the UI grey out invalid combinations (encoders: SFT only)."""
+    return {"models": catalog(), "techniques": TECHNIQUES, "matrix": technique_matrix()}
+
+
+@app.get("/api/sampling")
+def sampling() -> dict:
+    """Sampling + split strategies for the guided workflow (random/stratified, ratio/k-fold)."""
+    return {
+        "sampling": [{"key": k, **v} for k, v in SAMPLING_STRATEGIES.items()],
+        "split": [{"key": k, **v} for k, v in SPLIT_STRATEGIES.items()],
+    }
 
 
 @app.get("/api/hardware")
@@ -173,6 +186,63 @@ def experiment(exp_id: str) -> JSONResponse:
     if exp is None:
         raise HTTPException(404, "unknown experiment")
     return JSONResponse(exp)
+
+
+# ------------------------------------------------------------ saved model store
+def _store() -> ModelStore:
+    return ModelStore(root=str(ROOT / "outputs" / "model_store"))
+
+
+@app.get("/api/saved_models")
+def saved_models() -> dict:
+    """All persisted models (newest first) for the eval-only + comparison views."""
+    return {"models": [r.to_dict() for r in _store().list()]}
+
+
+@app.get("/api/saved_models/{model_id}")
+def saved_model(model_id: str) -> JSONResponse:
+    rec = _store().get(model_id)
+    if rec is None:
+        raise HTTPException(404, "unknown saved model")
+    return JSONResponse(rec.to_dict())
+
+
+@app.delete("/api/saved_models/{model_id}")
+def delete_saved_model(model_id: str) -> dict:
+    if not _store().delete(model_id):
+        raise HTTPException(404, "unknown saved model")
+    return {"deleted": model_id}
+
+
+class SaveModelConfig(BaseModel):
+    """Persist a trained version into the model store with its workflow metadata."""
+    train_exp: str
+    eval_exp: str | None = None
+    sampling: str = ""
+    split: str = ""
+    benchmarks: list[str] = []
+    test_ratio: float | None = None
+    k: int | None = None
+
+
+@app.post("/api/saved_models")
+def save_model(cfg: SaveModelConfig) -> dict:
+    from agent_bouncer.training.runner import save_trained_model
+    exp = X.get(cfg.train_exp)
+    if exp is None:
+        raise HTTPException(404, "unknown training experiment")
+    metrics, per_bench = {}, {}
+    if cfg.eval_exp:
+        ev = X.get(cfg.eval_exp)
+        if ev:
+            metrics = ev.get("metrics_summary", {})
+            per_bench = ev.get("metrics", {})
+    mid = save_trained_model(
+        exp, store=_store(), sampling=cfg.sampling, split=cfg.split,
+        benchmarks=cfg.benchmarks, test_ratio=cfg.test_ratio, k=cfg.k,
+        metrics=metrics, per_benchmark=per_bench,
+    )
+    return {"saved": mid}
 
 
 # ------------------------------------------------------- benchmark viewer + datasets
@@ -258,7 +328,7 @@ def _build_commands(cfg: RunConfig) -> list[list[str]]:
     need_openai = any(g.startswith("openai-") for g in guards)
     fast = [g for g in guards if not g.startswith("decoder-")]
 
-    main = [py, "scripts/run_benchmarks.py", "--per-class", str(cfg.per_class),
+    main = [py, "scripts/eval/run_benchmarks.py", "--per-class", str(cfg.per_class),
             "--skip-decoder", "--benchmarks", *benches, "--guards", *fast]
     if not need_openai:
         main.append("--no-openai")
@@ -271,9 +341,9 @@ def _build_commands(cfg: RunConfig) -> list[list[str]]:
     }
     for name, (path, mode) in decoders.items():
         if name in guards and (ROOT / path).is_dir():
-            cmds.append([py, "scripts/eval_added_guard.py", "--path", path, "--arch",
+            cmds.append([py, "scripts/eval/eval_added_guard.py", "--path", path, "--arch",
                          "decoder", "--mode", mode, "--name", name, "--params", "0.6B"])
-    cmds.append([py, "scripts/compute_curves.py"])
+    cmds.append([py, "scripts/report/compute_curves.py"])
     return cmds
 
 
@@ -339,7 +409,7 @@ _PARAM_FLAGS = {"epochs": "--epochs", "lr": "--lr", "batch_size": "--batch",
 
 @app.post("/api/train")
 async def start_train(cfg: TrainConfig) -> dict:
-    cmd = [sys.executable, "scripts/run_training.py", "--model", cfg.model,
+    cmd = [sys.executable, "scripts/train/run_training.py", "--model", cfg.model,
            "--technique", cfg.technique, "--train-data", cfg.train_data]
     for key, flag in _PARAM_FLAGS.items():
         if cfg.params.get(key) is not None:
@@ -351,7 +421,7 @@ async def start_train(cfg: TrainConfig) -> dict:
 
 @app.post("/api/test")
 async def start_test(cfg: TestConfig) -> dict:
-    cmd = [sys.executable, "scripts/run_testing.py", "--exp", cfg.exp,
+    cmd = [sys.executable, "scripts/eval/run_testing.py", "--exp", cfg.exp,
            "--per-class", str(cfg.per_class), "--device", cfg.device]
     if cfg.benchmarks:
         cmd += ["--benchmarks", *cfg.benchmarks]
@@ -363,12 +433,32 @@ class BuildConfig(BaseModel):
     name: str
     sources: list[str]
     per_class: int = 200
+    holdout_ratio: float | None = None   # train/test split fraction (e.g. 0.2 = 80/20)
+
+
+class EvalConfig(BaseModel):
+    """Evaluation-only run: score a saved model on benchmarks, no training."""
+    model_id: str
+    benchmarks: list[str] = []
+    per_class: int = 40
+    device: str = "cpu"
+
+
+@app.post("/api/eval")
+async def start_eval(cfg: EvalConfig) -> dict:
+    cmd = [sys.executable, "scripts/eval/run_eval_only.py", "--model-id", cfg.model_id,
+           "--per-class", str(cfg.per_class), "--device", cfg.device]
+    if cfg.benchmarks:
+        cmd += ["--benchmarks", *cfg.benchmarks]
+    return {"run_id": _launch([cmd]), "steps": 1}
 
 
 @app.post("/api/dataset/build")
 async def start_build(cfg: BuildConfig) -> dict:
-    cmd = [sys.executable, "scripts/build_dataset.py", "--strategy", cfg.strategy,
+    cmd = [sys.executable, "scripts/data/build_dataset.py", "--strategy", cfg.strategy,
            "--name", cfg.name, "--per-class", str(cfg.per_class), "--sources", *cfg.sources]
+    if cfg.holdout_ratio is not None:
+        cmd += ["--holdout", str(cfg.holdout_ratio)]
     return {"run_id": _launch([cmd]), "steps": 1}
 
 
