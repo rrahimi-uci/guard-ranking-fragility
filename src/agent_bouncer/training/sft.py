@@ -52,7 +52,7 @@ def _binary_metrics(eval_pred):
     }
 
 
-def train_encoder(cfg: dict[str, Any]) -> str:
+def train_encoder(cfg: dict[str, Any]) -> str:  # pragma: no cover - runs a real HF Trainer
     """Fine-tune a binary (safe/unsafe) sequence classifier. Returns output dir."""
     from datasets import Dataset
     from transformers import (
@@ -118,7 +118,7 @@ def train_encoder(cfg: dict[str, Any]) -> str:
     return out_dir
 
 
-def train_decoder(cfg: dict[str, Any]) -> str:
+def train_decoder(cfg: dict[str, Any]) -> str:  # pragma: no cover - runs a real TRL SFTTrainer
     """LoRA fine-tune a small decoder to emit the canonical JSON verdict."""
     from datasets import Dataset
     from peft import LoraConfig
