@@ -144,6 +144,8 @@
   .console .l.load{color:#8aa0c6} .console .l.ok{color:#7fe0a6}
   .console .l.info{color:#dbe6f7;font-weight:500;letter-spacing:.1px}
   .console .l.info.hd{color:#fff;font-weight:700;font-size:13.5px;margin-top:2px}
+  .console .l.prog{color:#a9c7ff;font-variant-numeric:tabular-nums}
+  .runstatus .pbar{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
   .runstatus{position:sticky;top:-12px;margin:-12px -14px 8px;padding:9px 14px;background:linear-gradient(90deg,#0c1322,#0a0f1a);
     border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-weight:600;color:#cdd8ef;z-index:2}
   .runstatus .spin{color:var(--accent);font-size:14px} .runstatus.done{color:#7fe0a6} .runstatus.fail{color:#ffb4b4}
@@ -580,6 +582,7 @@ function setTestMode(m){testMode=m;$$('#testModeSeg button').forEach(b=>b.classL
   $('#tTestSetWrap').style.display=m==='set'?'':'none';$('#tBenchWrap').style.display=m==='bench'?'':'none';}
 const SPIN=['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
 const fmtElapsed=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+const barStr=p=>{const n=Math.max(0,Math.min(10,Math.round((p||0)/10)));return '['+'█'.repeat(n)+'░'.repeat(10-n)+']';};
 function fmtRunLine(e){
   const d=document.createElement('div');d.className='l';
   const f=(x,n=2)=>x==null?'—':Number(x).toFixed(n);
@@ -587,6 +590,13 @@ function fmtRunLine(e){
   else if(e.type==='result'||e.type==='test_result'){d.className='l res';
     d.textContent=`✓ ${e.benchmark} · ${e.guard} — F1 ${f(e.f1)} · P ${f(e.precision)} · R ${f(e.recall)} · FPR ${f(e.fpr_on_benign)}`;}
   else if(e.type==='loading'){d.className='l load';d.textContent=`⋯ loading ${e.benchmark}`;}
+  else if(e.type==='progress'){d.className='l prog';
+    const bits=[`step ${e.step??'?'}${e.total?'/'+e.total:''}`];
+    if(e.loss!=null)bits.push(`loss ${(+e.loss).toFixed(3)}`);
+    if(e.rate!=null)bits.push(`${(+e.rate).toFixed(1)}/s`);
+    if(e.eta!=null)bits.push(`ETA ${fmtElapsed(e.eta)}`);
+    const tag=e.phase==='test'&&e.label?e.label+' · ':'';
+    d.textContent=`⏳ ${barStr(e.pct)} ${e.pct!=null?e.pct+'%':''} · ${tag}${bits.join(' · ')}`;}
   else if(e.type==='experiment'){d.className='l ok';d.textContent=`✓ experiment ${e.exp_id}`;}
   else if(e.type==='dataset'){d.className='l ok';d.textContent=`✓ dataset ${e.name}`;}
   else if(e.type==='error'){d.className='l err';d.textContent='✗ '+(e.text||'error');}
@@ -598,19 +608,25 @@ function fmtRunLine(e){
 function streamRun(run_id,con,onEvt,onDone){
   con.innerHTML='';
   const status=document.createElement('div');status.className='runstatus';con.appendChild(status);
-  const t0=Date.now();let si=0,steps=0,total=0,finished=false;
+  const t0=Date.now();let si=0,steps=0,total=0,finished=false,lastProg=null;
   const paint=(txt,cls)=>{const el=Math.floor((Date.now()-t0)/1000);
     status.className='runstatus'+(cls?' '+cls:'');
+    let prog='';
+    if(lastProg&&!cls){const p=lastProg,nm=p.phase==='test'&&p.label?p.label+' ':'';
+      prog=`<span class="pbar">${barStr(p.pct)} ${p.pct!=null?p.pct+'%':''}</span>`+
+        `<span class="stp">· ${nm}${p.step??'?'}${p.total?'/'+p.total:''}${p.eta!=null?' · ETA '+fmtElapsed(p.eta):''}</span>`;}
+    const stp=(!lastProg&&steps)?`<span class="stp">· step ${steps}${total?'/'+total:''}</span>`:'';
     status.innerHTML=(cls?'':`<span class="spin">${SPIN[si=(si+1)%SPIN.length]}</span> `)+
-      `<span>${txt}</span>`+(steps?`<span class="stp">· step ${steps}${total?'/'+total:''}</span>`:'')+`<span class="el">⏱ ${fmtElapsed(el)}</span>`;};
+      `<span>${txt}</span>`+prog+stp+`<span class="el">⏱ ${fmtElapsed(el)}</span>`;};
   paint('Starting…');
-  const tick=setInterval(()=>{if(!finished)paint('Running…');},130);
+  const tick=setInterval(()=>{if(!finished)paint(lastProg?(lastProg.phase==='test'?'Testing…':'Training…'):'Running…');},130);
   const es=new EventSource(`/api/run/${run_id}/events`);
-  const end=(txt,cls)=>{if(finished)return;finished=true;clearInterval(tick);paint(txt,cls);try{es.close();}catch(e){}onDone&&onDone();};
+  const end=(txt,cls)=>{if(finished)return;finished=true;clearInterval(tick);lastProg=null;paint(txt,cls);try{es.close();}catch(e){}onDone&&onDone();};
   es.onmessage=ev=>{const e=JSON.parse(ev.data);
     if(e.type==='done'){const f=e.failures||0,t=e.total||steps;
       end(f?`Done · ${t-f}/${t} ok, ${f} failed`:'Done ✓',f?'fail':'done');return;}
-    if(e.type==='step'){steps++;if(e.total)total=e.total;}
+    if(e.type==='step'){steps++;if(e.total)total=e.total;lastProg=null;}
+    if(e.type==='progress'){lastProg=e;}
     const line=fmtRunLine(e);if(line){con.appendChild(line);con.scrollTop=con.scrollHeight;}
     onEvt&&onEvt(e);};
   es.onerror=()=>end('Stream closed','done');

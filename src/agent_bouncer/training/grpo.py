@@ -120,6 +120,7 @@ def run_grpo(config_path: str | Path) -> str:  # pragma: no cover - runs a real 
         cfg["base_model"],
         trust_remote_code=bool(cfg.get("trust_remote_code", False)),
     )
+    from agent_bouncer.training.progress import progress_callback
     trainer = GRPOTrainer(
         model=model,
         reward_funcs=[make_reward_fn(_weights_from_cfg(cfg))],
@@ -127,6 +128,7 @@ def run_grpo(config_path: str | Path) -> str:  # pragma: no cover - runs a real 
         train_dataset=dataset,
         processing_class=tokenizer,
         peft_config=peft_config,
+        callbacks=[progress_callback()],
     )
     trainer.train()
     # When LoRA is used, merge the adapter into the base weights so the guard loads

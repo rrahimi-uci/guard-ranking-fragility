@@ -133,6 +133,16 @@ def test_parse_line_info_banner():
     assert api._parse_line("plain log")["type"] == "log"
 
 
+def test_parse_line_progress_train_and_test():
+    e = api._parse_line("PROGRESS phase=train step=30 total=60 loss=0.4213 rate=2.71 eta=23 epoch=0.50")
+    assert e["type"] == "progress" and e["phase"] == "train"
+    assert e["step"] == 30 and e["total"] == 60 and e["pct"] == 50   # pct derived
+    assert e["loss"] == 0.4213 and e["rate"] == 2.71 and e["eta"] == 23 and e["epoch"] == 0.5
+    t = api._parse_line("PROGRESS phase=test label=beavertails step=120 total=500 rate=45.3 eta=8")
+    assert t["type"] == "progress" and t["phase"] == "test" and t["label"] == "beavertails"
+    assert t["pct"] == 24 and t["loss"] is None and t["eta"] == 8
+
+
 def test_models_endpoint_lists_new_models():
     d = client.get("/api/models").json()
     keys = {m["key"] for m in d["models"]}
