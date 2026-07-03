@@ -151,6 +151,9 @@
   .runstatus .spin{color:var(--accent);font-size:14px} .runstatus.done{color:#7fe0a6} .runstatus.fail{color:#ffb4b4}
   .runstatus .el{margin-left:auto;color:var(--faint);font-weight:500;font-variant-numeric:tabular-nums}
   .runstatus .stp{color:var(--faint);font-weight:500}
+  .runstatus .stopbtn{margin-left:12px;padding:3px 10px;border:1px solid #7a2b2b;background:#2a1414;color:#ffb4b4;
+    border-radius:6px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .runstatus .stopbtn:hover:not(:disabled){background:#3a1a1a;border-color:#a33} .runstatus .stopbtn:disabled{opacity:.5;cursor:default}
   .empty{text-align:center;color:var(--faint);padding:60px 20px}.empty .big{font-size:38px;margin-bottom:10px;opacity:.7}
   .kv{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;font-size:12.5px;margin:6px 0}.kv .k{color:var(--faint)}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:50;background:var(--raise);border:1px solid var(--line);
@@ -608,7 +611,10 @@ function fmtRunLine(e){
 function streamRun(run_id,con,onEvt,onDone){
   con.innerHTML='';
   const status=document.createElement('div');status.className='runstatus';con.appendChild(status);
-  const t0=Date.now();let si=0,steps=0,total=0,finished=false,lastProg=null;
+  const t0=Date.now();let si=0,steps=0,total=0,finished=false,lastProg=null,stopping=false;
+  const stopBtn=document.createElement('button');stopBtn.className='stopbtn';stopBtn.textContent='⏹ Stop';
+  stopBtn.onclick=async()=>{stopBtn.disabled=true;stopping=true;stopBtn.textContent='Stopping…';
+    try{await fetch(`/api/run/${run_id}/stop`,{method:'POST'});}catch(e){}};
   const paint=(txt,cls)=>{const el=Math.floor((Date.now()-t0)/1000);
     status.className='runstatus'+(cls?' '+cls:'');
     let prog='';
@@ -617,14 +623,15 @@ function streamRun(run_id,con,onEvt,onDone){
         `<span class="stp">· ${nm}${p.step??'?'}${p.total?'/'+p.total:''}${p.eta!=null?' · ETA '+fmtElapsed(p.eta):''}</span>`;}
     const stp=(!lastProg&&steps)?`<span class="stp">· step ${steps}${total?'/'+total:''}</span>`:'';
     status.innerHTML=(cls?'':`<span class="spin">${SPIN[si=(si+1)%SPIN.length]}</span> `)+
-      `<span>${txt}</span>`+prog+stp+`<span class="el">⏱ ${fmtElapsed(el)}</span>`;};
+      `<span>${txt}</span>`+prog+stp+`<span class="el">⏱ ${fmtElapsed(el)}</span>`;
+    if(!finished)status.appendChild(stopBtn);};   // Stop button lives past each repaint
   paint('Starting…');
-  const tick=setInterval(()=>{if(!finished)paint(lastProg?(lastProg.phase==='test'?'Testing…':'Training…'):'Running…');},130);
+  const tick=setInterval(()=>{if(!finished)paint(stopping?'Stopping…':lastProg?(lastProg.phase==='test'?'Testing…':'Training…'):'Running…');},130);
   const es=new EventSource(`/api/run/${run_id}/events`);
   const end=(txt,cls)=>{if(finished)return;finished=true;clearInterval(tick);lastProg=null;paint(txt,cls);try{es.close();}catch(e){}onDone&&onDone();};
   es.onmessage=ev=>{const e=JSON.parse(ev.data);
     if(e.type==='done'){const f=e.failures||0,t=e.total||steps;
-      end(f?`Done · ${t-f}/${t} ok, ${f} failed`:'Done ✓',f?'fail':'done');return;}
+      end(e.stopped?'Stopped ⏹':f?`Done · ${t-f}/${t} ok, ${f} failed`:'Done ✓',e.stopped?'fail':f?'fail':'done');return;}
     if(e.type==='step'){steps++;if(e.total)total=e.total;lastProg=null;}
     if(e.type==='progress'){lastProg=e;}
     const line=fmtRunLine(e);if(line){con.appendChild(line);con.scrollTop=con.scrollHeight;}
