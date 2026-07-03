@@ -120,6 +120,53 @@ def _load_guard(model_key: str, arch: str, out_dir: str, technique: str, device:
     return DecoderGuard(out_dir, mode=mode, name=model_key, device=device)
 
 
+_MACRO_KEYS = ("precision", "recall", "f1", "roc_auc", "fpr_on_benign",
+               "latency_p50_ms", "latency_p90_ms", "throughput_per_s")
+
+
+def macro_average(metrics: dict, keys: tuple[str, ...] = _MACRO_KEYS) -> dict:
+    """Average per-benchmark metrics into one macro row (empty in → empty out)."""
+    if not metrics:
+        return {}
+    return {k: round(sum(metrics[b][k] for b in metrics) / len(metrics), 4) for k in keys}
+
+
+def _norm(text: str | None) -> str:
+    return " ".join((text or "").lower().split())
+
+
+def score_guard(guard, benchmarks: list[str], *, per_class: int = 40,
+                train_recs: list[dict] | None = None, loader=None) -> tuple[dict, dict]:
+    """Score a guard over benchmarks with leakage guards; returns (metrics, leakage).
+
+    ``loader(bench)`` returns that benchmark's records (defaults to the balanced registry
+    loader). Pure w.r.t. the guard object, so tests can pass a fake guard + loader.
+    """
+    if loader is None:
+        from agent_bouncer.evaluation.benchmarks import load_benchmark
+        def loader(bench):  # noqa: E306
+            return load_benchmark(bench, balanced=True, per_class=per_class)
+
+    train_recs = train_recs or []
+    metrics: dict = {}
+    leakage: dict = {}
+    for bench in benchmarks:
+        recs = loader(bench)
+        leaked = set(find_leakage(train_recs, recs)) if train_recs else set()
+        clean = [r for r in recs if _norm(r.get("text")) not in leaked]
+        leakage[bench] = {"n": len(recs), "dropped_leaked": len(recs) - len(clean)}
+        verdicts = [guard.predict(r["text"], surface=Surface.USER_PROMPT) for r in clean]
+        gold = [Decision(r["label"]) for r in clean]
+        lat = [v.latency_ms for v in verdicts if v.latency_ms is not None]
+        m = compute_metrics(gold, [v.decision for v in verdicts], lat).to_dict()
+        m["roc_auc"] = (m["recall"] + 1.0 - m["fpr_on_benign"]) / 2.0  # single-operating-point AUC
+        metrics[bench] = m
+        print(f"  [{bench}] {getattr(guard, 'name', '?')}: F1={m['f1']:.3f} "
+              f"FPR={m['fpr_on_benign']:.3f} (dropped {leakage[bench]['dropped_leaked']} leaked)",
+              flush=True)
+    return metrics, leakage
+
+
 def evaluate_and_record(train_exp_id: str, *, benchmarks: list[str] | None = None,
                         per_class: int = 40, device: str = "cpu", merge_scoreboard: bool = False) -> dict:
     """Load a trained version and score it on benchmarks with leakage guards."""
@@ -136,29 +183,11 @@ def evaluate_and_record(train_exp_id: str, *, benchmarks: list[str] | None = Non
     guard = _load_guard(model_key, arch, out_dir, train_exp.get("technique", "sft"), device)
     benchmarks = benchmarks or list(BENCHMARKS)
     stamp, created = X.now()
-    metrics: dict = {}
-    leakage: dict = {}
-    for bench in benchmarks:
-        recs = load_benchmark(bench, balanced=True, per_class=per_class)
-        # Anti-leakage: drop any benchmark item that appears in this model's training data.
-        leaked = set(find_leakage(train_recs, recs)) if train_recs else set()
-        clean = [r for r in recs if " ".join((r.get("text") or "").lower().split()) not in leaked]
-        leakage[bench] = {"n": len(recs), "dropped_leaked": len(recs) - len(clean)}
-        verdicts = [guard.predict(r["text"], surface=Surface.USER_PROMPT) for r in clean]
-        gold = [Decision(r["label"]) for r in clean]
-        lat = [v.latency_ms for v in verdicts if v.latency_ms is not None]
-        m = compute_metrics(gold, [v.decision for v in verdicts], lat)
-        d = m.to_dict()
-        d["roc_auc"] = (d["recall"] + 1.0 - d["fpr_on_benign"]) / 2.0  # single-operating-point AUC
-        metrics[bench] = d
-        print(f"  [{bench}] {model_key}: F1={m.f1:.3f} P={m.precision:.3f} R={m.recall:.3f} "
-              f"FPR={m.fpr_on_benign:.3f} p90={m.latency_p90_ms:.0f}ms thr={m.throughput_per_s:.1f}/s "
-              f"(dropped {leakage[bench]['dropped_leaked']} leaked)", flush=True)
-
-    _macro_keys = ("precision", "recall", "f1", "roc_auc", "fpr_on_benign",
-                   "latency_p50_ms", "latency_p90_ms", "throughput_per_s")
-    macro = ({k: round(sum(metrics[b][k] for b in metrics) / len(metrics), 4) for k in _macro_keys}
-             if metrics else {})
+    metrics, leakage = score_guard(
+        guard, benchmarks, per_class=per_class, train_recs=train_recs,
+        loader=lambda b: load_benchmark(b, balanced=True, per_class=per_class),
+    )
+    macro = macro_average(metrics)
     exp = X.Experiment(
         id=X.make_id(model_key, "eval", stamp), kind="eval", model_key=model_key,
         base_hf_id=train_exp.get("base_hf_id", ""), technique=train_exp.get("technique", ""),
@@ -191,3 +220,96 @@ def _merge_scoreboard(guard_name: str, params: str, metrics: dict) -> None:
     with os.fdopen(fd, "w") as fh:
         json.dump(blob, fh, indent=2)
     os.replace(tmp, RESULTS_JSON)
+
+
+# ------------------------------------------------------------------ eval-only mode
+def eval_only(
+    *,
+    benchmarks: list[str],
+    model_id: str | None = None,
+    store=None,
+    path: str | None = None,
+    arch: str = "decoder",
+    technique: str = "sft",
+    model_key: str | None = None,
+    per_class: int = 40,
+    device: str = "cpu",
+    guard_loader=None,
+    bench_loader=None,
+    record_exp: bool = True,
+    update_store: bool = True,
+) -> dict:
+    """Evaluate an **already-trained** model on benchmarks — no training.
+
+    Resolve the model from a saved :class:`ModelStore` record (``model_id``) or a raw
+    ``path`` (an uploaded / on-disk model). Scores it (leakage-guarded), optionally records
+    an ``eval`` experiment, and refreshes the store record's metrics. ``guard_loader`` and
+    ``bench_loader`` are injectable so this is testable without loading real weights.
+    """
+    if model_id is not None:
+        if store is None:
+            from agent_bouncer.tracking.model_store import ModelStore
+            store = ModelStore()
+        rec = store.get(model_id)
+        if rec is None:
+            raise ValueError(f"unknown saved model {model_id!r}")
+        path = path or rec.path
+        arch = rec.arch or arch
+        technique = rec.technique or technique
+        model_key = model_key or rec.base_model or model_id
+    if not path:
+        raise ValueError("eval_only needs a model_id or a path")
+    model_key = model_key or "uploaded"
+
+    load = guard_loader or _load_guard
+    guard = load(model_key, arch, path, technique, device)
+    metrics, leakage = score_guard(guard, benchmarks, per_class=per_class, loader=bench_loader)
+    macro = macro_average(metrics)
+    result = {
+        "eval_only": True, "model_key": model_key, "model_id": model_id, "path": path,
+        "technique": technique, "arch": arch, "benchmarks": benchmarks,
+        "metrics": metrics, "macro": macro, "leakage": leakage,
+    }
+    if record_exp:
+        stamp, created = X.now()
+        exp = X.Experiment(
+            id=X.make_id(model_key, "evalonly", stamp), kind="eval", model_key=model_key,
+            technique=technique, created=created,
+            params={"eval_only": True, "model_id": model_id, "path": path,
+                    "per_class": per_class, "device": device},
+            data={"benchmarks": benchmarks, "leakage": leakage, "leakage_checked": True},
+            output_dir=path, hardware=hardware_info(), git_commit=X.git_commit(),
+            metrics=metrics, metrics_summary=macro,
+        )
+        X.record(exp)
+        result["experiment_id"] = exp.id
+    if model_id and update_store and store is not None:
+        rec = store.get(model_id)
+        if rec is not None:
+            rec.metrics = macro
+            rec.per_benchmark = metrics
+            store.save(rec)
+    return result
+
+
+def save_trained_model(exp: dict, *, store=None, sampling: str = "", split: str = "",
+                       benchmarks: list[str] | None = None, test_ratio: float | None = None,
+                       k: int | None = None, n_test: int = 0, metrics: dict | None = None,
+                       per_benchmark: dict | None = None) -> str:
+    """Persist a trained model (from a train experiment dict) into the model store with the
+    full workflow metadata (source benchmarks, sampling, split, metrics). Returns its id."""
+    from agent_bouncer.tracking.model_store import ModelRecord, ModelStore
+    store = store or ModelStore()
+    rec = ModelRecord(
+        base_model=exp.get("model_key", ""),
+        arch=exp.get("params", {}).get("arch", ""),
+        technique=exp.get("technique", ""),
+        version=exp.get("version", ""),
+        benchmarks=benchmarks or [],
+        sampling=sampling, split=split, test_ratio=test_ratio, k=k,
+        n_train=exp.get("data", {}).get("n_train") or 0, n_test=n_test,
+        metrics=metrics or {}, per_benchmark=per_benchmark or {},
+        path=exp.get("output_dir", ""), notes=exp.get("notes", ""),
+        git_commit=exp.get("git_commit"),
+    )
+    return store.save(rec)
