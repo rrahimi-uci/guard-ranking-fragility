@@ -141,6 +141,7 @@ def config() -> dict:
         "guards": guards,
         "gated": GATED_BENCHMARKS,
         "openai_available": bool(os.environ.get("OPENAI_API_KEY")),
+        "hf_available": bool(os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")),
     }
 
 
@@ -190,8 +191,8 @@ def experiments() -> dict:
     for e in idx:
         if e.get("kind") == "train":
             versions.setdefault(e["model_key"], []).append(
-                {"id": e["id"], "version": e["version"],
-                 "technique": e.get("technique"), "created": e["created"]})
+                {"id": e["id"], "version": e["version"], "technique": e.get("technique"),
+                 "dataset": (e.get("data") or {}).get("dataset"), "created": e["created"]})
     return {"experiments": idx, "versions": versions}
 
 

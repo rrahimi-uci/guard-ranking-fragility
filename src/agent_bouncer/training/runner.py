@@ -30,6 +30,21 @@ from agent_bouncer.tracking.hardware import hardware_info
 RESULTS_JSON = "outputs/benchmark_results.json"
 
 
+def dataset_name(train_data: str) -> str:
+    """Human name of the training set from its path, e.g. data/train_sets/bt-balanced/train.jsonl
+    → 'bt-balanced'; data/demo/train.jsonl → 'demo'."""
+    parent = os.path.basename(os.path.dirname(train_data or ""))
+    return parent or os.path.splitext(os.path.basename(train_data or "dataset"))[0] or "dataset"
+
+
+def descriptive_name(model_key: str, technique: str, dataset: str) -> str:
+    """A clear name for a trained model: ``<model>-<params>-<technique>-<dataset>`` (params are
+    added only when the model key doesn't already encode them, avoiding e.g. qwen3-0.6b-0.6b)."""
+    params = get_base_model(model_key).params
+    base = model_key if params.lower() in model_key.lower() else f"{model_key}-{params}"
+    return f"{base}-{technique}-{dataset}"
+
+
 # --------------------------------------------------------------------------- train
 def build_config(model_key: str, technique: str, train_data: str, out_dir: str,
                  params: dict, seed: int) -> dict:
@@ -97,11 +112,13 @@ def train_and_record(model_key: str, technique: str, *, train_data: str,
     os.unlink(tmp.name)
 
     n_train = len(read_jsonl(train_data)) if os.path.exists(train_data) else None
+    ds = dataset_name(train_data)
+    name = descriptive_name(model_key, technique, ds)   # <model>-<params>-<technique>-<dataset>
     exp = X.Experiment(
-        id=X.make_id(model_key, technique, stamp), kind="train", model_key=model_key,
+        id=f"{name}-{stamp}", kind="train", model_key=model_key,
         base_hf_id=bm.hf_id, technique=technique, version=version, created=created,
-        params={**params, "seed": seed, "arch": bm.arch}, output_dir=out_dir,
-        data={"train": train_data, "n_train": n_train, "leakage_checked": False},
+        params={**params, "seed": seed, "arch": bm.arch, "name": name}, output_dir=out_dir,
+        data={"train": train_data, "dataset": ds, "n_train": n_train, "leakage_checked": False},
         hardware=hardware_info(), git_commit=X.git_commit(),
         metrics_summary={"train_seconds": elapsed}, notes=notes,
     )
@@ -313,10 +330,18 @@ def save_trained_model(exp: dict, *, store=None, sampling: str = "", split: str 
     full workflow metadata (source benchmarks, sampling, split, metrics). Returns its id."""
     from agent_bouncer.tracking.model_store import ModelRecord, ModelStore
     store = store or ModelStore()
+    ds = (exp.get("data", {}) or {}).get("dataset", "")
+    model_key = exp.get("model_key", "")
+    technique = exp.get("technique", "")
+    # clear name: <model>-<params>-<technique>-<dataset>
+    name = exp.get("params", {}).get("name") or (
+        descriptive_name(model_key, technique, ds) if model_key and ds else exp.get("id", ""))
     rec = ModelRecord(
-        base_model=exp.get("model_key", ""),
+        name=name,
+        base_model=model_key,
         arch=exp.get("params", {}).get("arch", ""),
-        technique=exp.get("technique", ""),
+        technique=technique,
+        dataset=ds,
         version=exp.get("version", ""),
         benchmarks=benchmarks or [],
         sampling=sampling, split=split, test_ratio=test_ratio, k=k,

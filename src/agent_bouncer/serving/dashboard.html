@@ -136,6 +136,7 @@
   .jpill{padding:7px 11px;border:1px solid var(--border);border-radius:999px;font-size:12.5px;cursor:pointer;color:var(--muted);background:var(--panel);font-family:inherit}
   .jpill:hover{background:var(--panel2)}
   .jpill.on{background:rgba(76,141,255,.12);border-color:rgba(76,141,255,.45);color:var(--text)}
+  .jpill:disabled{opacity:.4;cursor:not-allowed}.jpill:disabled:hover{background:var(--panel)}
   .console{background:#070a11;border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;height:280px;overflow:auto;
     font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.65}
   .console .l{color:var(--muted);white-space:pre-wrap;word-break:break-word}
@@ -545,11 +546,13 @@ function renderTrainControls(){
   $$('#testModeSeg button').forEach(b=>b.onclick=()=>setTestMode(b.dataset.m));
 }
 function renderTrainJobs(){
-  const combos=[];
+  const hf=!!CONFIG.hf_available, combos=[];
   MODELS.forEach(m=>(m.techniques||['sft']).forEach(t=>combos.push(
-    {key:`${m.key}::${t}`,label:`${m.key} · ${t.toUpperCase()}`,gated:m.gated})));
-  $('#trainJobs').innerHTML=combos.map(c=>`<button type="button" class="jpill ${trainJobs.has(c.key)?'on':''}" data-j="${c.key}">${c.label}${c.gated?' 🔒':''}</button>`).join('');
-  $$('#trainJobs .jpill').forEach(b=>b.onclick=()=>{const k=b.dataset.j;trainJobs.has(k)?trainJobs.delete(k):trainJobs.add(k);b.classList.toggle('on');updateTrainBtn();});
+    {key:`${m.key}::${t}`,label:`${m.key} · ${t.toUpperCase()}`,gated:m.gated,locked:m.gated&&!hf})));
+  // a gated model with no HF_TOKEN can't train — drop it from the selection & disable its pill
+  combos.filter(c=>c.locked).forEach(c=>trainJobs.delete(c.key));
+  $('#trainJobs').innerHTML=combos.map(c=>`<button type="button" class="jpill ${trainJobs.has(c.key)?'on':''}" data-j="${c.key}"${c.locked?' disabled title="needs HF_TOKEN (gated model)"':''}>${c.label}${c.gated?' 🔒':''}</button>`).join('');
+  $$('#trainJobs .jpill').forEach(b=>b.onclick=()=>{if(b.disabled)return;const k=b.dataset.j;trainJobs.has(k)?trainJobs.delete(k):trainJobs.add(k);b.classList.toggle('on');updateTrainBtn();});
   updateTrainBtn();
 }
 function updateTrainBtn(){$('#trainBtn').textContent=`⚙︎  Train selected (${trainJobs.size})`;
@@ -559,7 +562,7 @@ function renderTestVersions(){
   vs.sort((a,b)=>(b.created||'').localeCompare(a.created||''));
   const ids=new Set(vs.map(v=>v.id));testVersions=new Set([...testVersions].filter(x=>ids.has(x)));
   $('#tVersions').innerHTML=vs.length
-    ?vs.map(v=>`<button type="button" class="jpill ${testVersions.has(v.id)?'on':''}" data-v="${v.id}">${v.mk} · ${v.technique} · ${v.version}</button>`).join('')
+    ?vs.map(v=>`<button type="button" class="jpill ${testVersions.has(v.id)?'on':''}" data-v="${v.id}">${v.mk} · ${v.technique}${v.dataset?' · '+v.dataset:''} · ${v.version}</button>`).join('')
     :'<span class="sub">— no trained versions yet —</span>';
   $$('#tVersions .jpill').forEach(b=>b.onclick=()=>{const k=b.dataset.v;testVersions.has(k)?testVersions.delete(k):testVersions.add(k);b.classList.toggle('on');updateTestBtn();});
   updateTestBtn();
@@ -693,7 +696,7 @@ let SAVED=[];
 async function loadSaved(){SAVED=(await (await fetch('/api/saved_models')).json()).models||[];}
 /* ---------- evaluate (eval-only) ---------- */
 function renderEvaluate(){
-  $('#evModel').innerHTML=SAVED.length?SAVED.map(m=>`<option value="${m.id}">${m.base_model} · ${m.technique} · ${(m.created||'').slice(0,10)}</option>`).join(''):'<option value="">— no saved models yet —</option>';
+  $('#evModel').innerHTML=SAVED.length?SAVED.map(m=>`<option value="${m.id}">${m.name||(m.base_model+' · '+m.technique)} · ${(m.created||'').slice(0,10)}</option>`).join(''):'<option value="">— no saved models yet —</option>';
   $('#evBenchmarks').innerHTML=(DATA.sources||[]).map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   $('#evNote').textContent=SAVED.length?`${SAVED.length} saved model(s) available.`:'Train & test a model in Train & Test first (it is saved automatically).';
 }

@@ -37,6 +37,7 @@ class ModelRecord:
     base_model: str = ""
     arch: str = ""             # "encoder" | "decoder"
     technique: str = ""        # sft | grpo | dpo
+    dataset: str = ""          # training set it was trained on
     benchmarks: list = field(default_factory=list)   # source benchmark(s)
     sampling: str = ""         # random | stratified
     split: str = ""            # ratio | kfold
