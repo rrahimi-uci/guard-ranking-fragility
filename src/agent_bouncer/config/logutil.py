@@ -4,8 +4,17 @@ from __future__ import annotations
 
 import logging
 
-#: transformers loggers that emit the verbose model "LOAD REPORT" warning.
-_TARGET_LOGGERS = ("transformers.modeling_utils", "transformers.integrations.peft")
+#: Benign, verbose transformers notices to drop, mapped to the logger that emits each.
+#: These are *informational* (transformers telling you it already reconciled something) —
+#: not errors — so hiding them keeps the console clean without masking real warnings.
+_NOISE: dict[str, tuple[str, ...]] = {
+    # A classifier head was newly initialized — expected when fine-tuning a base model into a guard.
+    "transformers.modeling_utils": ("LOAD REPORT",),
+    "transformers.integrations.peft": ("LOAD REPORT",),
+    # The tokenizer's PAD/BOS/EOS differed from the model config, so transformers aligned them
+    # (e.g. Qwen uses <|endoftext|> as the pad token and no BOS). Purely a courtesy heads-up.
+    "transformers.trainer_utils": ("new PAD/BOS/EOS tokens",),
+}
 
 
 class DropSubstring(logging.Filter):
@@ -23,11 +32,13 @@ class DropSubstring(logging.Filter):
 
 
 def quiet_load_report() -> None:
-    """Suppress transformers' verbose ``LOAD REPORT`` warning — the *benign* notice that a
-    classifier head was newly initialized (expected when fine-tuning a base model into a
-    guard) — while leaving every other warning intact. Idempotent; safe if transformers
+    """Suppress a couple of *benign* transformers notices — the ``LOAD REPORT`` warning (a
+    newly-initialized classifier head) and the PAD/BOS/EOS token-alignment heads-up — while
+    leaving every other warning intact. Idempotent (won't stack filters); safe if transformers
     isn't installed (the loggers just never fire)."""
-    for name in _TARGET_LOGGERS:
+    for name, needles in _NOISE.items():
         lg = logging.getLogger(name)
-        if not any(isinstance(f, DropSubstring) for f in lg.filters):
-            lg.addFilter(DropSubstring("LOAD REPORT"))
+        existing = {f.needle for f in lg.filters if isinstance(f, DropSubstring)}
+        for needle in needles:
+            if needle not in existing:
+                lg.addFilter(DropSubstring(needle))

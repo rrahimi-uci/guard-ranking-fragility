@@ -19,3 +19,17 @@ def test_quiet_load_report_is_idempotent_and_filters():
     assert len(drops) == 1
     rec = logging.LogRecord("t", logging.WARNING, "", 0, "X LOAD REPORT", None, None)
     assert drops[0].filter(rec) is False
+
+
+def test_quiet_load_report_silences_pad_bos_eos_notice():
+    quiet_load_report()
+    quiet_load_report()  # idempotent for the trainer logger too
+    lg = logging.getLogger("transformers.trainer_utils")
+    drops = [f for f in lg.filters if isinstance(f, DropSubstring)]
+    assert len(drops) == 1
+    msg = ("The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and "
+           "generation config. ... Updated tokens: {'bos_token_id': None, 'pad_token_id': 151643}.")
+    rec = logging.LogRecord("t", logging.WARNING, "", 0, msg, None, None)
+    assert drops[0].filter(rec) is False                       # dropped
+    keep = logging.LogRecord("t", logging.WARNING, "", 0, "real training warning", None, None)
+    assert drops[0].filter(keep) is True                       # everything else survives
