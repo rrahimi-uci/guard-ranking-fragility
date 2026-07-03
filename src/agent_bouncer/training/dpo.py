@@ -42,7 +42,7 @@ def build_preference_pairs(records: list[dict], *, reasoning: bool = False) -> l
     return pairs
 
 
-def run_dpo(config_path: str | Path) -> str:
+def run_dpo(config_path: str | Path) -> str:  # pragma: no cover - runs a real TRL DPOTrainer
     from datasets import Dataset
     from peft import LoraConfig
     from trl import DPOConfig, DPOTrainer

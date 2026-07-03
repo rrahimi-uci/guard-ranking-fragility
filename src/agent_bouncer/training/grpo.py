@@ -61,7 +61,7 @@ def _weights_from_cfg(cfg: dict[str, Any]) -> RewardWeights:
     )
 
 
-def run_grpo(config_path: str | Path) -> str:
+def run_grpo(config_path: str | Path) -> str:  # pragma: no cover - runs a real TRL GRPOTrainer
     """RL-tune a reasoning guard with verifiable rewards."""
     from datasets import Dataset
     from trl import GRPOConfig, GRPOTrainer
