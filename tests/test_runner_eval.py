@@ -87,8 +87,8 @@ def test_save_trained_model_captures_workflow_metadata(tmp_path):
     store = ModelStore(backend="fs", root=str(tmp_path / "s"))
     exp = {
         "model_key": "smollm2-1.7b", "technique": "grpo", "version": "v9",
-        "output_dir": "/m/y", "params": {"arch": "decoder"},
-        "data": {"n_train": 120}, "git_commit": "abc123", "notes": "run",
+        "output_dir": "/m/y", "params": {"arch": "decoder", "name": "smollm2-1.7b-grpo-broad"},
+        "data": {"n_train": 120, "dataset": "broad"}, "git_commit": "abc123", "notes": "run",
     }
     mid = runner.save_trained_model(
         exp, store=store, sampling="stratified", split="ratio",
@@ -101,3 +101,5 @@ def test_save_trained_model_captures_workflow_metadata(tmp_path):
     assert rec.benchmarks == ["beavertails", "toxicchat"] and rec.test_ratio == 0.3
     assert rec.n_train == 120 and rec.n_test == 30 and rec.metrics["f1"] == 0.66
     assert rec.path == "/m/y" and rec.git_commit == "abc123"
+    # clear naming + training dataset captured
+    assert rec.name == "smollm2-1.7b-grpo-broad" and rec.dataset == "broad"

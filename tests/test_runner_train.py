@@ -47,6 +47,17 @@ def test_train_and_record(tmp_path, monkeypatch):
     exp = runner.train_and_record("distilbert", "sft", train_data=str(tr), params={"epochs": 1})
     assert exp["model_key"] == "distilbert" and exp["kind"] == "train"
     assert exp["data"]["n_train"] == 1 and recorded["id"] == exp["id"]
+    # naming: <model>-<params>-<technique>-<dataset>-<stamp> (params added since not in key)
+    assert exp["id"].startswith("distilbert-66M-sft-")
+    assert exp["params"]["name"].startswith("distilbert-66M-sft-") and exp["data"]["dataset"]
+
+
+def test_naming_helpers():
+    assert runner.dataset_name("data/train_sets/bt-balanced/train.jsonl") == "bt-balanced"
+    assert runner.dataset_name("data/demo/train.jsonl") == "demo"
+    # params folded in only when the key doesn't already carry them
+    assert runner.descriptive_name("qwen3-0.6b", "grpo", "bt") == "qwen3-0.6b-grpo-bt"
+    assert runner.descriptive_name("distilbert", "sft", "bt") == "distilbert-66M-sft-bt"
 
 
 def test_train_and_record_rejects_bad_technique():
