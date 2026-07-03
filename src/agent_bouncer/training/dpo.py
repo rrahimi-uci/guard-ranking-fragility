@@ -69,6 +69,7 @@ def run_dpo(config_path: str | Path) -> str:  # pragma: no cover - runs a real T
         cfg["base_model"],
         trust_remote_code=bool(cfg.get("trust_remote_code", False)),
     )
+    from agent_bouncer.training.progress import progress_callback
     trainer = DPOTrainer(
         model=model,
         args=dpo_config,
@@ -77,6 +78,7 @@ def run_dpo(config_path: str | Path) -> str:  # pragma: no cover - runs a real T
         peft_config=LoraConfig(
             r=int(lora.get("r", 16)), lora_alpha=int(lora.get("alpha", 32)), task_type="CAUSAL_LM"
         ),
+        callbacks=[progress_callback()],
     )
     trainer.train()
     trainer.save_model(out_dir)

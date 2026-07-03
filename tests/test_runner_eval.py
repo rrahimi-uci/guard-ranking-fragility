@@ -36,6 +36,15 @@ def test_macro_average_empty_and_nonempty():
     assert set(runner._MACRO_KEYS) <= set(macro)
 
 
+def test_score_guard_streams_progress(capsys):
+    # the per-record predict loop emits a PROGRESS marker (forced on the final item) so the
+    # console shows movement during long benchmark evals
+    metrics, _ = runner.score_guard(FakeGuard(), ["b1"], loader=lambda b: _bench_recs())
+    out = capsys.readouterr().out
+    assert "PROGRESS phase=test label=b1" in out and "step=4 total=4" in out
+    assert metrics["b1"]["f1"] == 1.0
+
+
 def test_score_guard_perfect_with_leakage_drop():
     metrics, leakage = runner.score_guard(
         FakeGuard(), ["b1"], loader=lambda b: _bench_recs(),

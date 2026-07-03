@@ -420,9 +420,30 @@ def _parse_line(text: str) -> dict:
     m = _LOADING_RE.search(text)
     if m:
         return {"type": "loading", "benchmark": m.group(1), "text": text}
+    if text.lstrip().startswith("PROGRESS "):  # live step/%/loss/ETA from train + eval loops
+        return _parse_progress(text)
     if text.lstrip().startswith(_INFO_PREFIXES):  # beautiful training/eval banner lines
         return {"type": "info", "text": text}
     return {"type": "log", "text": text}
+
+
+def _parse_progress(text: str) -> dict:
+    """Parse a ``PROGRESS key=value ...`` marker into a progress event (numbers coerced)."""
+    kv = dict(re.findall(r"(\w+)=(\S+)", text))
+
+    def num(key, cast):
+        try:
+            return cast(kv[key])
+        except (KeyError, ValueError):
+            return None
+
+    step, total, pct = num("step", int), num("total", int), num("pct", int)
+    if pct is None and step is not None and total:
+        pct = int(100 * step / total)
+    return {"type": "progress", "phase": kv.get("phase", "train"), "label": kv.get("label"),
+            "step": step, "total": total, "pct": pct, "loss": num("loss", float),
+            "rate": num("rate", float), "eta": num("eta", int), "epoch": num("epoch", float),
+            "text": text}
 
 
 # Leading glyphs of the rich console banners emitted by the runner (train/eval headers,

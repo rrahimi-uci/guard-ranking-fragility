@@ -104,6 +104,7 @@ def train_encoder(cfg: dict[str, Any]) -> str:  # pragma: no cover - runs a real
         # pin_memory only helps on CUDA; enabling it on MPS/CPU just prints a noisy warning
         dataloader_pin_memory=training_device() == "cuda",
     )
+    from agent_bouncer.training.progress import progress_callback
     trainer = Trainer(
         model=model,
         args=args,
@@ -111,6 +112,7 @@ def train_encoder(cfg: dict[str, Any]) -> str:  # pragma: no cover - runs a real
         eval_dataset=val_ds,
         data_collator=DataCollatorWithPadding(tokenizer),
         compute_metrics=_binary_metrics,
+        callbacks=[progress_callback()],
     )
     trainer.train()
     metrics = trainer.evaluate()
@@ -169,12 +171,14 @@ def train_decoder(cfg: dict[str, Any]) -> str:  # pragma: no cover - runs a real
     )
     # Load the model ourselves so TRL does not default to `device_map="auto"`
     # and create meta/offloaded parameters on single-device runs.
+    from agent_bouncer.training.progress import progress_callback
     trainer = SFTTrainer(
         model=model,
         train_dataset=to_text(read_jsonl(cfg["data"]["train"])),
         processing_class=tokenizer,
         args=sft_config,
         peft_config=peft_config,
+        callbacks=[progress_callback()],
     )
     trainer.train()
     # Merge the LoRA adapter into the base weights so the guard loads as a

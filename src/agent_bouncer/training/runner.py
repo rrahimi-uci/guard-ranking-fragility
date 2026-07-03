@@ -26,6 +26,7 @@ from agent_bouncer.evaluation.metrics import compute_metrics
 from agent_bouncer.models.registry import get_base_model
 from agent_bouncer.tracking import experiments as X
 from agent_bouncer.tracking.hardware import hardware_info
+from agent_bouncer.training.progress import Throttle, progress_line
 
 RESULTS_JSON = "outputs/benchmark_results.json"
 
@@ -288,7 +289,18 @@ def score_guard(guard, benchmarks: list[str], *, per_class: int = 40,
         leaked = set(find_leakage(train_recs, recs)) if train_recs else set()
         clean = [r for r in recs if _norm(r.get("text")) not in leaked]
         leakage[bench] = {"n": len(recs), "dropped_leaked": len(recs) - len(clean)}
-        verdicts = [guard.predict(r["text"], surface=Surface.USER_PROMPT) for r in clean]
+        # Predict one at a time so the console shows steady progress (a full benchmark can be
+        # thousands of prompts — minutes for a decoder guard — otherwise silent until done).
+        n = len(clean)
+        verdicts = []
+        throttle, t0 = Throttle(2.0), time.perf_counter()
+        for i, r in enumerate(clean, 1):
+            verdicts.append(guard.predict(r["text"], surface=Surface.USER_PROMPT))
+            now = time.perf_counter()
+            if throttle.ready(now, force=(i == n)):
+                rate = i / (now - t0) if now > t0 else None
+                eta = (n - i) / rate if rate else None
+                print(progress_line(i, n, phase="test", label=bench, rate=rate, eta=eta), flush=True)
         gold = [Decision(r["label"]) for r in clean]
         lat = [v.latency_ms for v in verdicts if v.latency_ms is not None]
         m = compute_metrics(gold, [v.decision for v in verdicts], lat).to_dict()
