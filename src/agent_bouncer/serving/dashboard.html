@@ -281,7 +281,15 @@
             <label>Test on</label>
             <div class="seg" id="testModeSeg"><button type="button" data-m="set" class="on">Created test set</button><button type="button" data-m="bench">Benchmarks</button></div>
             <label id="tTestSetWrap">Test set — held-out split (from Datasets Creation)<select id="tTestSet" aria-label="Test set"></select></label>
-            <label id="tBenchWrap" style="display:none">Benchmarks to test on<select id="tBenchmarks" multiple size="4" aria-label="Benchmarks"></select></label>
+            <div id="tBenchWrap" style="display:none">
+              <label style="margin-bottom:6px">Benchmarks to test on <span class="sub" id="tBenchCount"></span>
+                <span style="float:right;font-weight:400">
+                  <button type="button" class="ghostbtn" id="tBenchAll" style="padding:3px 9px;font-size:11px">Select all</button>
+                  <button type="button" class="ghostbtn" id="tBenchNone" style="padding:3px 9px;font-size:11px">Clear</button>
+                </span>
+              </label>
+              <div id="tBenchmarks" class="jpick" aria-label="Benchmarks to test on"></div>
+            </div>
             <div class="frow">
               <label>Test size / class (0 = full, benchmarks only)<input id="tPerClass" type="number" min="0" value="40"></label>
               <label>Device<select id="tDevice"><option>cpu</option><option>mps</option></select></label>
@@ -552,10 +560,20 @@ function fillTrainData(){
   const demo='<option value="data/demo/train.jsonl">demo · BeaverTails balanced</option>';
   $('#tData').innerHTML=(created.length?created.join('')+demo:demo);
 }
-let trainJobs=new Set(), testVersions=new Set();
+let trainJobs=new Set(), testVersions=new Set(), benchPick=null;
+function renderTestBenchmarks(){
+  const bs=CONFIG.benchmarks||[];
+  if(benchPick===null)benchPick=new Set(bs.map(b=>b.name));   // default: all selected
+  benchPick=new Set([...benchPick].filter(n=>bs.some(b=>b.name===n)));
+  $('#tBenchmarks').innerHTML=bs.map(b=>`<button type="button" class="jpill ${benchPick.has(b.name)?'on':''}" data-b="${b.name}"><span class="axd" style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:${(AXIS[b.axis]||{}).c||'#4c8dff'}"></span>${b.name}</button>`).join('');
+  $$('#tBenchmarks .jpill').forEach(el=>el.onclick=()=>{const k=el.dataset.b;benchPick.has(k)?benchPick.delete(k):benchPick.add(k);el.classList.toggle('on');updateBenchCount();});
+  updateBenchCount();
+}
+function updateBenchCount(){const tot=(CONFIG.benchmarks||[]).length,n=benchPick?benchPick.size:0;
+  const el=$('#tBenchCount');if(el)el.textContent=n===tot?`— all ${tot} selected`:`— ${n} of ${tot} selected`;}
 function renderTrainControls(){
   renderTrainJobs();
-  $('#tBenchmarks').innerHTML=(CONFIG.benchmarks||[]).map(b=>`<option value="${b.name}" selected>${b.name}</option>`).join('');
+  renderTestBenchmarks();
   renderTestVersions();
   fillTrainData();fillTestData();
   $$('#testModeSeg button').forEach(b=>b.onclick=()=>setTestMode(b.dataset.m));
@@ -689,7 +707,7 @@ async function runTest(){
   const body={exps,per_class:tpc,device:$('#tDevice').value};
   if(testMode==='set'){const ts=$('#tTestSet').value;
     if(!ts){toast('Create a dataset (with a held-out test split) first.');return;}body.test_set=ts;}
-  else{body.benchmarks=[...$('#tBenchmarks').selectedOptions].map(o=>o.value);}
+  else{const picked=[...(benchPick||[])];if(!picked.length){toast('Pick at least one benchmark to test on.');return;}body.benchmarks=picked;}
   btn.disabled=true;btn.textContent=`● Testing ${exps.length}…`;$('#trainBadge').textContent='testing';
   const con=$('#trainConsole');con.innerHTML='';
   let resp;try{resp=await fetch('/api/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
@@ -876,6 +894,8 @@ async function init(){
   $('#trainBtn').onclick=runTrain;$('#testBtn').onclick=runTest;$('#buildBtn').onclick=buildDataset;
   $('#lbSort').onchange=renderLeaderboard;$('#lbReport').onclick=generateReport;
   $('#ensStrategy').onchange=syncEnsThresh;$('#ensBuild').onclick=buildEnsemble;
+  $('#tBenchAll').onclick=()=>{benchPick=new Set((CONFIG.benchmarks||[]).map(b=>b.name));renderTestBenchmarks();};
+  $('#tBenchNone').onclick=()=>{benchPick=new Set();renderTestBenchmarks();};
   $('#sampleSearch').oninput=scheduleBenchSearch;
   $('#hazardFilter').onchange=applyBenchFilters;
   $('#clearBenchFilters').onclick=()=>{$('#sampleSearch').value='';setLabelFilter('all');$('#hazardFilter').value='all';applyBenchFilters();};
