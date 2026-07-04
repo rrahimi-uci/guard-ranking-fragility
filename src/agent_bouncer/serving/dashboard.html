@@ -149,6 +149,8 @@
   .hplabel{font-weight:600;color:var(--text)}
   .hprec{font-weight:500;color:var(--accent);font-size:10.5px;margin-left:4px}
   .hphint{color:var(--faint);font-size:10px;margin-top:3px;line-height:1.35}
+  .hpjob{border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:10px;background:var(--bg2)}
+  .hpjob-h{font-size:12px;font-weight:700;color:var(--text);margin-bottom:9px;letter-spacing:.02em}
   .console{background:#070a11;border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;height:280px;overflow:auto;
     font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.65}
   .console .l{color:var(--muted);white-space:pre-wrap;word-break:break-word}
@@ -580,26 +582,38 @@ function updateBenchCount(){const tot=(CONFIG.benchmarks||[]).length,n=benchPick
 let HP_SPECS={};
 async function loadHyperparams(){try{HP_SPECS=(await (await fetch('/api/hyperparams')).json()).specs||{};}catch(e){HP_SPECS={};}}
 function hpArch(modelKey){const m=MODELS.find(x=>x.key===modelKey);return m?m.arch:'decoder';}
-function selectedCombos(){const s=new Set();[...trainJobs].forEach(k=>{const[model,tech]=k.split('::');s.add(`${hpArch(model)}:${tech}`);});return [...s];}
 const hpFmt=v=>{if(v==null||v==='')return '';if(typeof v==='number'&&v!==0&&Math.abs(v)<1e-3)return v.toExponential();return String(v);};
+let hpState={};   // per-job edited values: jobKey -> {param: value}; survives re-render
 function renderHyperparams(){
   const panel=$('#hpPanel');if(!panel)return;
-  const combos=selectedCombos();
-  if(!combos.length){panel.innerHTML='<div class="sub">Select a model × technique above to configure its hyperparameters — each field shows the recommended value and only accepts valid choices.</div>';return;}
-  const seen=new Set(),params=[];
-  combos.forEach(c=>(HP_SPECS[c]||[]).forEach(p=>{if(!seen.has(p.name)){seen.add(p.name);params.push(p);}}));
-  panel.innerHTML='<div class="hpgrid">'+params.map(p=>{
-    let ctrl;
-    if(p.kind==='select'){
-      ctrl=`<select data-hp="${p.name}">`+(p.options||[]).map(o=>`<option value="${o}"${o===p.default?' selected':''}>${hpFmt(o)}</option>`).join('')+'</select>';
-    }else{
-      ctrl=`<input data-hp="${p.name}" type="number"${p.min!=null?` min="${p.min}"`:''}${p.max!=null?` max="${p.max}"`:''}${p.step!=null?` step="${p.step}"`:''} value="${p.default==null?'':p.default}"${p.optional?' placeholder="(full run)"':''}>`;
-    }
-    const accepted=p.kind==='select'?`accepted: ${(p.options||[]).map(hpFmt).join(' · ')}`:`range ${p.min}–${p.max}${p.optional?' · empty = full run':''}`;
-    return `<label class="hpfield" title="${(p.help||'').replace(/"/g,'&quot;')}"><span class="hplabel">${p.label}<span class="hprec">rec ${hpFmt(p.default)}</span></span>${ctrl}<span class="hphint">${accepted}</span></label>`;
-  }).join('')+'</div>';
+  const jobs=[...trainJobs];
+  Object.keys(hpState).forEach(k=>{if(!trainJobs.has(k))delete hpState[k];});   // prune deselected
+  if(!jobs.length){panel.innerHTML='<div class="sub">Select a model × technique above to configure its hyperparameters — each model gets its own settings, pre-filled with the recommended value, accepting only valid choices.</div>';return;}
+  panel.innerHTML=jobs.map(jk=>{
+    const [model,tech]=jk.split('::'), combo=`${hpArch(model)}:${tech}`, spec=HP_SPECS[combo]||[];
+    const vals=hpState[jk]=hpState[jk]||{};
+    const fields=spec.map(p=>{
+      const cur=(p.name in vals)?vals[p.name]:p.default;
+      let ctrl;
+      if(p.kind==='select'){
+        ctrl=`<select data-job="${jk}" data-hp="${p.name}">`+(p.options||[]).map(o=>`<option value="${o}"${o===cur?' selected':''}>${hpFmt(o)}</option>`).join('')+'</select>';
+      }else{
+        ctrl=`<input data-job="${jk}" data-hp="${p.name}" type="number"${p.min!=null?` min="${p.min}"`:''}${p.max!=null?` max="${p.max}"`:''}${p.step!=null?` step="${p.step}"`:''} value="${cur==null?'':cur}"${p.optional?' placeholder="(full run)"':''}>`;
+      }
+      const accepted=p.kind==='select'?`accepted: ${(p.options||[]).map(hpFmt).join(' · ')}`:`range ${p.min}–${p.max}${p.optional?' · empty = full run':''}`;
+      return `<label class="hpfield" title="${(p.help||'').replace(/"/g,'&quot;')}"><span class="hplabel">${p.label}<span class="hprec">rec ${hpFmt(p.default)}</span></span>${ctrl}<span class="hphint">${accepted}</span></label>`;
+    }).join('');
+    return `<div class="hpjob"><div class="hpjob-h">${model} · ${tech.toUpperCase()}</div><div class="hpgrid">${fields}</div></div>`;
+  }).join('');
+  $$('#hpPanel [data-hp]').forEach(el=>el.onchange=()=>{(hpState[el.dataset.job]=hpState[el.dataset.job]||{})[el.dataset.hp]=el.value;});
 }
-function getHyperparams(){const out={};$$('#hpPanel [data-hp]').forEach(el=>{const v=(el.value||'').trim();if(v!=='')out[el.dataset.hp]=Number(v);});return out;}
+function collectTrainJobs(){
+  return [...trainJobs].map(jk=>{
+    const [model,technique]=jk.split('::'), params={};
+    $$(`#hpPanel [data-job="${jk}"]`).forEach(el=>{const v=(el.value||'').trim();if(v!=='')params[el.dataset.hp]=Number(v);});
+    return {model,technique,params};
+  });
+}
 function renderTrainControls(){
   renderTrainJobs();
   renderHyperparams();
@@ -717,12 +731,11 @@ function streamRun(run_id,con,onEvt,onDone,startedAt){
   es.onerror=()=>end('Stream closed','done');
 }
 async function runTrain(){
-  const jobs=[...trainJobs].map(k=>{const [model,technique]=k.split('::');return {model,technique};});
+  const jobs=collectTrainJobs();   // each job carries its own hyperparameters
   if(!jobs.length){toast('Select at least one model × technique.');return;}
-  const params=getHyperparams();
   const btn=$('#trainBtn');btn.disabled=true;btn.textContent=`● Training ${jobs.length}…`;$('#trainBadge').textContent='training';
   const con=$('#trainConsole');con.innerHTML='';
-  let resp;try{resp=await fetch('/api/train',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jobs,train_data:$('#tData').value,params})});}
+  let resp;try{resp=await fetch('/api/train',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jobs,train_data:$('#tData').value})});}
   catch(e){toast('train failed to start');btn.disabled=false;updateTrainBtn();return;}
   let payload={};try{payload=await resp.json();}catch(e){}
   if(!resp.ok){toast(payload.detail||'train failed');btn.disabled=false;updateTrainBtn();return;}

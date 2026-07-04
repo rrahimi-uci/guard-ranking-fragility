@@ -463,3 +463,27 @@ def test_train_rejects_out_of_spec_hyperparameter(monkeypatch):
     bad = client.post("/api/train", json={"jobs": [{"model": "qwen3-0.6b", "technique": "sft"}],
                                           "params": {"lora_r": 7}, "train_data": "d"})
     assert bad.status_code == 400 and "not allowed" in bad.json()["detail"]
+
+
+def test_train_uses_per_job_hyperparameters(monkeypatch):
+    launched = {}
+    monkeypatch.setattr(api, "_launch", lambda cmds, **k: launched.update(c=cmds) or "r")
+    r = client.post("/api/train", json={"jobs": [
+        {"model": "qwen3-0.6b", "technique": "sft", "params": {"lora_r": 32, "epochs": 2}},
+        {"model": "distilbert", "technique": "sft", "params": {"epochs": 4, "max_length": 512}},
+    ], "train_data": "d"})
+    assert r.status_code == 200
+    joined = [" ".join(c) for c in launched["c"]]
+    dec = next(j for j in joined if "qwen3-0.6b" in j)
+    enc = next(j for j in joined if "distilbert" in j)
+    assert "--lora-r 32" in dec and "--epochs 2" in dec          # decoder's own config
+    assert "--epochs 4" in enc and "--max-length 512" in enc     # encoder's own config
+    assert "--lora-r" not in enc                                 # lora doesn't apply to encoders
+
+
+def test_train_rejects_bad_per_job_param(monkeypatch):
+    monkeypatch.setattr(api, "_launch", lambda cmds, **k: "r")
+    r = client.post("/api/train", json={"jobs": [
+        {"model": "qwen3-0.6b", "technique": "dpo", "params": {"beta": 0.9}},   # 0.9 not accepted
+    ], "train_data": "d"})
+    assert r.status_code == 400 and "beta" in r.json()["detail"]

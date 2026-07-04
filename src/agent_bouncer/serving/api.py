@@ -778,20 +778,26 @@ async def start_train(cfg: TrainConfig) -> dict:
     jobs = cfg.jobs or ([{"model": cfg.model, "technique": cfg.technique}] if cfg.model else [])
     if not jobs:
         raise HTTPException(400, "no models selected to train")
-    # Reject invalid hyperparameters up front: every provided value must be accepted for
-    # the arch/technique of a job that uses it (so a run can't start with a bad setting).
+
+    def job_params(j: dict) -> dict:
+        # per-job params if provided, else the shared cfg.params (back-compat)
+        return j.get("params") if isinstance(j.get("params"), dict) else (cfg.params or {})
+
+    # Validate each job against its OWN hyperparameters + arch/technique, so a run can't
+    # start with a value that model/technique doesn't accept.
     for j in jobs:
         try:
             arch = get_base_model(j["model"]).arch
         except Exception:  # noqa: BLE001 - unknown model is caught later by the trainer
             continue
         try:
-            validate_params(arch, j.get("technique", "sft"), cfg.params)
+            validate_params(arch, j.get("technique", "sft"), job_params(j))
         except ValueError as exc:
             raise HTTPException(400, f"{j['model']} ({j.get('technique', 'sft')}): {exc}") from exc
-    flags = _param_flags(cfg.params)
+    # Each job gets its own command built from its own params.
     cmds = [[sys.executable, "scripts/train/run_training.py", "--model", j["model"],
-             "--technique", j.get("technique", "sft"), "--train-data", cfg.train_data, *flags]
+             "--technique", j.get("technique", "sft"), "--train-data", cfg.train_data,
+             *_param_flags(job_params(j))]
             for j in jobs]
     return {"run_id": _launch(cmds, kind="train"), "steps": len(cmds)}
 
