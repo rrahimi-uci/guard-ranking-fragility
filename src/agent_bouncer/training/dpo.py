@@ -56,12 +56,19 @@ def run_dpo(config_path: str | Path) -> str:  # pragma: no cover - runs a real T
     pairs = build_preference_pairs(read_jsonl(cfg["data"]["train"]))
     d = cfg.get("dpo", {})
     out_dir = cfg.get("output_dir", "outputs/dpo")
+    # Keep the per-token logits tensor small enough for Apple MPS: DPO concatenates
+    # chosen+rejected (2x batch), so on a ~150k-vocab model batch*seq*vocab overflows
+    # MPSGraph's INT_MAX element limit at TRL's default batch=8 / max_length=1024. A small
+    # batch (with grad-accum for effective batch) keeps 2*batch*max_length*vocab < 2^31.
     dpo_config = DPOConfig(
         output_dir=out_dir,
         beta=float(d.get("beta", 0.1)),
         learning_rate=float(d.get("lr", 5e-6)),
         num_train_epochs=float(d.get("epochs", 1)),
         max_steps=int(d.get("max_steps", -1)),  # -1 = no cap (train by epochs)
+        per_device_train_batch_size=int(d.get("batch_size", 2)),
+        gradient_accumulation_steps=int(d.get("grad_accum", 4)),
+        max_length=int(d.get("max_length", 1024)),
         report_to="none",
         seed=int(cfg.get("seed", 42)),
     )

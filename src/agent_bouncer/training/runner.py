@@ -196,8 +196,15 @@ def build_config(model_key: str, technique: str, train_data: str, out_dir: str,
         elif technique == "dpo":
             # DPOTrainer reads its own section — mirror the user's hyperparameters here so the
             # CLI/UI flags actually take effect (run_dpo reads cfg["dpo"], not cfg["train"]).
-            cfg["dpo"] = {"epochs": params.get("epochs", 1), "lr": params.get("lr", 5e-6),
-                          "beta": params.get("beta", 0.1)}
+            # Small batch + bounded lengths keep the concatenated chosen/rejected logits under
+            # Apple MPS's INT_MAX element limit on large-vocab models (see dpo.run_dpo).
+            cfg["dpo"] = {
+                "epochs": params.get("epochs", 1), "lr": params.get("lr", 5e-6),
+                "beta": params.get("beta", 0.1),
+                "batch_size": params.get("batch_size", 2),
+                "grad_accum": params.get("grad_accum", 4),
+                "max_length": params.get("max_seq_len", 1024),
+            }
             if params.get("max_steps"):
                 cfg["dpo"]["max_steps"] = int(params["max_steps"])
     return cfg

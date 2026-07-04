@@ -22,7 +22,11 @@ def test_build_config_writes_dpo_section():
     from agent_bouncer.training.runner import build_config
     cfg = build_config("qwen3-0.6b", "dpo", "data/x.jsonl", "out",
                        {"epochs": 5, "lr": 1e-5, "beta": 0.2, "max_steps": 100}, seed=1)
-    assert cfg["dpo"] == {"epochs": 5, "lr": 1e-5, "beta": 0.2, "max_steps": 100}
+    # user hyperparameters take effect...
+    assert cfg["dpo"]["epochs"] == 5 and cfg["dpo"]["lr"] == 1e-5
+    assert cfg["dpo"]["beta"] == 0.2 and cfg["dpo"]["max_steps"] == 100
+    # ...alongside MPS-safe defaults that keep the concatenated logits under INT_MAX
+    assert cfg["dpo"]["batch_size"] == 2 and cfg["dpo"]["max_length"] == 1024
 
 
 def test_build_config_grpo_still_correct():
