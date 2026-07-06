@@ -363,7 +363,7 @@
               <option value="fpr">Least over-blocking (min FPR)</option>
             </select></label>
           <button type="button" class="ghostbtn" id="ensOptimize" style="flex:0 0 auto;padding:11px 16px">⚡ Auto-optimize (find best ensemble)</button>
-          <button type="button" class="ghostbtn" id="ensOptimizeAll" style="flex:0 0 auto;padding:11px 16px">🎛 Optimize all objectives <span class="sub">balanced · F1 · min-FPR, from small models</span></button>
+          <button type="button" class="ghostbtn" id="ensOptimizeAll" style="flex:0 0 auto;padding:11px 16px">🎛 Optimize all objectives <span class="sub">balanced · F1 · min-FPR · cascade, from small models</span></button>
           <button type="button" class="ghostbtn" id="ensCascade" style="flex:0 0 auto;padding:11px 16px">⛓ Recall→precision cascade <span class="sub">high-recall gate → high-precision filter</span></button>
         </div>
         <p class="footer-note" id="ensNote"></p>
@@ -991,13 +991,14 @@ async function optimizeAllEnsembles(){
     let d={};try{d=await r.json();}catch(e){}
     if(!r.ok){toast(d.detail||'optimize failed');$('#ensNote').innerHTML=`⚠️ ${d.detail||'Could not build optimized ensembles — test at least 2 small models on the benchmarks first.'}`;return;}
     await loadResults();renderLeaderboard();renderROC();await loadEnsembleMembers();renderEnsembleBuilder();
-    const OBJ={balanced:'Balanced',f1:'Max F1',fpr:'Min over-block'};
+    const OBJ={balanced:'Balanced',f1:'Max F1',fpr:'Min over-block',cascade:'Cascade (recall→precision)'};
+    const compOf=e=>e.strategy==='cascade'&&e.members?`${lbLabel(e.members[0])} → ${lbLabel(e.members[1])}`:(e.members||[]).map(lbLabel).join(' + ');
     const rows=(d.built||[]).map(e=>{const M=e.macro||{};
-      return `<tr><td class="name">${OBJ[e.objective]||e.objective}</td><td>${(e.members||[]).map(lbLabel).join(' + ')}</td><td>${e.strategy}${e.threshold!=null?' @'+e.threshold:''}</td><td class="mono">${fmt(M.precision)}</td><td class="mono">${fmt(M.recall)}</td><td class="mono">${fmt(M.f1)}</td><td class="mono">${fmt(M.roc_auc)}</td><td class="mono">${fmt(M.fpr_on_benign)}</td><td class="mono">${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'}</td></tr>`;}).join('');
-    $('#ensCandidates').innerHTML='<div class="sub" style="margin:6px 0 4px">Optimized ensembles per objective (small models) — added to the leaderboard</div>'+
+      return `<tr><td class="name">${OBJ[e.objective]||e.objective}</td><td>${compOf(e)}</td><td>${e.strategy}${e.threshold!=null?' @'+e.threshold:''}</td><td class="mono">${fmt(M.precision)}</td><td class="mono">${fmt(M.recall)}</td><td class="mono">${fmt(M.f1)}</td><td class="mono">${fmt(M.roc_auc)}</td><td class="mono">${fmt(M.fpr_on_benign)}</td><td class="mono">${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'}</td></tr>`;}).join('');
+    $('#ensCandidates').innerHTML='<div class="sub" style="margin:6px 0 4px">Optimized small-model ensembles (per objective + recall→precision cascade) — added to the leaderboard</div>'+
       '<table><thead><tr><th>Objective</th><th>Composed of</th><th>Strategy</th><th>P ↑</th><th>R ↑</th><th>F1 ↑</th><th>AUC ↑</th><th>FPR ↓</th><th>p50 ↓</th></tr></thead><tbody>'+rows+'</tbody></table>';
     const pool=(d.pool||[]).map(lbLabel).join(', ');
-    $('#ensNote').innerHTML=`✓ Built <b>${(d.built||[]).length}</b> optimized ensemble(s) — one per objective, composed from small models [${pool}]. Added to the leaderboard (category <b>Ensembles</b>).`;
+    $('#ensNote').innerHTML=`✓ Built <b>${(d.built||[]).length}</b> optimized ensemble(s) — one per objective plus the recall→precision cascade, composed from small models [${pool}]. Added to the leaderboard (category <b>Ensembles</b>) so you can compare them to the GPT baselines.`;
     toast('✓ Optimized ensembles added to leaderboard');
   }catch(e){toast('optimize failed');}
   finally{btn.disabled=false;btn.innerHTML=orig;}

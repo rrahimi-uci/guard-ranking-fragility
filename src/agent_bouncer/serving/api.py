@@ -381,9 +381,14 @@ class EnsembleOptimizeAllConfig(BaseModel):
 @app.post("/api/ensemble/optimize_all")
 def optimize_all_ensembles(cfg: EnsembleOptimizeAllConfig) -> dict:
     """For EACH objective, search the (small-model) pool for the best ensemble and merge it as a
-    distinct ``ensemble-best-<objective>`` leaderboard row — so the board shows the optimized
-    ensemble for every objective alongside the small models and GPT baselines it's built from."""
-    from agent_bouncer.evaluation.ensembles import load_predictions, optimize_ensemble
+    distinct ``ensemble-best-<objective>`` leaderboard row — plus the recall→precision cascade — so
+    the board shows every recommended small-model ensemble alongside the GPT baselines in one shot."""
+    from agent_bouncer.evaluation.ensembles import (
+        load_predictions,
+        macro_average,
+        optimize_cascade,
+        optimize_ensemble,
+    )
 
     preds = load_predictions(str(PRED_DIR))
     pool = _optimize_pool(preds, cfg.scope)
@@ -402,6 +407,18 @@ def optimize_all_ensembles(cfg: EnsembleOptimizeAllConfig) -> dict:
         built.append({"name": name, "objective": obj, "members": best["members"],
                       "strategy": best["strategy"], "threshold": best["threshold"],
                       "macro": best["macro"], "n_evaluated": result["n_evaluated"]})
+    # also add the recall→precision cascade so its results land on the leaderboard in the same pass
+    try:
+        casc = optimize_cascade(preds, pool=pool)
+        _merge_scoreboard("ensemble-cascade", casc["per_bench"], meta={
+            "members": [casc["stage1"], casc["stage2"]], "strategy": "cascade",
+            "stage1": casc["stage1"], "stage2": casc["stage2"], "objective": None, "scope": cfg.scope,
+        })
+        built.append({"name": "ensemble-cascade", "objective": "cascade",
+                      "members": [casc["stage1"], casc["stage2"]], "strategy": "cascade",
+                      "threshold": None, "macro": macro_average(casc["per_bench"])})
+    except ValueError as exc:
+        errors["cascade"] = str(exc)
     if not built:
         raise HTTPException(400, "; ".join(f"{o}: {m}" for o, m in errors.items())
                             or "no scorable ensembles from the available predictions")

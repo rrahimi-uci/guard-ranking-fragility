@@ -419,7 +419,11 @@ def test_optimize_all_builds_one_ensemble_per_objective_from_small_models(monkey
     d = r.json()
     assert d["curves_stale"] is False   # AB-005: resync actually ran (returns a real status)
     names = {e["name"] for e in d["built"]}
-    assert names == {"ensemble-best-balanced", "ensemble-best-f1", "ensemble-best-fpr"}
+    # per-objective ensembles PLUS the recall→precision cascade, all on the leaderboard in one pass
+    assert names == {"ensemble-best-balanced", "ensemble-best-f1", "ensemble-best-fpr",
+                     "ensemble-cascade"}
+    casc = next(e for e in d["built"] if e["name"] == "ensemble-cascade")
+    assert casc["objective"] == "cascade" and casc["strategy"] == "cascade"
     # composed from small models only — the GPT baseline is excluded from the pool + members
     assert "openai-gpt-4o-mini" not in d["pool"]
     for e in d["built"]:
