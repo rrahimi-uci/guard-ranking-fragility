@@ -9,7 +9,9 @@ close the gap on headline macro-F1 at a usable operating point. Below is the hon
 1. Each guard is scored **once** per sample on the cached benchmark subsets
    ([`scripts/eval/dump_predictions.py`](../scripts/eval/dump_predictions.py)) — one guard per process, so a
    BERT encoder and a Qwen decoder never co-load (that deadlocks the tokenizer threadpool).
-   Output: `outputs/predictions/<guard>.json` = `{benchmark: [[gold, pred, score, latency_ms], …]}`.
+   Output: `outputs/predictions/<guard>.json` = `{benchmark: [[gold, pred, score, latency_ms, sample_key], …]}`.
+   The trailing `sample_key` (a hash of the normalized prompt) lets members be aligned by prompt
+   identity rather than by list position — so guards scored on differently-filtered subsets combine correctly.
 2. Ensembles are combined **offline** from those per-sample rows
    ([`scripts/eval/eval_ensembles.py`](../scripts/eval/eval_ensembles.py)) via the pure
    [`combine()`](../src/agent_bouncer/models/ensemble.py) function — so any combination is free to explore.

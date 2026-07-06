@@ -4,8 +4,9 @@ can be combined offline (score each guard once, then explore combinations for fr
 
 Run one guard per process (avoids co-loading a BERT encoder + a Qwen decoder, which
 deadlocks the tokenizer threadpool). Output: outputs/predictions/<guard>.json =
-{benchmark: [[y, u, s, ms], ...]} where y=gold-unsafe, u=pred-unsafe, s=score, ms=latency.
-Sample order matches the cached subset, so guards align by index.
+{benchmark: [[y, u, s, ms, key], ...]} where y=gold-unsafe, u=pred-unsafe, s=score,
+ms=latency, key=stable sample identity (hash of the normalized prompt). The trailing
+key lets the ensemble evaluator align members by prompt, not list position.
 
 Usage:
     python scripts/eval/dump_predictions.py --guard encoder-distilbert
@@ -27,6 +28,7 @@ import agent_bouncer  # noqa: E402,F401  (auto-loads .env)
 from agent_bouncer.core.guard import KeywordGuard  # noqa: E402
 from agent_bouncer.core.schema import Decision, Surface  # noqa: E402
 from agent_bouncer.data import read_jsonl  # noqa: E402
+from agent_bouncer.evaluation.ensembles import sample_key  # noqa: E402
 
 CACHE = "data/benchmarks"
 OUT = "outputs/predictions"
@@ -94,7 +96,8 @@ def main() -> None:
         for r, v in zip(recs, vs, strict=True):
             y = 1 if r["label"] == "unsafe" else 0
             u = 1 if v.decision == Decision.UNSAFE else 0
-            rows.append([y, u, round(float(v.score), 4), round(float(v.latency_ms or 0.0), 3)])
+            rows.append([y, u, round(float(v.score), 4), round(float(v.latency_ms or 0.0), 3),
+                         sample_key(r["text"])])
         out[bench] = rows
         print(f"  [{bench}] {args.guard}: {len(rows)} preds", flush=True)
 

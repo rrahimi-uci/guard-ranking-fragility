@@ -19,7 +19,12 @@ import tempfile
 
 from agent_bouncer.core.schema import Decision
 from agent_bouncer.evaluation.curves import roc_auc
-from agent_bouncer.evaluation.ensembles import evaluate_ensemble, load_predictions, macro_average
+from agent_bouncer.evaluation.ensembles import (
+    _align_rows,
+    evaluate_ensemble,
+    load_predictions,
+    macro_average,
+)
 from agent_bouncer.evaluation.metrics import compute_metrics
 from agent_bouncer.models.ensemble import combine
 
@@ -76,7 +81,9 @@ def eval_tuned(members, preds, *, weights=None, seed=42, fpr_cap=0.20) -> tuple[
     # build (bench, idx, gold, score, latency), deterministically split val/test
     val, test = [], []
     for b in benches:
-        rows = [preds[m][b] for m in members]
+        rows = _align_rows([preds[m][b] for m in members])  # align by sample identity, not position
+        if rows is None:                                     # unalignable members on this bench
+            continue
         n = len(rows[0])
         idx = list(range(n))
         random.Random(seed).shuffle(idx)

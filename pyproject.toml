@@ -49,4 +49,4 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-pythonpath = ["src"]
+pythonpath = ["src", "scripts/eval"]   # scripts/eval so the CLI dump/ensemble modules are testable

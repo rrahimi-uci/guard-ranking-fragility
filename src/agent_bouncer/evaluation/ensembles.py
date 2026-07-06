@@ -37,30 +37,51 @@ def sample_key(text: str) -> str:
     return hashlib.sha1(norm.encode("utf-8")).hexdigest()[:12]
 
 
+def _keyed_index(member: list) -> dict:
+    """Map each row to a composite ``(sample_key, occurrence_index)`` so DUPLICATE prompts (same
+    text) are preserved as distinct entries instead of collapsing to one — the k-th occurrence of a
+    text in one member aligns with the k-th occurrence in another (benchmark subset order is
+    deterministic, so those are the same original sample)."""
+    seen: dict[str, int] = {}
+    out: dict[tuple, list] = {}
+    for r in member:
+        k = r[4]
+        i = seen.get(k, 0)
+        seen[k] = i + 1
+        out[(k, i)] = r
+    return out
+
+
 def _align_rows(rows: list[list]) -> list[list] | None:
     """Align member prediction-row lists to a common sample order, or return ``None`` if they can't
     be safely aligned (caller skips that benchmark).
 
-    - When EVERY member dumped a per-row key (5th element), align by the INTERSECTION of keys — this
-      is correct even if members were scored on different subsets/orders of the same benchmark.
-    - For legacy dumps without keys, fall back to positional alignment but require equal length AND
-      identical gold columns across members (a cheap guard against silent misalignment)."""
+    - When EVERY member dumped a per-row key (5th element), align by the INTERSECTION of composite
+      ``(sample_key, occurrence)`` identities — correct even if members were scored on different
+      subsets/orders of the same benchmark, and preserving duplicate prompts.
+    - For legacy dumps without keys, fall back to positional alignment (equal length required).
+
+    Either way, a final guard requires the gold column to agree across members at every aligned
+    position — any disagreement means the rows are misaligned, so the benchmark is skipped."""
     if not rows or any(len(member) == 0 for member in rows):
         return None
     if all(len(r) > 4 for member in rows for r in member):          # keyed dumps → align by identity
-        by_key = [{r[4]: r for r in member} for member in rows]
-        common = set(by_key[0]).intersection(*by_key[1:])
+        maps = [_keyed_index(member) for member in rows]
+        common = set(maps[0]).intersection(*maps[1:])
         if not common:
             return None
         order = sorted(common)
-        return [[d[k] for k in order] for d in by_key]
-    n = len(rows[0])                                                # legacy positional fallback
-    if any(len(r) != n for r in rows):
-        return None
-    for i in range(n):                                             # gold columns must match
-        if any(member[i][0] != rows[0][i][0] for member in rows[1:]):
+        aligned = [[mp[k] for k in order] for mp in maps]
+    else:                                                          # legacy positional fallback
+        n = len(rows[0])
+        if any(len(r) != n for r in rows):
             return None
-    return rows
+        aligned = rows
+    n = len(aligned[0])
+    for i in range(n):                                             # gold columns must agree
+        if any(member[i][0] != aligned[0][i][0] for member in aligned[1:]):
+            return None
+    return aligned
 
 
 def load_predictions(pred_dir: str = PRED_DIR) -> dict[str, dict]:

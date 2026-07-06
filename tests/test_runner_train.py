@@ -84,6 +84,22 @@ def test_train_and_record_fails_fast_on_empty_train_file(tmp_path, monkeypatch):
         runner.train_and_record("distilbert", "sft", train_data=str(empty))
 
 
+@pytest.mark.parametrize("bad_row", [
+    '{"text": "missing-label"}',                 # AB-014: no label
+    '{"label": "safe"}',                         # no text
+    '{"text": "hi", "label": "maybe"}',          # unknown label value
+    '{"text": "   ", "label": "safe"}',          # blank text
+])
+def test_train_and_record_rejects_malformed_rows(tmp_path, monkeypatch, bad_row):
+    import agent_bouncer.training.sft as sft
+    monkeypatch.setattr(sft, "run_sft", lambda cfg_path: pytest.fail("trainer must not run"))
+    monkeypatch.setattr(runner.X, "record", lambda e: pytest.fail("must not record"))
+    f = tmp_path / "bad.jsonl"
+    f.write_text('{"text": "ok", "label": "safe"}\n' + bad_row + "\n")
+    with pytest.raises(ValueError, match="malformed row"):
+        runner.train_and_record("distilbert", "sft", train_data=str(f))
+
+
 def test_train_and_record_cleans_temp_config_when_trainer_fails(tmp_path, monkeypatch):
     import agent_bouncer.training.sft as sft
 

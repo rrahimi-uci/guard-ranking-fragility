@@ -22,6 +22,23 @@ def _counts(recs):
     return (sum(r["label"] == "safe" for r in recs), sum(r["label"] == "unsafe" for r in recs))
 
 
+# --------------------------------------------------------- AB-013: stratified tiny-data holdout
+def test_stratified_ratio_split_tiny_data_yields_nonempty_test():
+    tr, te = ratio_split(_recs(1, 1), test_ratio=0.2, stratified=True, seed=1)
+    assert len(tr) == 1 and len(te) == 1   # was train=2, test=0 (per-class rounding zeroed test)
+
+
+def test_stratified_sample_and_split_tiny_data_holdout_nonempty():
+    d = sample_and_split(_recs(1, 1), sampling="stratified", split="ratio",
+                         test_ratio=0.2, seed=1)
+    assert len(d["test"]) >= 1 and len(d["train"]) >= 1
+
+
+def test_stratified_ratio_split_normal_data_unchanged():
+    tr, te = ratio_split(_recs(50, 50), test_ratio=0.2, stratified=True, seed=1)
+    assert len(te) == 20 and len(tr) == 80   # 20% per class, unchanged
+
+
 # ---- random_sample ---------------------------------------------------------
 
 def test_random_sample_size_and_determinism():

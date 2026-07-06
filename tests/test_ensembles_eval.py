@@ -172,3 +172,38 @@ def test_legacy_positional_rows_with_mismatched_gold_are_rejected():
     b = {"b1": [[0, 0, 0.2, 20], [1, 1, 0.8, 20]]}   # gold column reversed → misaligned
     with pytest.raises(ValueError, match="mismatched sample counts|share no common"):
         evaluate_ensemble({"a": a, "b": b}, ["a", "b"], "union")
+
+
+def test_duplicate_prompts_are_preserved_not_collapsed():
+    """AB-012: two rows sharing the same prompt text must BOTH be scored (aligned by occurrence),
+    not collapsed to one by a text-only key."""
+    a = {"b": [_krow(1, 1, 0.9, 10, "dup"), _krow(0, 0, 0.1, 10, "dup"), _krow(1, 1, 0.8, 10, "x")]}
+    b = {"b": [_krow(1, 1, 0.7, 20, "dup"), _krow(0, 0, 0.2, 20, "dup"), _krow(1, 1, 0.6, 20, "x")]}
+    out = evaluate_ensemble({"a": a, "b": b}, ["a", "b"], "union")
+    assert out["b"]["n"] == 3   # both "dup" rows kept + "x"
+
+
+def test_duplicate_occurrences_align_across_reordered_members():
+    """The k-th occurrence of a duplicated prompt in one member aligns with the k-th in another even
+    when the members' overall row order differs."""
+    a = {"b": [_krow(1, 1, 0.9, 10, "dup"), _krow(0, 0, 0.1, 10, "dup")]}
+    b = {"b": [_krow(0, 0, 0.2, 20, "dup"), _krow(1, 1, 0.8, 20, "dup")]}  # reversed
+    # occurrence-0 (gold 1) pairs with occurrence-0 (gold 0) -> gold mismatch -> benchmark skipped
+    with pytest.raises(ValueError):
+        evaluate_ensemble({"a": a, "b": b}, ["a", "b"], "union")
+
+
+# --------------------------------------------------------- AB-011: eval_tuned keyed alignment
+def test_eval_tuned_aligns_reordered_keyed_members():
+    from eval_ensembles import eval_tuned
+    a = {"b": [_krow(1, 1, 0.9, 10, "t1"), _krow(1, 1, 0.8, 10, "t2"),
+               _krow(0, 0, 0.1, 10, "t3"), _krow(0, 0, 0.2, 10, "t4")]}
+    b_fwd = {"b": [_krow(0, 0, 0.2, 20, "t4"), _krow(0, 0, 0.1, 20, "t3"),
+                   _krow(1, 1, 0.8, 20, "t2"), _krow(1, 1, 0.9, 20, "t1")]}  # reversed order
+    b_ord = {"b": [_krow(1, 1, 0.9, 20, "t1"), _krow(1, 1, 0.8, 20, "t2"),
+                   _krow(0, 0, 0.1, 20, "t3"), _krow(0, 0, 0.2, 20, "t4")]}  # same order as a
+    out_rev, t_rev = eval_tuned(["a", "b"], {"a": a, "b": b_fwd})
+    out_ord, t_ord = eval_tuned(["a", "b"], {"a": a, "b": b_ord})
+    # aligned by identity, so B's row order is irrelevant — tuned threshold + metrics match
+    assert out_rev and out_rev["b"]["n"] == out_ord["b"]["n"] and t_rev == t_ord
+    assert out_rev["b"]["f1"] == out_ord["b"]["f1"]

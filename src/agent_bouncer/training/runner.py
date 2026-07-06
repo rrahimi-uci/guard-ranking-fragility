@@ -239,6 +239,16 @@ def train_and_record(model_key: str, technique: str, *, train_data: str,
     recs = read_jsonl(train_data)
     if not recs:
         raise ValueError(f"training set has no rows: {train_data!r}")
+    # Validate the row SCHEMA before the banner/trainer: every row needs a non-empty `text` and a
+    # label in {safe, unsafe}. Otherwise malformed rows are miscounted (anything not "unsafe" reads
+    # as safe) and a broken dataset can be recorded as a successful run.
+    bad = [i for i, r in enumerate(recs)
+           if not str(r.get("text") or "").strip() or r.get("label") not in ("safe", "unsafe")]
+    if bad:
+        raise ValueError(
+            f"training set has {len(bad)} malformed row(s) — each needs a non-empty 'text' and a "
+            f"'label' of 'safe' or 'unsafe'; first bad row (index {bad[0]}): {recs[bad[0]]!r}"
+        )
     n_train = len(recs)
     ds = dataset_name(train_data)
     name = descriptive_name(model_key, technique, ds)   # <model>-<params>-<technique>-<dataset>

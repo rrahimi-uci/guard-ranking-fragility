@@ -115,6 +115,11 @@ def ratio_split(records: Sequence[dict], *, test_ratio: float = 0.3, key: str = 
             n_test = holdout_count(len(recs), test_ratio)
             test += recs[:n_test]
             train += recs[n_test:]
+        # Per-class rounding can zero out the test set on tiny data (e.g. 1 safe + 1 unsafe → every
+        # class rounds to 0). Guarantee the same non-empty-holdout-when-splittable contract as the
+        # non-stratified path: move one row into test when the pool is splittable but test is empty.
+        if test_ratio > 0 and not test and len(train) >= 2:
+            test.append(train.pop())
         rng.shuffle(train)
         rng.shuffle(test)
     assert_no_leakage(train, test)
