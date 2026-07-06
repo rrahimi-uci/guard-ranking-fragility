@@ -190,8 +190,9 @@ def build_html(blob: dict, sort: str = "f1", *, generated: str = "") -> str:
     <tbody>{"".join(rows_html)}</tbody></table>
   <p class="note">Sorted by <b>{html.escape(sort)}</b>.
     Best value per column in <b style="color:#0a8f5b">green</b>.
-    AUC for hard-decision guards (GPT, keyword) is the single-point estimate (recall+1−FPR)/2;
-    the encoder &amp; threshold-swept ensembles use a true swept AUC.</p>
+    AUC is one definition for every row — the tie-corrected rank ROC-AUC over each guard's scores.
+    For binary-score judges (GPT, keyword, decoders) this equals the operating point (recall+1−FPR)/2;
+    the encoder's continuous scores yield a true threshold-swept AUC.</p>
   <h2>Per-benchmark F1</h2>
   <table><thead><tr><th>Model</th>{bench_head}</tr></thead><tbody>{"".join(bench_rows)}</tbody></table>
   <div class="foot">Agent Bouncer — SLM guardrails · all guards scored through one harness.</div>

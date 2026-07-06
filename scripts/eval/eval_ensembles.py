@@ -206,6 +206,10 @@ def main() -> None:
             json.dump(blob, fh, indent=2)
         os.replace(tmp, RESULTS)
         print(f"merged into scoreboard: ensembles={to_merge or []} members={sorted(members)}")
+        # Re-derive curves.json + roc_auc so the merged ensemble/member rows get curve entries and
+        # the two artifacts stay identical (fixes ensembles on the leaderboard with no ROC/PR curve).
+        import runpy
+        runpy.run_path("scripts/report/compute_curves.py", run_name="__main__")
 
 
 def _auto_pick(summary: dict) -> list[str]:

@@ -111,3 +111,81 @@ def test_build_config_encoder_no_validation_by_default():
     assert "validation" not in build_config("distilbert", "sft", "tr.jsonl", "/o", {}, 42)["data"]
     cfg = build_config("distilbert", "sft", "tr.jsonl", "/o", {"validation": "val.jsonl"}, 42)
     assert cfg["data"]["validation"] == "val.jsonl"
+
+
+# --- results-computation audit (round 3) ---------------------------------------------------
+
+def test_beavertails_dedup_unsafe_wins():
+    """A prompt that appears both safe and unsafe collapses to one UNSAFE record (unsafe wins),
+    so benchmark gold labels are internally consistent (no contradictory pairs)."""
+    from agent_bouncer.data.loaders import dedup_unsafe_wins
+    recs = [
+        {"text": "steal corn?", "label": "safe", "hazard": "none"},
+        {"text": "steal corn?", "label": "unsafe", "hazard": "non_violent_crimes"},
+        {"text": "hello", "label": "safe", "hazard": "none"},
+        {"text": "  Steal   corn? ", "label": "safe", "hazard": "none"},  # whitespace/case dup
+    ]
+    out = dedup_unsafe_wins(recs)
+    by = {" ".join(r["text"].lower().split()): r for r in out}
+    assert len(out) == 2
+    assert by["steal corn?"]["label"] == "unsafe"
+    assert by["steal corn?"]["hazard"] == "non_violent_crimes"  # carries the unsafe hazard
+    assert by["hello"]["label"] == "safe"
+
+
+def test_training_loader_uses_disjoint_split_for_beavertails(monkeypatch):
+    """The default training loader must draw BeaverTails from 30k_train, never the 30k_test pool
+    the benchmark is scored on (train/eval leakage)."""
+    from agent_bouncer.data import training_sets as T
+    captured = {}
+    import agent_bouncer.data.loaders as L
+    monkeypatch.setattr(L, "load_beavertails",
+                        lambda split="30k_train", **k: captured.setdefault("split", split) or [])
+    T.default_training_loader("beavertails")
+    assert captured["split"] == "30k_train"
+
+
+def test_auc_binary_scores_equal_operating_point():
+    """rank-AUC over binary (0/1) scores provably equals the operating-point estimate
+    (recall+1-fpr)/2 — so unifying every row on rank-AUC changes nothing for hard-decision
+    guards while giving continuous-score guards a true swept AUC."""
+    from agent_bouncer.core.schema import Decision as D
+    from agent_bouncer.evaluation.curves import auc_with_fallback
+    from agent_bouncer.evaluation.metrics import compute_metrics
+    gold = [D.UNSAFE, D.UNSAFE, D.SAFE, D.SAFE, D.UNSAFE, D.SAFE]
+    pred = [D.UNSAFE, D.SAFE, D.UNSAFE, D.SAFE, D.UNSAFE, D.SAFE]
+    scores = [1.0 if p == D.UNSAFE else 0.0 for p in pred]
+    m = compute_metrics(gold, pred)
+    a = auc_with_fallback([1 if g == D.UNSAFE else 0 for g in gold], scores,
+                          recall=m.recall, fpr=m.fpr_on_benign)
+    assert abs(a - (m.recall + 1 - m.fpr_on_benign) / 2) < 1e-9
+
+
+def test_auc_fallback_when_single_class():
+    """rank-AUC is undefined with one class present -> fall back to the operating-point value."""
+    from agent_bouncer.evaluation.curves import auc_with_fallback
+    a = auc_with_fallback([1, 1, 1], [1.0, 0.0, 1.0], recall=0.67, fpr=0.0)
+    assert abs(a - (0.67 + 1 - 0.0) / 2) < 1e-9
+
+
+def test_auc_continuous_scores_is_true_swept():
+    """With continuous scores the rank-AUC is a genuine ROC-AUC (perfect ranking -> 1.0)."""
+    from agent_bouncer.evaluation.curves import auc_with_fallback
+    a = auc_with_fallback([0, 0, 1, 1], [0.1, 0.2, 0.8, 0.9], recall=1.0, fpr=0.0)
+    assert abs(a - 1.0) < 1e-9
+
+
+def test_compute_curves_pr_endpoint_uses_prevalence():
+    """The single-operating-point PR endpoint at recall=1 must be the class prevalence
+    (n_pos/n), not a hardcoded 0.5, for imbalanced cells."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "compute_curves", "scripts/report/compute_curves.py")
+    cc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cc)
+    m = {"recall": 0.5, "fpr_on_benign": 0.1, "precision": 0.8, "n": 100}
+    entry = cc._derive_point(m, {"n_safe": 80, "n_unsafe": 20})   # 20% prevalence
+    assert abs(entry["pr"][-1][1] - 0.2) < 1e-9
+    # no meta -> recover prevalence algebraically (still not 0.5 for this imbalanced cell)
+    entry2 = cc._derive_point(m, None)
+    assert entry2["pr"][-1][1] != 0.5

@@ -55,8 +55,9 @@ class OpenAIModerationGuard:
         return self._client
 
     def predict(self, text: str, *, surface: Surface = Surface.USER_PROMPT) -> Verdict:
-        start = time.perf_counter()
-        result = self._client_obj().moderations.create(model=self.model, input=text).results[0]
+        client = self._client_obj()  # construct/import BEFORE the timer so the one-time SDK
+        start = time.perf_counter()  # import + client build is not charged to the first sample
+        result = client.moderations.create(model=self.model, input=text).results[0]
         flagged = bool(result.flagged)
         cats = result.categories
         cats = cats.model_dump() if hasattr(cats, "model_dump") else dict(cats)
@@ -162,9 +163,14 @@ class OpenAIChatGuard:
         content = resp.choices[0].message.content or ""
         latency = (time.perf_counter() - start) * 1000
         verdict = parse_verdict(content, surface=surface, latency_ms=latency, model=self.name)
-        if verdict is None:  # unparseable judge output -> treat as safe (don't inflate FPR)
+        if verdict is None:
+            # Fail CLOSED (unparseable / budget-exhausted judge output -> unsafe), the SAME
+            # policy the local DecoderGuard uses, so identical failure modes produce identical
+            # labels and recall/FPR/F1 are comparable across every guard. (Failing open here
+            # would let a guard that never emits a valid verdict manufacture a perfect FPR.)
             return Verdict(
-                decision=Decision.SAFE, hazard=Hazard.NONE, score=0.0,
+                decision=Decision.UNSAFE, hazard=Hazard.NONE, score=1.0,
+                rationale="unparseable output (fail-closed)",
                 surface=surface, latency_ms=latency, model=self.name,
             )
         return verdict

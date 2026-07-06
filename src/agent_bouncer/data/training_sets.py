@@ -100,6 +100,27 @@ def _balanced(records: list[dict], per_class: int, rng: random.Random) -> list[d
     return out
 
 
+#: Sources whose benchmark is scored on a *held-out* split — training must draw from the
+#: DISJOINT split, never the benchmark's, or a guard is scored on prompts it trained on.
+#: (BeaverTails: benchmark = 30k_test, so training pulls 30k_train.)
+_TRAIN_SPLIT_LOADERS = {
+    "beavertails": lambda: __import__(
+        "agent_bouncer.data.loaders", fromlist=["load_beavertails"]
+    ).load_beavertails(split="30k_train"),
+}
+
+
+def default_training_loader(src: str) -> list[dict]:
+    """Records for a training source, drawn from a split DISJOINT from its benchmark eval pool
+    where one exists (so training never leaks into the benchmark). Falls back to the registry
+    loader for single-split sources — those must additionally be protected by the eval-time
+    leakage filter (``runner.score_guard`` drops any benchmark row present in the training set)."""
+    if src in _TRAIN_SPLIT_LOADERS:
+        return _TRAIN_SPLIT_LOADERS[src]()
+    from agent_bouncer.evaluation.benchmarks import load_benchmark
+    return load_benchmark(src)
+
+
 def build_training_set(
     strategy: str,
     sources: list[str],
@@ -120,9 +141,7 @@ def build_training_set(
     name = validate_training_set_name(name)
 
     if loader is None:
-        from agent_bouncer.evaluation.benchmarks import load_benchmark
-        def loader(src):  # noqa: E306
-            return load_benchmark(src)
+        loader = default_training_loader
 
     rng = random.Random(seed)
     train: list[dict] = []

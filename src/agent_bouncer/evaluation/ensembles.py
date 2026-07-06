@@ -20,7 +20,7 @@ import os
 from collections.abc import Sequence
 
 from agent_bouncer.core.schema import Decision
-from agent_bouncer.evaluation.curves import roc_auc
+from agent_bouncer.evaluation.curves import auc_with_fallback
 from agent_bouncer.evaluation.metrics import compute_metrics
 from agent_bouncer.models.ensemble import STRATEGIES, combine
 
@@ -47,8 +47,10 @@ def available_members(pred_dir: str = PRED_DIR) -> list[str]:
 
 def _auc(gold: Sequence[Decision], scores: Sequence[float], m: dict) -> float:
     """True swept AUC when scores vary, else the single-operating-point estimate."""
-    auc = roc_auc([1 if g == Decision.UNSAFE else 0 for g in gold], list(scores))
-    return auc if auc is not None else (m["recall"] + 1 - m["fpr_on_benign"]) / 2
+    return auc_with_fallback(
+        [1 if g == Decision.UNSAFE else 0 for g in gold], list(scores),
+        recall=m["recall"], fpr=m["fpr_on_benign"],
+    )
 
 
 def evaluate_ensemble(

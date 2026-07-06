@@ -23,6 +23,7 @@ import yaml
 from agent_bouncer.core.schema import Decision, Surface
 from agent_bouncer.data import read_jsonl
 from agent_bouncer.data.split import find_leakage
+from agent_bouncer.evaluation.curves import auc_with_fallback
 from agent_bouncer.evaluation.metrics import compute_metrics
 from agent_bouncer.models.registry import get_base_model
 from agent_bouncer.tracking import experiments as X
@@ -399,7 +400,13 @@ def score_guard(guard, benchmarks: list[str], *, per_class: int = 40,
         gold = [Decision(r["label"]) for r in clean]
         lat = [v.latency_ms for v in verdicts if v.latency_ms is not None]
         m = compute_metrics(gold, [v.decision for v in verdicts], lat).to_dict()
-        m["roc_auc"] = (m["recall"] + 1.0 - m["fpr_on_benign"]) / 2.0  # single-operating-point AUC
+        # ONE AUC definition for every row (rank-AUC from scores, operating-point fallback) so
+        # single guards and ensembles are comparable — see curves.auc_with_fallback.
+        m["roc_auc"] = auc_with_fallback(
+            [1 if g == Decision.UNSAFE else 0 for g in gold],
+            [float(v.score) for v in verdicts],
+            recall=m["recall"], fpr=m["fpr_on_benign"],
+        )
         metrics[bench] = m
         if predictions_out is not None:
             predictions_out[bench] = [

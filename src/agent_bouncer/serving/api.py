@@ -859,6 +859,10 @@ async def start_test(cfg: TestConfig) -> dict:
             # benchmark-mode results go onto the Leaderboard scoreboard automatically
             cmd += ["--benchmarks", *cfg.benchmarks, "--merge-scoreboard"]
         cmds.append(cmd)
+    # After bench-mode tests merged new cells, re-derive curves.json + roc_auc so the ROC/PR view
+    # stays in lockstep with the leaderboard (no-op for created-test-set runs — nothing merged).
+    if any("--merge-scoreboard" in c for c in cmds):
+        cmds.append([sys.executable, "scripts/report/compute_curves.py"])
     return {"run_id": _launch(cmds, kind="test"), "steps": len(cmds)}
 
 

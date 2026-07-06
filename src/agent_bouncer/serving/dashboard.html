@@ -395,8 +395,9 @@ Chart.defaults.borderColor='#232c44';Chart.defaults.plugins.legend.labels.usePoi
 const gLabel=n=>({'keyword-baseline':'Keyword','encoder-distilbert':'Encoder 66M','encoder-modernbert-large':'Encoder 395M','decoder-sft-0.6B':'Decoder-SFT 0.6B','decoder-sft-1.7B':'Decoder-SFT 1.7B','decoder-grpo-0.6B':'Decoder-GRPO','openai-moderation':'OpenAI-Mod','openai-gpt-4o-mini':'GPT-4o-mini','openai-gpt-5.4-mini':'GPT-5.4-mini','openai-gpt-5.2-low':'GPT-5.2 low','openai-gpt-5.2-medium':'GPT-5.2 medium','openai-gpt-5.2-high':'GPT-5.2 high'}[n]||n);
 const guardsIn=()=>{const s=new Set();for(const b in RESULTS.results||{})for(const g in RESULTS.results[b])s.add(g);return ORDER.filter(x=>s.has(x)).concat([...s].filter(x=>!ORDER.includes(x)));};
 const benchesIn=()=>Object.keys(RESULTS.results||{});
-function macro(){const out={};for(const b in RESULTS.results||{})for(const g in RESULTS.results[b]){const m=RESULTS.results[b][g];(out[g]=out[g]||{});for(const k of ['precision','recall','f1','roc_auc','fpr_on_benign','latency_p50_ms','latency_p90_ms','throughput_per_s']){(out[g][k]=out[g][k]||[]);if(m[k]!=null)out[g][k].push(m[k]);}}
-  const a={};for(const g in out){a[g]={};for(const k in out[g]){const v=out[g][k];a[g][k]=v.length?v.reduce((x,y)=>x+y,0)/v.length:null;}}return a;}
+function macro(){const out={},ns={};for(const b in RESULTS.results||{})for(const g in RESULTS.results[b]){const m=RESULTS.results[b][g];(out[g]=out[g]||{});(ns[g]=ns[g]||[]);if(m.n!=null)ns[g].push(m.n);for(const k of ['precision','recall','f1','roc_auc','fpr_on_benign','latency_p50_ms','latency_p90_ms','throughput_per_s']){(out[g][k]=out[g][k]||[]);if(m[k]!=null)out[g][k].push(m[k]);}}
+  const a={};for(const g in out){a[g]={};for(const k in out[g]){const v=out[g][k];a[g][k]=v.length?v.reduce((x,y)=>x+y,0)/v.length:null;}
+    const nn=ns[g]||[];a[g]._nmin=nn.length?Math.min(...nn):null;a[g]._nmax=nn.length?Math.max(...nn):null;}return a;}
 function destroy(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 function gridX(){return{grid:{display:false},ticks:{maxRotation:0,autoSkip:false,font:{size:11}}};}
 function barOpts(max,h){return{indexAxis:h?'y':'x',responsive:true,maintainAspectRatio:false,
@@ -873,15 +874,20 @@ function renderLeaderboard(){
   const cell=(r,k,hl)=>{const v=r[k],isBest=v!=null&&best[k]!=null&&Math.abs(v-best[k])<1e-9;
     const disp=v==null?'—':(k.indexOf('latency')===0?(v<10?v.toFixed(1):Math.round(v)):v.toFixed(3));
     return `<td class="mono${isBest?' lbbest':''}">${disp}</td>`;};
-  let html=`<table><thead><tr><th>Model</th><th>Params</th>`+LB_METRICS.map(([,t,hl])=>`<th>${t} ${hl==='hi'?'↑':'↓'}</th>`).join('')+`</tr></thead>`;
+  const nFmt=r=>r._nmin==null?'—':(r._nmin===r._nmax?String(r._nmin):`${r._nmin}–${r._nmax}`);
+  const allN=rows.flatMap(r=>[r._nmin,r._nmax]).filter(v=>v!=null);
+  const mixedN=allN.length?Math.min(...allN)!==Math.max(...allN):false;
+  let html=`<table><thead><tr><th>Model</th><th>Params</th>`+LB_METRICS.map(([,t,hl])=>`<th>${t} ${hl==='hi'?'↑':'↓'}</th>`).join('')+`<th>n</th></tr></thead>`;
   CAT_ORDER.forEach(cat=>{
     const rs=rows.filter(r=>lbCat(r.g)===cat).sort((x,y)=>dir*(((x[sort]??(lo?1e12:-1e12)))-((y[sort]??(lo?1e12:-1e12)))));
     if(!rs.length)return;
-    html+=`<tbody><tr class="lbcat"><td colspan="${LB_METRICS.length+2}">${cat} · ${rs.length}</td></tr>`+
-      rs.map(r=>`<tr><td class="name">${lbLabel(r.g)}</td><td class="mono" style="color:var(--muted)">${lbParams(r.g)}</td>`+LB_METRICS.map(([k,,hl])=>cell(r,k,hl)).join('')+`</tr>`).join('')+`</tbody>`;
+    html+=`<tbody><tr class="lbcat"><td colspan="${LB_METRICS.length+3}">${cat} · ${rs.length}</td></tr>`+
+      rs.map(r=>`<tr><td class="name">${lbLabel(r.g)}</td><td class="mono" style="color:var(--muted)">${lbParams(r.g)}</td>`+LB_METRICS.map(([k,,hl])=>cell(r,k,hl)).join('')+`<td class="mono" style="color:var(--muted)">${nFmt(r)}</td></tr>`).join('')+`</tbody>`;
   });
   html+='</table>';$('#lbTable').innerHTML=html;
-  $('#lbNote').innerHTML=`Macro-averaged over ${benchesIn().length} benchmark(s), ≤${RESULTS.per_class||'?'}/class. Best per column highlighted. AUC for hard-decision guards (GPT, keyword) is the single-point estimate (recall+1−FPR)/2; the encoder & swept ensembles use a true threshold-swept AUC.`;
+  $('#lbNote').innerHTML=`Macro-averaged over ${benchesIn().length} benchmark(s). Best per column highlighted. `+
+    `AUC is one definition for every row — the tie-corrected rank ROC-AUC over each guard's scores (for binary-score judges this equals the operating point (recall+1−FPR)/2; the encoder's continuous scores give a true swept AUC). `+
+    (mixedN?`<b style="color:var(--warn,#f5a524)">⚠ rows were scored on different sample sizes (n column) — compare with care.</b>`:`All rows scored on the same sample size (n column).`);
 }
 async function generateReport(){
   const btn=$('#lbReport'),orig=btn.textContent;btn.disabled=true;btn.textContent='⏳ Rendering…';

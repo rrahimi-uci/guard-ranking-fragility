@@ -38,6 +38,7 @@ bench: benchmarks  ## Alias for `benchmarks`
 
 benchmarks:  ## Download + run the standard benchmark suite (uses .env keys); writes outputs/BENCHMARKS.md
 	python scripts/eval/run_benchmarks.py $(if $(per_class),--per-class $(per_class),)
+	python scripts/report/compute_curves.py  # keep curves.json + roc_auc in sync with the scoreboard
 
 benchmarks-full:  ## Download the full-size ungated benchmark datasets to data/benchmarks/full
 	python scripts/data/download_full_benchmarks.py $(if $(benchmarks),--benchmarks $(benchmarks),)

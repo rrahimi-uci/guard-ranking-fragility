@@ -110,6 +110,11 @@ def main() -> None:
         fh.write(header + report)
     print(f"\nmerged {args.name} into {RESULTS_JSON} and re-rendered {REPORT_MD}")
 
+    # Keep curves.json + every cell's roc_auc in sync with the just-merged scoreboard so the two
+    # artifacts never diverge (this guard's predictions were dumped above).
+    import runpy
+    runpy.run_path("scripts/report/compute_curves.py", run_name="__main__")
+
 
 if __name__ == "__main__":
     main()

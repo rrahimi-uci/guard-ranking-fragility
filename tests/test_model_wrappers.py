@@ -87,7 +87,9 @@ def test_decoder_guard_fails_closed_on_junk(monkeypatch):
     from agent_bouncer.core.schema import Decision
     from agent_bouncer.models.decoder import DecoderGuard
     v = DecoderGuard("path", name="dec", mode="reasoning", device="cpu").predict("hello")
-    assert v.decision == Decision.UNSAFE and v.score == 0.5  # unparseable → fail closed
+    # unparseable → fail closed; score MUST agree with the UNSAFE decision (1.0), not a 0.5
+    # placeholder that would corrupt score-based AUC / soft-vote ensembles.
+    assert v.decision == Decision.UNSAFE and v.score == 1.0
 
 
 def test_decoder_resolves_device_when_unset(monkeypatch):

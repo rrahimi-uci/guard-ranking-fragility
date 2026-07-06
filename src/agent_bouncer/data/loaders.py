@@ -275,6 +275,26 @@ def unify_to_taxonomy(records: Iterable[dict], source: str, text_field: str = "p
     return out
 
 
+def dedup_unsafe_wins(records: list[dict]) -> list[dict]:
+    """Collapse records that share the same prompt text to ONE record with a single, consistent
+    gold label: a prompt is ``unsafe`` iff ANY of its rows is unsafe (keeping that row's hazard),
+    else ``safe``. First occurrence order is preserved.
+
+    Per-(prompt, response) datasets like BeaverTails label the *response*, so the same prompt can
+    appear as both safe and unsafe across rows; without this, identical prompts carry contradictory
+    gold labels and every guard is forced wrong on one of each conflicting pair. This mirrors
+    ``scripts/data/prepare_beavertails_demo.py`` (unsafe iff any response unsafe)."""
+    by_text: dict[str, dict] = {}
+    for rec in records:
+        key = " ".join((rec.get("text") or "").lower().split())
+        prev = by_text.get(key)
+        if prev is None:
+            by_text[key] = rec
+        elif prev["label"] != Decision.UNSAFE.value and rec["label"] == Decision.UNSAFE.value:
+            by_text[key] = rec  # unsafe wins, and carries its hazard
+    return list(by_text.values())
+
+
 # ----------------------------------------------------------------- split / io
 def train_val_split(
     records: list[dict], val_ratio: float = 0.1, seed: int = 42
@@ -317,8 +337,11 @@ def load_wildguardmix(split: str = "train", text_field: str = "prompt") -> list[
 
 
 def load_beavertails(split: str = "30k_train", text_field: str = "prompt") -> list[dict]:
+    # BeaverTails is per-(prompt, response): `is_safe` labels the response, so the same prompt
+    # recurs with conflicting labels. Aggregate to one label per prompt (unsafe iff any response
+    # unsafe) so the benchmark gold labels are internally consistent.
     ds = _load_hf("PKU-Alignment/BeaverTails", split)
-    return unify_to_taxonomy(ds, "beavertails", text_field=text_field)
+    return dedup_unsafe_wins(unify_to_taxonomy(ds, "beavertails", text_field=text_field))
 
 
 def load_aegis(split: str = "train", text_field: str = "prompt") -> list[dict]:

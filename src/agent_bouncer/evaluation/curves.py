@@ -47,6 +47,18 @@ def roc_auc(labels: Sequence, scores: Sequence[float]) -> float | None:
     return (sum_ranks_pos - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg)
 
 
+def auc_with_fallback(labels: Sequence, scores: Sequence[float], *, recall: float, fpr: float) -> float:
+    """The tie-corrected rank ROC-AUC, falling back to the single-operating-point
+    estimate ``(recall + 1 - fpr) / 2`` only when the rank-AUC is undefined (a single
+    class present). This is the ONE definition every scoreboard row must use, so single
+    guards and ensembles are directly comparable. For a guard whose score is binary
+    (0/1 — the OpenAI/decoder judges), the rank-AUC provably equals the operating-point
+    estimate, so this changes nothing for them while giving a true swept AUC for guards
+    with continuous scores (the encoder)."""
+    auc = roc_auc(labels, scores)
+    return auc if auc is not None else (recall + 1.0 - fpr) / 2.0
+
+
 def roc_curve(labels: Sequence, scores: Sequence[float]) -> list[tuple[float, float]]:
     """Return ROC points ``[(fpr, tpr), ...]`` swept high→low threshold."""
     y = _binarize(labels)

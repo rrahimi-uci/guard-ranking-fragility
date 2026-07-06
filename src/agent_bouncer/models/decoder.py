@@ -159,7 +159,11 @@ class DecoderGuard:
             return Verdict(
                 decision=Decision.UNSAFE,
                 hazard=Hazard.NONE,
-                score=0.5,
+                # score MUST agree with the UNSAFE decision (1.0), not a 0.5 placeholder that
+                # contradicts it — otherwise a fail-closed sample corrupts score-based AUC and
+                # soft-vote (mean/weighted) ensembles that consume this score.
+                score=1.0,
+                rationale="unparseable output (fail-closed)",
                 surface=surface,
                 latency_ms=latency,
                 model=self.name,

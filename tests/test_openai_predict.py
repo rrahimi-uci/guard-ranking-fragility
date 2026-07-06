@@ -48,10 +48,14 @@ def test_chat_predict_parses_unsafe():
     assert g.predict("x").decision == Decision.UNSAFE
 
 
-def test_chat_predict_unparseable_defaults_safe():
+def test_chat_predict_unparseable_fails_closed():
     g = OpenAIChatGuard("gpt-4o-mini")
     g._client = _chat_client("not json at all")
-    assert g.predict("x").decision == Decision.SAFE  # never inflate FPR on junk output
+    # Fail CLOSED on junk output — the SAME policy DecoderGuard uses, so identical failure modes
+    # produce identical labels and the guards are comparable (a guard that never emits a valid
+    # verdict must not manufacture a perfect FPR by silently passing everything).
+    v = g.predict("x")
+    assert v.decision == Decision.UNSAFE and v.score == 1.0
 
 
 def test_chat_predict_content_policy_refusal_is_unsafe():
