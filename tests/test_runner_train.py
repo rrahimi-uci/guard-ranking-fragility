@@ -232,3 +232,34 @@ def test_benchmark_test_merges_into_scoreboard(tmp_path, monkeypatch):
     runner.evaluate_and_record("t1", benchmarks=["beavertails"], per_class=2, merge_scoreboard=True)
     blob = json.load(open(tmp_path / "r.json"))
     assert "qwen3-0.6b-sft" in blob["results"]["beavertails"]   # distinct per model×technique
+
+
+def test_benchmark_test_dumps_predictions_for_ensembling(tmp_path, monkeypatch):
+    import agent_bouncer.evaluation.benchmarks as B
+    import agent_bouncer.evaluation.ensembles as E
+    from agent_bouncer.core.schema import Decision, Surface, Verdict
+
+    class FakeGuard:
+        name = "fake"
+
+        def predict(self, text, *, surface=Surface.USER_PROMPT):
+            return Verdict(decision=Decision.UNSAFE if "bad" in text else Decision.SAFE,
+                           score=0.9 if "bad" in text else 0.1, surface=surface, latency_ms=1.0)
+
+    train_exp = {"model_key": "qwen3-0.6b", "technique": "grpo", "version": "v1",
+                 "base_hf_id": "hf", "output_dir": "/o", "params": {"arch": "decoder"},
+                 "data": {"train": str(tmp_path / "none.jsonl")}}
+    monkeypatch.setattr(runner.X, "get", lambda i: train_exp)
+    monkeypatch.setattr(runner.X, "record", lambda e: None)
+    monkeypatch.setattr(runner, "_load_guard", lambda *a, **k: FakeGuard())
+    monkeypatch.setattr(runner, "RESULTS_JSON", str(tmp_path / "r.json"))
+    monkeypatch.setattr(E, "PRED_DIR", str(tmp_path / "preds"))   # don't touch real outputs/
+    monkeypatch.setattr(B, "load_benchmark",
+                        lambda b, balanced=True, per_class=40: [{"text": "bad", "label": "unsafe"},
+                                                                {"text": "ok", "label": "safe"}])
+    monkeypatch.setattr(B, "BENCHMARKS", {"beavertails": object()})
+    runner.evaluate_and_record("t1", benchmarks=["beavertails"], per_class=2, merge_scoreboard=True)
+    # the tested model is now a loadable ensemble member with per-sample rows
+    preds = E.load_predictions(str(tmp_path / "preds"))
+    assert "qwen3-0.6b-grpo" in preds
+    assert preds["qwen3-0.6b-grpo"]["beavertails"] == [[1, 1, 0.9, 1.0], [0, 0, 0.1, 1.0]]

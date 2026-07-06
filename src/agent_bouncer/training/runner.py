@@ -323,8 +323,13 @@ def _warm_guard_for_parallel(guard) -> None:
 
 def score_guard(guard, benchmarks: list[str], *, per_class: int = 40,
                 train_recs: list[dict] | None = None, loader=None,
-                workers: int = 1, fuzzy_leakage: bool = False) -> tuple[dict, dict]:
+                workers: int = 1, fuzzy_leakage: bool = False,
+                predictions_out: dict | None = None) -> tuple[dict, dict]:
     """Score a guard over benchmarks with leakage guards; returns (metrics, leakage).
+
+    If ``predictions_out`` is provided, it's filled with ``{benchmark: [[y, u, score, ms], …]}``
+    per-sample rows (aligned to the leakage-filtered subset) so the result can be reused as an
+    ensemble member.
 
     ``loader(bench)`` returns that benchmark's records (defaults to the balanced registry
     loader). Pure w.r.t. the guard object, so tests can pass a fake guard + loader.
@@ -396,6 +401,12 @@ def score_guard(guard, benchmarks: list[str], *, per_class: int = 40,
         m = compute_metrics(gold, [v.decision for v in verdicts], lat).to_dict()
         m["roc_auc"] = (m["recall"] + 1.0 - m["fpr_on_benign"]) / 2.0  # single-operating-point AUC
         metrics[bench] = m
+        if predictions_out is not None:
+            predictions_out[bench] = [
+                [1 if g == Decision.UNSAFE else 0, 1 if v.decision == Decision.UNSAFE else 0,
+                 round(float(v.score), 4), round(float(v.latency_ms or 0.0), 3)]
+                for g, v in zip(gold, verdicts, strict=True)
+            ]
         # format kept in sync with the Workbench's live test-result parser (_TEST_RE)
         print(f"  [{bench}] {getattr(guard, 'name', '?')}: F1={m['f1']:.3f} P={m['precision']:.3f} "
               f"R={m['recall']:.3f} FPR={m['fpr_on_benign']:.3f} p90={m['latency_p90_ms']:.0f}ms "
@@ -454,13 +465,17 @@ def evaluate_and_record(train_exp_id: str, *, benchmarks: list[str] | None = Non
         metrics, leakage = score_guard(guard, benchmarks, train_recs=train_recs,
                                        loader=lambda b: test_recs or [], workers=worker_count,
                                        fuzzy_leakage=True)
+        preds_out = None
     else:
         from agent_bouncer.evaluation.benchmarks import BENCHMARKS, load_benchmark
         benchmarks = benchmarks or list(BENCHMARKS)
+        # when merging to the leaderboard, also capture per-sample predictions so the model
+        # becomes an ensemble member (aligned to the shared benchmark subset).
+        preds_out = {} if merge_scoreboard else None
         metrics, leakage = score_guard(
             guard, benchmarks, per_class=per_class, train_recs=train_recs,
             loader=lambda b: load_benchmark(b, balanced=True, per_class=per_class),
-            workers=worker_count, fuzzy_leakage=True,
+            workers=worker_count, fuzzy_leakage=True, predictions_out=preds_out,
         )
     macro = macro_average(metrics)
     exp = X.Experiment(
@@ -481,9 +496,33 @@ def evaluate_and_record(train_exp_id: str, *, benchmarks: list[str] | None = Non
     # the same base model are distinct rows.
     if merge_scoreboard and metrics and test_set is None:
         technique = train_exp.get("technique", "") or "sft"
-        _merge_scoreboard(f"{model_key}-{technique}", "", metrics)
+        row = f"{model_key}-{technique}"
+        _merge_scoreboard(row, "", metrics)
+        if preds_out:   # also make the model available as an ensemble member
+            _dump_test_predictions(row, preds_out)
     print(f"[test] recorded experiment {exp.id} (macro F1 {macro.get('f1')})", flush=True)
     return exp.to_dict()
+
+
+def _dump_test_predictions(name: str, per_bench_rows: dict) -> None:
+    """Merge a tested guard's per-sample predictions into outputs/predictions/<name>.json so
+    the ensemble builder can use it as a member (atomic write)."""
+    import json
+
+    from agent_bouncer.evaluation.ensembles import PRED_DIR
+    os.makedirs(PRED_DIR, exist_ok=True)
+    path = os.path.join(PRED_DIR, f"{name}.json")
+    blob = {}
+    if os.path.exists(path):
+        try:
+            blob = json.load(open(path))
+        except (ValueError, OSError):
+            blob = {}
+    blob.update(per_bench_rows)
+    fd, tmp = tempfile.mkstemp(dir=PRED_DIR, suffix=".tmp")
+    with os.fdopen(fd, "w") as fh:
+        json.dump(blob, fh)
+    os.replace(tmp, path)
 
 
 def _merge_scoreboard(guard_name: str, params: str, metrics: dict) -> None:
