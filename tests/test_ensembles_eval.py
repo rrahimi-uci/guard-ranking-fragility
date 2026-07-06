@@ -240,6 +240,21 @@ def test_optimize_cascade_needs_two_models():
         optimize_cascade({"only": {"b": [_krow(1, 1, 0.9, 10, "t1")]}})
 
 
+def test_optimize_cascade_skips_unscorable_stale_member():
+    """A stale single-benchmark dump with trivial perfect recall+precision (e.g. 2 samples) is
+    auto-picked first but shares no ALIGNABLE samples with the real models, so the optimizer must
+    fall through to a valid pair instead of raising 'mismatched samples on every shared benchmark'."""
+    # stale strictly out-ranks both real models on recall AND precision (1.0 vs 0.5) → picked first
+    stale = {"b1": [_krow(1, 1, 0.0, 1, "z1"), _krow(0, 0, 0.0, 1, "z2")]}
+    m1 = {"b1": [_krow(1, 1, 0.9, 10, "t1"), _krow(1, 0, 0.3, 10, "t2"),
+                 _krow(0, 1, 0.6, 10, "t3"), _krow(0, 0, 0.1, 10, "t4")]}   # recall .5, precision .5
+    m2 = {"b1": [_krow(1, 1, 0.8, 20, "t1"), _krow(1, 0, 0.3, 20, "t2"),
+                 _krow(0, 1, 0.5, 20, "t3"), _krow(0, 0, 0.1, 20, "t4")]}   # recall .5, precision .5
+    res = optimize_cascade({"stale-tiny": stale, "m1": m1, "m2": m2})
+    assert res["stage1"] != "stale-tiny" and res["stage2"] != "stale-tiny"
+    assert res["per_bench"]   # a scorable cascade over the real models was found
+
+
 # --------------------------------------------------------- AB-011: eval_tuned keyed alignment
 def test_eval_tuned_aligns_reordered_keyed_members():
     from eval_ensembles import eval_tuned

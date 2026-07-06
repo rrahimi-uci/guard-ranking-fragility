@@ -228,8 +228,12 @@ def evaluate_cascade(preds: dict[str, dict], stage1: str, stage2: str) -> dict[s
 
 
 def optimize_cascade(preds: dict[str, dict], *, pool: Sequence[str] | None = None) -> dict:
-    """Build the natural recall→precision cascade: pick the highest-recall model as the gate and the
-    highest-precision (different) model as the filter, from ``pool`` (default every guard)."""
+    """Build the natural recall→precision cascade: the highest-recall model as the gate and the
+    highest-precision (different) model as the filter, from ``pool`` (default every guard).
+
+    Robust to unscorable pairs: candidate gates (recall-desc) × filters (precision-desc) are tried
+    until one yields a scorable cascade, so a stale/tiny prediction dump that shares no alignable
+    benchmark with the rest can't wedge the whole search."""
     allowed = set(pool) if pool is not None else None
     names = sorted(n for n in preds if allowed is None or n in allowed)
     if len(names) < 2:
@@ -238,14 +242,24 @@ def optimize_cascade(preds: dict[str, dict], *, pool: Sequence[str] | None = Non
             f"{' in the selected pool' if allowed is not None else ''} — test more models first"
         )
     macro = {n: _member_macro(preds, n) for n in names}
-    stage1 = max(names, key=lambda n: macro[n].get("recall") or 0.0)          # gate: max recall
-    stage2 = max((n for n in names if n != stage1),                            # filter: max precision
-                 key=lambda n: macro[n].get("precision") or 0.0)
-    per_bench = evaluate_cascade(preds, stage1, stage2)
-    return {"stage1": stage1, "stage2": stage2, "per_bench": per_bench,
-            "macro": macro_average(per_bench),
-            "stage1_recall": macro[stage1].get("recall"),
-            "stage2_precision": macro[stage2].get("precision")}
+    by_recall = sorted(names, key=lambda n: macro[n].get("recall") or 0.0, reverse=True)
+    by_prec = sorted(names, key=lambda n: macro[n].get("precision") or 0.0, reverse=True)
+    for stage1 in by_recall:                       # gate: prefer highest recall
+        for stage2 in by_prec:                     # filter: prefer highest precision
+            if stage2 == stage1:
+                continue
+            try:
+                per_bench = evaluate_cascade(preds, stage1, stage2)
+            except ValueError:
+                continue                           # this pair shares no alignable benchmark; try next
+            return {"stage1": stage1, "stage2": stage2, "per_bench": per_bench,
+                    "macro": macro_average(per_bench),
+                    "stage1_recall": macro[stage1].get("recall"),
+                    "stage2_precision": macro[stage2].get("precision")}
+    raise ValueError(
+        "no gate/filter pair shares alignable benchmark samples — re-test the models on the SAME "
+        "benchmarks (and remove stale single-benchmark prediction dumps) so a cascade can be scored"
+    )
 
 
 # Strategies that ignore the threshold (no sweep needed).
