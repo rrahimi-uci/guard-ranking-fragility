@@ -114,3 +114,29 @@ input — while precision rises toward the filter's. The Workbench's **⛓ Recal
 button auto-picks the highest-recall small model as the gate and the highest-precision one as the
 filter, scores the pair offline, and adds an **`Cascade · recall→precision`** row to the leaderboard so
 you can compare its P / R / F1 / AUC / p50 / p90 directly against the GPT baselines.
+
+> **Note — an AND-cascade trades recall for precision; it does not raise both.** Final `unsafe = gate AND filter`,
+> so `recall(cascade) ≤ min(recall of the two stages)`. It boosts precision (and, if the gate cheaply clears
+> easy negatives, cuts cost) but can't lift recall above the weaker stage. Use it when you want fewer false
+> positives; use `union` when you want higher recall.
+
+### Confidence-deferral cascade
+
+A different two-stage design that is *not* recall-capped: a cheap **decider** handles the inputs it's
+confident about (score ≤ `low` → safe, score ≥ `high` → unsafe) and **defers only the uncertain middle
+band** to an **expert** model. Final latency = decider + (defer-rate × expert), and because it's a router
+(not an AND vote) it can improve the whole operating point when the decider has a usable confidence signal.
+The **🔀 Confidence-deferral cascade** button auto-searches decider × expert × band for the best macro-F1 and
+adds a **`Cascade · confidence-deferral`** row (with its defer-rate). With binary 0/1 scores nothing lands in
+the band and it degenerates to the decider alone — a continuous-confidence model (the encoder, or a calibrated
+head) is what makes it pay off.
+
+### Diversity report — *can ensembling even help?*
+
+Before trusting any combiner, the **🔬 Diversity report** answers whether the members are complementary at
+all. It aligns them by sample identity and reports per-model accuracy, mean pairwise **disagreement**, mean
+**error-correlation** (Yule's Q), and the **oracle ceiling** — the accuracy you'd reach if you could pick the
+right member for every sample. If the oracle barely exceeds the best single model (small *headroom*), the
+members are **redundant** and no combiner will help — you need more diverse or stronger base models. Large
+headroom with low error-correlation means ensembling *should* pay off (and points you at soft/router combiners
+rather than a hard AND/OR vote).

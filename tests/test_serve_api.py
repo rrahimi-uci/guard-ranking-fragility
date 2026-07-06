@@ -473,6 +473,49 @@ def test_cascade_auto_picks_recall_gate_and_precision_filter(monkeypatch, tmp_pa
     assert meta["strategy"] == "cascade" and meta["stage1"] == "qwen3-0.6b-sft"
 
 
+def _cascade_preds():
+    from agent_bouncer.evaluation.ensembles import sample_key
+
+    def kr(y, u, sc, ms, t):
+        return [y, u, sc, ms, sample_key(t)]
+
+    # a = cheap decider with an uncertain (0.5) middle; b = expert that resolves it
+    return {
+        "qwen3-0.6b-sft": {"b": [kr(1, 1, .9, 10, "t1"), kr(1, 0, .5, 10, "t2"),
+                                 kr(0, 0, .1, 10, "t3"), kr(0, 1, .5, 10, "t4")]},
+        "smollm2-1.7b-sft": {"b": [kr(1, 1, .8, 50, "t1"), kr(1, 1, .8, 50, "t2"),
+                                   kr(0, 0, .2, 50, "t3"), kr(0, 0, .2, 50, "t4")]},
+    }
+
+
+def test_deferral_endpoint_builds_and_merges(monkeypatch, tmp_path):
+    monkeypatch.setattr(api, "PRED_DIR", _write_preds(tmp_path, _cascade_preds()))
+    monkeypatch.setattr(api, "RESULTS_JSON", tmp_path / "results.json")
+    monkeypatch.setattr(api, "CURVES_JSON", tmp_path / "curves.json")
+    r = client.post("/api/ensemble/deferral", json={"scope": "small"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["stage1"] != d["stage2"] and 0.0 <= d["defer_rate"] <= 1.0
+    import json
+    meta = json.loads((tmp_path / "results.json").read_text())["ensembles"]["ensemble-deferral"]
+    assert meta["strategy"] == "deferral" and "defer_rate" in meta
+
+
+def test_diversity_endpoint_reports_verdict(monkeypatch, tmp_path):
+    monkeypatch.setattr(api, "PRED_DIR", _write_preds(tmp_path, _cascade_preds()))
+    r = client.post("/api/ensemble/diversity", json={"scope": "small"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["verdict"] in ("redundant", "some-complementarity", "diverse")
+    assert "oracle_accuracy" in d and "headroom" in d and d["n_samples"] > 0
+
+
+def test_deferral_scope_typo_is_rejected(monkeypatch, tmp_path):
+    monkeypatch.setattr(api, "PRED_DIR", tmp_path / "empty")
+    assert client.post("/api/ensemble/deferral", json={"scope": "nope"}).status_code == 422
+    assert client.post("/api/ensemble/diversity", json={"scope": "nope"}).status_code == 422
+
+
 def test_report_404_when_no_results(monkeypatch, tmp_path):
     monkeypatch.setattr(api, "RESULTS_JSON", tmp_path / "missing.json")
     assert client.get("/api/report").status_code == 404

@@ -83,6 +83,8 @@ def _label(guard: str) -> str:
         return f"Optimized · {_OBJ_LABEL[m.group(1)]}"
     if guard.startswith("ensemble-cascade"):
         return "Cascade · recall→precision"
+    if guard.startswith("ensemble-deferral"):
+        return "Cascade · confidence-deferral"
     if guard.startswith("ensemble-"):
         return "Ensemble · " + guard[len("ensemble-"):]
     return guard
@@ -111,7 +113,7 @@ def _composition(guard: str, ensembles: dict) -> str:
     e = ensembles.get(guard)
     if not e or not e.get("members"):
         return ""
-    if e.get("strategy") == "cascade" and e.get("stage1") and e.get("stage2"):
+    if e.get("strategy") in ("cascade", "deferral") and e.get("stage1") and e.get("stage2"):
         text = f"{_label(e['stage1'])} → {_label(e['stage2'])}"
     else:
         text = " + ".join(_label(m) for m in e["members"])

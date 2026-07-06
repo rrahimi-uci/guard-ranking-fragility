@@ -365,6 +365,8 @@
           <button type="button" class="ghostbtn" id="ensOptimize" style="flex:0 0 auto;padding:11px 16px">⚡ Auto-optimize (find best ensemble)</button>
           <button type="button" class="ghostbtn" id="ensOptimizeAll" style="flex:0 0 auto;padding:11px 16px">🎛 Optimize all objectives <span class="sub">balanced · F1 · min-FPR · cascade, from small models</span></button>
           <button type="button" class="ghostbtn" id="ensCascade" style="flex:0 0 auto;padding:11px 16px">⛓ Recall→precision cascade <span class="sub">high-recall gate → high-precision filter</span></button>
+          <button type="button" class="ghostbtn" id="ensDeferral" style="flex:0 0 auto;padding:11px 16px">🔀 Confidence-deferral cascade <span class="sub">cheap decider → expert on uncertain cases</span></button>
+          <button type="button" class="ghostbtn" id="ensDiversity" style="flex:0 0 auto;padding:11px 16px">🔬 Diversity report <span class="sub">can ensembling even help?</span></button>
         </div>
         <p class="footer-note" id="ensNote"></p>
         <div id="ensCandidates" style="margin-top:8px"></div>
@@ -863,12 +865,14 @@ const OBJ_LABEL={balanced:'balanced',f1:'max-F1',fpr:'min-FPR'};
 function lbLabel(g){const k=gLabel(g);if(k!==g)return k;let m;
   if(m=g.match(/^openai-gpt-([\d.]+)-(low|medium|high)$/))return `GPT-${m[1]} ${m[2]}`;
   if(m=g.match(/^ensemble-best-(balanced|f1|fpr)$/))return `Optimized · ${OBJ_LABEL[m[1]]}`;
-  if(g==='ensemble-cascade'||g.startsWith('ensemble-cascade'))return 'Cascade · recall→precision';
+  if(g.startsWith('ensemble-cascade'))return 'Cascade · recall→precision';
+  if(g.startsWith('ensemble-deferral'))return 'Cascade · confidence-deferral';
   if(g.startsWith('ensemble-'))return 'Ensemble · '+g.slice(9);
   return g;}
 function ensComposition(g){const e=(RESULTS.ensembles||{})[g];if(!e||!e.members)return '';
   let who;
   if(e.strategy==='cascade'&&e.stage1&&e.stage2)who=`${lbLabel(e.stage1)} → ${lbLabel(e.stage2)}`;
+  else if(e.strategy==='deferral'&&e.stage1&&e.stage2)who=`${lbLabel(e.stage1)} → ${lbLabel(e.stage2)} · defer ${e.defer_rate!=null?Math.round(e.defer_rate*100)+'%':'—'}`;
   else who=e.members.map(lbLabel).join(' + ')+(e.strategy?` · ${e.strategy}${e.threshold!=null&&e.strategy==='mean'?' @'+e.threshold:''}`:'');
   return `<div class="sub" style="font-weight:400;font-size:10.5px;margin-top:2px;color:var(--muted)">${who}</div>`;}
 function lbParams(g){const P={'keyword-baseline':'0','encoder-distilbert':'66M','encoder-modernbert-large':'395M','modernbert-large':'395M','decoder-sft-0.6B':'0.6B','decoder-grpo-0.6B':'0.6B','decoder-sft-1.7B':'1.7B'};
@@ -984,6 +988,45 @@ async function buildCascade(){
   }catch(e){toast('cascade failed');}
   finally{btn.disabled=false;btn.innerHTML=orig;}
 }
+async function buildDeferral(){
+  const btn=$('#ensDeferral'),orig=btn.innerHTML;btn.disabled=true;btn.textContent='⏳ Building deferral cascade…';
+  try{
+    const r=await fetch('/api/ensemble/deferral',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope:'small'})});
+    let d={};try{d=await r.json();}catch(e){}
+    if(!r.ok){toast(d.detail||'deferral failed');$('#ensNote').innerHTML=`⚠️ ${d.detail||'Could not build a deferral cascade — test at least 2 small models first.'}`;return;}
+    await loadResults();renderLeaderboard();renderROC();await loadEnsembleMembers();renderEnsembleBuilder();
+    const M=d.macro||{},dr=d.defer_rate!=null?Math.round(d.defer_rate*100):null;
+    $('#ensCandidates').innerHTML='<div class="sub" style="margin:6px 0 4px">Confidence-deferral cascade (small models) — added to the leaderboard</div>'+
+      '<table><thead><tr><th>Role</th><th>Model</th></tr></thead><tbody>'+
+      `<tr><td>decider (cheap)</td><td class="name">${lbLabel(d.stage1)}</td></tr>`+
+      `<tr><td>expert (uncertain band ${fmt(d.low,2)}–${fmt(d.high,2)})</td><td class="name">${lbLabel(d.stage2)}</td></tr>`+
+      '</tbody></table>';
+    const degen=dr===0?` <b style="color:var(--warn,#f5a524)">⚠ defer-rate 0%</b> — the decider's scores are binary (0/1), so nothing lands in the uncertain band and the cascade equals the decider alone. Deferral pays off only with a continuous-confidence model (e.g. the encoder).`:` The expert ran on only <b>${dr}%</b> of inputs (the uncertain ones), so latency stays low.`;
+    $('#ensNote').innerHTML=`✓ Deferral <b>${lbLabel(d.stage1)} → ${lbLabel(d.stage2)}</b> — P ${fmt(M.precision)} · R ${fmt(M.recall)} · F1 ${fmt(M.f1)} · AUC ${fmt(M.roc_auc)} · FPR ${fmt(M.fpr_on_benign)} · p50 ${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'}.`+degen;
+    toast('✓ Deferral cascade added');
+  }catch(e){toast('deferral failed');}
+  finally{btn.disabled=false;btn.innerHTML=orig;}
+}
+async function showDiversity(){
+  const btn=$('#ensDiversity'),orig=btn.innerHTML;btn.disabled=true;btn.textContent='⏳ Analyzing…';
+  try{
+    const members=[...(ensPick||[])];  // selected members, else whole small-model pool (server default)
+    const r=await fetch('/api/ensemble/diversity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({members,scope:'small'})});
+    let d={};try{d=await r.json();}catch(e){}
+    if(!r.ok){toast(d.detail||'diversity failed');$('#ensNote').innerHTML=`⚠️ ${d.detail||'Need at least 2 members with shared benchmark predictions.'}`;return;}
+    const VC={redundant:'#f87171','some-complementarity':'#f5a524',diverse:'#34d399'};
+    const rows=(d.members||[]).map(m=>`<tr><td class="name">${lbLabel(m.name)}</td><td class="mono">${fmt(m.accuracy)}</td></tr>`).join('');
+    $('#ensCandidates').innerHTML=`<div class="sub" style="margin:6px 0 4px">Diversity / complementarity — ${d.n_samples} aligned samples</div>`+
+      '<table><thead><tr><th>Model</th><th>Accuracy ↑</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      `<div style="margin-top:8px;font-size:12px;line-height:1.5">`+
+      `<div>Best single accuracy <b>${fmt(d.best_single_accuracy)}</b> · <b>oracle ceiling ${fmt(d.oracle_accuracy)}</b> (pick-the-right-member) · headroom <b>${fmt(d.headroom)}</b></div>`+
+      `<div>Mean pairwise disagreement <b>${fmt(d.mean_disagreement)}</b> · mean error-correlation (Yule's Q) <b>${fmt(d.mean_error_correlation)}</b> · benign all-flag rate <b>${fmt(d.benign_all_flag_rate)}</b></div>`+
+      `<div style="margin-top:6px;padding:8px 10px;border-radius:8px;background:rgba(127,127,127,.08)"><b style="color:${VC[d.verdict]||'inherit'}">${(d.verdict||'').toUpperCase()}</b> — ${d.explanation||''}</div></div>`;
+    $('#ensNote').innerHTML=`🔬 Diversity verdict: <b style="color:${VC[d.verdict]||'inherit'}">${d.verdict}</b> (oracle headroom ${fmt(d.headroom)} over the best single model).`;
+    toast('✓ Diversity report ready');
+  }catch(e){toast('diversity failed');}
+  finally{btn.disabled=false;btn.innerHTML=orig;}
+}
 async function optimizeAllEnsembles(){
   const btn=$('#ensOptimizeAll'),orig=btn.innerHTML;btn.disabled=true;btn.textContent='⏳ Optimizing all objectives…';
   try{
@@ -1071,7 +1114,7 @@ async function init(){
   $$('#nav a').forEach(a=>a.onclick=e=>{e.preventDefault();switchView(a.dataset.view);});
   $('#trainBtn').onclick=runTrain;$('#testBtn').onclick=runTest;$('#buildBtn').onclick=buildDataset;
   $('#lbSort').onchange=renderLeaderboard;$('#lbReport').onclick=generateReport;
-  $('#ensStrategy').onchange=syncEnsThresh;$('#ensBuild').onclick=buildEnsemble;$('#ensOptimize').onclick=optimizeEnsemble;$('#ensOptimizeAll').onclick=optimizeAllEnsembles;$('#ensCascade').onclick=buildCascade;
+  $('#ensStrategy').onchange=syncEnsThresh;$('#ensBuild').onclick=buildEnsemble;$('#ensOptimize').onclick=optimizeEnsemble;$('#ensOptimizeAll').onclick=optimizeAllEnsembles;$('#ensCascade').onclick=buildCascade;$('#ensDeferral').onclick=buildDeferral;$('#ensDiversity').onclick=showDiversity;
   $('#tBenchAll').onclick=()=>{benchPick=new Set((CONFIG.benchmarks||[]).map(b=>b.name));renderTestBenchmarks();};
   $('#tBenchNone').onclick=()=>{benchPick=new Set();renderTestBenchmarks();};
   $('#tVersAll').onclick=()=>selectAllVersions(true);$('#tVersNone').onclick=()=>selectAllVersions(false);

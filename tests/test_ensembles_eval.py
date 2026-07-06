@@ -255,6 +255,73 @@ def test_optimize_cascade_skips_unscorable_stale_member():
     assert res["per_bench"]   # a scorable cascade over the real models was found
 
 
+# --------------------------------------------------------- confidence-deferral cascade
+from agent_bouncer.evaluation.ensembles import (  # noqa: E402
+    diversity_report,
+    evaluate_deferral,
+    optimize_deferral,
+)
+
+
+def test_deferral_confident_by_stage1_uncertain_to_stage2():
+    """stage1 decides confident cases (score outside the band); uncertain (in-band) scores defer to
+    stage2, which can RESCUE a wrong stage1 call. Here stage1 mislabels t2 safe (score 0.5) but the
+    expert flags it → cascade is perfect."""
+    s1 = {"b": [_krow(1, 1, 0.9, 100, "t1"), _krow(1, 0, 0.5, 100, "t2"),
+                _krow(0, 0, 0.1, 100, "t3"), _krow(0, 1, 0.5, 100, "t4")]}
+    s2 = {"b": [_krow(1, 1, 0.8, 500, "t1"), _krow(1, 1, 0.8, 500, "t2"),
+                _krow(0, 0, 0.2, 500, "t3"), _krow(0, 0, 0.2, 500, "t4")]}
+    m = evaluate_deferral({"a": s1, "b": s2}, "a", "b", low=0.4, high=0.6)["b"]
+    assert m["precision"] == 1.0 and m["recall"] == 1.0
+    assert m["defer_rate"] == 0.5                       # t2, t4 were in the uncertain band
+    # deferred samples pay both models' latency (600), confident ones pay only stage1 (100)
+    assert m["latency_p50_ms"] == 350.0                 # median of {100,100,600,600}
+
+
+def test_deferral_degenerates_to_stage1_on_binary_scores():
+    """With binary 0/1 scores nothing lands in the open band → defer_rate 0 → cascade == stage1."""
+    s1 = {"b": [_krow(1, 1, 1.0, 10, "t1"), _krow(0, 0, 0.0, 10, "t2")]}
+    s2 = {"b": [_krow(1, 0, 0.0, 99, "t1"), _krow(0, 1, 1.0, 99, "t2")]}  # opposite, never consulted
+    m = evaluate_deferral({"a": s1, "b": s2}, "a", "b", low=0.3, high=0.7)["b"]
+    assert m["defer_rate"] == 0.0 and m["precision"] == 1.0 and m["recall"] == 1.0
+
+
+def test_optimize_deferral_returns_valid_config():
+    a = {"b": [_krow(1, 1, 0.9, 10, "t1"), _krow(1, 0, 0.5, 10, "t2"),
+               _krow(0, 0, 0.1, 10, "t3"), _krow(0, 1, 0.5, 10, "t4")]}
+    b = {"b": [_krow(1, 1, 0.8, 20, "t1"), _krow(1, 1, 0.8, 20, "t2"),
+               _krow(0, 0, 0.2, 20, "t3"), _krow(0, 0, 0.2, 20, "t4")]}
+    res = optimize_deferral({"a": a, "b": b})
+    assert res["stage1"] != res["stage2"] and 0.0 <= res["defer_rate"] <= 1.0 and res["per_bench"]
+
+
+# --------------------------------------------------------- diversity / complementarity report
+def test_diversity_flags_complementary_members():
+    # a and b make DIFFERENT errors → high oracle headroom → "diverse"
+    a = {"b": [_krow(1, 1, 0.9, 10, "t1"), _krow(1, 0, 0.1, 10, "t2"),
+               _krow(0, 0, 0.1, 10, "t3"), _krow(0, 1, 0.9, 10, "t4")]}   # wrong on t2, t4
+    b = {"b": [_krow(1, 0, 0.1, 10, "t1"), _krow(1, 1, 0.9, 10, "t2"),
+               _krow(0, 1, 0.9, 10, "t3"), _krow(0, 0, 0.1, 10, "t4")]}   # wrong on t1, t3
+    rep = diversity_report({"a": a, "b": b}, ["a", "b"])
+    assert rep["oracle_accuracy"] == 1.0 and rep["headroom"] > 0.1 and rep["verdict"] == "diverse"
+
+
+def test_diversity_flags_redundant_members():
+    # identical decisions → zero headroom → "redundant"
+    a = {"b": [_krow(1, 1, 0.9, 10, "t1"), _krow(0, 0, 0.1, 10, "t2")]}
+    rep = diversity_report({"a": a, "b": dict(a)}, ["a", "b"])
+    assert rep["headroom"] == 0.0 and rep["verdict"] == "redundant"
+
+
+def test_diversity_drops_unalignable_outlier():
+    """A stale single-benchmark dump that can't align with the rest is dropped, not fatal."""
+    a = {"b": [_krow(1, 1, 0.9, 10, "t1"), _krow(0, 0, 0.1, 10, "t2"), _krow(1, 1, 0.8, 10, "t3")]}
+    b = {"b": [_krow(1, 0, 0.1, 10, "t1"), _krow(0, 1, 0.9, 10, "t2"), _krow(1, 1, 0.7, 10, "t3")]}
+    stale = {"b": [_krow(1, 1, 0.0, 1, "zz")]}   # 1 sample, disjoint key → unalignable
+    rep = diversity_report({"a": a, "b": b, "stale": stale}, ["a", "b", "stale"])
+    assert "stale" in rep["dropped"] and {m["name"] for m in rep["members"]} == {"a", "b"}
+
+
 # --------------------------------------------------------- AB-011: eval_tuned keyed alignment
 def test_eval_tuned_aligns_reordered_keyed_members():
     from eval_ensembles import eval_tuned

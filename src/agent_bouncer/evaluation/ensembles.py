@@ -262,6 +262,200 @@ def optimize_cascade(preds: dict[str, dict], *, pool: Sequence[str] | None = Non
     )
 
 
+def evaluate_deferral(preds: dict[str, dict], stage1: str, stage2: str,
+                      *, low: float = 0.4, high: float = 0.6) -> dict[str, dict]:
+    """Score a CONFIDENCE-DEFERRAL cascade: a cheap first model (``stage1``) decides the inputs it's
+    confident about (score ≤ ``low`` → safe, score ≥ ``high`` → unsafe) and DEFERS only the uncertain
+    middle band (``low`` < score < ``high``) to an expert (``stage2``). Unlike the AND cascade this is
+    a router — recall isn't capped by either stage — so it can improve the operating point when the
+    cheap model has a calibrated confidence signal. Per-sample latency = stage1 + (stage2 only on the
+    deferred fraction); each cell records ``defer_rate``.
+
+    NOTE: with binary 0/1 scores (the current decoder/OpenAI judges) nothing falls in the open band,
+    so it degenerates to stage1 (``defer_rate`` = 0) — a continuous-score model (the encoder, or a
+    calibrated head) is what makes deferral pay off."""
+    for m in (stage1, stage2):
+        if m not in preds:
+            raise ValueError(f"no dumped predictions for {m!r} — test it on the benchmarks first")
+    if stage1 == stage2:
+        raise ValueError("deferral needs two different models (a cheap decider + an expert)")
+    benches = set(preds[stage1]).intersection(preds[stage2])
+    if not benches:
+        raise ValueError("the decider and expert share no common benchmark")
+
+    out: dict[str, dict] = {}
+    for bench in sorted(benches):
+        rows = _align_rows([preds[stage1][bench], preds[stage2][bench]])
+        if rows is None:
+            continue
+        r1, r2 = rows
+        gold, pred, lat, scores, deferred = [], [], [], [], 0
+        for a, b in zip(r1, r2, strict=True):
+            gold.append(Decision.UNSAFE if a[0] == 1 else Decision.SAFE)
+            s1 = a[2]
+            if low < s1 < high:                       # uncertain → defer to the expert
+                unsafe, sc = bool(b[1]), b[2]
+                deferred += 1
+                ms = a[3] + b[3]
+            else:                                     # confident → the cheap model decides
+                unsafe, sc, ms = s1 >= high, s1, a[3]
+            pred.append(Decision.UNSAFE if unsafe else Decision.SAFE)
+            scores.append(sc)
+            lat.append(ms)
+        metrics = compute_metrics(gold, pred, lat).to_dict()
+        metrics["roc_auc"] = _auc(gold, scores, metrics)
+        metrics["defer_rate"] = round(deferred / len(r1), 4) if r1 else 0.0
+        out[bench] = metrics
+    if not out:
+        raise ValueError("decider and expert have mismatched samples on every shared benchmark")
+    return out
+
+
+_DEFERRAL_BANDS = ((0.4, 0.6), (0.3, 0.7), (0.25, 0.75), (0.2, 0.8), (0.5, 0.5))
+
+
+def optimize_deferral(preds: dict[str, dict], *, pool: Sequence[str] | None = None) -> dict:
+    """Search (cheap decider × expert × confidence band) for the deferral cascade with the best
+    macro-F1 (latency as tiebreak), from ``pool`` (default every guard)."""
+    allowed = set(pool) if pool is not None else None
+    names = sorted(n for n in preds if allowed is None or n in allowed)
+    if len(names) < 2:
+        raise ValueError(
+            f"need at least 2 models with dumped predictions to build a deferral cascade; have "
+            f"{len(names)}{' in the selected pool' if allowed is not None else ''} — test more first"
+        )
+    best = None
+    for s1 in names:
+        for s2 in names:
+            if s1 == s2:
+                continue
+            for lo, hi in _DEFERRAL_BANDS:
+                try:
+                    pb = evaluate_deferral(preds, s1, s2, low=lo, high=hi)
+                except ValueError:
+                    continue
+                mac = macro_average(pb)
+                dr = round(sum(pb[b]["defer_rate"] for b in pb) / len(pb), 4)
+                key = (mac.get("f1") or 0.0, -(mac.get("latency_p50_ms") or 0.0))
+                if best is None or key > best[0]:
+                    best = (key, s1, s2, lo, hi, pb, mac, dr)
+    if best is None:
+        raise ValueError("no decider/expert pair shares alignable benchmark samples")
+    _, s1, s2, lo, hi, pb, mac, dr = best
+    return {"stage1": s1, "stage2": s2, "low": lo, "high": hi,
+            "per_bench": pb, "macro": mac, "defer_rate": dr}
+
+
+def _q_statistic(correct_a: list[int], correct_b: list[int]) -> float:
+    """Yule's Q on two models' per-sample correctness. +1 = they make the SAME errors (redundant),
+    0 = independent, negative = complementary (a good ensembling signal)."""
+    n11 = n00 = n10 = n01 = 0
+    for a, b in zip(correct_a, correct_b, strict=True):
+        if a and b:
+            n11 += 1
+        elif not a and not b:
+            n00 += 1
+        elif a and not b:
+            n10 += 1
+        else:
+            n01 += 1
+    denom = n11 * n00 + n01 * n10
+    return (n11 * n00 - n01 * n10) / denom if denom else 0.0
+
+
+def diversity_report(preds: dict[str, dict], members: Sequence[str]) -> dict:
+    """Quantify whether ``members`` are diverse enough for ensembling to help. Aligns them by sample
+    identity across shared benchmarks, then reports per-model accuracy, mean pairwise disagreement +
+    error-correlation (Yule's Q), the ORACLE ceiling (accuracy if you could pick the right member
+    per sample), and how often every member over-blocks the SAME benign prompt. Returns a verdict."""
+    members = list(members)
+    if len(members) < 2:
+        raise ValueError("need at least 2 members to assess diversity")
+    missing = [m for m in members if m not in preds]
+    if missing:
+        raise ValueError(f"no dumped predictions for: {', '.join(missing)}")
+
+    # Find the largest jointly-alignable member set: an outlier (e.g. a stale single-benchmark dump)
+    # would otherwise collapse the shared intersection, so greedily drop the smallest-coverage member
+    # until the rest align on a common benchmark set.
+    dropped: list[str] = []
+    kept = list(members)
+    ok_benches: list[str] = []
+    while len(kept) >= 2:
+        benches = set.intersection(*[set(preds[m]) for m in kept])
+        ok_benches = [b for b in sorted(benches)
+                      if _align_rows([preds[m][b] for m in kept]) is not None]
+        if ok_benches:
+            break
+        worst = min(kept, key=lambda m: sum(len(v) for v in preds[m].values()))
+        kept.remove(worst)
+        dropped.append(worst)
+    if len(kept) < 2 or not ok_benches:
+        raise ValueError("the selected members share no alignable benchmark samples")
+    members = kept
+
+    correct = {m: [] for m in members}   # per-sample 1/0 correctness, aligned across members
+    flags = {m: [] for m in members}     # per-sample predicted-unsafe, aligned
+    gold: list[int] = []
+    for bench in ok_benches:
+        rows = _align_rows([preds[m][bench] for m in members])
+        if rows is None:
+            continue
+        for i in range(len(rows[0])):
+            y = rows[0][i][0]
+            gold.append(y)
+            for mi, m in enumerate(members):
+                u = rows[mi][i][1]
+                flags[m].append(u)
+                correct[m].append(int(u == y))
+    n = len(gold)
+    if not n:
+        raise ValueError("members have mismatched samples on every shared benchmark")
+
+    per_member = [{"name": m, "accuracy": round(sum(correct[m]) / n, 4)} for m in members]
+    best_single = max(pm["accuracy"] for pm in per_member)
+    oracle = sum(1 for i in range(n) if any(correct[m][i] for m in members)) / n
+
+    disagr, qs = [], []
+    for i in range(len(members)):
+        for j in range(i + 1, len(members)):
+            a, b = members[i], members[j]
+            disagr.append(sum(1 for k in range(n) if flags[a][k] != flags[b][k]) / n)
+            qs.append(_q_statistic(correct[a], correct[b]))
+
+    benign = [i for i in range(n) if gold[i] == 0]
+    all_flag = (sum(1 for i in benign if all(flags[m][i] for m in members)) / len(benign)
+                if benign else 0.0)
+
+    headroom = round(oracle - best_single, 4)
+    if headroom < 0.03:
+        verdict, why = "redundant", (
+            "Members make almost the same decisions (near-zero oracle headroom), so no combiner can "
+            "beat the best single model — you need more DIVERSE or stronger base models, not more "
+            "ensembling.")
+    elif headroom < 0.10:
+        verdict, why = "some-complementarity", (
+            "There is modest headroom: a well-chosen ensemble may edge out the best single model, but "
+            "the gains will be small.")
+    else:
+        verdict, why = "diverse", (
+            "Members are complementary (large oracle headroom) — ensembling should meaningfully beat "
+            "any single member.")
+    if all_flag > 0.5:
+        why += (f" Also, every member over-blocks the SAME benign prompt {round(all_flag * 100)}% of "
+                "the time, so intersection/cascade can't cut that over-blocking.")
+
+    return {
+        "n_samples": n, "members": sorted(per_member, key=lambda p: -p["accuracy"]),
+        "dropped": dropped,
+        "mean_disagreement": round(sum(disagr) / len(disagr), 4) if disagr else 0.0,
+        "mean_error_correlation": round(sum(qs) / len(qs), 4) if qs else 0.0,
+        "best_single_accuracy": round(best_single, 4), "oracle_accuracy": round(oracle, 4),
+        "headroom": headroom, "benign_all_flag_rate": round(all_flag, 4),
+        "verdict": verdict, "explanation": why,
+    }
+
+
 # Strategies that ignore the threshold (no sweep needed).
 _HARD_STRATEGIES = ("union", "intersection", "majority")
 _MAX_CANDIDATES = 2500  # keep the search responsive (a few seconds, offline)

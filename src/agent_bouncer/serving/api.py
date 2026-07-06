@@ -470,6 +470,73 @@ def build_cascade(cfg: CascadeConfig) -> dict:
             "curves_stale": not curves_ok, **extra}
 
 
+class DeferralConfig(BaseModel):
+    """Confidence-deferral cascade. Decider/expert + band auto-tuned when omitted."""
+    stage1: str | None = None            # cheap decider (auto-searched)
+    stage2: str | None = None            # expert for uncertain cases (auto-searched)
+    low: float = 0.4
+    high: float = 0.6
+    scope: Literal["small", "all"] = "small"
+    name: str | None = None
+
+
+@app.post("/api/ensemble/deferral")
+def build_deferral(cfg: DeferralConfig) -> dict:
+    """Build a confidence-deferral cascade (cheap decider handles confident cases, defers the
+    uncertain middle to an expert), merge it onto the leaderboard, and return metrics + defer rate.
+    With no stages given, searches decider × expert × band for the best macro-F1."""
+    from agent_bouncer.evaluation.ensembles import (
+        evaluate_deferral,
+        load_predictions,
+        macro_average,
+        optimize_deferral,
+    )
+
+    preds = load_predictions(str(PRED_DIR))
+    try:
+        if cfg.stage1 and cfg.stage2:
+            s1, s2 = cfg.stage1, cfg.stage2
+            per_bench = evaluate_deferral(preds, s1, s2, low=cfg.low, high=cfg.high)
+            macro, low, high = macro_average(per_bench), cfg.low, cfg.high
+            defer_rate = round(sum(per_bench[b]["defer_rate"] for b in per_bench) / len(per_bench), 4)
+        else:
+            res = optimize_deferral(preds, pool=_optimize_pool(preds, cfg.scope))
+            s1, s2, per_bench = res["stage1"], res["stage2"], res["per_bench"]
+            macro, low, high, defer_rate = res["macro"], res["low"], res["high"], res["defer_rate"]
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    name = _ensemble_name(cfg.name, "ensemble-deferral")
+    _merge_scoreboard(name, per_bench, meta={
+        "members": [s1, s2], "strategy": "deferral", "stage1": s1, "stage2": s2,
+        "low": low, "high": high, "defer_rate": defer_rate, "objective": None,
+    })
+    curves_ok = _resync_curves()
+    return {"name": name, "stage1": s1, "stage2": s2, "low": low, "high": high,
+            "defer_rate": defer_rate, "macro": macro, "curves_stale": not curves_ok}
+
+
+class DiversityConfig(BaseModel):
+    """Assess whether members are diverse enough for ensembling to help."""
+    members: list[str] = []              # default: the whole small-model pool
+    scope: Literal["small", "all"] = "small"
+
+
+@app.post("/api/ensemble/diversity")
+def ensemble_diversity(cfg: DiversityConfig) -> dict:
+    """Return a diversity/complementarity report for the selected members (or the whole small-model
+    pool): per-model accuracy, pairwise disagreement + error-correlation, the oracle ceiling, and a
+    verdict on whether ensembling can help. Read-only (no scoreboard mutation)."""
+    from agent_bouncer.evaluation.ensembles import diversity_report, load_predictions
+
+    preds = load_predictions(str(PRED_DIR))
+    members = cfg.members or _optimize_pool(preds, cfg.scope) or sorted(preds)
+    try:
+        return diversity_report(preds, members)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 # ------------------------------------------------------- training / experiments API
 @app.get("/api/models")
 def models() -> dict:
