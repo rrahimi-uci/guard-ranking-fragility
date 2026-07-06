@@ -940,7 +940,7 @@ async function buildEnsemble(){
     if(!r.ok){toast(d.detail||'ensemble failed');return;}
     await loadResults();renderLeaderboard();renderROC();
     const M=d.macro||{};
-    $('#ensNote').innerHTML=`✓ <b>${d.name}</b> — F1 ${fmt(M.f1)} · AUC ${fmt(M.roc_auc)} · FPR ${fmt(M.fpr_on_benign)} · p50 ${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'}. Added to the leaderboard above.`;
+    $('#ensNote').innerHTML=`✓ <b>${d.name}</b> — P ${fmt(M.precision)} · R ${fmt(M.recall)} · F1 ${fmt(M.f1)} · AUC ${fmt(M.roc_auc)} · FPR ${fmt(M.fpr_on_benign)} · p50 ${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'}. Added to the leaderboard above.`;
     toast('✓ Ensemble scored & added');
   }catch(e){toast('ensemble failed');}
   finally{btn.disabled=false;btn.textContent=orig;updateEnsBtn();}
@@ -956,7 +956,7 @@ async function optimizeEnsemble(){
     // pre-fill the builder with the winning config so it's easy to tweak
     ensPick=new Set(b.members||[]);$('#ensStrategy').value=b.strategy;if(b.threshold!=null)$('#ensThresh').value=b.threshold;
     renderEnsembleBuilder();
-    $('#ensNote').innerHTML=`✓ Best (${d.objective}): <b>${d.name}</b> — ${b.strategy}${b.threshold!=null?' @ '+b.threshold:''} of [${(b.members||[]).map(lbLabel).join(', ')}] · F1 ${fmt(M.f1)} · AUC ${fmt(M.roc_auc)} · FPR ${fmt(M.fpr_on_benign)} · p50 ${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'} · searched ${d.n_evaluated} combos. Added to the leaderboard.`;
+    $('#ensNote').innerHTML=`✓ Best (${d.objective}): <b>${d.name}</b> — ${b.strategy}${b.threshold!=null?' @ '+b.threshold:''} of [${(b.members||[]).map(lbLabel).join(', ')}] · P ${fmt(M.precision)} · R ${fmt(M.recall)} · F1 ${fmt(M.f1)} · AUC ${fmt(M.roc_auc)} · FPR ${fmt(M.fpr_on_benign)} · p50 ${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'} · searched ${d.n_evaluated} combos. Added to the leaderboard.`;
     renderEnsCandidates(d.candidates);
     toast('✓ Best ensemble found & added');
   }catch(e){toast('optimize failed');}
@@ -971,9 +971,9 @@ async function optimizeAllEnsembles(){
     await loadResults();renderLeaderboard();renderROC();await loadEnsembleMembers();renderEnsembleBuilder();
     const OBJ={balanced:'Balanced',f1:'Max F1',fpr:'Min over-block'};
     const rows=(d.built||[]).map(e=>{const M=e.macro||{};
-      return `<tr><td class="name">${OBJ[e.objective]||e.objective}</td><td>${(e.members||[]).map(lbLabel).join(' + ')}</td><td>${e.strategy}${e.threshold!=null?' @'+e.threshold:''}</td><td class="mono">${fmt(M.f1)}</td><td class="mono">${fmt(M.roc_auc)}</td><td class="mono">${fmt(M.fpr_on_benign)}</td><td class="mono">${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'}</td></tr>`;}).join('');
+      return `<tr><td class="name">${OBJ[e.objective]||e.objective}</td><td>${(e.members||[]).map(lbLabel).join(' + ')}</td><td>${e.strategy}${e.threshold!=null?' @'+e.threshold:''}</td><td class="mono">${fmt(M.precision)}</td><td class="mono">${fmt(M.recall)}</td><td class="mono">${fmt(M.f1)}</td><td class="mono">${fmt(M.roc_auc)}</td><td class="mono">${fmt(M.fpr_on_benign)}</td><td class="mono">${M.latency_p50_ms!=null?Math.round(M.latency_p50_ms)+'ms':'—'}</td></tr>`;}).join('');
     $('#ensCandidates').innerHTML='<div class="sub" style="margin:6px 0 4px">Optimized ensembles per objective (small models) — added to the leaderboard</div>'+
-      '<table><thead><tr><th>Objective</th><th>Composed of</th><th>Strategy</th><th>F1 ↑</th><th>AUC ↑</th><th>FPR ↓</th><th>p50 ↓</th></tr></thead><tbody>'+rows+'</tbody></table>';
+      '<table><thead><tr><th>Objective</th><th>Composed of</th><th>Strategy</th><th>P ↑</th><th>R ↑</th><th>F1 ↑</th><th>AUC ↑</th><th>FPR ↓</th><th>p50 ↓</th></tr></thead><tbody>'+rows+'</tbody></table>';
     const pool=(d.pool||[]).map(lbLabel).join(', ');
     $('#ensNote').innerHTML=`✓ Built <b>${(d.built||[]).length}</b> optimized ensemble(s) — one per objective, composed from small models [${pool}]. Added to the leaderboard (category <b>Ensembles</b>).`;
     toast('✓ Optimized ensembles added to leaderboard');
@@ -983,8 +983,8 @@ async function optimizeAllEnsembles(){
 function renderEnsCandidates(cands){
   const el=$('#ensCandidates');if(!el)return;
   if(!cands||!cands.length){el.innerHTML='';return;}
-  el.innerHTML='<div class="sub" style="margin:6px 0 4px">Top candidates</div><table><thead><tr><th>Ensemble</th><th>Strategy</th><th>F1 ↑</th><th>AUC ↑</th><th>FPR ↓</th><th>p50 ↓</th></tr></thead><tbody>'+
-    cands.map(c=>`<tr><td class="name">${(c.members||[]).map(lbLabel).join(' + ')}</td><td>${c.strategy}${c.threshold!=null?' @'+c.threshold:''}</td><td class="mono">${fmt(c.f1)}</td><td class="mono">${fmt(c.roc_auc)}</td><td class="mono">${fmt(c.fpr_on_benign)}</td><td class="mono">${c.latency_p50_ms!=null?Math.round(c.latency_p50_ms):'—'}</td></tr>`).join('')+'</tbody></table>';
+  el.innerHTML='<div class="sub" style="margin:6px 0 4px">Top candidates</div><table><thead><tr><th>Ensemble</th><th>Strategy</th><th>P ↑</th><th>R ↑</th><th>F1 ↑</th><th>AUC ↑</th><th>FPR ↓</th><th>p50 ↓</th></tr></thead><tbody>'+
+    cands.map(c=>`<tr><td class="name">${(c.members||[]).map(lbLabel).join(' + ')}</td><td>${c.strategy}${c.threshold!=null?' @'+c.threshold:''}</td><td class="mono">${fmt(c.precision)}</td><td class="mono">${fmt(c.recall)}</td><td class="mono">${fmt(c.f1)}</td><td class="mono">${fmt(c.roc_auc)}</td><td class="mono">${fmt(c.fpr_on_benign)}</td><td class="mono">${c.latency_p50_ms!=null?Math.round(c.latency_p50_ms):'—'}</td></tr>`).join('')+'</tbody></table>';
 }
 
 /* ---------- roc ---------- */

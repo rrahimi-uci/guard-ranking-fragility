@@ -97,6 +97,9 @@ def test_optimize_finds_a_valid_best():
     assert len(out["candidates"]) <= 3 and out["n_evaluated"] > 0
     # candidates are ranked (first is the best for the objective)
     assert out["candidates"][0]["members"] == best["members"]
+    # each candidate carries calculated precision + recall (for the UI tables), not just F1
+    for c in out["candidates"]:
+        assert 0.0 <= c["precision"] <= 1.0 and 0.0 <= c["recall"] <= 1.0
 
 
 def test_optimize_f1_objective_maximizes_f1():

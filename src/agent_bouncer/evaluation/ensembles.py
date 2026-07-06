@@ -195,7 +195,8 @@ def optimize_ensemble(
     best = scored[0]
     candidates = [
         {"members": m, "strategy": s, "threshold": t,
-         **{k: macro.get(k) for k in ("f1", "roc_auc", "fpr_on_benign", "latency_p50_ms")}}
+         **{k: macro.get(k) for k in
+            ("precision", "recall", "f1", "roc_auc", "fpr_on_benign", "latency_p50_ms")}}
         for (m, s, t, macro, _pb) in scored[:top_k]
     ]
     return {
