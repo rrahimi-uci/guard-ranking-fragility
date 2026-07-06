@@ -870,6 +870,11 @@ function renderEnsembleBuilder(){
   }
   if($('#ensStrategy').options.length!==ENS_STRATS.length)$('#ensStrategy').innerHTML=ENS_STRATS.map(s=>`<option value="${s}">${s}</option>`).join('');
   const canOpt=ENS_MEMBERS.length>=2;const ob=$('#ensOptimize');if(ob)ob.disabled=!canOpt;
+  // explain why the buttons are disabled when there aren't enough members yet
+  if($('#ensNote')){
+    if(ENS_MEMBERS.length===1)$('#ensNote').innerHTML='⚠️ Only <b>1</b> member available — an ensemble needs <b>at least 2</b>. Test another model on the <b>same benchmark(s)</b> (Train &amp; Test → ② Test → Benchmarks) to add one, then Build or Auto-optimize.';
+    else if(!ENS_MEMBERS.length)$('#ensNote').textContent='';
+  }
   syncEnsThresh();updateEnsBtn();
 }
 async function buildEnsemble(){
