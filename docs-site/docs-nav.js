@@ -49,6 +49,10 @@ window.DOCS_NAV = [
       {
         "href": "m-ensembles.html",
         "label": "Ensembles"
+      },
+      {
+        "href": "m-safepyramid.html",
+        "label": "SafePyramid (policy guardrailing)"
       }
     ]
   },

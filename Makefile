@@ -52,6 +52,10 @@ incumbents:  ## Compare vs OpenAI + gated incumbents on the test subset (uses .e
 curves:  ## Compute ROC / PR / AUC curves for local guards -> outputs/curves.json
 	python scripts/report/compute_curves.py
 
+safepyramid:  ## Score a policy judge on SafePyramid (model=gpt-4o-mini [limit=N] [reasoning_effort=low])
+	python scripts/eval/run_safepyramid.py --model $(or $(model),gpt-4o-mini) \
+		$(if $(limit),--limit $(limit),) $(if $(reasoning_effort),--reasoning-effort $(reasoning_effort),)
+
 build-dataset:  ## Build a training set (strategy=balanced name=my-set sources="beavertails xstest")
 	python scripts/data/build_dataset.py --strategy $(or $(strategy),balanced) --name $(or $(name),my-set) --sources $(sources)
 

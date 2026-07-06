@@ -19,6 +19,7 @@ The pages below are the documentation, one per topic. Each link is the raw Markd
 
 - [Benchmark suite](m-benchmarks.md): The seven-benchmark standard suite across guardrail, red-teaming, and over-refusal axes; every guard scored through one harness; over-blocking (FPR@benign) as the headline usability metric.
 - [Ensembles](m-ensembles.md): Combining guards into one — union / intersection / majority / mean / weighted strategies — evaluated offline from dumped per-sample predictions, and the interactive ensemble builder in the Workbench.
+- [SafePyramid (policy guardrailing)](m-safepyramid.md): In-context policy guardrailing: given a conversation + an application-specific policy, identify the exact set of violated rules — scored by exact-set-match and rule-level P/R/F1 across L0/L1/L2.
 
 ## Architecture
 
