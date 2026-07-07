@@ -24,8 +24,18 @@ Eval-driven: we build the scoreboard first, then climb it.
   tested); `scripts/report/make_report.py`. Remaining: push to GitHub + Hugging Face release.
 - [x] **Phase 8 — Standard benchmark suite.** Registry-driven multi-benchmark runner
   (`eval/benchmarks.py`) over **7 ungated standard benchmarks** across guardrail /
-  red-teaming / over-refusal axes; **live comparison vs GPT-4o-mini and GPT-5.2 (low
-  reasoning)** + OpenAI Moderation. `make bench` → `outputs/BENCHMARKS.md`.
+  red-teaming / over-refusal axes; **live comparison vs GPT-4o-mini, GPT-5.4-mini, and
+  GPT-5.2 (low/medium/high reasoning)** + OpenAI Moderation. `make bench` → `outputs/BENCHMARKS.md`.
+- [x] **Phase 9 — Workbench + ensembles.** FastAPI Workbench (train/test/compare, leakage-guarded,
+  hardware capture), a **Leaderboard** with PDF export, and an **ensemble builder**: offline
+  combine (union/intersection/majority/mean/weighted), **per-objective auto-optimization**,
+  **recall→precision** + **confidence-deferral cascades**, and a **diversity/complementarity report**.
+- [x] **Phase 10 — Correctness audit.** Multi-agent audit + fixes: **one unified ROC-AUC definition**
+  for every row (from raw per-sample dumps), prompt-identity ensemble alignment, sample-size honesty
+  on the leaderboard, consistent fail-closed guard policy, and train↔benchmark leakage guards.
+- [x] **Phase 11 — Policy guardrailing.** Integrated **SafePyramid** (in-context policy guardrailing):
+  loader, policy-judge, and exact-set-match + rule-level P/R/F1 scoring across L0/L1/L2
+  (`make safepyramid`).
 
 ### Verified in-session
 - **7-benchmark suite, one harness:** GPT-5.2 (low) leads on macro-F1 *and* over-blocking
@@ -36,8 +46,9 @@ Eval-driven: we build the scoreboard first, then climb it.
 
 ### Follow-ups needing external access
 - Score the gated incumbents + benchmarks (Llama Guard / ShieldGemma / WildGuardMix /
-  HarmBench / Lakera PINT) — needs `HF_TOKEN` + license acceptance.
+  WildJailbreak / HarmBench / StrongREJECT / Lakera PINT) — needs `HF_TOKEN` + license acceptance.
 - Full-scale **GPU** GRPO run + red-team training data to close the injection-recall gap.
+- Agent-trajectory safety axis (ATBench / TRAJECT-Bench) — needs new trajectory-eval machinery.
 - Publish repo + model.
 
 ## Minimum viable *visible* release

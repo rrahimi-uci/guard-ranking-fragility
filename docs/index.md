@@ -1,6 +1,6 @@
 ---
 title: "Agent Bouncer — a tiny, fast LLM safety guardrail (SLM)"
-description: "Open-source small language model (SLM) guardrail for LLMs and AI agents: detects prompt injection, jailbreaks, and unsafe content on the request path. Fine-tuned + RL-tuned (GRPO), benchmarked vs GPT-4o-mini, GPT-5.2, and OpenAI Moderation."
+description: "Open-source small language model (SLM) guardrail for LLMs and AI agents: detects prompt injection, jailbreaks, and unsafe content on the request path. Fine-tuned + RL-tuned (GRPO), benchmarked vs GPT-4o-mini, GPT-5.4-mini, GPT-5.2, and OpenAI Moderation — with ensembles, cascades, and a policy-guardrailing benchmark (SafePyramid)."
 ---
 
 ![Agent Bouncer Workbench](media/agent-bouncer.png)
@@ -15,15 +15,20 @@ outputs *before* they reach your model. SLM guardrails, trained with **fine-tuni
 
 ## Highlights
 
-- **7-benchmark standard suite** across guardrail, red-teaming, and over-refusal axes.
-- **Compared live vs GPT-4o-mini and GPT-5.2 at low / medium / high reasoning** + OpenAI Moderation, through one harness.
-- **Precision / Recall / F1 / ROC-AUC / latency / throughput / P90** — over-blocking (`fpr_on_benign`) front and center.
+- **7-benchmark standard suite** across guardrail, red-teaming, and over-refusal axes — plus a
+  distinct **policy-guardrailing** axis, [SafePyramid](safepyramid.md).
+- **Compared live vs GPT-4o-mini, GPT-5.4-mini, and GPT-5.2 at low / medium / high reasoning** +
+  OpenAI Moderation, through one harness.
+- **Precision / Recall / F1 / ROC-AUC / latency / throughput / P90** — over-blocking (`fpr_on_benign`)
+  front and center, with **one honest number per cell** (audited: unified AUC, leakage-guarded, and
+  mixed sample sizes flagged).
 - **Full training lifecycle**: model registry (Qwen3, DeepSeek-R1-1.5B, SmolLM2-1.7B, Gemma-1B),
   configurable SFT/GRPO/DPO, **versioning**, **experiment tracking**, **hardware capture**, and
   **train/test leakage guards**.
 - **Agent Bouncer Workbench** — configure, train, test, and compare from a polished web UI, with a
-  **Leaderboard** (results table + ROC/PR/AUC curves), a **PDF report** export, and an
-  **interactive ensemble builder**.
+  **Leaderboard** (results table + ROC/PR/AUC curves), a **PDF report** export, and an **ensemble
+  builder** with per-objective auto-optimization, **recall→precision** + **confidence-deferral
+  cascades**, and a **diversity report**.
 
 ## Headline result (7 benchmarks, one harness)
 
@@ -58,7 +63,8 @@ student training material:
 
 - [Architecture](architecture.md) — how it all fits together (with mermaid diagrams)
 - [Benchmarks & results](benchmarks.md) — the full scoreboard + analysis
-- [Ensembles](ensembles.md) — can combining SLMs match GPT-5.2 Low?
+- [Ensembles](ensembles.md) — ensembles, cascades, and a diversity report: can combining SLMs help?
+- [SafePyramid](safepyramid.md) — in-context policy guardrailing (a distinct axis)
 - [Datasets](datasets.md) · [Taxonomy](taxonomy.md) · [Roadmap](roadmap.md)
 - Auto-generated scoreboard → `outputs/BENCHMARKS.md` (created by `make bench`)
 

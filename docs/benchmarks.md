@@ -6,8 +6,8 @@ The research questions this repo answers:
 >    the request path of an LLM/agent, screen prompts fast enough to matter, and *not*
 >    over-block benign traffic?
 > 2. How does it compare, **apples-to-apples on standard benchmarks**, to frontier LLM
->    judges — **GPT-4o-mini** and **GPT-5.2 (low reasoning)** — and to a purpose-built
->    moderation API?
+>    judges — **GPT-4o-mini**, **GPT-5.4-mini**, and **GPT-5.2 (low reasoning)** — and to a
+>    purpose-built moderation API?
 
 Everything below is scored through **one harness** (`agent_bouncer.evaluation`), so the
 numbers are directly comparable. Metrics: **precision / recall / F1** (positive class =
@@ -36,10 +36,16 @@ Workbench's *Explore Benchmarks* tab / test controls (**size 0 = full**) — usi
 | Red-team | **JailbreakBench** | `JailbreakBench/JBB-Behaviors` | 100 harmful + 100 benign red-team behaviors |
 | Over-refusal | **XSTest** | `natolambert/xstest-v2-copy` | Safe-but-scary prompts → over-blocking (FPR) |
 
-Gated benchmarks (**WildGuardMix, HarmBench, AdvBench, Lakera PINT**) need `HF_TOKEN`
-+ license acceptance; the pipeline reports them as *not run* rather than fabricating
+Gated benchmarks (**WildGuardMix, WildJailbreak, HarmBench, StrongREJECT, AdvBench, Lakera PINT**)
+need `HF_TOKEN` + license acceptance; the pipeline reports them as *not run* rather than fabricating
 numbers. BeaverTails uses the held-out `30k_test` split (disjoint from the demo
 training data — no leakage).
+
+Beyond this binary suite, a distinct **policy-guardrailing** axis is available — **[SafePyramid](safepyramid.md)**
+(ByteDance, public): given a conversation + an application-specific *policy* (numbered rules), a
+policy-configurable judge must return the **exact set of violated rules**, scored by exact-set-match +
+rule-level P/R/F1 across difficulty levels L0/L1/L2. Its metrics aren't comparable to the binary
+suite's P/R/F1/FPR, so it's kept off this leaderboard and reported separately (`make safepyramid`).
 
 Full per-benchmark tables are auto-generated in
 [`outputs/BENCHMARKS.md`](../outputs/BENCHMARKS.md). Reproduce with `make bench`.

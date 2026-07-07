@@ -8,6 +8,21 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **GPT-5.4-mini** frontier baseline (`--baseline-models`), scored alongside GPT-4o-mini and the
+  GPT-5.2 reasoning tiers, with a "🛰 Run frontier baselines" button in the Workbench.
+- **Optimized ensembles per objective** (`POST /api/ensemble/optimize`, `/optimize_all`): one-click
+  best ensemble for `balanced` / `f1` / `fpr`, composed from the small-model pool, added to the
+  leaderboard with their composition shown.
+- **Recall→precision cascade** (`POST /api/ensemble/cascade`): a high-recall gate → high-precision
+  filter; the filter runs only on gate-flagged inputs, so latency stays low.
+- **Confidence-deferral cascade** (`POST /api/ensemble/deferral`): a cheap decider handles confident
+  cases and defers only the uncertain middle band to an expert (a router — not recall-capped).
+- **Diversity / complementarity report** (`POST /api/ensemble/diversity`): per-model accuracy, pairwise
+  disagreement + error-correlation (Yule's Q), and the oracle ceiling — a verdict on whether
+  ensembling can even help before you trust a combiner.
+- **SafePyramid** in-context policy-guardrailing benchmark (`ByteDance/SafePyramid`): loader,
+  policy-judge, and exact-set-match + rule-level P/R/F1 scoring across levels L0/L1/L2
+  (`agent_bouncer.evaluation.safepyramid`, `scripts/eval/run_safepyramid.py`, `make safepyramid`).
 - **Leaderboard** tab in the Agent Bouncer Workbench: a macro-average results table (Precision /
   Recall / F1 / ROC-AUC / p50 / p90) grouped into small models · GPT baselines · ensembles,
   with best-in-column highlighting and sortable columns, above the ROC/PR/AUC curves.
@@ -36,6 +51,17 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- **Correctness audit (multi-agent, adversarially verified):** **one unified ROC-AUC definition** for
+  every leaderboard row (rank-AUC from raw per-sample scores, operating-point fallback); ensemble
+  members are aligned by **prompt identity** (not list position), fixing silent corruption when guards
+  were scored on differently leakage-filtered subsets, and duplicate prompts are preserved; BeaverTails
+  gold labels de-duplicated (a prompt is unsafe iff any response is unsafe); training draws from a split
+  disjoint from the benchmark eval pool; decoder + OpenAI guards share one **fail-closed** policy;
+  `train_and_record` fails fast on missing / empty / malformed training data; split helpers guarantee a
+  non-empty holdout when splittable; the model store closes every SQLite/file handle; and the leaderboard
+  **flags rows scored on different sample sizes** instead of silently mixing them.
+- Ensemble cascade auto-pick is robust to unscorable pairs (a stale single-benchmark prediction dump can
+  no longer wedge the search).
 - GRPO decoder is scored in `reasoning` mode everywhere (SFT mode truncated its `<think>` trace
   and failed closed to `unsafe`), fixing its scoreboard row and every ensemble that includes it.
 - Experiment index writes are atomic (temp file + rename), so an interrupted write can no longer

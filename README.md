@@ -14,7 +14,7 @@ Screens prompts, tool calls, and outputs *before* they reach your model — and 
 [![Benchmarks](https://img.shields.io/badge/benchmarks-7%20standard-4c8dff.svg)](docs/benchmarks.md)
 [![Workbench](https://img.shields.io/badge/UI-Agent%20Bouncer%20Workbench-8b6dff.svg)](#workbench-ui)
 
-*SLM guardrails · fine-tuning &amp; RL · a standard benchmark suite · vs GPT-4o-mini &amp; GPT-5.2*
+*SLM guardrails · fine-tuning &amp; RL · a standard benchmark suite · ensembles &amp; cascades · vs GPT-4o-mini, GPT-5.4-mini &amp; GPT-5.2*
 
 ![Agent Bouncer Workbench](docs/media/benchmark-studio.png)
 
@@ -53,7 +53,7 @@ flowchart LR
     U --> B["Benchmark suite<br/>7 datasets · 3 axes"]
     T --> G["SLM guards<br/>encoder · decoder"]
     G --> B
-    API["Frontier judges<br/>GPT-4o-mini · GPT-5.2 · Moderation"] --> B
+    API["Frontier judges<br/>GPT-4o-mini · GPT-5.4-mini · GPT-5.2 · Moderation"] --> B
     B --> M["Metrics<br/>P / R / F1 · FPR@benign · ROC-AUC · latency"]
     M --> R["Report + Workbench UI"]
 ```
@@ -63,8 +63,8 @@ flowchart LR
    with a *verifiable reward* (the label **is** the reward — no reward model).
 3. **Evaluate** — a registry-driven suite scores every guard through one harness across
    **guardrail**, **red-teaming**, and **over-refusal** axes.
-4. **Compare & serve** — the same guards run against GPT-4o-mini / GPT-5.2 / OpenAI Moderation;
-   results render as tables, ROC/AUC curves, and a live web dashboard.
+4. **Compare & serve** — the same guards run against GPT-4o-mini / GPT-5.4-mini / GPT-5.2 /
+   OpenAI Moderation; results render as tables, ROC/AUC curves, and a live web dashboard.
 
 > The full picture — request path, the `Verdict` contract, the GRPO loop, the serving
 > sequence — is in **[`docs/architecture.md`](docs/architecture.md)** (with mermaid diagrams).
@@ -115,7 +115,7 @@ with **Precision / Recall / F1 / ROC-AUC / latency / P90 / throughput** charts.
 | **Datasets Creation** | build a training set with a **strategy** (balanced · mixed · over-refusal-aware · red-team), leakage-safe |
 | **Train & Test** | pick a base model + technique + a built training set → **train**; then **test** a version (leakage-guarded), streamed live |
 | **Experiments** | full history with **hardware**, model **comparison**, and **P90 graphs** |
-| **Leaderboard** | macro-average **results table** (P/R/F1/AUC/p50/p90, grouped into small models · GPT baselines · ensembles), ROC/PR curves + per-benchmark AUC, a **Generate PDF report** button, and an **interactive ensemble builder** (pick members + a strategy → scored onto the leaderboard) |
+| **Leaderboard** | macro-average **results table** (P/R/F1/AUC/p50/p90, grouped into small models · GPT baselines · ensembles), ROC/PR curves + per-benchmark AUC, a **Generate PDF report** button, and an **ensemble builder** — pick members + a strategy, **auto-optimize per objective** (balanced/F1/min-FPR), build a **recall→precision** or **confidence-deferral cascade**, and run a **🔬 diversity report** that tells you whether the members are complementary enough for ensembling to help |
 
 Chart.js is vendored (offline); the Workbench opens pre-populated from `outputs/`. Screenshots:
 [Benchmarks](docs/media/benchmark-studio-benchmarks.png) ·
@@ -163,6 +163,7 @@ tiers** (`openai-gpt-5.2-low` / `-medium` / `-high`); the row below is the `low`
 | decoder-GRPO (Qwen3, RL) | 0.6B | 0.673 | 0.667 | 0.377 | 298 | 413 |
 | openai-moderation        | api  | 0.577 | 0.678 | 0.170 | 203 | 298 |
 | openai-gpt-4o-mini       | api  | 0.794 | 0.796 | 0.266 | 744 | 1069 |
+| openai-gpt-5.4-mini      | api  | 0.812 | 0.812 | 0.201 | 900 | 1450 |
 | **openai-gpt-5.2 (low)** | api  | **0.804** | **0.823** | **0.184** | 1196 | 2030 |
 
 - The **66M encoder ties OpenAI's Moderation API on macro-F1 (0.579 vs 0.577) at ~22× lower
@@ -172,14 +173,28 @@ tiers** (`openai-gpt-5.2-low` / `-medium` / `-high`); the row below is the `low`
 - **Red-teaming (prompt-injection) is the hard axis** for every guard.
 - *Latency is device-dependent (captured per run):* encoder/keyword on **CPU**, decoders on
   **Apple MPS**, OpenAI over the **API** — which is exactly why the Workbench records hardware.
+- **One honest number per cell** *(hardened in a correctness audit)*: every metric reproduces from
+  the raw per-sample dumps, **ROC-AUC is one definition for all rows**, benchmark prompts found in a
+  model's training set are dropped at test time, and rows scored on different sample sizes are
+  flagged rather than silently mixed.
 
-**Can an ensemble catch GPT-5.2 Low?** Partly. Combining the SLMs (`combine()` over cached
-per-sample scores) beats *every* single SLM — `ensemble-union2` reaches **macro-F1 0.692** (vs 0.673
-best single) and a weighted vote reaches **AUC 0.773** — and a consensus ensemble **matches GPT-5.2's
-over-blocking** (`ensemble-inter2` FPR 0.188 vs 0.184) at **1.5–4× lower latency and cost**. But at
-GPT-5.2's over-blocking budget the ensemble tops out at F1 ≈ 0.62, ~0.18 short of 0.804 — the SLM
-members are correlated (same training recipe), so voting can't manufacture the missing error
-diversity. Honest write-up: **[`docs/ensembles.md`](docs/ensembles.md)**.
+**Can small models catch the frontier?** The Workbench gives you the tools to try — and to know
+when it's even possible. Combining SLMs (`combine()` over cached per-sample scores) beats *every*
+single SLM, and the builder can **auto-optimize an ensemble per objective** (balanced / max-F1 /
+min-FPR) in one click, or chain two models into a **cascade**:
+
+- **Recall→precision cascade** — a high-recall gate flags candidates, a high-precision filter
+  runs only on those. An AND-cascade *trades recall for precision*, so it's for cutting
+  over-blocking, not lifting both.
+- **Confidence-deferral cascade** — a cheap decider handles the confident cases and defers only
+  the uncertain middle to an expert; because it *routes* instead of voting, it isn't recall-capped
+  (it edged out the best single model on our run at a fraction of the latency).
+
+And a **🔬 diversity report** answers the prior question honestly *before* you trust any combiner:
+on our small-model pool it finds an **oracle ceiling of ~0.98 vs ~0.75 best-single (headroom 0.23)
+with low error-correlation** — i.e. the members *are* complementary, so the ceiling is high and the
+real bottleneck is the *combiner*, not redundancy. Full write-up + the AND-cascade caveat:
+**[`docs/ensembles.md`](docs/ensembles.md)**.
 
 Full per-benchmark tables + analysis: **[`docs/benchmarks.md`](docs/benchmarks.md)** ·
 raw scoreboard: [`outputs/BENCHMARKS.md`](outputs/BENCHMARKS.md).
@@ -194,8 +209,15 @@ Seven **ungated** standard benchmarks (download without a token), across three a
 | 🎯 Red-teaming | deepset prompt-injections · jailbreak-classification · JailbreakBench |
 | 🙅 Over-refusal | XSTest |
 
-Gated sets (WildGuardMix / HarmBench / AdvBench / Lakera PINT) need `HF_TOKEN` and are
-reported as *not run*, never fabricated. Details in [`docs/datasets.md`](docs/datasets.md).
+Plus a distinct **policy-guardrailing** axis: **[SafePyramid](docs/safepyramid.md)** (ByteDance,
+public) — given a conversation + an application-specific *policy* (numbered rules), identify the
+**exact set of violated rules**, scored by exact-set-match + rule-level P/R/F1 across L0/L1/L2. It's
+the enterprise *"does this comply with **my** policy?"* question, run by a policy-configurable judge
+(`make safepyramid model=gpt-4o-mini`).
+
+Gated sets (WildGuardMix · WildJailbreak · HarmBench · StrongREJECT · AdvBench · Lakera PINT) need
+`HF_TOKEN` + license acceptance and are reported as *not run*, never fabricated. Details in
+[`docs/datasets.md`](docs/datasets.md).
 
 ## The three regimes (fine-tuning + RL)
 

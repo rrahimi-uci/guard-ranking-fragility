@@ -63,18 +63,23 @@ Members: `encoder-distilbert`, `decoder-sft-0.6B`, `decoder-grpo-0.6B`, `openai-
   reaches macro-F1 ≈ **0.62**, ~0.18 below GPT-5.2's 0.804. You can trade that for recall
   (`union2` F1 0.692) but only by over-blocking 2.5× as often.
 
-## Why — and what would actually close it
+## Why — is it the members, or the combiner?
 
-The members are **correlated**: the encoder, the 0.6B SFT decoder, and the GRPO decoder are all
-fine-tuned on the same BeaverTails-style data, so they tend to make the *same* mistakes. Ensembles
-only help when members fail *independently*; Moderation adds some diversity (it drives the AUC/FPR
-gains) but is itself weak on these sets. Closing the remaining F1 gap needs **error diversity**, not
-more voting — a stronger/larger base model, more or broader training data, or a genuinely different
-model family — rather than another copy of the same recipe.
+Ensembles only help when members fail *independently*, so before blaming the models, **run the
+[diversity report](#diversity-report--can-ensembling-even-help)**. It's the empirical test — and it's
+often surprising. On the current small-model pool it reports an **oracle ceiling ≈ 0.98 vs ≈ 0.75
+best-single (headroom 0.23) with low error-correlation** — i.e. the members *are* complementary and the
+information to do far better is there. When that's the case the bottleneck is the **combiner**, not
+redundancy: a hard union/majority vote leaves headroom on the table, which is why the builder also
+offers **soft/optimized ensembles**, a **confidence-deferral cascade** (a router, so it isn't
+recall-capped), and per-objective auto-optimization. If instead the report shows *near-zero headroom*,
+the members are genuinely redundant (e.g. the same training recipe) and no combiner can help — then you
+need **error diversity**: a stronger/larger base model, broader data, or a different model family.
 
-**Bottom line:** ship the ensemble for its better-than-any-single-SLM quality, matched over-blocking,
-and lower latency/cost — but don't claim F1 parity with GPT-5.2 Low. The chosen `ensemble-*` columns are
-merged into the scoreboard (`outputs/benchmark_results.json`) and appear on the **Leaderboard**.
+**Bottom line:** ship an ensemble for its better-than-any-single-SLM quality, matched over-blocking, and
+lower latency/cost — but don't claim F1 parity with GPT-5.2 Low, and let the diversity report tell you
+whether more combiner tuning is even worth it. The chosen `ensemble-*` rows are merged into the
+scoreboard (`outputs/benchmark_results.json`) and appear on the **Leaderboard**.
 
 ## Build ensembles interactively in the Workbench
 

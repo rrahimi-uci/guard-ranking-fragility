@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agent Bouncer — a tiny, fast SLM safety guardrail for LLMs &amp; agents</title>
   <meta name="description"
-    content="Agent Bouncer is an open-source small language model (SLM) safety guardrail for LLMs and AI agents: it screens prompts, tool calls, and outputs for prompt injection, jailbreaks, and unsafe content. Fine-tuned + RL-tuned (GRPO), benchmarked against GPT-4o-mini, GPT-5.2, and OpenAI Moderation through one honest harness, with the Agent Bouncer Workbench.">
+    content="Agent Bouncer is an open-source small language model (SLM) safety guardrail for LLMs and AI agents: it screens prompts, tool calls, and outputs for prompt injection, jailbreaks, and unsafe content. Fine-tuned + RL-tuned (GRPO), benchmarked against GPT-4o-mini, GPT-5.4-mini, GPT-5.2, and OpenAI Moderation through one honest harness, with the Agent Bouncer Workbench.">
   <link rel="icon" type="image/png" href="agent-bouncer.png">
   <script>
     // Resolve theme before first paint to avoid a flash of the wrong mode.
@@ -24,7 +24,7 @@
   </script>
   <meta property="og:title" content="Agent Bouncer — a tiny, fast SLM safety guardrail for LLMs & agents">
   <meta property="og:description"
-    content="Open-source SLM guardrail: detects prompt injection, jailbreaks, and unsafe content on the request path. Benchmarked vs GPT-4o-mini, GPT-5.2, and OpenAI Moderation with an honest scoreboard and the Agent Bouncer Workbench.">
+    content="Open-source SLM guardrail: detects prompt injection, jailbreaks, and unsafe content on the request path. Benchmarked vs GPT-4o-mini, GPT-5.4-mini, GPT-5.2, and OpenAI Moderation with an honest scoreboard and the Agent Bouncer Workbench.">
   <meta property="og:image" content="agent-bouncer-poster.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -84,7 +84,7 @@
             A tiny, fast safety <strong>bouncer for LLMs and agents</strong> — it screens prompts, tool calls,
             and outputs <em>before</em> they reach your model. Small-language-model guardrails trained with
             <strong>fine-tuning + RL</strong>, <strong>benchmarked</strong> on a standard suite against
-            GPT-4o-mini, GPT-5.2, and OpenAI Moderation through one honest harness, and shipped with a web
+            GPT-4o-mini, GPT-5.4-mini, GPT-5.2, and OpenAI Moderation through one honest harness, and shipped with a web
             <strong>Agent Bouncer Workbench</strong>.
           </p>
           <div class="hero-cta">
@@ -121,15 +121,15 @@
           <div class="grid">
             <div class="card">
               <h3>Guards, from 0 to GPT</h3>
-              <p>A keyword baseline, a fine-tuned encoder (DistilBERT 66M / ModernBERT-large 395M), decoder guards (Qwen3-0.6B/1.7B via SFT, and a GRPO reasoning guard), OpenAI Moderation, GPT-4o-mini, and GPT-5.2 at low / medium / high reasoning effort.</p>
+              <p>A keyword baseline, a fine-tuned encoder (DistilBERT 66M / ModernBERT-large 395M), decoder guards (Qwen3-0.6B/1.7B via SFT, and a GRPO reasoning guard), OpenAI Moderation, GPT-4o-mini, GPT-5.4-mini, and GPT-5.2 at low / medium / high reasoning effort.</p>
             </div>
             <div class="card">
               <h3>One honest harness</h3>
-              <p>Seven benchmarks across guardrail, red-teaming, and over-refusal axes. Precision / Recall / F1 / ROC-AUC / p50 / p90 / throughput — with <strong>over-blocking (FPR@benign)</strong> as the headline usability metric.</p>
+              <p>Seven benchmarks across guardrail, red-teaming, and over-refusal axes — plus a distinct <strong>policy-guardrailing</strong> axis (SafePyramid). Precision / Recall / F1 / ROC-AUC / p50 / p90 / throughput — with <strong>over-blocking (FPR@benign)</strong> as the headline usability metric, and one honest, audited number per cell.</p>
             </div>
             <div class="card">
-              <h3>Ensembles, interactively</h3>
-              <p>Combine guards with union / intersection / majority / mean / weighted strategies. The Workbench ensemble builder scores your mix instantly from dumped per-sample predictions and drops it onto the leaderboard.</p>
+              <h3>Ensembles &amp; cascades</h3>
+              <p>Combine guards (union / intersection / majority / mean / weighted), <strong>auto-optimize per objective</strong>, or chain them into a <strong>recall→precision</strong> or <strong>confidence-deferral cascade</strong> — and run a <strong>diversity report</strong> that tells you whether ensembling can even help, all scored offline from dumped per-sample predictions.</p>
             </div>
           </div>
         </section>
@@ -151,7 +151,7 @@ make setup                       # venv + eval/benchmark/serve extras
 #    and compare on the Leaderboard — from the Workbench or the CLI.
 make bench                       # download + run the 7-benchmark suite
 make test                        # run the test suite (green)</code></pre>
-          <p class="section-lead">Set <code>OPENAI_API_KEY</code> in <code>.env</code> to score the OpenAI Moderation, GPT-4o-mini, and GPT-5.2 (low/medium/high) guards; everything else runs locally on CPU.</p>
+          <p class="section-lead">Set <code>OPENAI_API_KEY</code> in <code>.env</code> to score the OpenAI Moderation, GPT-4o-mini, GPT-5.4-mini, and GPT-5.2 (low/medium/high) guards; everything else runs locally on CPU.</p>
         </section>
 
         <section id="reference">
