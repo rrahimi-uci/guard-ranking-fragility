@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 
+
 def md(src): return {"cell_type": "markdown", "metadata": {}, "source": src}
 def code(src): return {"cell_type": "code", "metadata": {}, "execution_count": None, "outputs": [], "source": src}
 
@@ -29,9 +30,11 @@ negatives, **JailbreakBench + XSTest held out (LOBO)**, leakage-safe splits, mat
 - **SMOKE** (CPU/MPS, the default when no CUDA): tiny data + few steps + a small proxy model so the whole
   pipeline runs in minutes to prove it works — flip to a GPU for real numbers.
 
-**Benchmarks:** if run inside the repo it uses the cached matched-n subsets in `data/benchmarks/` (seed 42,
-per_class=80); outside the repo it downloads the same benchmarks from Hugging Face. Set `OPENAI_API_KEY`
-(and optionally `HF_TOKEN`) to include the GPT baselines; they're skipped cleanly if absent.""") )
+**Benchmarks travel with the notebook:** the matched-n subsets are bundled in `data/benchmarks/` next to
+this notebook (seed 42, per_class=80), so the `notebooks/` folder is self-contained — copy or zip it and
+the eval sets come along, no download needed. If the bundle is missing it downloads the same benchmarks
+from Hugging Face. Set `OPENAI_API_KEY` (and optionally `HF_TOKEN`) to include the GPT baselines; they're
+skipped cleanly if absent.""") )
 
 CELLS.append(md("## 1 · Install dependencies"))
 CELLS.append(code(r"""# Idempotent; safe to re-run. On Colab this installs everything; locally it's a no-op if present.
@@ -110,8 +113,8 @@ print(f"OPENAI baselines: {'on' if OPENAI_KEY else 'off (no OPENAI_API_KEY)'}")"
 CELLS.append(md(r"""## 3 · Data
 
 One record schema `{text, label∈{safe,unsafe}, source}` (positive class = `unsafe`). The **eval sets** are
-the repo's cached matched-n subsets (`data/benchmarks/*.jsonl`, seed 42) when running inside the repo, else
-downloaded from Hugging Face. The **training mixture** is built from *disjoint* training splits (never the
+the matched-n subsets bundled next to this notebook (`data/benchmarks/*.jsonl`, seed 42), else downloaded
+from Hugging Face. The **training mixture** is built from *disjoint* training splits (never the
 eval subsets), with **JailbreakBench** (red-team transfer) and **XSTest** (over-refusal) fully **held
 out** (LOBO). Every load is wrapped so a missing source degrades gracefully."""))
 CELLS.append(code(r"""from datasets import load_dataset
@@ -140,9 +143,10 @@ def _read_jsonl(path):
                 out.append({"text": r["text"], "label": r["label"], "source": r.get("source", "")})
     return out
 
-# Locate the repo's cached benchmarks if we're running inside the repo (the "benchmark from here").
+# Find the cached benchmarks: the bundle shipped next to this notebook (data/benchmarks/) is preferred, so
+# the notebooks/ folder is self-contained; the repo copy and a couple of common layouts are also checked.
 def _find_dir(name):
-    for base in (".", "..", "../..", os.path.dirname(os.getcwd())):
+    for base in (".", "notebooks", "..", "../..", os.path.dirname(os.getcwd())):
         p = os.path.join(base, name)
         if os.path.isdir(p): return os.path.normpath(p)
     return None

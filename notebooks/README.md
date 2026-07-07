@@ -1,0 +1,23 @@
+# Notebooks
+
+## `smollm3_guard_end_to_end.ipynb` — self-contained SmolLM3-3B guard pipeline
+
+Trains **SmolLM3-3B** into an LLM/agent safety guard and evaluates it against the mini judges, end to end,
+in one notebook. It implements [`../docs/smollm3-guard-plan.md`](../docs/smollm3-guard-plan.md).
+
+**This folder is standalone.** The matched-n benchmark subsets are bundled in
+[`data/benchmarks/`](data/benchmarks/) (seed 42, per_class=80) — copy or zip the `notebooks/` folder and the
+eval sets travel with it, no download needed. If the bundle is missing the notebook falls back to Hugging
+Face. The only network requirement is the one-time model download.
+
+- **SMOKE mode** (auto when no CUDA): a tiny proxy model + tiny data + a few steps, so the whole pipeline
+  runs in minutes on CPU/MPS to prove it works.
+- **FULL mode** (a CUDA GPU): trains the real SmolLM3-3B; batch size, sequence length and precision
+  auto-scale to the GPU's VRAM (a 16 GB T4 runs without OOM).
+- Set `OPENAI_API_KEY` (and optionally `HF_TOKEN`) to include the GPT-4o-mini / GPT-5-mini baselines.
+
+Outputs (leaderboard, per-axis + per-benchmark P/R/F1, parity CIs, and the figures) are written to
+`outputs/nb-smollm3-guard/`.
+
+Regenerate the notebook: `python ../scripts/build_smollm3_notebook.py`.
+Refresh the bundled data: `python ../scripts/bundle_notebook_data.py`.

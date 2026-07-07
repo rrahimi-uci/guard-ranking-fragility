@@ -48,6 +48,10 @@ extend-exclude = ["notebooks", "*.ipynb"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.per-file-ignores]
+# this file is a notebook generator: its long lines are embedded notebook-cell source (kept compact)
+"scripts/build_smollm3_notebook.py" = ["E501"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
