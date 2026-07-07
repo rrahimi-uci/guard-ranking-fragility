@@ -155,3 +155,32 @@ flowchart LR
 4. **Save** the versioned model with its metrics and **compare** experiments.
 
 All four steps are one click each in the [guided workflow →](workflow.md).
+
+## Extending beyond SFT / GRPO / DPO — the right order for this repo
+
+The repo ships **SFT · GRPO · DPO**. The key fact that fixes the *order* of any extension: our reward is
+**verifiable** — the gold `safe`/`unsafe` label *is* the reward — so the natural progression stays in the
+**reward-model-free** family (critic-free online RL, reference-free preference) and reserves anything that
+needs a *learned* reward model for last. Concretely:
+
+**SFT → GRPO → DPO → RLOO → ORPO → (maybe) KTO → [RewardTrainer + PPO, only if going reward-model-based].**
+
+| Technique | Family | Needs | TRL trainer | Reach for it when |
+|---|---|---|---|---|
+| **SFT** | supervised | labels | `SFTTrainer` | always step 1 |
+| **GRPO** | online RL, critic-free (group-relative baseline) | a verifiable reward | `GRPOTrainer` | optimize the metric directly |
+| **DPO** | offline preference (needs a reference model) | good/bad pairs | `DPOTrainer` | targeted correction from pairs |
+| **RLOO** | online RL, critic-free (leave-one-out baseline) | a verifiable reward | `RLOOTrainer` | a lighter online-RL sibling of GRPO — try when GRPO is unstable/costly |
+| **ORPO** | reference-free preference **fused with SFT** (one stage) | good/bad pairs | `ORPOTrainer` | no reference model in memory; efficient one-pass align for small models |
+| **KTO** *(maybe)* | unpaired, binary desirable/undesirable | per-example `safe`/`unsafe` (no pairs) | `KTOTrainer` | you have lots of *unpaired* good/bad examples — which guardrail data naturally is |
+| **RewardTrainer + PPO** | reward-model-based RLHF | a trained reward model + value model | `RewardTrainer`, `PPOTrainer` | **only** if you deliberately move to reward-model-based RL |
+
+**Why this order (not the textbook RLHF ladder):** when the reward is exact, RLOO/ORPO/KTO stay
+reward-model-free and cheap, while `RewardTrainer + PPO` add a whole reward-model training stage plus a
+value network that buy little over a verifiable reward — so they come **last**, and only on purpose.
+GRPO and RLOO are siblings (group-relative vs leave-one-out baseline, both critic-free); ORPO folds the
+preference signal into SFT so there's no separate reference model; KTO is the natural fit for our binary,
+often-unpaired labels. Encoders remain **SFT-only** — all of these operate on generated sequences.
+
+*(Only SFT/GRPO/DPO are wired today; RLOO/ORPO/KTO are the planned extensions and would each add a thin
+TRL-trainer wrapper alongside `training/sft.py` · `grpo.py` · `dpo.py`.)*

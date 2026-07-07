@@ -68,10 +68,21 @@ python scripts/train/run_training.py --model smollm3-3b --technique sft \
   --max-seq-len 1024 --bf16 --seed 42 --batch 8 --grad-accum 2      # A100. MPS: smoke only (--max-steps 60)
 ```
 
-**RL/DPO are ablation-only** (they collapsed to FPR 0.77–0.99; root cause: `rewards.py`
+**RL/preference methods are ablation-only** (GRPO/DPO collapsed to FPR 0.77–0.99; root cause: `rewards.py`
 `false_positive_penalty == correctness`). If run, set `false_positive_penalty≈2.5`, start from the SFT
 checkpoint, GPU only, and report FPR recovery as a negative-result row. (SmolLM3's ~128k vocab risks the
 Apple MPS INT_MAX limit in DPO — do RL on A100 only.)
+
+**Technique progression (for the ablations / future work).** Because the reward here is **verifiable**
+(the gold label *is* the reward), extend in the reward-model-free order and keep reward-model RL for last:
+**SFT → GRPO → DPO → RLOO → ORPO → (maybe) KTO → [RewardTrainer + PPO only if going reward-model-based].**
+RLOO is the critic-free sibling of GRPO (leave-one-out baseline); ORPO fuses preference into SFT with no
+reference model; KTO fits our *unpaired* binary safe/unsafe labels; `RewardTrainer + PPO` add a learned
+reward + value model that buy little over an exact reward, so they come last and only on purpose. Only
+SFT/GRPO/DPO are wired today; the rest are thin TRL-trainer wrappers to add. Rationale + trainer map:
+[`docs/fine-tuning.md`](fine-tuning.md#extending-beyond-sft--grpo--dpo--the-right-order-for-this-repo).
+The SmolLM3 **headline guard stays SFT**; all RL/preference methods are research ablations, not the
+shipped guard.
 
 ---
 

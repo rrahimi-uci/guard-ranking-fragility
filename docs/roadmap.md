@@ -44,6 +44,13 @@ Eval-driven: we build the scoreboard first, then climb it.
 - Encoder fine-tune (distilbert, 2 epochs, 73 s) **beat the keyword baseline ~100× on F1**.
 - Real decoder SFT size sweep on Qwen3 **0.6B and 1.7B**; real GRPO from the SFT checkpoint.
 
+### Training-technique extensions (planned)
+- Beyond the shipped **SFT / GRPO / DPO**, extend in the reward-model-free order that fits our
+  *verifiable* reward: **RLOO → ORPO → (maybe) KTO**, with **RewardTrainer + PPO only** if deliberately
+  moving to reward-model-based RL. Each is a thin TRL-trainer wrapper alongside
+  `training/{sft,grpo,dpo}.py`. Rationale + trainer map in
+  [`fine-tuning.md`](fine-tuning.md#extending-beyond-sft--grpo--dpo--the-right-order-for-this-repo).
+
 ### Follow-ups needing external access
 - Score the gated incumbents + benchmarks (Llama Guard / ShieldGemma / WildGuardMix /
   WildJailbreak / HarmBench / StrongREJECT / Lakera PINT) — needs `HF_TOKEN` + license acceptance.
