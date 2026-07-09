@@ -3,8 +3,8 @@
 ACM-formatted (`acmart`, sigconf) measurement study of a laptop-trained SmolLM3-3B safety guard.
 
 ## Files
-- `safety_guard_operating_point_artifacts.tex` — the paper (ACM `acmart`, `sigconf` + `nonacm`).
-- `safety_guard_operating_point_artifacts.pdf` — compiled output.
+- `benchmark_chooses_the_winner.tex` — the paper (ACM `acmart`, `sigconf` + `nonacm`).
+- `benchmark_chooses_the_winner.pdf` — compiled output.
 - `refs.bib` — 32 fact-checked references (verified arXiv IDs).
 - `figures/` — vector PDF figures (generated from result JSON; Okabe-Ito colorblind-safe palette):
   - `fig1_inhouse_auprc.pdf` — in-house pooled AUPRC (guard vs open guards).
@@ -18,11 +18,11 @@ ACM-formatted (`acmart`, sigconf) measurement study of a laptop-trained SmolLM3-
 
 ## Build
 ```bash
-make            # compile safety_guard_operating_point_artifacts.tex -> safety_guard_operating_point_artifacts.pdf (uses tectonic; auto-fetches acmart)
+make            # compile benchmark_chooses_the_winner.tex -> benchmark_chooses_the_winner.pdf (uses tectonic; auto-fetches acmart)
 make figures    # regenerate figures/ from the result JSON
 make clean
 ```
-Or directly: `tectonic safety_guard_operating_point_artifacts.tex` (needs network on first run to fetch acmart).
+Or directly: `tectonic benchmark_chooses_the_winner.tex` (needs network on first run to fetch acmart).
 
 ## Provenance
 All numbers trace to `notebooks/outputs/nb-smollm3-guard/*.json`. Producing scripts:
