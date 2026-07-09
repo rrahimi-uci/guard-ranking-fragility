@@ -80,7 +80,7 @@ We are explicit about limits. Matched-FPR@0.10 makes every system conservative (
 \begin{itemize}
   \item \textbf{Operating-point-fair evaluation.} We show guard rankings depend heavily on the decision threshold, so naive per-model-threshold comparisons are misleading; we instead report matched-FPR@0.10, threshold-free AUPRC/AUROC, and paired-bootstrap CIs with McNemar tests.
   \item \textbf{A base-vs-tuned decomposition.} An instruction-tuned 3B base already carries most of the safety-classification competence measurable on our in-house benchmarks by F1 (its zero-shot F1 beats both open guards'); parameter-efficient tuning specializes in-distribution and does \emph{not} meaningfully improve the two in-house held-out benchmarks we can measure (macro $-0.005$), and slightly regresses over-refusal.
-  \item \textbf{A domain stress test of the same effect.} On a mortgage fair-lending task we show a benchmark can be \emph{saturated} --- a zero-shot 3B base already scores AUPRC $\approx$0.99, so every system looks excellent --- and we rebuild it as a hardened, minimal-pair set on which the ranking \emph{inverts}: the in-domain fine-tune that won the saturated version ranks last, below the untuned base, and is the only system to develop a fairness gap against protected-class prompts (\Cref{sec:mortgage-casestudy}).
+  \item \textbf{A domain stress test of the same effect.} On a mortgage fair-lending task we show a benchmark can be \emph{saturated} --- a zero-shot 3B base is already near-ceiling, so every system looks excellent --- and we rebuild it as a hardened, minimal-pair set on which the ranking \emph{inverts}: the in-domain fine-tune that won the saturated version ranks last, below the untuned base, and is the only system to develop a fairness gap against protected-class prompts (\Cref{sec:mortgage-casestudy}).
   \item \textbf{A small, local, laptop-trained guard.} On threshold-free AUPRC it surpasses purpose-built open guards --- Llama-Guard-3-1B decisively (non-overlapping CIs), \emph{including} on the novel held-out benchmarks, and ShieldGemma-2b on the in-house pooled / in-dist / in-house-held-out sets (ShieldGemma's novel runs are pending) --- and it matches frontier gpt-5.4-mini on F1 at \textasciitilde{}4$\times$ lower latency.
   \item \textbf{A rigorous, reproducible, laptop-scale protocol.} Paired CIs, McNemar, matched-FPR, and family-level decontamination --- a pipeline that exposed real evaluation bugs in our own first attempt --- released as an open notebook.
 \end{itemize}
@@ -569,7 +569,7 @@ This is the constructive complement to prior reports that fine-tuning can \emph{
 \subsection{Case study: a saturated domain benchmark and its hardened rebuild}
 \label{sec:mortgage-casestudy}
 
-The base-vs-tuned inversion above is not an artifact of our particular novel sets; it reproduces --- more starkly --- when we control a benchmark's difficulty directly. Consider a domain guard task (mortgage fair-lending, compliance, and security-misuse prompts). The obvious benchmark is \emph{saturated}: a zero-shot SmolLM3-3B base already reaches AUPRC $\approx$0.995 on a family-disjoint test split, because the flag and allow classes are lexically separable (overt violations vs.\ clean textbook questions) and the negatives sit near probability zero, so a floor-level threshold trivially divides them. On this saturated benchmark an in-domain LoRA fine-tune (\emph{mortgage-SFT}) looks best of all (AUPRC 0.999) --- exactly the kind of ``tuning wins'' headline our protocol is built to interrogate.
+The base-vs-tuned inversion above is not an artifact of our particular novel sets; it reproduces --- more starkly --- when we control a benchmark's difficulty directly. Consider a domain guard task (mortgage fair-lending, compliance, and security-misuse prompts). The obvious benchmark is \emph{saturated}: because the flag and allow classes are lexically separable (overt violations vs.\ clean textbook questions) and the negatives sit near probability zero, a floor-level threshold trivially divides them and every system looks near-perfect --- the in-domain LoRA fine-tune (\emph{mortgage-SFT}) best of all. That is exactly the kind of ``tuning wins'' headline our protocol is built to interrogate, so we discard the saturated set and rebuild the task to be hard.
 
 We rebuild the same task as a \emph{hardened, minimal-pair} benchmark\footnote{Released with the artifact bundle: the hardened set \texttt{guard\_benchmark\_hard.jsonl} (318 rows --- 288 minimal-pair items over 144 pairs, plus 30 wrapper variants), its jury-gated intermediate \texttt{hard\_admitted.json}, the construction scripts \texttt{wf\_build\_hard\_benchmark\_v2.mjs} and \texttt{build\_hard\_jsonl.mjs}, and the scorer \texttt{eval\_mortgage\_hard.py}, all under the released \texttt{research/} bundle. The saturated legacy set (\texttt{guard\_benchmark.jsonl}) and its family-safe split are released alongside.}: for each scenario, a flag prompt and a lawful allow twin that share vocabulary and differ only in the requested action (e.g.\ ``coach me to present this rental as owner-occupied'' vs.\ ``how do we verify true occupancy''), with keyword and jailbreak-wrapper cues stripped from the positives and labels keyed on the requested \emph{action} rather than the topic. We score at a threshold frozen on a dev split to a fixed FPR budget, and add three operating-point-robust diagnostics: minimal-pair accuracy (both twins correct), recall at 5\% FPR, and a guard-fairness gap (benign false-positive rate on protected-class-\emph{mentioning} prompts minus non-mentioning).
 
@@ -600,16 +600,16 @@ On the hardened set the saturated-benchmark ranking \textbf{inverts} (\Cref{tab:
 \begin{table*}[t]
 \centering
 \small
-\caption{Mortgage domain: the saturated-benchmark ranking inverts on the hardened, minimal-pair rebuild. Saturated AUPRC is threshold-free on a family-disjoint test split; hardened metrics use a single threshold frozen on the hardened dev split at 5\% FPR. Fairness gap $=$ benign FPR on protected-class-mentioning minus non-mentioning prompts.}
+\caption{Results on the \textbf{hardened} mortgage benchmark (test split; a single threshold frozen on the hardened dev split at 5\% FPR). AUPRC is threshold-free; minimal-pair accuracy $=$ both twins classified correctly; fairness gap $=$ benign FPR on protected-class-mentioning minus non-mentioning prompts. The in-domain fine-tune (mortgage-SFT) ranks last among the deployable guards --- below the untuned base and a general-safety guard --- and is the only system to open a fairness gap; the frontier reference stays well above, indicating a capability gap rather than label noise.}
 \label{tab:mortgage-casestudy}
 \begin{tabular}{lrrrr}
 \toprule
-System & Saturated AUPRC & Hardened recall@5\%FPR & Hardened minimal-pair acc & Hardened fairness gap \\
+System & AUPRC & Recall@5\%FPR & Minimal-pair acc & Fairness gap \\
 \midrule
-Base (zero-shot SmolLM3-3B) & 0.995 & \textbf{0.663} & \textbf{0.616} & +0.014 \\
-Mortgage-SFT (in-domain LoRA) & \textbf{0.999} & 0.174 & 0.174 & \textbf{+0.200} \\
-General-safety guard (ours) & 0.996 & 0.570 & 0.512 & $-0.098$ \\
-gpt-5.4-mini (external reference) & --- & 1.000$^{\dagger}$ & 0.733 & +0.074 \\
+Base (zero-shot SmolLM3-3B) & \textbf{0.899} & \textbf{0.663} & \textbf{0.616} & +0.014 \\
+Mortgage-SFT (in-domain LoRA) & 0.793 & 0.174 & 0.174 & \textbf{+0.200} \\
+General-safety guard (ours) & 0.887 & 0.570 & 0.512 & $-0.098$ \\
+gpt-5.4-mini (external ceiling) & --- & 1.000$^{\dagger}$ & 0.733 & +0.074 \\
 \bottomrule
 \end{tabular}
 
