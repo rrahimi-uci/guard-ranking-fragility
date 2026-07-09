@@ -1,9 +1,9 @@
 # Agent-Bouncer: An Operating-Point-Fair Measurement Study of a Laptop-Trained SmolLM3-3B Safety Guard
 
-> **Note:** `safety_guard_operating_point_artifacts.tex` (compiled to `safety_guard_operating_point_artifacts.pdf`) is the authoritative paper. This prose draft
+> **Note:** `benchmark_chooses_the_winner.tex` (compiled to `benchmark_chooses_the_winner.pdf`) is the authoritative paper. This prose draft
 > predates the grounding audit and its base-vs-tuned / calibration numbers (e.g. base 0.711,
 > tuned 0.791, matched-FPR figures) were superseded by the clean per-model-calibrated recompute
-> now reflected in `safety_guard_operating_point_artifacts.tex`: base **0.713** / tuned **0.794** (Δ+0.081 [0.062,0.100]), base
+> now reflected in `benchmark_chooses_the_winner.tex`: base **0.713** / tuned **0.794** (Δ+0.081 [0.062,0.100]), base
 > in-house AUPRC **0.696**. See `README.md` "Provenance" for the producing scripts.
 
 ## Abstract

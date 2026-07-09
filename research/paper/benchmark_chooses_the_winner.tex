@@ -17,7 +17,7 @@
 \begin{document}
 
 % ---- Title / authors ----
-\title{Safety-Guard Rankings Are Operating-Point Artifacts}
+\title{The Benchmark Chooses the Winner: Operating Points, Fine-Tuning, and the Fragility of Safety-Guard Rankings}
 \subtitle{A Fair, Reproducible Evaluation of Small LLM Guards}
 
 \author{Anonymous}
@@ -274,27 +274,54 @@ All splits are class-balanced (matched-n). HarmBench is an all-harmful stress se
 \begin{table*}[t]
 \centering
 \small
-\caption{Benchmarks, their safety axis, pool, evaluation role, and notes.}
+\caption{Benchmarks: source, safety axis, split role, and test statistics. Sources are Hugging Face datasets at \texttt{huggingface.co/datasets/$\langle$source$\rangle$}. ``Test n (uns:safe)'' is the balanced test-split size and its unsafe:safe composition. The four in-distribution and two in-house-held-out sets form the 2{,}018-row in-house pool; the three balanced novel sets total 2{,}020 rows (per-set AUPRC in \Cref{tab:novel-auprc}); HarmBench is 200 all-unsafe rows scored separately.}
 \label{tab:benchmarks}
 \begin{tabular}{lllll}
 \toprule
-Benchmark & Axis & Pool & Role & Notes \\
+Benchmark & Source (Hugging Face) & Axis & Split role & Test n (uns:safe) \\
 \midrule
-BeaverTails & guardrail & in-house & in-dist (dev/test) & \\
-ToxicChat & guardrail & in-house & in-dist (dev/test) & non-commercial license $\to$ eval-only for any released model \\
-Prompt Injections & red\_team & in-house & in-dist (dev/test) & \\
-Jailbreak Classification & red\_team & in-house & in-dist (dev/test) & \\
-JailbreakBench & red\_team & in-house & in-house held-out (test) & test-only, no dev rows \\
-XSTest & over\_refusal & in-house & in-house held-out (test) & benign-but-risky; gold label \texttt{safe}; test-only, no dev rows \\
-WildGuardTest (prompt) & --- & novel & novel held-out (test) & never trained on \\
-WildJailbreak (eval) & --- & novel & novel held-out (test) & never trained on \\
-OR-Bench-Hard & --- & novel & novel held-out (test) & never trained on \\
-HarmBench & --- & novel & novel held-out (test) & 200 rows, all-harmful; mean $P(\text{unsafe})$ only; excluded from aggregate AUPRC \\
+BeaverTails~\cite{ji2023beavertails} & \texttt{PKU-Alignment/BeaverTails} & guardrail & in-dist (train/dev/test) & 1{,}041 (513:528) \\
+ToxicChat~\cite{lin2023toxicchat} & \texttt{lmsys/toxic-chat} & guardrail & in-dist (train/dev/test) & 401 (199:202) \\
+Prompt Injections & \texttt{deepset/prompt-injections} & red-team & in-dist (train/dev/test) & 68 (32:36) \\
+Jailbreak Classification & \texttt{jackhhao/jailbreak-classification} & red-team & in-dist (train/dev/test) & 148 (73:75) \\
+JailbreakBench~\cite{chao2024jailbreakbench} & \texttt{JailbreakBench/JBB-Behaviors} & red-team & in-house held-out (test only) & 120 (58:62) \\
+XSTest~\cite{rottger2024xstest} & \texttt{natolambert/xstest-v2-copy} & over-refusal & in-house held-out (test only) & 240 (123:117) \\
+\midrule
+WildGuardTest~\cite{han2024wildguard} & \texttt{allenai/wildguardmix} & guardrail & novel / OOD (test only) & balanced \\
+WildJailbreak~\cite{jiang2024wildteaming} & \texttt{allenai/wildjailbreak} & red-team & novel / OOD (test only) & balanced \\
+OR-Bench-Hard~\cite{cui2024orbench} & \texttt{bench-llm/or-bench} & over-refusal & novel / OOD (test only) & balanced \\
+HarmBench~\cite{mazeika2024harmbench} & \texttt{walledai/HarmBench} & red-team & novel / OOD (test only) & 200 (all unsafe) \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-The in-house pool contributes 2,018 balanced test rows. The three balanced novel sets contribute 2,020 balanced rows; HarmBench adds 200 all-harmful rows scored separately.
+\textbf{Selection.} We pick established, publicly hosted sets that jointly cover the three safety axes --- \emph{guardrail} (harmful content), \emph{red-team} (jailbreaks / prompt injection), and \emph{over-refusal} (benign-but-superficially-risky) --- and we represent each axis in \emph{both} the in-house and the novel pool, so no axis is judged on a single source. XSTest is the over-refusal probe (its gold label is \texttt{safe}); HarmBench is an all-harmful stress set (no negatives), so it is scored by mean $P(\text{unsafe})$ and excluded from any aggregate AUPRC.
+
+\textbf{Train/dev/test separation (per benchmark).} Only the four \emph{in-distribution} sets contribute training and calibration data: each is split into a train portion (LoRA fine-tuning only), a dev portion (fitting $T$ and $\tau$ only), and a class-balanced test portion; the \textbf{1{,}102} in-distribution dev rows come exclusively from these four (JailbreakBench and XSTest contribute \emph{zero} dev/train rows). The two \emph{in-house-held-out} sets and the four \emph{novel} sets are \textbf{test-only}: the guard never sees them in training or calibration. Novel sets are additionally held out at the \emph{source-family} level (the whole dataset family is excluded from training) with near-duplicate filtering, so held-out evaluation measures transfer rather than memorization. Every test split is class-balanced by matched-$n$ sampling except XSTest (over-refusal, majority \texttt{safe}) and HarmBench (all-unsafe). \Cref{fig:pools} shows the split-and-evaluation flow.
+
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  >=Stealth,
+  pool/.style={draw, rounded corners, align=left, inner sep=6pt, font=\small, text width=54mm, fill=black!2},
+  sink/.style={draw, rounded corners, align=center, inner sep=6pt, font=\small, text width=44mm, fill=black!6}
+]
+  \node[pool] (ind) {\textbf{In-distribution} (4 sets)\\ BeaverTails, ToxicChat, Prompt Injections, Jailbreak Classification\\[2pt] $\Rightarrow$ \textbf{train} $+$ \textbf{dev} $+$ test};
+  \node[pool, below=6mm of ind] (iho) {\textbf{In-house held-out} (2 sets)\\ JailbreakBench, XSTest\\[2pt] $\Rightarrow$ test only (0 train/dev)};
+  \node[pool, below=6mm of iho] (nov) {\textbf{Novel / OOD} (4 sets)\\ WildGuardTest, WildJailbreak, OR-Bench-Hard, HarmBench\\[2pt] $\Rightarrow$ test only, source-family holdout};
+  \node[sink, right=42mm of ind] (train) {\textbf{Fine-tune (LoRA)} $+$ \textbf{calibrate} $T,\tau$\\[2pt] in-dist train $+$ dev only (1{,}102 dev rows)};
+  \node[sink, right=42mm of nov] (eval) {\textbf{Evaluate all systems}\\[2pt] AUPRC/AUROC, matched-FPR@0.10, paired CIs};
+  \draw[->] (ind.east) -- node[above, font=\scriptsize]{train\,+\,dev} (train.west);
+  \draw[->] (ind.east) -- (eval.west);
+  \draw[->] (iho.east) -- (eval.west);
+  \draw[->] (nov.east) -- (eval.west);
+  \draw[->] (train.south) -- node[right, font=\scriptsize]{guard adapter} (eval.north);
+\end{tikzpicture}%
+}
+\caption{Benchmark pools and the train/dev/test separation. Only the four in-distribution sets feed fine-tuning and calibration (train\,+\,dev); the two in-house-held-out and four novel sets are test-only, so held-out and out-of-distribution evaluation measure transfer rather than memorization.}
+\label{fig:pools}
+\end{figure*}
 
 \subsection{Baselines}
 
@@ -374,7 +401,28 @@ keyword matcher & --- & 0.096 & 0.168 & --- & not measured \\
 
 On pooled in-house AUPRC the guard (0.844) leads ShieldGemma-2b (0.712) and Llama-Guard-3-1B (0.639) on point estimates (the baselines carry no CIs, so we do not assert statistical significance here); see \Cref{fig:inhouse-auprc}. At matched FPR@0.10 all tunable systems are conservative (the guard operates at recall 0.431, FPR 0.051); the guard still leads the other tunable guards on both recall and F1 on point estimates. The guard's in-dist AUPRC is 0.846 and its in-house held-out AUPRC is 0.860 [0.803, 0.909]. At each system's best threshold (Optimal-F1), the guard reaches 0.794, ShieldGemma-2b 0.730, and Llama-Guard-3-1B 0.672 --- the same guard $>$ ShieldGemma $>$ Llama-Guard order, which (like AUPRC) inverts the native-threshold F1 ordering of the two open guards (\Cref{sec:operating-point-fairness}).
 
-At the \textbf{deployed} operating point ($T=2.10$, $\tau=0.59$), the guard's per-benchmark F1 is BeaverTails 0.716, ToxicChat 0.915, Prompt Injections 0.828, Jailbreak Classification 0.980, JailbreakBench 0.821, XSTest 0.833. This yields macro-F1 0.860 (in-dist) / 0.827 (in-house held-out) and pooled micro-F1 0.794. The deployed overall FPR is \textbf{0.306} --- i.e.\ at $\tau=0.59$ roughly 31\% of benign in-house prompts are flagged. This is high and is a genuine deployment concern that would in practice motivate a higher, application-specific threshold; we return to it in \Cref{sec:limitations}. (Note: the macro-F1 in-dist value 0.860 coincides numerically with the \emph{in-house held-out AUPRC} 0.860 but is a different metric on a different split.)
+\Cref{tab:perbench} breaks the in-house pool down per benchmark: threshold-free AUPRC for every system, plus the base$\to$tuned F1 at each model's own clean in-distribution calibration (the tuned column is also the guard's deployed-point F1). Two patterns stand out. Tuning's F1 gain is concentrated in-distribution and near-flat on the held-out sets (JailbreakBench $+0.012$, XSTest $-0.023$); and on the two held-out sets the \emph{base} already has the higher AUPRC (JailbreakBench 0.967 vs 0.826, XSTest 0.976 vs 0.857), an early sign of the out-of-distribution ranking degradation we quantify in \S\ref{sec:base-vs-tuned}. At the deployed point ($T=2.10$, $\tau=0.59$) this yields macro-F1 0.860 (in-dist) / 0.827 (held-out) and pooled micro-F1 0.794, but the deployed overall FPR is \textbf{0.306} --- at $\tau=0.59$ roughly 31\% of benign in-house prompts are flagged, a genuine deployment concern we revisit in \Cref{sec:limitations}.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Per-benchmark in-house results. Threshold-free AUPRC (unsafe = positive) for each system, and base$\to$tuned F1 at each model's clean in-distribution calibration. Sets marked $\dagger$ are in-house held-out (test-only, zero train/dev rows); the rest are in-distribution. ``n (uns:safe)'' is the balanced test size. Novel per-set AUPRC is in \Cref{tab:novel-auprc}.}
+\label{tab:perbench}
+\begin{tabular}{llrrrrr}
+\toprule
+Benchmark & n (uns:safe) & Guard & Base & Llama-G-3-1B & ShieldGemma-2b & F1 base$\to$tuned \\
+\midrule
+BeaverTails & 1{,}041 (513:528) & 0.687 & 0.618 & 0.561 & 0.656 & 0.691 $\to$ 0.716 \\
+ToxicChat & 401 (199:202) & 0.948 & 0.856 & 0.663 & 0.952 & 0.766 $\to$ 0.915 \\
+Prompt Injections & 68 (32:36) & 0.905 & 0.786 & 0.807 & 0.666 & 0.690 $\to$ 0.828 \\
+Jailbreak Classification & 148 (73:75) & \textbf{0.999} & 0.451 & 0.662 & 0.824 & 0.339 $\to$ 0.980 \\
+JailbreakBench$^\dagger$ & 120 (58:62) & 0.826 & \textbf{0.967} & 0.806 & 0.676 & 0.809 $\to$ 0.821 \\
+XSTest$^\dagger$ & 240 (123:117) & 0.857 & \textbf{0.976} & 0.755 & 0.825 & 0.856 $\to$ 0.833 \\
+\midrule
+\textbf{Pooled (2{,}018)} & (998:1{,}020) & \textbf{0.844} & 0.696 & 0.639 & 0.712 & 0.713 $\to$ 0.794 \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \subsection{Novel held-out benchmarks (guard never trained on them)}
 \label{subsec:novel}
@@ -443,6 +491,34 @@ The F1 difference is not significant (McNemar $p=0.20$; CI spans zero, its lower
 
 \section{Analysis}
 \label{sec:analysis}
+
+The three analyses below share one message, summarized in \Cref{fig:ranking-flip}: the \emph{same} candidate systems change rank as the evaluation regime changes, so the reported ``best guard'' is a property of the benchmark and operating point as much as of the model.
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+  >=Stealth,
+  cand/.style={draw, rounded corners, align=center, inner sep=5pt, font=\small, text width=58mm, fill=black!2},
+  regime/.style={draw, rounded corners, align=left, inner sep=5pt, font=\small, text width=44mm, fill=black!4},
+  win/.style={draw, rounded corners, align=left, inner sep=5pt, font=\small, text width=30mm, fill=black!8}
+]
+  \node[cand] (c) {\textbf{Same candidate systems}\\ untuned base $\cdot$ fine-tuned guard $\cdot$ open guards};
+  \node[regime, below=7mm of c.west, anchor=north west, xshift=-2mm] (r1) {\textbf{Saturated in-domain}\\ (negatives $\approx 0$)};
+  \node[regime, below=4mm of r1] (r2) {\textbf{In-house pooled}\\ (fair, threshold-free)};
+  \node[regime, below=4mm of r2] (r3) {\textbf{Novel / hardened}\\ (OOD, minimal-pair)};
+  \node[win, right=14mm of r1] (w1) {in-domain \textbf{fine-tune} wins};
+  \node[win, right=14mm of r2] (w2) {\textbf{fine-tuned guard} wins (base close behind)};
+  \node[win, right=14mm of r3] (w3) {\textbf{untuned base} wins};
+  \draw[->] (c) -- (r1.north);
+  \draw[->] (r1) -- (w1);
+  \draw[->] (r2) -- (w2);
+  \draw[->] (r3) -- (w3);
+\end{tikzpicture}%
+}
+\caption{The benchmark chooses the winner. The identical set of systems is re-ranked by the evaluation regime: an in-domain fine-tune tops a saturated benchmark, ties/leads on a fair in-house pool, and \emph{loses to the untuned base} out-of-distribution and on a hardened minimal-pair set (\S\ref{sec:base-vs-tuned}, \S\ref{sec:mortgage-casestudy}).}
+\label{fig:ranking-flip}
+\end{figure}
 
 \subsection{Base-vs-tuned decomposition: PEFT specializes in-distribution and degrades OOD ranking}
 \label{sec:base-vs-tuned}

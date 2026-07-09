@@ -10,7 +10,7 @@ research/
     outputs/      cached scores + summary_*.json (every number in the paper traces here)
     .env          optional keys (OPENAI_API_KEY / HF_TOKEN)
     README.md
-  paper/          ACM paper: safety_guard_operating_point_artifacts.{tex,pdf}, refs.bib, figures/, tables/
+  paper/          ACM paper: benchmark_chooses_the_winner.{tex,pdf}, refs.bib, figures/, tables/
     Makefile, README.md, DRAFT.md, metrics_survey.md
   scripts/        producing scripts for the paper's experiments (see scripts/README.md)
   docs/           supporting design/results docs referenced by the notebook & paper
@@ -46,7 +46,7 @@ Mortgage case-study chain: `build_mortgage_split.py` → `train_mortgage.py` (TE
 ## Build the paper
 `paper/` compiles standalone (figures are committed as vector PDFs — no scripts or Python needed):
 ```bash
-cd research/paper && make            # tectonic -> safety_guard_operating_point_artifacts.pdf
+cd research/paper && make            # tectonic -> benchmark_chooses_the_winner.pdf
 make figures                         # optional: regenerate figures (needs the venv above)
 ```
 
