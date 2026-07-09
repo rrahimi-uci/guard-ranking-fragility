@@ -1,5 +1,5 @@
 # agent-bouncer paper build
-PAPER = safety_guard_operating_point_artifacts
+PAPER = benchmark_chooses_the_winner
 .PHONY: all figures clean
 all: $(PAPER).pdf
 $(PAPER).pdf: $(PAPER).tex refs.bib $(wildcard figures/*.pdf)
