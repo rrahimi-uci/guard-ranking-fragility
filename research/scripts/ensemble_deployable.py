@@ -9,7 +9,8 @@ rows DISJOINT from the fit set -- the in-house held-out benchmarks and the novel
 reported AUPRCs have no leakage. We report three points:
   raw prob-avg  (simplest per-prompt deployable, conservative)
   PIT-avg       (dev-style CDF normalization, the deployable recipe we recommend)
-  rank-avg      (global-test oracle upper bound, from ensemble_probe.py, for context)
+  rank-avg      (a non-deployable global-rank-average alternative, from ensemble_probe.py, for context;
+                 NOT an upper bound -- the PIT ensemble can and does exceed it, e.g. Qwen 0.847 > 0.845)
 A single model's AUPRC is invariant to any monotone map, so the base/tuned endpoints are unchanged.
 Run from research/:  .venv/bin/python scripts/ensemble_deployable.py
 """
@@ -85,7 +86,10 @@ def ens(members, store, mask=None, kind="pit"):
 
 PAIRS={"smol base+tuned":["smol_base","smol_tuned"],"qwen base+tuned":["qwen_base","qwen_tuned"],
        "cross tuned+tuned":["smol_tuned","qwen_tuned"],"all4":["smol_base","smol_tuned","qwen_base","qwen_tuned"]}
-RANK_UB={"smol base+tuned":(0.847,0.907),"qwen base+tuned":(0.820,0.845),"cross tuned+tuned":(None,0.799),"all4":(0.794,0.898)}  # (inhouse-pooled, novel) from probe, context only
+# (inhouse-pooled, novel) global-rank-average from ensemble_probe.py -- a reference ALTERNATIVE ensemble,
+# NOT an upper bound (the deployable PIT ensemble exceeds it on Qwen and cross). cross novel = rank-avg best
+# 0.796 (0.799 is the prob-avg best; do not confuse the two).
+RANK_REF={"smol base+tuned":(0.847,0.907),"qwen base+tuned":(0.820,0.845),"cross tuned+tuned":(None,0.796),"all4":(0.794,0.898)}
 
 def A(scores,gold): return round(auprc(scores,gold),3)
 res={"endpoints":{}, "ensembles":{}, "meta":{"n_novel":int(n_bal),"n_inhouse_heldout":int(ho_mask.sum()),"n_fit_indist":int(fit_mask.sum())}}
@@ -97,13 +101,13 @@ for m in IH:
     res["endpoints"][m]={"inhouse_heldout":ho,"novel":nv}; print(f"{m:14s} {ho:18.3f} {nv:11.3f}")
 
 print("\n=== DEPLOYABLE ENSEMBLES ===")
-print(f"{'ensemble':18s} | {'in-house HELD-OUT':>26s} | {'novel / OOD':>26s} | rank-UB(nov)")
+print(f"{'ensemble':18s} | {'in-house HELD-OUT':>26s} | {'novel / OOD':>26s} | rank-avg-ref(nov)")
 print(f"{'':18s} | {'prob-avg':>12s} {'PIT-avg':>13s} | {'prob-avg':>12s} {'PIT-avg':>13s} |")
 for nm,mem in PAIRS.items():
     ho_p=A(ens(mem,IH,ho_mask,"prob"),gold_ih[ho_mask]); ho_q=A(ens(mem,IH,ho_mask,"pit"),gold_ih[ho_mask])
     nv_p=A(ens(mem,NV,None,"prob"),gold_nov); nv_q=A(ens(mem,NV,None,"pit"),gold_nov)
     res["ensembles"][nm]={"inhouse_heldout":{"prob":ho_p,"pit":ho_q},"novel":{"prob":nv_p,"pit":nv_q}}
-    print(f"{nm:18s} | {ho_p:12.3f} {ho_q:13.3f} | {nv_p:12.3f} {nv_q:13.3f} | {RANK_UB[nm][1]}")
+    print(f"{nm:18s} | {ho_p:12.3f} {ho_q:13.3f} | {nv_p:12.3f} {nv_q:13.3f} | {RANK_REF[nm][1]}")
 
 # headline: deployable PIT base+tuned vs pure tuned on novel (CI), per family
 print("\n=== HEADLINE: deployable PIT base+tuned vs pure tuned, on NOVEL (OOD) ===")

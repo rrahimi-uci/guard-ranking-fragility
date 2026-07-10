@@ -20,7 +20,7 @@ def le(p):
 le("notebooks/.env"); le(".env")
 HF=os.environ.get("HF_TOKEN")
 SEED=42; random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
-DEV="mps" if torch.backends.mps.is_available() else "cpu"
+DEV="cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
 MID="HuggingFaceTB/SmolLM3-3B"; ADAPTER="notebooks/outputs/nb-smollm3-guard/adapter"; MAXLEN=1024
 PER_CLASS=int(os.environ.get("PER_CLASS","400")); BS=16
 CACHE="notebooks/outputs/nb-smollm3-guard"

@@ -18,7 +18,7 @@ def le(p):
 le("notebooks/.env"); le(".env")
 HF_TOKEN = os.environ.get("HF_TOKEN")
 SEED = 42; random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
-DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
 MODEL_ID = "HuggingFaceTB/SmolLM3-3B"
 MAX_SEQ_LEN = 1024; EVAL_PER_CLASS = 1200; TRAIN_CAP = 1200; OR_BENCH_CAP = 1000
 

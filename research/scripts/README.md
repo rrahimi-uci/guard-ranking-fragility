@@ -2,9 +2,9 @@
 
 **Run every script from `research/`** (the parent of this folder), so their `notebooks/…` and `paper/…`
 paths resolve — e.g. `python scripts/eval_mortgage_hard.py`. The `.py` scripts need the environment in
-`../requirements.txt`; the `.mjs` files are Claude Code **Workflow** scripts (LLM-orchestration, run via the
-Claude Code harness, not plain `node`) — the benchmark they generate is committed, so re-running them is
-optional.
+`../notebooks/requirements.txt`. Most `.mjs` files are Claude Code **Workflow** scripts (LLM-orchestration,
+run via the Claude Code harness, not plain `node`); `build_hard_jsonl.mjs` is a plain-`node` script. The
+benchmark they generate is committed, so re-running them is optional.
 
 ## Paper: in-house, novel/OOD, and base-vs-tuned
 | script | purpose |

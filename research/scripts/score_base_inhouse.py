@@ -12,7 +12,7 @@ def le(p):
                 k,v=l.split("=",1); os.environ.setdefault(k.strip(),v.strip().strip('"').strip("'"))
 le("notebooks/.env"); le(".env"); HF=os.environ.get("HF_TOKEN")
 SEED=42; random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
-DEV="mps" if torch.backends.mps.is_available() else "cpu"
+DEV="cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
 MID="HuggingFaceTB/SmolLM3-3B"; MAXLEN=1024; TRAIN_CAP=1200; OR_BENCH_CAP=1000; ND="notebooks/outputs/nb-smollm3-guard"
 OUT=f"{ND}/base_smollm3_inhouse.json"
 if os.path.exists(OUT):

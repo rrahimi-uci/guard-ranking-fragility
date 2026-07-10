@@ -167,19 +167,23 @@ for nm,ks in soups.items():
 # ---- headline: for the deployable single model (tuned), does a base-blend Pareto-help? ----
 print("\n############ HEADLINE: does base⊕tuned beat the pure TUNED model on BOTH axes? ############")
 for fam in ("smol","qwen"):
-    t_in=auprc(IH[f"{fam}_tuned"],g_ih); t_nov=auprc(NV[f"{fam}_tuned"],gold_bal)
-    b_in=auprc(IH[f"{fam}_base"],g_ih);  b_nov=auprc(NV[f"{fam}_base"],gold_bal)
+    # Apples-to-apples: the blend is built from rank-transformed scores, so the tuned baseline must
+    # be scored in the SAME rank space (rank01 breaks the many score ties by index, so auprc(rank01(x))
+    # != auprc(x); comparing a rank-blend to the RAW tuned endpoint would make w=1.0 show a spurious gain).
+    rt_in=rank01(IH[f"{fam}_tuned"]); rt_nov=rank01(NV[f"{fam}_tuned"])
+    t_in=auprc(rt_in,g_ih); t_nov=auprc(rt_nov,gold_bal)
+    b_in=auprc(IH[f"{fam}_base"],g_ih);  b_nov=auprc(NV[f"{fam}_base"],gold_bal)  # raw base endpoints (context)
     # rank-avg blend at each w; find w maximizing min-improvement over tuned on both axes
     best=None
     for w in WS:
-        in_a=auprc(w*rank01(IH[f"{fam}_tuned"])+(1-w)*rank01(IH[f"{fam}_base"]),g_ih)
-        nv_a=auprc(w*rank01(NV[f"{fam}_tuned"])+(1-w)*rank01(NV[f"{fam}_base"]),gold_bal)
+        in_a=auprc(w*rt_in+(1-w)*rank01(IH[f"{fam}_base"]),g_ih)
+        nv_a=auprc(w*rt_nov+(1-w)*rank01(NV[f"{fam}_base"]),gold_bal)
         # Pareto-dominates tuned iff both >= tuned (small tol) and at least one strictly >
         dom = (in_a>=t_in-1e-6) and (nv_a>=t_nov-1e-6) and ((in_a>t_in+1e-6) or (nv_a>t_nov+1e-6))
-        score=min(in_a-t_in, nv_a-t_nov)  # worst-axis gain over tuned
+        score=min(in_a-t_in, nv_a-t_nov)  # worst-axis gain over tuned (0 at w=1.0 by construction)
         if best is None or score>best[0]: best=(score,w,in_a,nv_a,dom)
     _,w,in_a,nv_a,dom=best
-    lo,hi=paired_boot(gold_bal, w*rank01(NV[f"{fam}_tuned"])+(1-w)*rank01(NV[f"{fam}_base"]), NV[f"{fam}_tuned"])
+    lo,hi=paired_boot(gold_bal, w*rt_nov+(1-w)*rank01(NV[f"{fam}_base"]), rt_nov)
     print(f"  {fam}: tuned(in={t_in:.3f},nov={t_nov:.3f})  base(in={b_in:.3f},nov={b_nov:.3f})")
     print(f"       best rank-blend w={w:.2f}: in={in_a:.3f} ({in_a-t_in:+.3f}), nov={nv_a:.3f} ({nv_a-t_nov:+.3f})"
           f"  Pareto-dominates tuned? {dom}")
