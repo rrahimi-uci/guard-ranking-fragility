@@ -19,7 +19,7 @@ ACM-formatted (`acmart`, sigconf) measurement study of a laptop-trained SmolLM3-
 ## Build
 ```bash
 make            # compile benchmark_chooses_the_winner.tex -> benchmark_chooses_the_winner.pdf (uses tectonic; auto-fetches acmart)
-make figures    # regenerate figures/ from the result JSON
+make figures    # regenerate figures/ (values are inline in make_figures.py; keep in sync with the tables by hand)
 make clean
 ```
 Or directly: `tectonic benchmark_chooses_the_winner.tex` (needs network on first run to fetch acmart).

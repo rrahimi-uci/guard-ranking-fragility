@@ -18,7 +18,7 @@ def le(p):
                 k,v=l.split("=",1); os.environ.setdefault(k.strip(),v.strip().strip('"').strip("'"))
 le("notebooks/.env"); le(".env"); HF=os.environ.get("HF_TOKEN")
 SEED=42; random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
-DEV="mps" if torch.backends.mps.is_available() else "cpu"
+DEV="cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
 MID="HuggingFaceTB/SmolLM3-3B"; MAXLEN=1024; PC=400; CACHE="notebooks/outputs/nb-smollm3-guard"
 from datasets import load_dataset
 def _n(t): return " ".join((t or "").lower().split())
@@ -117,6 +117,6 @@ for nm in ("guard","base","llama-guard","shieldgemma"):
 print("\n HarmBench mean P(unsafe):", {nm:round(float(per[nm]['harmbench'].mean()),3) for nm in SC})
 print(f"\n ATTRIBUTION (novel): tuned guard {res['guard']['auprc']:.3f} vs base {res['base']['auprc']:.3f} -> "
       f"tuning {'HELPS' if res['guard']['auprc']>res['base']['auprc'] else 'does NOT help'} on novel held-out (delta {res['guard']['auprc']-res['base']['auprc']:+.3f})")
-json.dump(res,open(f"{CACHE}/summary_novel_full.json","w"),indent=2,default=float)
-print("\nsaved -> summary_novel_full.json")
+json.dump(res,open(f"{CACHE}/summary_novel_4way.json","w"),indent=2,default=float)  # 4-system schema; the paper's canonical 3-system file is summary_novel_full.json (written by verify_novel.py)
+print("\nsaved -> summary_novel_4way.json")
 print("DONE_NOVEL_GAPS")
