@@ -37,7 +37,7 @@ lo=[0.870,0.751,0.673]; hi=[0.900,0.811,0.733]
 err=[[a-l for a,l in zip(ap,lo)],[h-a for a,h in zip(ap,hi)]]
 b=ax.bar(sys,ap,color=col,width=0.62,zorder=3)
 ax.errorbar(range(3),ap,yerr=err,fmt="none",ecolor=C["ink"],capsize=3,lw=1,zorder=4)
-lab(ax,b,ap,dy=0.012); ax.set_ylim(0,1.0); ax.set_ylabel("AUPRC (4 novel held-out sets)"); clean(ax)
+lab(ax,b,ap,dy=0.012); ax.set_ylim(0,1.0); ax.set_ylabel("AUPRC (3 balanced novel sets)"); clean(ax)
 ax.set_title("Out-of-distribution: base > tuned > Llama-Guard",fontsize=8.5,color=C["ink"])
 plt.tight_layout(); plt.savefig("paper/figures/fig2_novel_auprc.pdf",bbox_inches="tight"); plt.close()
 

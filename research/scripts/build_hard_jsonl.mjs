@@ -62,7 +62,10 @@ chosen.forEach((x, i) => {
   })
 })
 
-const out = 'notebooks/data/benchmarks/full/guard_benchmark_hard.jsonl'
+// Write to a LEGACY filename, never the canonical guard_benchmark_hard.jsonl the paper analyzes:
+// this builder emits the superseded 318-row minimal-pair set with a different schema, so overwriting
+// the committed 334-row trap-typed dataset would silently corrupt the paper's evaluation input.
+const out = 'notebooks/data/benchmarks/full/guard_benchmark_hard_legacy318.jsonl'
 fs.writeFileSync(out, rows.map(x => JSON.stringify(x)).join('\n') + '\n')
 
 // report

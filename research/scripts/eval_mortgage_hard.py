@@ -18,7 +18,7 @@ def le(p):
         if l and not l.startswith("#") and "=" in l:
             k,v=l.split("=",1); os.environ.setdefault(k.strip(),v.strip().strip('"').strip("'"))
 le("notebooks/.env"); le(".env"); HF=os.environ.get("HF_TOKEN")
-DEV="mps" if torch.backends.mps.is_available() else "cpu"
+DEV="cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
 MID="HuggingFaceTB/SmolLM3-3B"; MAXLEN=1024; ND="notebooks/outputs/nb-smollm3-guard"
 HARD="notebooks/data/benchmarks/full/guard_benchmark_hard.jsonl"
 
