@@ -80,7 +80,7 @@ We are explicit about limits. Matched-FPR@0.10 makes every system conservative (
 
 \begin{itemize}
   \item \textbf{Operating-point-fair evaluation.} We show guard rankings depend heavily on the decision threshold, so naive per-model-threshold comparisons are misleading; we instead report matched-FPR@0.10, threshold-free AUPRC/AUROC, and paired-bootstrap CIs with McNemar tests.
-  \item \textbf{A base-vs-tuned decomposition.} An instruction-tuned 3B base already carries most of the safety-classification competence measurable on our in-house benchmarks by F1 (its zero-shot F1 beats both open guards'); parameter-efficient tuning specializes in-distribution and does \emph{not} meaningfully improve the two in-house held-out benchmarks we can measure (macro $-0.005$), and slightly regresses over-refusal.
+  \item \textbf{A base-vs-tuned decomposition.} An instruction-tuned 3B base already carries most of the safety-classification competence measurable on our in-house benchmarks by F1 (its zero-shot F1 beats both open guards'); parameter-efficient tuning specializes in-distribution and does \emph{not} meaningfully improve the two in-house held-out benchmarks we can measure (macro $-0.005$), and slightly regresses over-refusal. This in-distribution-specialization / OOD-degradation pattern \emph{replicates cross-family} on a second base, Qwen2.5-1.5B-Instruct (\Cref{sec:cross-family}).
   \item \textbf{A domain stress test of the same effect (exploratory).} On a mortgage fair-lending task we show a benchmark can be \emph{saturated} --- a zero-shot 3B base is already near-ceiling, so every system looks excellent and none can be ranked --- and we rebuild it as a hardened, trap-typed set that de-saturates the field: small guards over-block benign-adjacent prompts far more than a frontier model, and which fine-tune ``wins'' flips between this in-domain set and the general novel sets. We flag this as a seed-scale, single-annotator case study rather than a headline result (\Cref{sec:mortgage-casestudy}).
   \item \textbf{A small, local, laptop-trained guard.} On threshold-free AUPRC it surpasses purpose-built open guards --- Llama-Guard-3-1B decisively (non-overlapping CIs), \emph{including} on the novel held-out benchmarks, and ShieldGemma-2b on the in-house pooled / in-dist / in-house-held-out sets (ShieldGemma's novel runs are pending) --- and it matches frontier gpt-5.4-mini on F1 at \textasciitilde{}4$\times$ lower latency.
   \item \textbf{A rigorous, reproducible, laptop-scale protocol.} Paired CIs, McNemar, matched-FPR, and family-level decontamination --- a pipeline that exposed real evaluation bugs in our own first attempt --- released as open code (the evaluation scripts plus a single orchestrating reproduction notebook).
@@ -163,7 +163,7 @@ A single forward pass yields the score (\Cref{fig:logprob-head}) --- no autoregr
 
 \subsection{Model selection: small language models}
 
-We use \textbf{SmolLM3-3B}~\cite{bakouch2025smollm3} as the primary guard base --- small enough to fine-tune and serve on a single consumer laptop, instruction-tuned (so it already carries much of the safety-classification competence, \Cref{sec:base-vs-tuned}), and it tokenizes \texttt{safe}/\texttt{unsafe} as single tokens, which the one-forward-pass logprob head requires. The recipe is deliberately base-agnostic; to check that our conclusions are not an artifact of one model family, we apply the \emph{identical} LoRA recipe and evaluation protocol to three further small instruction-tuned bases that also expose single-token verdicts --- Qwen2.5-1.5B-Instruct, DeepSeek-R1-Distill-Qwen-1.5B, and SmolLM2-1.7B-Instruct.
+We use \textbf{SmolLM3-3B}~\cite{bakouch2025smollm3} as the primary guard base --- small enough to fine-tune and serve on a single consumer laptop, instruction-tuned (so it already carries much of the safety-classification competence, \Cref{sec:base-vs-tuned}), and it tokenizes \texttt{safe}/\texttt{unsafe} as single tokens, which the one-forward-pass logprob head requires. The recipe is deliberately base-agnostic; to check that our conclusions are not an artifact of one model family, we apply the \emph{identical} LoRA recipe and evaluation protocol to a second, different-family base --- \textbf{Qwen2.5-1.5B-Instruct} --- and report the cross-family comparison in \Cref{sec:cross-family}. The recipe transfers to any base that tokenizes \texttt{safe}/\texttt{unsafe} as single tokens; extending the full evaluation to further families (e.g., DeepSeek-R1-Distill-Qwen-1.5B, SmolLM2-1.7B-Instruct, whose training runs we verified) is left to future work given laptop compute limits.
 
 \subsection{Calibration}
 
@@ -543,6 +543,34 @@ We have now measured the base on the four novel benchmarks, which \textbf{confir
 
 This is the constructive complement to prior reports that fine-tuning can \emph{destroy} safety alignment: here tuning ``works,'' yet the measurable gain is memorization of the in-distribution operating regime rather than demonstrated transferable safety competence.
 
+\subsection{Cross-family replication (Qwen2.5-1.5B)}
+\label{sec:cross-family}
+
+To test whether the base-vs-tuned pattern is specific to SmolLM3, we applied the \emph{identical} LoRA recipe, calibration protocol, and evaluation to \textbf{Qwen2.5-1.5B-Instruct} --- a smaller model from a different family. Both central signals reproduce (\Cref{tab:cross-family}). \textbf{(i)~Tuning specializes in-distribution:} the tuned Qwen guard's in-house pooled AUPRC (0.821 [0.796, 0.843]) rises well above its untuned base (0.681), a $+0.140$ lift comparable to SmolLM3's $+0.148$. \textbf{(ii)~Tuning does not improve --- and directionally degrades --- OOD ranking:} on the three novel benchmarks the \emph{untuned} base's aggregate AUPRC (0.795 [0.770, 0.819]) exceeds the tuned guard's (0.758 [0.728, 0.789]) on the point estimate, while both reach essentially the same best-threshold F1 (base 0.730, tuned 0.741) --- the same in-distribution-specialization-without-OOD-gain signature as SmolLM3, and the base outranks the tuned guard on all three novel sets individually (\Cref{tab:cross-family}). The two families differ only in \emph{strength}: the Qwen OOD gap is smaller and its base/tuned CIs \emph{overlap} (unlike SmolLM3's disjoint CIs), so on this second family the base-over-tuned inversion is directional rather than statistically decisive. The system ordering also carries over: the tuned Qwen guard leads both open guards on in-house AUPRC (0.821 vs ShieldGemma-2b 0.712, Llama-Guard-3-1B 0.639) and on matched-FPR@0.10 F1 (0.607 vs 0.425 vs 0.196), and ties gpt-5.4-mini on F1 (guard Optimal-F1 0.769 vs gpt native-point 0.784) at 84\,ms batch=1 median latency. We report Qwen2.5 as a single-family robustness check --- it confirms the two findings are not a SmolLM3 artifact; broadening to further families remains future work.
+
+\begin{table}[t]
+\small
+\centering
+\caption{Cross-family replication of the base-vs-tuned pattern. In-house pooled AUPRC and novel-aggregate AUPRC for the tuned guard vs.\ its untuned base, under the \emph{identical} recipe on two different-family bases. On both, tuning \emph{raises} in-house AUPRC yet the untuned base's novel AUPRC \emph{exceeds} the tuned guard's, at tied best-threshold F1 --- the in-distribution-specialization / OOD-degradation signature. For Qwen2.5 the novel base/tuned CIs overlap (directional), for SmolLM3 they are disjoint (decisive).}
+\label{tab:cross-family}
+\begin{tabular}{lcc}
+\toprule
+ & SmolLM3-3B & Qwen2.5-1.5B \\
+ & (primary) & (cross-family) \\
+\midrule
+In-house AUPRC, base & 0.696 & 0.681 \\
+In-house AUPRC, tuned & \textbf{0.844} & \textbf{0.821} \\
+\midrule
+Novel AUPRC, tuned & 0.781 & 0.758 \\
+Novel AUPRC, base & \textbf{0.886} & \textbf{0.795} \\
+\quad novel base/tuned CIs & disjoint & overlap \\
+Novel best-F1 (base/tuned) & 0.792 / 0.796 & 0.730 / 0.741 \\
+\midrule
+Batch=1 latency (p50) & 124\,ms & 84\,ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Case study: a saturated domain benchmark and its hardened rebuild}
 \label{sec:mortgage-casestudy}
 
@@ -609,6 +637,7 @@ Threshold-free, the guard leads the open guards across every in-house pooling, o
 \begin{table}[t]
 \small
 \centering
+\setlength{\tabcolsep}{4pt}
 \caption{Threshold-free AUPRC across in-house poolings. The guard leads on point estimates; only the guard carries CIs.}
 \label{tab:auprc-poolings}
 \begin{tabular}{lrrr}
