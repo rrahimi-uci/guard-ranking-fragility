@@ -1,9 +1,9 @@
 # Guard Ranking Fragility
 
 Paper and full reproduction bundle for
-***"The Benchmark Chooses the Winner: Operating Points, Fine-Tuning, and the Fragility of Safety-Guard Rankings."***
+***"Small-LLM Guardrails for High-Compliance LLM Deployments: Layering General and Domain-Specific Protection"*** (subtitle: *A Fair, Reproducible Evaluation — and Why the Benchmark Chooses the Winner*).
 
-A measurement study of small-language-model (SLM) safety guards. The recurring theme: **which guard looks best is decided by the evaluation protocol, not just the model.** The same systems reorder under native-threshold vs. matched-FPR vs. threshold-free comparison; parameter-efficient fine-tuning specializes in-distribution while *degrading* out-of-distribution ranking; and the fine-tuning **objective** (SFT vs. DPO vs. GRPO) controls that degradation.
+A measurement study of small-language-model (SLM) safety guards for high-compliance deployments (lending, healthcare, finance), where almost all traffic passes through a **layered** guardrail stack: a **general** safety guard plus **domain-specific** compliance guards (e.g., a mortgage assistant's fair-lending, regulatory, and security-misuse rules). We evaluate the **input-prompt** layer of both — a general guard on a broad suite and a domain-specific guard on a hardened mortgage benchmark. The recurring theme: **which guard looks best is decided by the evaluation protocol, not just the model** — and the general and domain-specific layers need not share a best guard. The same systems reorder under native-threshold vs. matched-FPR vs. threshold-free comparison; parameter-efficient fine-tuning specializes in-distribution while *degrading* out-of-distribution ranking; and the fine-tuning **objective** (SFT vs. DPO vs. GRPO) controls that degradation.
 
 ## Key findings
 
