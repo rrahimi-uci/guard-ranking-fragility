@@ -7,6 +7,30 @@
   archivePrefix = {arXiv}
 }
 
+@misc{meta2024llamaguard2,
+  author       = {{Meta AI}},
+  title        = {Llama Guard 2 Model Card},
+  year         = {2024},
+  howpublished = {GitHub model card},
+  note         = {PurpleLlama repository, Llama-Guard2 model card}
+}
+
+@misc{meta2024llamaguard3_8b,
+  author       = {{Meta AI}},
+  title        = {Llama Guard 3-8B Model Card},
+  year         = {2024},
+  howpublished = {GitHub model card},
+  note         = {PurpleLlama repository, Llama-Guard3 8B model card}
+}
+
+@misc{meta2024llamaguard3_1b,
+  author       = {{Meta AI}},
+  title        = {Llama Guard 3-1B Model Card},
+  year         = {2024},
+  howpublished = {Hugging Face model card},
+  note         = {https://huggingface.co/meta-llama/Llama-Guard-3-1B}
+}
+
 @article{fedorov2024llamaguard3_1b,
   author       = {Igor Fedorov and Kate Plawiak and Lemeng Wu and Tarek Elgamal and Naveen Suda and Eric Smith and Hongyuan Zhan and Jianfeng Chi and Yuriy Hulovatyy and Kimish Patel and Zechun Liu and Changsheng Zhao and Yangyang Shi and Tijmen Blankevoort and Mahesh Pasupuleti and Bilge Soran and Zacharie Delpierre Coudert and Rachad Alao and Raghuraman Krishnamoorthi and Vikas Chandra},
   title        = {Llama Guard 3-1B-INT4: Compact and Efficient Safeguard for Human-AI Conversations},
@@ -16,22 +40,12 @@
   archivePrefix = {arXiv}
 }
 
-@article{meta2024llamaguard2_3,
-  author       = {{Meta (Llama Team)} and Grattafiori and others},
-  title        = {Llama Guard 2 / Llama Guard 3 (described in "The Llama 3 Herd of Models")},
-  journal      = {arXiv preprint / Meta model cards},
-  year         = {2024},
-  eprint       = {2407.21783},
-  archivePrefix = {arXiv},
-  note         = {Llama 3 Herd; model cards: https://github.com/meta-llama/PurpleLlama}
-}
-
 @misc{meta2024promptguard,
-  author       = {{Meta (Llama / PurpleLlama Team)}},
-  title        = {Prompt Guard (Llama Prompt Guard): mDeBERTa-based prompt-injection / jailbreak classifier},
-  howpublished = {Meta model card (PurpleLlama), https://github.com/meta-llama/PurpleLlama/blob/main/Prompt-Guard/MODEL\_CARD.md},
+  author       = {{Meta AI}},
+  title        = {Prompt Guard 86M Model Card},
+  howpublished = {Hugging Face model card},
   year         = {2024},
-  note         = {model card only; no arXiv paper}
+  note         = {https://huggingface.co/meta-llama/Prompt-Guard-86M}
 }
 
 @article{zeng2024shieldgemma,
@@ -264,8 +278,7 @@
   author       = {Elie Bakouch and Loubna Ben Allal and Anton Lozhkov and Nouamane Tazi and Lewis Tunstall and Carlos Miguel Pati{\~n}o and Edward Beeching and Aymeric Roucher and Aksel Joonas Reedi and Quentin Gallou{\'e}dec and Kashif Rasul and Nathan Habib and Cl{\'e}mentine Fourrier and Hynek Kydl{\'\i}{\v c}ek and Guilherme Penedo and Hugo Larcher and Mathieu Morlon and Vaibhav Srivastav and Joshua Lochner and Xuan-Son Nguyen and Colin Raffel and Leandro von Werra and Thomas Wolf},
   title        = {SmolLM3: smol, multilingual, long-context reasoner},
   howpublished = {Hugging Face blog + model card (HuggingFaceTB/SmolLM3-3B), https://huggingface.co/blog/smollm3},
-  year         = {2025},
-  note         = {no arXiv paper; cite blog + model card}
+  year         = {2025}
 }
 
 @article{majhi2025gpuguard,
@@ -274,18 +287,19 @@
   journal      = {arXiv preprint},
   year         = {2025},
   eprint       = {2512.19011},
-  archivePrefix = {arXiv},
-  note         = {v3 revised 2026; under review}
+  archivePrefix = {arXiv}
 }
 
 @inproceedings{hsiung2025guardrails,
   author       = {Lei Hsiung and Tianyu Pang and Yung-Chen Tang and Linyue Song and Tsung-Yi Ho and Pin-Yu Chen and Yaoqing Yang},
   title        = {Why LLM Safety Guardrails Collapse After Fine-tuning: A Similarity Analysis Between Alignment and Fine-tuning Datasets},
-  booktitle    = {ACL 2026 (Long Papers)},
+  booktitle    = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages        = {16601--16619},
   year         = {2026},
   eprint       = {2506.05346},
   archivePrefix = {arXiv},
-  note         = {Also ICML 2025 DIG-BUGS workshop (oral)}
+  doi          = {10.18653/v1/2026.acl-long.756},
+  note         = {Earlier workshop version at ICML 2025 DIG-BUGS}
 }
 
 @inproceedings{hackett2025bypassing,
@@ -308,12 +322,20 @@
   note         = {https://github.com/QwenLM/Qwen3Guard}
 }
 
-@misc{meta2025promptguard2,
+@misc{meta2025promptguard2_86m,
   author       = {{Meta AI}},
-  title        = {Llama Prompt Guard 2 (86M and 22M)},
+  title        = {Llama Prompt Guard 2-86M Model Card},
   year         = {2025},
-  howpublished = {Meta PurpleLlama model cards},
+  howpublished = {Hugging Face model card},
   note         = {https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M}
+}
+
+@misc{meta2025promptguard2_22m,
+  author       = {{Meta AI}},
+  title        = {Llama Prompt Guard 2-22M Model Card},
+  year         = {2025},
+  howpublished = {Hugging Face model card},
+  note         = {https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-22M}
 }
 
 @misc{meta2025llamaguard4,
