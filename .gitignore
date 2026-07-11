@@ -24,7 +24,7 @@ checkpoints/
 *.bin
 wandb/
 
-# Data (downloaded / generated — not committed). tests/data/ fixtures are kept.
+# Data (downloaded / generated — not committed)
 /data/
 
 # Env / secrets
@@ -35,6 +35,3 @@ wandb/
 .DS_Store
 .idea/
 .vscode/
-
-# Agent Bouncer Workbench runtime
-.studio.pid
