@@ -5,10 +5,38 @@
 \usepackage{amsmath}
 \usepackage{makecell}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta}
+\usetikzlibrary{positioning,arrows.meta,calc}
 \usepackage[capitalize]{cleveref}
 \usepackage{microtype}                 % char protrusion + font expansion: fixes text spilling past the margin
 \setlength{\emergencystretch}{3em}     % allow extra glue on hard lines so nothing overflows the text block
+\raggedbottom
+\setlength{\textfloatsep}{9pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{9pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\dblfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{5pt}
+\setlength{\belowcaptionskip}{0pt}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.82}
+\renewcommand{\dblfloatpagefraction}{0.82}
+
+\definecolor{stagebluefill}{HTML}{EAF2FF}
+\definecolor{stageblueedge}{HTML}{2563EB}
+\definecolor{stagepurplefill}{HTML}{F1EBFF}
+\definecolor{stagepurpleedge}{HTML}{7C3AED}
+\definecolor{stageredfill}{HTML}{FDECEC}
+\definecolor{stagerededge}{HTML}{DC2626}
+\definecolor{stageorangefill}{HTML}{FFF1E8}
+\definecolor{stageorangeedge}{HTML}{EA580C}
+\definecolor{stagegoldfill}{HTML}{FFF7D6}
+\definecolor{stagegoldedge}{HTML}{CA8A04}
+\definecolor{stagegreenfill}{HTML}{EAF7EE}
+\definecolor{stagegreenedge}{HTML}{15803D}
+\definecolor{stageslatefill}{HTML}{F8FAFC}
+\definecolor{stageslateedge}{HTML}{475569}
 
 % ---- acmart housekeeping (nonacm) ----
 \settopmatter{printacmref=false}
@@ -32,18 +60,20 @@
 }
 
 \begin{abstract}
-Safety guards are typically compared by a single F1 computed at each model's own decision threshold. We show this turns the ranking into an artifact of the operating point: the reported winner changes with the threshold, the metric, and the benchmark. Treating that as the central measurement problem, we study a small, laptop-trained guard --- SmolLM3-3B fine-tuned with LoRA into a one-forward-pass \{safe, unsafe\} classifier --- under an operating-point-fair protocol: threshold-free AUPRC/AUROC, a matched-FPR operating point, and paired-bootstrap 95\% confidence intervals (CIs) with McNemar tests. Building this protocol also surfaced and fixed real evaluation bugs in our own first pipeline (calibration leakage, batch-amortized latency, an asymmetric per-model threshold advantage, and a baseline error-handling bias).
+Safety guards are often compared at each model's native decision threshold. That makes the reported winner partly a property of the operating point and the benchmark rather than of the model itself. We study this problem using a small local guard based on SmolLM3-3B, evaluated under an operating-point-fair protocol: threshold-free AUPRC/AUROC, matched-FPR comparisons, and paired-bootstrap confidence intervals with McNemar tests.
 
-Three results make the thesis concrete. First, native-threshold F1 is rank-inverting: two open guards swap order between their native F1 and threshold-free AUPRC. Second, a base-vs-tuned decomposition shows parameter-efficient fine-tuning specializes in-distribution while \emph{degrading} out-of-distribution ranking --- across the novel benchmarks the \emph{untuned} base outranks the tuned guard (aggregate AUPRC over the three balanced sets, 0.886 vs 0.781, non-overlapping CIs) at equal peak F1, so the guard's out-of-distribution lead is inherited base competence rather than a product of tuning. A six-base sweep (three vendors, 1.5--8B) sharpens this into a \emph{convergence} finding: identical tuning drives every base's out-of-distribution ranking into a narrow, model-independent band, degrading strong-OOD bases like SmolLM3 yet \emph{helping} weak ones. And the degradation is cheaply reversible --- a training-free, inference-time base$\oplus$tuned ensemble beats \emph{both} out-of-distribution (novel AUPRC 0.896 / 0.847, paired-bootstrap CIs excluding zero), recovering the base's robustness without discarding the tuned model. Third, an \emph{exploratory}, seed-scale mortgage case study illustrates that the winner is benchmark-dependent: a saturated in-domain benchmark bunches the leading systems near the ceiling (only Llama-Guard falls away), whereas a hardened, trap-typed rebuild de-saturates the field --- small guards over-block benign-but-risky prompts far more than a frontier model, and the in-domain fine-tune that leads \emph{here} is the reverse of the general-OOD result where the untuned base leads. Under the fair protocol the guard still beats Llama-Guard-3-1B decisively (non-overlapping CIs, including out-of-distribution) and ties gpt-5.4-mini on F1 at lower batch=1 latency: an efficiency result, not an accuracy one. A controlled comparison against six specialized open guardrail models (Llama Guard 3, ShieldGemma, WildGuard, Qwen3Guard, Prompt Guard 2) finds the same over-blocking and operating-point fragility recurring across vendors, reinforcing that the effects we isolate are properties of the measurement regime, not of any one guard.
+Three findings matter. First, rankings flip under fair evaluation: two open guards reverse order between native-threshold F1 and threshold-free AUPRC. Second, parameter-efficient fine-tuning improves in-distribution performance but weakens out-of-distribution ranking robustness: on three balanced novel benchmarks, the \emph{untuned} base outranks the tuned guard in AUPRC (0.886 vs.\ 0.781, non-overlapping CIs) at essentially tied peak F1. Third, the same instability reappears when we change either the model family or the benchmark regime: identical tuning drives six bases toward a narrow out-of-distribution band, and a hardened mortgage benchmark changes which system appears strongest. Under this protocol the guard remains competitive --- it beats Llama-Guard-3-1B on the novel aggregate and shows no statistically significant F1 difference from gpt-5.4-mini at lower batch=1 latency --- but the main claim is methodological: guard comparisons must be scoped to the evaluation regime, because the benchmark and the operating point can choose different winners.
 \end{abstract}
 
 \maketitle
 
 \section{Introduction}
 
-Large language models are now deployed as chat assistants and autonomous agents, where a single unsafe completion, a successful jailbreak, or an over-eager refusal all carry real cost. The dominant mitigation is a \emph{safety guard}: a classifier that screens content --- most commonly user prompts, and in some systems model responses --- as \texttt{safe} or \texttt{unsafe} before it reaches the model or the outside world. We are explicit up front about scope: our guard and \emph{every} evaluation in this paper classify \textbf{input prompts}. Screening of model \emph{responses} and of \emph{agent} tool-call arguments or tool outputs --- the surfaces that motivate the ``agent-bouncer'' name --- is \emph{not} evaluated here and is left to future work (\S\ref{sec:future}). In practice, teams face an unattractive choice. Purpose-built open guards (Llama Guard 1/2/3 and Prompt Guard, ShieldGemma, Aegis, Granite Guardian, WildGuard) are convenient but are often reported on their own favorable operating points; proprietary frontier classifiers are strong but add per-request cost, latency, and a data-sharing dependency. Meanwhile, published guard comparisons frequently tune a threshold for the proposed system while holding baselines at fixed points, report latency as batch-amortized throughput, and decontaminate with exact string matching --- choices that quietly inflate the reported advantage.
+Teams do not deploy abstract safety metrics; they deploy specific guards at specific operating points. Yet safety guards are still commonly compared at each model's native threshold, or at thresholds tuned only for the proposed system. That makes the reported winner partly a property of the operating point rather than of the model itself. The problem is amplified by benchmark design: a benchmark dominated by obvious violations rewards a different behavior than one built from borderline, over-refusal-bait, or domain-specific trap prompts. If the operating point or the benchmark changes, the ranking can change with it.
 
-This paper is a \textbf{measurement and controlled-study} contribution, not a state-of-the-art chase. We fine-tune SmolLM3-3B into a binary guard that emits a single-token verdict --- a softmax over the \texttt{\{safe, unsafe\}} token logits at the last position, i.e.\ one forward pass --- with temperature and decision threshold calibrated on an \emph{in-distribution} dev split only (in-house held-out and novel benchmarks contribute zero rows to calibration). Training is parameter-efficient LoRA (r=32, all seven projections; 60.5M trainable params, 1.93\% of 3.14B) run in \textasciitilde{}71 minutes / 300 steps on a single consumer Apple M4 Max laptop (36 GB unified memory, MPS backend, no CUDA). Everything --- training, calibration, and evaluation --- fits on a laptop, so the protocol is cheap to reproduce and audit.
+This paper is a \textbf{measurement-focused controlled study} of that problem. We evaluate a small local guard --- SmolLM3-3B fine-tuned with LoRA into a one-forward-pass \texttt{\{safe, unsafe\}} classifier --- under an operating-point-fair protocol: threshold-free AUPRC/AUROC, matched-FPR comparisons, paired-bootstrap uncertainty, and leak-free in-distribution calibration. Scope is deliberately narrow: our guard and \emph{every} evaluation in this paper classify \textbf{input prompts}. We do not evaluate response moderation or agent tool-call surfaces, despite the broader project name (\S\ref{sec:future}).
+
+Three findings matter. First, native-threshold comparisons can be rank-inverting: two open guards reverse order between native-threshold F1 and threshold-free AUPRC. Second, parameter-efficient fine-tuning improves in-distribution performance but weakens out-of-distribution ranking robustness: on three balanced novel benchmarks, the \emph{untuned} base outranks the tuned guard in AUPRC (0.886 vs.\ 0.781, non-overlapping CIs) at essentially tied peak F1. Third, the same instability reappears when we change either the model family or the benchmark regime: identical tuning drives six bases toward a narrow OOD band, and a hardened mortgage benchmark changes which system appears strongest.
 
 Our emphasis is on \emph{how} we measure, and we are careful with the word ``held-out,'' which we split into two distinct pools throughout the paper:
 
@@ -52,14 +82,12 @@ Our emphasis is on \emph{how} we measure, and we are careful with the word ``hel
   \item \textbf{Novel held-out (OOD)} --- four benchmarks from source families the guard never saw during training (WildGuardTest, WildJailbreak, OR-Bench-Hard, HarmBench).
 \end{itemize}
 
-We evaluate on 6 in-house benchmarks (2,018 balanced, leakage-filtered test rows across guardrail, red-team, and over-refusal axes) and on the 4 novel held-out benchmarks (2,020 balanced rows across three sets, plus 200 all-harmful HarmBench rows). We compare against gpt-5.4-mini, Llama-Guard-3-1B, ShieldGemma-2b, and a keyword matcher, using paired-bootstrap 95\% CIs, McNemar tests, threshold-free AUPRC/AUROC, and a matched-FPR@0.10 operating point, with latency measured at true batch=1. Building this pipeline surfaced real bugs in our own first evaluation --- a calibration leak, batch-amortized latency, an asymmetric threshold advantage for our own model, and an API-error default that biased the GPT baseline's FPR --- which we document and fix.
-
-The headline comparisons are collected once in \Cref{tab:headline} and reported in full, with CIs, in \S\ref{sec:results}; we do not restate them in prose. The one-line reading: under the fair protocol the guard leads the open guards on threshold-free AUPRC --- decisively over Llama-Guard-3-1B (non-overlapping CIs), including on the novel benchmarks --- and ties gpt-5.4-mini on F1 at lower batch=1 latency. But the load-bearing finding is not the guard's standing; it is that the standing is contingent on the operating point, and that the tuning credited for it does not survive out of distribution: the \emph{untuned} base outranks the tuned guard on the novel benchmarks (\S\ref{sec:base-vs-tuned}).
+We evaluate on 6 in-house benchmarks (2,018 balanced, leakage-filtered test rows across guardrail, red-team, and over-refusal axes) and on 4 novel held-out benchmarks (2,020 balanced rows across three sets, plus 200 all-harmful HarmBench rows). We compare against gpt-5.4-mini, Llama-Guard-3-1B, ShieldGemma-2b, and a keyword matcher under one protocol. The headline comparisons are collected once in \Cref{tab:headline} and reported in full, with CIs where available, in \S\ref{sec:results}; we do not restate them in prose. Under the fair protocol the guard remains competitive: it leads the measured open guards on in-house AUPRC, beats Llama-Guard-3-1B decisively on the novel aggregate, and shows no statistically significant F1 difference from gpt-5.4-mini at lower batch=1 latency. But the load-bearing claim is not that one local guard wins everywhere. It is that guard rankings are fragile, and that claims about the ``best'' guard must be scoped to the evaluation regime that produced them.
 
 \begin{table*}[t]
   \centering
   \small
-  \caption{Headline results (in-house pooled unless noted). Only the guard's pooled/held-out AUPRC, the guard-vs-Llama novel aggregate, the base-vs-tuned delta, and the GPT $\Delta$F1 carry CIs; baseline AUPRCs are point estimates.}
+  \caption{Headline results (in-house pooled unless noted). The bracketed entries carry CIs in this table; later sections additionally report CIs for the base novel aggregate, ensemble deltas, and the mortgage case study. Baseline in-house AUPRCs for ShieldGemma-2b and Llama-Guard-3-1B remain point estimates.}
   \label{tab:headline}
   \begin{tabular}{lllll}
     \toprule
@@ -74,37 +102,34 @@ The headline comparisons are collected once in \Cref{tab:headline} and reported 
   \end{tabular}
 \end{table*}
 
-We are explicit about limits. Matched-FPR@0.10 makes every system conservative (guard recall 0.431 there), so AUPRC is our fair primary summary; at the \emph{deployed} operating point (T=2.10, $\tau=0.59$) the guard's overall FPR is 0.306, i.e.\ it over-blocks benign prompts, which we treat as a real deployment concern. ShieldGemma is run somewhat outside its designed content-policy regime and its novel-benchmark numbers are still pending; a single global threshold is structurally in-distribution-optimized. Positioned against the two closest works, we complement CPU-class efficient-guard studies (``Do You Really Need a GPU to Guard Your LLM?'') by adding rigorous operating-point-fair comparison and a base-vs-tuned decomposition on a 3B generative guard, and we serve as the constructive counterpart to ``Why LLM Safety Guardrails Collapse After Fine-tuning'' (ICML 2025): where they show tuning can destroy alignment, we show that even when tuning \emph{works}, its measurable gains are memorized in-distribution and do not transfer to the in-house held-out sets we can test.
+We are explicit about limits. Matched-FPR@0.10 is deliberately conservative, so AUPRC is our fair primary summary; at the \emph{deployed} operating point (T=2.10, $\tau=0.59$) the guard still over-blocks benign prompts, which is a real deployment concern. ShieldGemma is run somewhat outside its designed content-policy regime and its novel-benchmark numbers are still pending; a single global threshold remains structurally in-distribution-optimized. The paper should therefore be read as a controlled measurement study about ranking fragility, not as a universal leaderboard claim.
 
 \subsection{Contributions}
 
 \begin{itemize}
-  \item \textbf{Operating-point-fair evaluation.} We show guard rankings depend heavily on the decision threshold, so naive per-model-threshold comparisons are misleading; we instead report matched-FPR@0.10, threshold-free AUPRC/AUROC, and paired-bootstrap CIs with McNemar tests.
-  \item \textbf{A base-vs-tuned decomposition.} An instruction-tuned 3B base already carries most of the safety-classification competence measurable on our in-house benchmarks by F1 (its zero-shot F1 beats both open guards'); parameter-efficient tuning specializes in-distribution and does \emph{not} meaningfully improve the two in-house held-out benchmarks we can measure (macro $-0.005$), and slightly regresses over-refusal. A six-base sweep (three vendors, 1.5--8B: Qwen2.5, SmolLM2, DeepSeek-R1-Distill, Qwen3-4B/8B) recasts this as a \emph{convergence} phenomenon --- the identical tuning drives every base's out-of-distribution ranking into a narrow, model-independent band (novel AUPRC $0.74$--$0.80$, from bases spanning $0.60$--$0.89$), degrading strong-OOD bases like SmolLM3 yet \emph{helping} weak ones (\Cref{sec:cross-family}).
-  \item \textbf{A training-free OOD mitigation.} The decomposition points to a cheap fix, which we verify: a per-prompt, inference-time ensemble of the untuned base and the tuned guard (each score normalized by an in-distribution CDF map, then averaged) \emph{beats both constituents} on the novel benchmarks --- SmolLM3 novel AUPRC $0.781/0.886 \to 0.896$, Qwen2.5 $0.758/0.795 \to 0.847$, paired-bootstrap CIs excluding zero on both families (\Cref{sec:ensemble}). It recovers the base's out-of-distribution ranking with no retraining, turning the degradation finding into an actionable remedy.
-  \item \textbf{A controlled comparison against specialized guards.} We re-evaluate six purpose-built open guardrail models --- Llama-Guard-3-1B/8B, ShieldGemma-2B, WildGuard-7B, Qwen3Guard-4B, and Prompt Guard 2 (plus Llama-Guard-4-12B from published results) --- on the \emph{identical} rows and protocol, beside the self-reported published landscape. The same over-blocking and operating-point fragility recur across vendors: recall-first guards (Qwen3Guard, WildGuard) over-block over-refusal-bait at FPR 0.73--0.81, and the strongest off-the-shelf OOD ranker (Llama-Guard-3-8B, novel AUPRC 0.833) still trails our untuned base (\Cref{sec:guardrails}).
-  \item \textbf{A domain stress test of the same effect (exploratory).} On a mortgage fair-lending task we show a benchmark can be \emph{saturated} --- a zero-shot 3B base is already near-ceiling, and the local base, the fine-tune, and ShieldGemma bunch near the ceiling so they cannot be ranked apart --- and we rebuild it as a hardened, trap-typed set that de-saturates the field: small guards over-block benign-adjacent prompts far more than a frontier model, and which fine-tune ``wins'' flips between this in-domain set and the general novel sets. We flag this as a seed-scale, single-annotator case study rather than a headline result (\Cref{sec:mortgage-casestudy}).
-  \item \textbf{A small, local, laptop-trained guard.} On threshold-free AUPRC it surpasses purpose-built open guards --- Llama-Guard-3-1B decisively (non-overlapping CIs), \emph{including} on the novel held-out benchmarks, and ShieldGemma-2b on the in-house pooled / in-dist / in-house-held-out sets (ShieldGemma's novel runs are pending) --- and it matches frontier gpt-5.4-mini on F1 at \textasciitilde{}4$\times$ lower latency.
-  \item \textbf{A rigorous, reproducible, laptop-scale protocol.} Paired CIs, McNemar, matched-FPR, and family-level decontamination --- a pipeline that exposed real evaluation bugs in our own first attempt --- released as open code (the evaluation scripts plus a single orchestrating reproduction notebook).
+  \item \textbf{A fair evaluation claim.} We show that guard rankings are unstable under native-threshold comparison, and that matched operating points plus threshold-free metrics materially change who appears strongest.
+  \item \textbf{A generalization claim.} We show that parameter-efficient tuning improves in-distribution performance but can degrade out-of-distribution ranking robustness: the untuned base can be the stronger OOD ranker, and the same pattern extends across multiple base families.
+  \item \textbf{A practical implication claim.} We show that the same fragility reappears when benchmark regime changes, and that a simple inference-time base$\oplus$tuned ensemble can recover much of the lost OOD robustness without retraining.
+  \item \textbf{An objective claim.} We show the OOD degradation is a property of the \emph{supervised} objective rather than of fine-tuning per se: a KL-regularized objective (DPO, GRPO) resists the convergence, and once each objective is fairly tuned by per-objective hyperparameter search, DPO matches SFT in-distribution while dominating it out-of-distribution (\Cref{sec:rl-vs-ft}).
 \end{itemize}
 
 \section{Related Work}
 
-\textbf{LLM safety guards and content moderation.} A growing family of purpose-built classifiers screens prompts and responses for LLM and agent pipelines. Meta's Llama Guard line (1/2/3) \cite{inan2023llamaguard,meta2024llamaguard2_3,fedorov2024llamaguard3_1b} and Prompt Guard \cite{meta2024promptguard}, Google's ShieldGemma \cite{zeng2024shieldgemma}, NVIDIA's Aegis \cite{ghosh2024aegis}, IBM's Granite Guardian \cite{padhi2024graniteguardian}, and AI2's WildGuard \cite{han2024wildguard} all frame moderation as a supervised classification task over a safety taxonomy, typically emitting a verdict token or category label. Recent work pushes on the \emph{reasoning} axis (R\textsuperscript{2}-Guard's knowledge-enhanced logical-reasoning inference \cite{kang2025r2guard} at ICLR 2025, DuoGuard's two-player RL/multilingual training \cite{deng2025duoguard}, and other reasoning-guards). Our guard is deliberately minimal by comparison: a single-token verdict read from the \{safe, unsafe\} logits in one forward pass, LoRA-tuned on a consumer laptop. We compare directly against two open guards under a fair protocol; on threshold-free AUPRC our guard leads both open guards on the in-house pool (full comparison with CIs in \Cref{tab:main-inhouse}; per-pooling breakdown in \Cref{tab:auprc-poolings}).
+\textbf{LLM safety guards and content moderation.} A growing family of purpose-built classifiers screens prompts and responses for LLM and agent pipelines. Meta's Llama Guard line (1/2/3) \cite{inan2023llamaguard,meta2024llamaguard2,meta2024llamaguard3_8b,meta2024llamaguard3_1b}, Google's ShieldGemma \cite{zeng2024shieldgemma}, NVIDIA's Aegis \cite{ghosh2024aegis}, IBM's Granite Guardian \cite{padhi2024graniteguardian}, and AI2's WildGuard \cite{han2024wildguard} all frame moderation as supervised classification over safety or refusal labels, typically emitting a verdict token, category label, or score. Meta's Prompt Guard \cite{meta2024promptguard} is the specialized injection/jailbreak variant in that family: a binary prompt-attack detector rather than a general content-taxonomy guard. Recent work pushes on the \emph{reasoning} axis (R\textsuperscript{2}-Guard's knowledge-enhanced logical-reasoning inference \cite{kang2025r2guard} at ICLR 2025, and minimax/two-player RL for multilingual safety training \cite{deng2025duoguard}). Our guard is deliberately minimal by comparison: it reads a single-token verdict from the \{safe, unsafe\} logits in one forward pass and is LoRA-tuned on a consumer laptop. We compare directly against two open guards under a fair protocol; on threshold-free AUPRC our guard leads both open guards on the in-house pool (full comparison with CIs in \Cref{tab:main-inhouse}; per-pooling breakdown in \Cref{tab:auprc-poolings}).
 
-\textbf{Benchmarks.} We evaluate on established suites spanning guardrail, red-team, and over-refusal axes: BeaverTails \cite{ji2023beavertails}, ToxicChat \cite{lin2023toxicchat}, JailbreakBench \cite{chao2024jailbreakbench}, XSTest \cite{rottger2024xstest}, OR-Bench \cite{cui2024orbench}, HarmBench \cite{mazeika2024harmbench}, and prompt-injection/jailbreak-classification sets, plus OpenAI's moderation evaluation set \cite{markov2023holistic}. To probe generalization rather than memorization, we additionally reserve four novel benchmarks the guard never trained on --- WildGuardTest \cite{han2024wildguard}, WildJailbreak \cite{jiang2024wildteaming}, OR-Bench-Hard \cite{cui2024orbench}, and HarmBench \cite{mazeika2024harmbench} --- held out at the source-family level, and report per-benchmark and aggregate results with paired-bootstrap 95\% CIs and McNemar tests. Across the novel held-out benchmarks the guard's aggregate AUPRC over the three balanced sets is 0.781 [0.751, 0.811] versus Llama-Guard-3-1B 0.701 [0.673, 0.733], the only cross-system AUPRC comparison in which both sides carry CIs and they do not overlap.
+\textbf{Benchmarks.} We evaluate on established suites spanning guardrail, red-team, and over-refusal axes: BeaverTails \cite{ji2023beavertails}, ToxicChat \cite{lin2023toxicchat}, JailbreakBench \cite{chao2024jailbreakbench}, XSTest \cite{rottger2024xstest}, OR-Bench \cite{cui2024orbench}, HarmBench \cite{mazeika2024harmbench}, and prompt-injection/jailbreak-classification sets, plus OpenAI's moderation evaluation set \cite{markov2023holistic}. To probe generalization rather than memorization, we additionally reserve four novel benchmarks the guard never trained on --- WildGuardTest \cite{han2024wildguard}, WildJailbreak \cite{jiang2024wildteaming}, OR-Bench-Hard \cite{cui2024orbench}, and HarmBench \cite{mazeika2024harmbench} --- held out at the source-family level, and report per-benchmark and aggregate results with paired-bootstrap 95\% CIs and McNemar tests. Across the novel held-out benchmarks the guard's aggregate AUPRC over the three balanced sets is 0.781 [0.751, 0.811] versus Llama-Guard-3-1B 0.701 [0.673, 0.733], one of the headline novel-aggregate comparisons whose system-level CIs do not overlap.
 
 \textbf{Measurement rigor.} A recurring hazard in guard evaluation is that rankings are sensitive to the decision threshold, and that a model tuned on its own dev split is compared against baselines evaluated at fixed operating points. We treat this as a first-class methodological concern rather than an implementation detail: we report threshold-free AUPRC/AUROC, matched-FPR@0.10 operating points, true batch=1 latency (p50 124 ms / p90 188 ms), paired CIs, and family-level holdout. This positions our work as a \emph{measurement and controlled study} rather than a leaderboard entry.
 
 \subsection{Differentiation from the two closest works}
 
-\textbf{``Do You Really Need a GPU to Guard Your LLM?'' \cite{majhi2025gpuguard} (CPU-class classifiers / efficient pipelines).} That line argues small, cheap classifiers can serve as practical guards. We share the efficiency motivation --- our guard is laptop-trained (\textasciitilde{}71 min / 300 steps, fp32, Apple M4 Max, MPS, no CUDA) and runs locally at \textasciitilde{}$4\times$ lower latency than gpt-5.4-mini (124 ms vs \textasciitilde{}512 ms per request; see the latency caveat in \Cref{subsec:frontier}). Our distinct contribution is not a smaller classifier but a \emph{rigorous fair comparison} on a 3B generative guard: operating-point-fair evaluation (matched-FPR + threshold-free AUPRC + paired CIs) and a base-vs-tuned decomposition that prior efficient-guard work does not report.
+\textbf{``Do You Really Need a GPU to Guard Your LLM?'' \cite{majhi2025gpuguard} (CPU-class classifiers / efficient pipelines).} That line argues small, cheap classifiers can serve as practical guards. We share the efficiency motivation --- our guard is laptop-trained (\textasciitilde{}71 min / 300 steps, fp32, Apple M4 Max, MPS, no CUDA) and runs locally at \textasciitilde{}$4\times$ lower latency than gpt-5.4-mini (124 ms vs \textasciitilde{}512 ms per request; see the latency caveat in \Cref{subsec:frontier}). Our distinct contribution is not a smaller classifier but a \emph{rigorously fair comparison} on a 3B generative guard: operating-point-fair evaluation (matched-FPR + threshold-free AUPRC + paired CIs) and a base-vs-tuned decomposition that prior efficient-guard work does not report.
 
-\textbf{``Why LLM Safety Guardrails Collapse After Fine-tuning'' \cite{hsiung2025guardrails} (ICML 2025 DIG-BUGS).} That work shows fine-tuning can \emph{destroy} a model's alignment. We are the constructive complement. Even when fine-tuning ``works,'' our base-vs-tuned ablation (identical paired rows; base = zero-shot SmolLM3-3B with the same logprob head) shows the measurable gains are almost entirely in-distribution and do not improve the two in-house held-out benchmarks we can test (per-benchmark decomposition in \Cref{tab:base-vs-tuned}). The zero-shot base (F1 0.713) exceeds zero-shot Llama-Guard-3-1B (0.673) and ShieldGemma-2b (0.424) \emph{by F1}, suggesting an instruction-tuned 3B base already carries much of the safety-classification competence; under threshold-free AUPRC, however, the base's in-house score (0.696) sits \emph{between} the two open guards (Llama-Guard-3-1B 0.639, ShieldGemma-2b 0.712), so this in-house ranking holds by F1 only and not threshold-free (\Cref{sec:base-vs-tuned}). Where the ICML work demonstrates that tuning can break alignment, we show that tuning which appears successful still only measurably specializes in-distribution, and we decompose how much competence is base versus tuned. We have since run the base on the novel benchmarks (\Cref{sec:base-vs-tuned}): the base \emph{outranks} the tuned guard out-of-distribution (aggregate AUPRC over the three balanced sets 0.886 vs 0.781, disjoint CIs) at tied best-threshold F1, so the guard's novel-set lead reflects inherited base competence, and tuning degrades OOD score ranking rather than improving generalization.
+\textbf{``Why LLM Safety Guardrails Collapse After Fine-tuning'' \cite{hsiung2025guardrails} (ACL 2026; earlier version at ICML 2025 DIG-BUGS).} That work shows fine-tuning can \emph{destroy} a model's alignment. We are the constructive complement. Even when fine-tuning ``works,'' our base-vs-tuned ablation (identical paired rows; base = zero-shot SmolLM3-3B with the same logprob head) shows the measurable gains are almost entirely in-distribution and do not improve the two in-house held-out benchmarks we can test (per-benchmark decomposition in \Cref{tab:base-vs-tuned}). The zero-shot base (F1 0.713) exceeds zero-shot Llama-Guard-3-1B (0.673) and ShieldGemma-2b (0.424) \emph{by F1}, suggesting an instruction-tuned 3B base already carries much of the safety-classification competence; under threshold-free AUPRC, however, the base's in-house score (0.696) sits \emph{between} the two open guards (Llama-Guard-3-1B 0.639, ShieldGemma-2b 0.712), so this in-house ranking holds by F1 only and not threshold-free (\Cref{sec:base-vs-tuned}). Where the earlier work demonstrates that tuning can break alignment, we show that tuning which appears successful still only measurably specializes in-distribution, and we decompose how much competence is base versus tuned. We have since run the base on the novel benchmarks (\Cref{sec:base-vs-tuned}): the base \emph{outranks} the tuned guard out-of-distribution (aggregate AUPRC over the three balanced sets 0.886 vs 0.781, disjoint CIs) at tied best-threshold F1, so the guard's novel-set lead reflects inherited base competence, and tuning degrades OOD score ranking rather than improving generalization.
 
 \subsection{What is novel here}
 
-Threshold-free AUPRC is itself an established guard metric~\cite{markov2023holistic,inan2023llamaguard,zeng2024shieldgemma,padhi2024graniteguardian,kang2025r2guard}, so we do \textbf{not} claim it as our innovation. What prior work lacks --- and what we contribute --- is the \emph{combination}: matched-FPR across systems (nearest prior art, Granite Guardian's fixed-FPR points~\cite{padhi2024graniteguardian}), AUPRC \emph{and} AUROC, paired-bootstrap CIs and McNemar tests on a shared calibration set~\cite{guo2017calibration}, plus the finding that native-threshold F1 is not merely imprecise but rank-\emph{inverting} (\Cref{sec:operating-point-fairness}). Our two genuinely new findings are this operating-point-fairness result and the base-vs-tuned decomposition~\cite{hsiung2025guardrails} (\Cref{sec:base-vs-tuned}), which a six-base cross-family/scaling sweep recasts as a \emph{convergence} phenomenon (\Cref{sec:cross-family}) and which admits a simple training-free remedy --- a base\,$\oplus$\,tuned inference-time ensemble that recovers the degraded OOD ranking (\Cref{sec:ensemble}); the laptop-trained guard, the controlled comparison of specialized guards (\Cref{sec:guardrails}), and the reproducible protocol are the engineering contributions listed above. We scope claims to detection-based content classification; adversarial evasion remains open~\cite{hackett2025bypassing}.
+Threshold-free AUPRC is itself an established guard metric~\cite{markov2023holistic,inan2023llamaguard,zeng2024shieldgemma,padhi2024graniteguardian,kang2025r2guard}, so we do \textbf{not} claim it as our innovation. What prior work lacks --- and what we contribute --- is the \emph{combination}: matched-FPR across systems, AUPRC \emph{and} AUROC, paired-bootstrap CIs and McNemar tests, with temperature and threshold calibrated on a shared calibration split via standard temperature scaling~\cite{guo2017calibration}, plus the finding that native-threshold F1 is not merely imprecise but rank-\emph{inverting}. Our two genuinely new findings are this operating-point-fairness result and the base-vs-tuned decomposition~\cite{hsiung2025guardrails} (\Cref{sec:base-vs-tuned}), which a six-base cross-family/scaling sweep recasts as a \emph{convergence} phenomenon (\Cref{sec:cross-family}) and which admits a simple training-free remedy --- a base\,$\oplus$\,tuned inference-time ensemble that recovers the degraded OOD ranking (\Cref{sec:ensemble}); the laptop-trained guard, the controlled comparison of specialized guards (\Cref{sec:guardrails}), and the reproducible protocol are the engineering contributions listed above. We scope claims to detection-based content classification; adversarial evasion remains open~\cite{hackett2025bypassing}.
 
 \section{Methodology}
 \label{sec:methodology}
@@ -115,20 +140,45 @@ Threshold-free AUPRC is itself an established guard metric~\cite{markov2023holis
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  >=Stealth, node distance=6mm and 9mm,
-  stage/.style={draw, rounded corners, align=left, inner sep=6pt, font=\small, text width=41mm, fill=black!2}
+  >=Stealth,
+  node distance=6mm and 8mm,
+  stage/.style={draw, rounded corners=5pt, line width=0.7pt, align=left, inner sep=6pt, font=\small, text width=42mm},
+  tag/.style={font=\scriptsize\bfseries, text=white, inner sep=3pt, rounded corners=2pt},
+  flow/.style={->, line width=0.9pt, draw=black!75},
+  note/.style={draw, dashed, rounded corners=4pt, line width=0.6pt, align=left, inner sep=5pt, font=\scriptsize, text width=90mm}
 ]
-  \node[stage] (data) {\textbf{1. Data \& splits}\\[3pt]10 public benchmarks; family-level decontamination.\\[2pt]$\bullet$ in-distribution (4 sets): dev $+$ test\\ $\bullet$ in-house held-out (2 sets)\\ $\bullet$ novel held-out / OOD (4 sets)};
-  \node[stage, right=of data] (train) {\textbf{2. Fine-tuning \textit{(technique)}}\\[3pt]SmolLM3-3B base $+$ LoRA on all 7 projections.\\[2pt]completion-only SFT on the verdict token; single-token \texttt{\{safe,unsafe\}} logprob head.\\[2pt]laptop / MPS $\Rightarrow$ guard adapter};
-  \node[stage, right=of train] (cal) {\textbf{3. Calibration}\\[3pt]fit temperature $T$ and threshold $\tau$ on the in-distribution dev split \emph{only} (leak-free),\\[2pt]then \textbf{freeze} both};
-  \node[stage, right=of cal] (eval) {\textbf{4. Evaluation \textit{(operating-point-fair)}}\\[3pt]\emph{systems}: guard, zero-shot base, Llama-Guard-3-1B, ShieldGemma-2b, gpt-5.4-mini, keyword.\\[2pt]\emph{metrics}: threshold-free AUPRC/AUROC; matched-FPR@0.10; paired-bootstrap CIs $+$ McNemar; batch$=$1 latency};
-  \draw[->] (data) -- node[above, font=\scriptsize]{train} (train);
-  \draw[->] (train) -- node[above, font=\scriptsize]{adapter} (cal);
-  \draw[->] (cal) -- node[above, font=\scriptsize]{frozen $T,\tau$} (eval);
-  \draw[->] (data.south) to[out=-18, in=-162] node[below, font=\scriptsize]{in-house held-out $+$ novel test rows (unseen in training \emph{and} calibration)} (eval.south);
+  \node[stage, fill=stagebluefill, draw=stageblueedge] (data) {\textbf{Pool definition}\\[2pt]
+  \textcolor{stageblueedge}{\textbf{In-distribution:}} 4 sets, used for train/dev/test\\
+  \textcolor{stagepurpleedge}{\textbf{In-house held-out:}} 2 sets, test only\\
+  \textcolor{stagerededge}{\textbf{Novel held-out:}} 4 sets, test only};
+  \node[tag, fill=stageblueedge, anchor=north west] at ([xshift=2pt,yshift=-2pt]data.north west) {1. Data};
+
+  \node[stage, fill=stageorangefill, draw=stageorangeedge, right=of data] (train) {\textbf{Guard training}\\[2pt]
+  SmolLM3-3B $+$ LoRA on q, k, v, o, gate, up, down\\
+  completion-only SFT on the verdict token\\
+  output: tuned guard adapter};
+  \node[tag, fill=stageorangeedge, anchor=north west] at ([xshift=2pt,yshift=-2pt]train.north west) {2. Train};
+
+  \node[stage, fill=stagegoldfill, draw=stagegoldedge, right=of train] (cal) {\textbf{Leak-free calibration}\\[2pt]
+  fit $T$ and $\tau$ on in-distribution dev only\\
+  1{,}102 dev rows; zero held-out or novel rows\\
+  freeze $T{=}2.10$ and $\tau{=}0.59$ before test};
+  \node[tag, fill=stagegoldedge, anchor=north west] at ([xshift=2pt,yshift=-2pt]cal.north west) {3. Calibrate};
+
+  \node[stage, fill=stagegreenfill, draw=stagegreenedge, right=of cal] (eval) {\textbf{Frozen evaluation}\\[2pt]
+  \emph{systems}: tuned guard, untuned base, Llama-Guard-3-1B, ShieldGemma-2b, gpt-5.4-mini, keyword\\
+  \emph{metrics}: AUPRC/AUROC, matched-FPR@0.10, paired bootstrap, McNemar, batch$=$1 latency};
+  \node[tag, fill=stagegreenedge, anchor=north west] at ([xshift=2pt,yshift=-2pt]eval.north west) {4. Evaluate};
+
+  \node[note, draw=stagerededge, below=7mm of $(train.south)!0.5!(cal.south)$, fill=white] (barrier) {\textbf{Leakage barrier.} In-house held-out and novel rows never enter LoRA training or temperature/threshold fitting. They are consumed only at final evaluation time, which is why the held-out and OOD claims are about transfer rather than memorization.};
+
+  \draw[flow] (data) -- node[above, font=\scriptsize]{in-dist train rows} (train);
+  \draw[flow] (train) -- node[above, font=\scriptsize]{adapter} (cal);
+  \draw[flow] (cal) -- node[above, font=\scriptsize]{frozen $T,\tau$} (eval);
+  \draw[flow, dashed, draw=stagerededge] (data.south east) to[out=-35, in=-145] node[below, font=\scriptsize, align=center]{held-out + novel rows\\test only} (eval.south west);
 \end{tikzpicture}%
 }
-\caption{End-to-end setup. Only in-distribution \emph{train} rows tune the LoRA guard and only in-distribution \emph{dev} rows calibrate $(T,\tau)$, which are then frozen; every system is scored on the held-out and novel test rows under one operating-point-fair protocol. The zero-shot base is the same network with the LoRA adapter removed. Hyperparameters: \Cref{tab:lora}; calibrated values: \Cref{tab:calibration}; results: \S\ref{sec:results}.}
+\caption{End-to-end setup. The pipeline is intentionally asymmetric: only in-distribution rows feed LoRA training and temperature/threshold fitting, while in-house-held-out and novel rows are test-only. The zero-shot base is the same base network with the LoRA adapter removed. Hyperparameters: \Cref{tab:lora}; calibrated values: \Cref{tab:calibration}; results: \S\ref{sec:results}.}
 \label{fig:pipeline}
 \end{figure*}
 
@@ -165,7 +215,7 @@ A single forward pass yields the score (\Cref{fig:logprob-head}) --- no autoregr
 
 \subsection{Model selection: small language models}
 
-We use \textbf{SmolLM3-3B}~\cite{bakouch2025smollm3} as the primary guard base --- small enough to fine-tune and serve on a single consumer laptop, instruction-tuned (so it already carries much of the safety-classification competence, \Cref{sec:base-vs-tuned}), and it tokenizes \texttt{safe}/\texttt{unsafe} as single tokens, which the one-forward-pass logprob head requires. The recipe is deliberately base-agnostic; to check that our conclusions are not an artifact of one model family, we apply the \emph{identical} LoRA recipe and guard calibration to five further bases spanning three vendors and 1.5--8B --- \textbf{Qwen2.5-1.5B}, \textbf{SmolLM2-1.7B}, \textbf{DeepSeek-R1-Distill-Qwen-1.5B} (reasoning-distilled), \textbf{Qwen3-4B}, and \textbf{Qwen3-8B} --- and report the cross-family and scaling comparison in \Cref{sec:cross-family}. The recipe transfers to any base that tokenizes \texttt{safe}/\texttt{unsafe} as single tokens.
+We use \textbf{SmolLM3-3B}~\cite{bakouch2025smollm3} as the primary guard base --- small enough to fine-tune and serve on a single consumer laptop and instruction-tuned, so it already carries much of the safety-classification competence (\Cref{sec:base-vs-tuned}). In our own tokenizer inspection, \texttt{safe}/\texttt{unsafe} are single tokens, which the one-forward-pass logprob head requires. The recipe is deliberately base-agnostic; to check that our conclusions are not an artifact of one model family, we apply the \emph{identical} LoRA recipe and guard calibration to five further bases spanning three vendors and 1.5--8B --- \textbf{Qwen2.5-1.5B}, \textbf{SmolLM2-1.7B}, \textbf{DeepSeek-R1-Distill-Qwen-1.5B} (reasoning-distilled), \textbf{Qwen3-4B}, and \textbf{Qwen3-8B} --- and report the cross-family and scaling comparison in \Cref{sec:cross-family}. The recipe transfers to any base that tokenizes \texttt{safe}/\texttt{unsafe} as single tokens.
 
 \subsection{Calibration}
 
@@ -219,7 +269,7 @@ Training ran entirely on a consumer Apple M4 Max laptop (36 GB unified memory, M
 \subsection{Task and label mapping}
 \label{sec:setup}
 
-The guard is a binary classifier that emits a single-token verdict, \texttt{safe} or \texttt{unsafe}. We read the logits at the last position, take a softmax over the \texttt{\{safe, unsafe\}} token pair, and treat the resulting $P(\text{unsafe})$ as the decision score. A prompt is labeled \texttt{unsafe} if it should be blocked (harmful content, successful jailbreak/injection, policy-violating request) and \texttt{safe} otherwise; the over-refusal axis contributes benign-but-superficially-risky prompts whose gold label is \texttt{safe}. All evaluations reduce to this one score per row, obtained in a single forward pass.
+The guard is a binary classifier that emits a single-token verdict, \texttt{safe} or \texttt{unsafe}. We read the logits at the last position, take a softmax over the \texttt{\{safe, unsafe\}} token pair, and treat the resulting $P(\text{unsafe})$ as the decision score. A prompt is labeled \texttt{unsafe} if it should be blocked (harmful content, successful jailbreak/injection, policy-violating request) and \texttt{safe} otherwise; the over-refusal axis contributes benign-but-superficially-risky prompts whose core signal is unnecessary refusal, alongside contrast items that preserve the binary safe/unsafe framing. All evaluations reduce to this one score per row, obtained in a single forward pass.
 
 \subsection{Benchmarks and terminology}
 
@@ -231,7 +281,7 @@ We use three explicitly distinguished pools, and we reserve the word ``held-out'
   \item \textbf{Novel held-out (OOD):} WildGuardTest, WildJailbreak, OR-Bench-Hard, HarmBench. Held out at the source-family level; the guard never trained on them.
 \end{itemize}
 
-All splits are class-balanced (matched-n). HarmBench is an all-harmful stress set (no negatives), so it is scored by mean $P(\text{unsafe})$ rather than F1/AUPRC and is \textbf{excluded} from any aggregate AUPRC.
+All splits are matched-$n$ or near-balanced after filtering. XSTest remains near-balanced (123 unsafe / 117 safe), and HarmBench is an all-harmful stress set (no negatives), so it is scored by mean $P(\text{unsafe})$ rather than F1/AUPRC and is \textbf{excluded} from any aggregate AUPRC.
 
 \begin{table*}[t]
 \centering
@@ -257,41 +307,49 @@ HarmBench~\cite{mazeika2024harmbench} & \texttt{walledai/HarmBench} & red-team &
 \end{tabular}
 \end{table*}
 
-\textbf{Selection.} We pick established, publicly hosted sets that jointly cover the three safety axes --- \emph{guardrail} (harmful content), \emph{red-team} (jailbreaks / prompt injection), and \emph{over-refusal} (benign-but-superficially-risky) --- and we represent each axis in \emph{both} the in-house and the novel pool, so no axis is judged on a single source. XSTest is the over-refusal probe (its gold label is \texttt{safe}); HarmBench is an all-harmful stress set (no negatives), so it is scored by mean $P(\text{unsafe})$ and excluded from any aggregate AUPRC.
+\textbf{Selection.} We pick established, publicly hosted sets that jointly cover the three safety axes --- \emph{guardrail} (harmful content), \emph{red-team} (jailbreaks / prompt injection), and \emph{over-refusal} (benign-but-superficially-risky) --- and we represent each axis in \emph{both} the in-house and the novel pool, so no axis is judged on a single source. XSTest is the over-refusal probe: in our filtered split it is near-balanced (123 unsafe / 117 safe) rather than all-safe, but it still stresses benign-risky prompts and refusal behavior. HarmBench is an all-harmful stress set (no negatives), so it is scored by mean $P(\text{unsafe})$ and excluded from any aggregate AUPRC.
 
-\textbf{Train/dev/test separation (per benchmark).} Only the four \emph{in-distribution} sets contribute training and calibration data: each is split into a train portion (LoRA fine-tuning only), a dev portion (fitting $T$ and $\tau$ only), and a class-balanced test portion; the \textbf{1{,}102} in-distribution dev rows come exclusively from these four (JailbreakBench and XSTest contribute \emph{zero} dev/train rows). The two \emph{in-house-held-out} sets and the four \emph{novel} sets are \textbf{test-only}: the guard never sees them in training or calibration. Novel sets are additionally held out at the \emph{source-family} level (the whole dataset family is excluded from training) with near-duplicate filtering, so held-out evaluation measures transfer rather than memorization. Every test split is class-balanced by matched-$n$ sampling except XSTest (over-refusal, majority \texttt{safe}) and HarmBench (all-unsafe). \Cref{fig:pools} shows the split-and-evaluation flow.
+\textbf{Train/dev/test separation (per benchmark).} Only the four \emph{in-distribution} sets contribute training and calibration data: each is split into a train portion (LoRA fine-tuning only), a dev portion (fitting $T$ and $\tau$ only), and a class-balanced test portion; the \textbf{1{,}102} in-distribution dev rows come exclusively from these four (JailbreakBench and XSTest contribute \emph{zero} dev/train rows). The two \emph{in-house-held-out} sets and the four \emph{novel} sets are \textbf{test-only}: the guard never sees them in training or calibration. Novel sets are additionally held out at the \emph{source-family} level (the whole dataset family is excluded from training) with near-duplicate filtering, so held-out evaluation measures transfer rather than memorization. Every test split is matched-$n$ except XSTest, which remains near-balanced after filtering (123 unsafe / 117 safe), and HarmBench, which is all-unsafe. \Cref{fig:pools} shows the split-and-evaluation flow.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\resizebox{\textwidth}{!}{%
+\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[
   >=Stealth,
-  pool/.style={draw, rounded corners, align=left, inner sep=6pt, font=\small, text width=54mm, fill=black!2},
-  sink/.style={draw, rounded corners, align=center, inner sep=6pt, font=\small, text width=44mm, fill=black!6}
+  node distance=4mm,
+  pool/.style={draw, rounded corners=5pt, line width=0.7pt, align=left, inner sep=6pt, font=\scriptsize, text width=76mm},
+  chip/.style={font=\scriptsize\bfseries, text=white, inner sep=3pt, rounded corners=2pt}
 ]
-  \node[pool] (ind) {\textbf{In-distribution} (4 sets)\\ BeaverTails, ToxicChat, Prompt Injections, Jailbreak Classification\\[2pt] $\Rightarrow$ \textbf{train} $+$ \textbf{dev} $+$ test};
-  \node[pool, below=6mm of ind] (iho) {\textbf{In-house held-out} (2 sets)\\ JailbreakBench, XSTest\\[2pt] $\Rightarrow$ test only (0 train/dev)};
-  \node[pool, below=6mm of iho] (nov) {\textbf{Novel / OOD} (4 sets)\\ WildGuardTest, WildJailbreak, OR-Bench-Hard, HarmBench\\[2pt] $\Rightarrow$ test only, source-family holdout};
-  \node[sink, right=42mm of ind] (train) {\textbf{Fine-tune (LoRA)} $+$ \textbf{calibrate} $T,\tau$\\[2pt] in-dist train $+$ dev only (1{,}102 dev rows)};
-  \node[sink, right=42mm of nov] (eval) {\textbf{Evaluate all systems}\\[2pt] AUPRC/AUROC, matched-FPR@0.10, paired CIs};
-  \draw[->] (ind.east) -- node[above, font=\scriptsize]{train\,+\,dev} (train.west);
-  \draw[->] (ind.east) -- (eval.west);
-  \draw[->] (iho.east) -- (eval.west);
-  \draw[->] (nov.east) -- (eval.west);
-  \draw[->] (train.south) -- node[right, font=\scriptsize]{guard adapter} (eval.north);
+  \node[pool, fill=stagebluefill, draw=stageblueedge] (ind) {\textbf{In-distribution (4 sets)}\\
+  BeaverTails, ToxicChat, Prompt Injections, Jailbreak Classification\\[2pt]
+  \textbf{Usage:} train + dev + test};
+  \node[chip, fill=stageblueedge, anchor=north east] at ([xshift=-2pt,yshift=-2pt]ind.north east) {train/dev/test};
+
+  \node[pool, fill=stagepurplefill, draw=stagepurpleedge, below=of ind] (iho) {\textbf{In-house held-out (2 sets)}\\
+  JailbreakBench, XSTest\\[2pt]
+  \textbf{Usage:} test only; zero train/dev rows};
+  \node[chip, fill=stagepurpleedge, anchor=north east] at ([xshift=-2pt,yshift=-2pt]iho.north east) {test only};
+
+  \node[pool, fill=stageredfill, draw=stagerededge, below=of iho] (nov) {\textbf{Novel held-out / OOD (4 sets)}\\
+  WildGuardTest, WildJailbreak, OR-Bench-Hard, HarmBench\\[2pt]
+  \textbf{Usage:} test only; source-family holdout};
+  \node[chip, fill=stagerededge, anchor=north east] at ([xshift=-2pt,yshift=-2pt]nov.north east) {test only};
+
+  \draw[->, line width=0.9pt, draw=black!70] (ind.south) -- (iho.north);
+  \draw[->, line width=0.9pt, draw=black!70] (iho.south) -- (nov.north);
 \end{tikzpicture}%
 }
-\caption{Benchmark pools and the train/dev/test separation. Only the four in-distribution sets feed fine-tuning and calibration (train\,+\,dev); the two in-house-held-out and four novel sets are test-only, so held-out and out-of-distribution evaluation measure transfer rather than memorization.}
+\caption{Benchmark pools and how each is used. Only the in-distribution pool feeds fine-tuning and calibration; the in-house-held-out and novel pools are test-only, so the reported held-out and OOD results measure transfer rather than memorization.}
 \label{fig:pools}
-\end{figure*}
+\end{figure}
 
 \subsection{Baselines}
 
 We compare against four systems, each run in its own native regime:
 
 \begin{itemize}
-  \item \textbf{gpt-5.4-mini} --- zero-shot classifier prompt at a fixed native decision point (no tunable threshold). On API errors we abstain rather than defaulting to a label (a corrected bug; see \Cref{sec:bugs}).
-  \item \textbf{Llama-Guard-3-1B}~\cite{meta2024llamaguard2_3} --- the standard (non-INT4) checkpoint, run with its native chat template, reading the first-token verdict. (The INT4-quantized variant of this 1B model is described separately in~\cite{fedorov2024llamaguard3_1b}; we do not use it.)
+  \item \textbf{gpt-5.4-mini} --- zero-shot classifier prompt at a fixed native decision point (no tunable threshold). On API errors we abstain rather than defaulting to a label.
+  \item \textbf{Llama-Guard-3-1B}~\cite{meta2024llamaguard3_1b} --- the standard (non-INT4) checkpoint, run with its native chat template, reading the first-token verdict. (The INT4-quantized variant of this 1B model is described separately in~\cite{fedorov2024llamaguard3_1b}; we do not use it.)
   \item \textbf{ShieldGemma-2b} --- its guideline prompt, scored by $P(\text{Yes})$. ShieldGemma is a content-policy / general-guideline guard and is used somewhat outside its designed regime here; it is not an injection detector.
   \item \textbf{Keyword matcher} --- a simple substring/keyword baseline.
 \end{itemize}
@@ -301,9 +359,9 @@ For a matched comparison we also evaluate an untuned \textbf{base} SmolLM3-3B: z
 \subsection{Metrics and which comparisons carry CIs}
 \label{sec:metrics}
 
-We report F1 and false-positive rate (FPR) at the operating threshold, and the threshold-free summaries AUPRC and AUROC. Because only our guard receives a dev-tuned threshold while baselines are fixed operating points, we additionally compare all tunable systems at \textbf{matched-FPR@0.10} (threshold chosen so FPR $=0.10$ on the in-distribution dev split) and rely on AUPRC as the fair threshold-free summary. Uncertainty is reported as paired-bootstrap 95\% CIs; pairwise agreement/disagreement between systems is tested with McNemar. Latency is measured at true batch=1 (p50/p90), not batch-amortized.
+We report F1 and false-positive rate (FPR) at the operating threshold, and the threshold-free summaries AUPRC and AUROC. Because only our guard receives a dev-tuned threshold while baselines are fixed operating points, we additionally compare all tunable systems at \textbf{matched-FPR@0.10} (threshold chosen so FPR $=0.10$ on the in-distribution dev split) and rely on AUPRC as the fair threshold-free summary. Uncertainty is reported as paired-bootstrap 95\% CIs; pairwise agreement/disagreement between systems is tested with McNemar. Latency is measured at true batch=1 (p50/p90).
 
-We are explicit about statistical support: \textbf{only} the guard's pooled/in-house-held-out AUPRC, the guard-vs-Llama-Guard novel aggregate AUPRC, the base-vs-tuned F1 delta, and the guard-vs-GPT $\Delta$F1 carry CIs. Baseline AUPRCs (ShieldGemma, Llama-Guard on the in-house pool) are point estimates. We therefore reserve the word ``decisive'' for the one comparison in which both sides carry CIs and they do not overlap (novel-set guard vs Llama-Guard); elsewhere we say ``leads on point estimates.''
+We are explicit about statistical support. Paired-bootstrap CIs are reported for the guard's pooled and in-house-held-out AUPRC, the base and guard novel aggregates, the guard-vs-Llama novel aggregate, the base-vs-tuned and guard-vs-GPT deltas, the ensemble deltas, and the mortgage case-study AUPRCs. Baseline in-house AUPRCs for ShieldGemma-2b and Llama-Guard-3-1B remain point estimates. We therefore reserve the word ``decisive'' for the novel-aggregate comparisons whose system-level CIs do not overlap; elsewhere we say ``leads on point estimates.''
 
 We report several distinct F1 aggregations and define each to prevent conflation:
 
@@ -316,12 +374,7 @@ We report several distinct F1 aggregations and define each to prevent conflation
 
 \subsection{Decontamination}
 
-Training data is leakage-filtered against the test splits. Our initial pipeline used exact-string-match decontamination. We recommend, and adopt as protocol, source-family holdout plus near-duplicate detection; source-family holdout is what defines and separates the four novel benchmarks, so the guard is evaluated on data from families it never saw during training. We describe near-duplicate detection as the recommended companion to family holdout rather than claiming an exhaustively executed near-duplicate sweep of the release pipeline.
-
-\subsection{Evaluation bugs found and fixed}
-\label{sec:bugs}
-
-Building the pipeline surfaced four real bugs in our own first evaluation, each of which we corrected before reporting: (1) a \textbf{calibration leak} in which in-house held-out dev rows had leaked into temperature/threshold fitting --- fixed to in-dist-only calibration ($T=2.10$, $\tau=0.59$); (2) \textbf{batch-amortized latency} (throughput/16) --- replaced with true batch=1 p50/p90; (3) an \textbf{asymmetric threshold advantage} (only our model got a dev-tuned threshold while baselines were fixed points) --- addressed via matched-FPR + threshold-free AUPRC; and (4) a \textbf{GPT error-handling bias} in which API errors defaulted to \texttt{unsafe} (inflating the GPT FPR) --- corrected to \emph{abstain}. We verified this does not affect the reported comparison: an abstention-logged re-score of the in-house GPT baseline found \textbf{zero} API errors in the original run (the fail-closed branch never fired), and it reproduces the tie (GPT FPR $0.321{\to}0.326$; guard\,$-$\,GPT $\Delta$F1 $+0.011$, McNemar $p{=}0.14$, guard scored with the deployed in-dist-only calibration).
+Training data is leakage-filtered against the test splits. We adopt source-family holdout plus near-duplicate detection as the decontamination protocol; source-family holdout is what defines and separates the four novel benchmarks, so the guard is evaluated on data from families it never saw during training. We describe near-duplicate detection as the recommended companion to family holdout rather than claiming an exhaustively executed near-duplicate sweep of the release pipeline.
 
 \section{Implementation Framework}
 \label{sec:impl}
@@ -332,7 +385,7 @@ Training and evaluation run on a single consumer Apple M4 Max laptop (36 GB unif
 
 \subsection{Software and frameworks}
 
-The guard is built on Hugging Face \texttt{transformers} with \texttt{peft} (LoRA) and \texttt{trl}, PyTorch on the MPS backend, and \texttt{datasets} for benchmark loading; evaluation uses NumPy/pandas, and Matplotlib for figures. Exact pinned versions are released with the code (\texttt{requirements.txt}).
+The guard is built on Hugging Face \texttt{transformers} with \texttt{peft} (LoRA) and \texttt{trl}, PyTorch on the MPS backend, and \texttt{datasets} for benchmark loading; evaluation uses NumPy/pandas and Matplotlib for figures. Exact pinned versions are released with the code (\texttt{requirements.txt}).
 
 \subsection{Model configuration and hyperparameters}
 
@@ -366,10 +419,10 @@ Threshold-free AUPRC here is pooled over the \textbf{in-house test rows only} (2
 System & AUPRC, in-house pooled [95\% CI] & Recall @FPR 0.10 & F1 @FPR 0.10 & FPR @0.10 & Latency (batch=1) \\
 \midrule
 Guard (SmolLM3-3B, ours) & \textbf{0.844} [0.825, 0.866] & 0.431 & 0.581 & 0.051 & p50 124 ms / p90 188 ms \\
-ShieldGemma-2b & 0.712 & 0.341 & 0.464 & --- & not measured \\
-Llama-Guard-3-1B & 0.639 & 0.242 & 0.360 & --- & not measured \\
+ShieldGemma-2b & 0.712 & 0.341 & 0.464 & 0.125 & not measured \\
+Llama-Guard-3-1B & 0.639 & 0.242 & 0.360 & 0.101 & not measured \\
 gpt-5.4-mini (fixed native point) & --- & 0.856 & 0.784 & 0.321 & \textasciitilde{}512 ms (remote API) \\
-keyword matcher & --- & 0.096 & 0.168 & --- & not measured \\
+keyword matcher & --- & 0.096 & 0.168 & 0.047 & not measured \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -380,9 +433,9 @@ keyword matcher & --- & 0.096 & 0.168 & --- & not measured \\
 \label{fig:inhouse-auprc}
 \end{figure}
 
-On pooled in-house AUPRC the guard (0.844) leads ShieldGemma-2b (0.712) and Llama-Guard-3-1B (0.639) on point estimates (the baselines carry no CIs, so we do not assert statistical significance here); see \Cref{fig:inhouse-auprc}. At matched FPR@0.10 all tunable systems are conservative (the guard operates at recall 0.431, FPR 0.051); the guard still leads the other tunable guards on both recall and F1 on point estimates. The guard's in-dist AUPRC is 0.846 and its in-house held-out AUPRC is 0.860 [0.803, 0.909]. At each system's best threshold (Optimal-F1), the guard reaches 0.794, ShieldGemma-2b 0.730, and Llama-Guard-3-1B 0.672 --- the same guard $>$ ShieldGemma $>$ Llama-Guard order, which (like AUPRC) inverts the native-threshold F1 ordering of the two open guards (\Cref{sec:operating-point-fairness}).
+The in-house result is straightforward. Under both threshold-free AUPRC and the conservative matched-FPR view, the guard is ahead of the measured open baselines on the pooled in-house set; see \Cref{fig:inhouse-auprc}. Because ShieldGemma-2b and Llama-Guard-3-1B do not carry paired CIs here, we state this only as a point-estimate lead. The decisive cross-system evidence comes later on the novel aggregate in \Cref{subsec:novel}.
 
-\Cref{tab:perbench} breaks the in-house pool down per benchmark: threshold-free AUPRC for every system, plus the base$\to$tuned F1 at each model's own clean in-distribution calibration (the tuned column is also the guard's deployed-point F1). Two patterns stand out. Tuning's F1 gain is concentrated in-distribution and near-flat on the held-out sets (JailbreakBench $+0.012$, XSTest $-0.023$); and on the two held-out sets the \emph{base} already has the higher AUPRC (JailbreakBench 0.967 vs 0.826, XSTest 0.976 vs 0.857), an early sign of the out-of-distribution ranking degradation we quantify in \S\ref{sec:base-vs-tuned}. At the deployed point ($T=2.10$, $\tau=0.59$) this yields macro-F1 0.860 (in-dist) / 0.827 (held-out) and pooled micro-F1 0.794, but the deployed overall FPR is \textbf{0.306} --- at $\tau=0.59$ roughly 31\% of benign in-house prompts are flagged, a genuine deployment concern we revisit in \Cref{sec:limitations}.
+\Cref{tab:perbench} explains where that pooled advantage comes from. Tuning repairs two in-distribution weak spots and drives most of the gain, but the two in-house held-out benchmarks already favor the \emph{untuned} base on AUPRC (JailbreakBench 0.967 vs.\ 0.826, XSTest 0.976 vs.\ 0.857), which foreshadows the out-of-distribution ranking reversal we isolate in \Cref{sec:base-vs-tuned}. The deployed threshold is therefore useful but not benign: it reaches pooled micro-F1 0.794, yet the overall deployed FPR is 0.306, so this is not a plug-and-play operating point for production.
 
 \begin{table*}[t]
 \centering
@@ -405,10 +458,62 @@ XSTest$^\dagger$ & 240 (123:117) & 0.857 & \textbf{0.976} & 0.755 & 0.825 & 0.85
 \end{tabular}
 \end{table*}
 
+\subsection{Why native-threshold rankings are misleading}
+\label{sec:operating-point-fairness}
+
+The first thing to establish is that ranking depends on where each model's alarm is set. At native thresholds Llama-Guard-3-1B posts a higher F1 than ShieldGemma-2b (0.673 vs.\ 0.424), but that ordering \textbf{reverses} under both threshold-free AUPRC (0.639 vs.\ 0.712) and best-threshold Optimal-F1 (0.672 vs.\ 0.730). The core measurement warning of the paper is therefore simple: a comparison at each model's preferred operating point can change who appears best.
+
+\begin{figure}[t]
+\includegraphics[width=\columnwidth]{figures/fig3_operating_point_flip.pdf}
+\caption{ShieldGemma-2b versus Llama-Guard-3-1B under native-threshold F1, threshold-free AUPRC, and matched-FPR@0.10: the native-F1 ordering reverses under both operating-point-fair views.}
+\label{fig:operating-point-flip}
+\end{figure}
+
+Threshold-free, the guard leads the open guards across every in-house pooling on point estimates (baseline AUPRCs carry no CIs):
+
+\begin{table}[t]
+\small
+\centering
+\setlength{\tabcolsep}{4pt}
+\caption{Threshold-free AUPRC across in-house poolings. The guard leads on point estimates; only the guard carries CIs.}
+\label{tab:auprc-poolings}
+\begin{tabular}{lrrr}
+\toprule
+System & \makecell[r]{AUPRC\\in-house pooled} & \makecell[r]{AUPRC\\in-dist} & \makecell[r]{AUPRC\\in-house held-out} \\
+\midrule
+Guard & 0.844 [0.825, 0.866] & 0.846 & 0.860 [0.803, 0.909] \\
+ShieldGemma-2b & 0.712 & 0.702 & 0.785 \\
+Llama-Guard-3-1B & 0.639 & 0.610 & 0.762 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At a dev-matched FPR$=$0.10 operating point, all tunable systems become conservative. The realized \emph{test} FPRs are not identical --- guard 0.051, Llama-Guard-3-1B 0.101, ShieldGemma-2b 0.125 --- so ``matched-FPR@0.10'' is matched on the \emph{dev} split rather than exactly on test; on the test pool the guard is in fact held to a stricter operating point than the baselines:
+
+\begin{table}[t]
+\small
+\centering
+\caption{Dev-matched FPR$=$0.10 operating point (threshold set so FPR$=$0.10 on the in-distribution dev split; realized \emph{test} FPRs differ and are shown in the FPR column). gpt-5.4-mini and the keyword matcher are at their fixed native points.}
+\label{tab:matched-fpr}
+\begin{tabular}{lrrr}
+\toprule
+System & Recall & F1 & FPR \\
+\midrule
+Guard & 0.431 & 0.581 & 0.051 \\
+ShieldGemma-2b & 0.341 & 0.464 & 0.125 \\
+Llama-Guard-3-1B & 0.242 & 0.360 & 0.101 \\
+keyword matcher & 0.096 & 0.168 & 0.047 \\
+gpt-5.4-mini (fixed native point) & 0.856 & 0.784 & 0.321 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The practical reading is straightforward. Native-threshold F1 conflates classifier quality with threshold choice; matched-FPR removes that confound but is intentionally conservative; threshold-free AUPRC is therefore our primary summary. Read together, these views support one claim: rankings are not stable unless the evaluation regime is held fixed.
+
 \subsection{Novel held-out benchmarks (guard never trained on them)}
 \label{subsec:novel}
 
-On the three balanced benchmarks the guard never saw during training, we compare threshold-free AUPRC across the tuned guard, the \emph{zero-shot base}, and Llama-Guard-3-1B (both guard-vs-Llama and base-vs-guard aggregate CIs are non-overlapping).
+This is the paper's clearest empirical result. On the three balanced benchmarks the guard never saw during training, the ranking is untuned base $>$ tuned guard $>$ Llama-Guard-3-1B, and the first two gaps are supported by non-overlapping aggregate CIs.
 
 \begin{table*}[t]
 \centering
@@ -435,14 +540,14 @@ Aggregate Optimal-F1 & 0.792 & 0.796 & 0.691 \\
 \label{fig:novel-auprc}
 \end{figure}
 
-The tuned guard's aggregate AUPRC (0.781 [0.751, 0.811]) exceeds Llama-Guard-3-1B's (0.701 [0.673, 0.733]) with non-overlapping CIs --- a decisive cross-system result. But the \emph{untuned base} ranks higher still (0.886 [0.870, 0.900], disjoint from the tuned guard), while best-threshold F1 is essentially tied across base and guard (0.792 vs 0.796, both above Llama-Guard's 0.691); see \Cref{fig:novel-auprc}. Read together: out-of-distribution the base is the strongest \emph{ranker} (most operating-point-robust), base and tuned guard reach the same \emph{peak} F1, and both beat Llama-Guard. The guard's novel-set lead over Llama-Guard is thus inherited from the base, not produced by LoRA; fine-tuning degrades OOD score ranking (AUPRC) without changing peak achievable F1 (\Cref{sec:base-vs-tuned}).
+The tuned guard still beats Llama-Guard-3-1B decisively: 0.781 [0.751, 0.811] versus 0.701 [0.673, 0.733]. But the more important point is attribution. The \emph{untuned} base ranks higher still at 0.886 [0.870, 0.900], while best-threshold F1 is essentially tied across base and tuned guard (0.792 vs.\ 0.796). So the tuned guard's novel-set advantage over Llama-Guard is real, but it is inherited from the base rather than created by LoRA. Fine-tuning preserves peak achievable F1 and worsens the score ranking across thresholds.
 
-The aggregate 95\% CIs ([0.751, 0.811] vs [0.673, 0.733]) do not overlap, so this is our one decisive cross-system AUPRC result. The aggregate is over the three balanced novel sets (2,020 rows); \textbf{HarmBench is excluded} from it. On HarmBench (200 all-harmful prompts), mean predicted $P(\text{unsafe})$ is 0.967 for the zero-shot base, 0.780 for the tuned guard, and 0.390 for Llama-Guard-3-1B; because this compares raw probabilities across differently temperature-scaled models it is \emph{suggestive, not decisive} and is not a threshold-free ranking metric (though it echoes the AUPRC ordering base $>$ guard $>$ Llama-Guard). ShieldGemma-2b on the novel benchmarks is \textbf{pending} (Gemma-2 stalls on the throttled MPS laptop); on the in-house held-out set its AUPRC is 0.785 versus the guard's 0.860. We therefore make \textbf{no} ShieldGemma novel-set claim.
+This novel aggregate is one of the manuscript's decisive comparisons: the guard beats Llama-Guard-3-1B with non-overlapping system-level CIs, and the untuned base outranks the tuned guard by the same criterion. The aggregate is over the three balanced novel sets (2,020 rows); \textbf{HarmBench is excluded}. On HarmBench, mean predicted $P(\text{unsafe})$ follows the same ordering (base 0.967, guard 0.780, Llama-Guard-3-1B 0.390), but that comparison is calibration-dependent and only suggestive. ShieldGemma-2b remains \textbf{pending} on the novel benchmarks, so we make no ShieldGemma novel-set claim.
 
-\subsection{Frontier comparison: statistical tie and Pareto-style position}
+\subsection{Secondary comparison: local parity with a frontier API}
 \label{subsec:frontier}
 
-Against gpt-5.4-mini on paired rows, the guard shows no statistically significant F1 difference.
+This is a deployment-oriented side result, not the main methodological claim. Against gpt-5.4-mini on paired rows, the guard shows no statistically significant F1 difference.
 
 \begin{table}[t]
 \centering
@@ -468,12 +573,12 @@ gpt-5.4-mini latency & \textasciitilde{}512 ms (remote API) \\
 \label{fig:pareto}
 \end{figure}
 
-The F1 difference is not significant (McNemar $p=0.14$; CI spans zero, its lower bound admitting the guard being 0.004 \emph{worse}), so this is a statistical \textbf{tie} with the guard nominally ahead, not an accuracy beat. Two caveats. First, this comparison places the guard at its in-dist-tuned threshold ($\tau=0.59$) against gpt at its fixed native point --- the same per-model-threshold asymmetry we criticize in \Cref{sec:operating-point-fairness}; because gpt exposes no tunable threshold, a matched-FPR comparison is not possible, so the tie is threshold-advantaged in the guard's favor and should be read as such. Second, latency is cross-substrate: 124 ms is local M4 Max inference while \textasciitilde{}512 ms is a remote API round-trip (network plus server-side batching), so ``\textasciitilde{}4x lower latency'' is deployment-realistic but \emph{not} a controlled hardware comparison, and it is a \textbf{guard-vs-gpt claim only} --- Llama-Guard and ShieldGemma latency were not measured. With those caveats, the guard achieves parity accuracy locally at roughly 4x lower batch=1 latency with no API cost: an efficiency win at parity accuracy rather than an accuracy win (\Cref{fig:pareto}).
+This comparison should be read narrowly. The F1 difference is not significant (McNemar $p=0.14$; CI spans zero), so the result is a statistical \textbf{tie}. It is also threshold-asymmetric: the guard is evaluated at its in-dist-tuned threshold while gpt is stuck at its native point, because no matched-FPR comparison is possible. And the latency comparison is cross-substrate: local M4 Max inference versus a remote API round-trip. With those caveats, the deployment takeaway is simple: the local guard reaches parity accuracy with a frontier API on this pool at about one quarter of the single-request latency and with no API cost (\Cref{fig:pareto}).
 
 \subsection{Analysis: why the rankings move}
 \label{sec:analysis}
 
-The three analyses below share one message, summarized in \Cref{fig:ranking-flip}: the \emph{same} candidate systems change rank as the evaluation regime changes, so the reported ``best guard'' is a property of the benchmark and operating point as much as of the model.
+The three analyses below share one message, summarized in \Cref{fig:ranking-flip}: the \emph{same} candidate systems change rank as the evaluation regime changes, so the reported ``best guard'' is as much a property of the benchmark and the operating point as of the model.
 
 \begin{figure}[t]
 \centering
@@ -504,13 +609,13 @@ The three analyses below share one message, summarized in \Cref{fig:ranking-flip
 \subsection{Base-vs-tuned decomposition: PEFT specializes in-distribution and degrades OOD ranking}
 \label{sec:base-vs-tuned}
 
-We isolate the contribution of parameter-efficient fine-tuning by evaluating the base SmolLM3-3B model zero-shot with the identical single-token logprob head (no training), on the identical paired rows.
+We isolate the contribution of parameter-efficient fine-tuning by evaluating the base SmolLM3-3B model zero-shot with the identical single-token logprob head on the identical paired rows.
 
-Two findings stand out. First, the \emph{untuned} base is already a competent safety classifier by F1: its zero-shot F1 of 0.713 exceeds the zero-shot F1 of both purpose-built open guards --- Llama-Guard-3-1B (0.673) and ShieldGemma-2b (0.424). Consistent with our own Contribution \#1, this is an \textbf{F1-at-operating-point} comparison, so we also measured the base's threshold-free in-house AUPRC: 0.696 [0.666, 0.730]. This \emph{confirms} the caution we flagged rather than overturning it --- under AUPRC the base (0.696) falls \emph{between} Llama-Guard-3-1B (0.639) and ShieldGemma-2b (0.712), so the base's by-F1 lead over ShieldGemma does \textbf{not} survive the threshold-free test in-house. The threshold-free ``base is a strong guard'' claim holds only \emph{out-of-distribution}: on the novel benchmarks the base's aggregate AUPRC over the three balanced sets (0.886) beats every system we could measure there (Llama-Guard-3-1B 0.701; see \Cref{subsec:novel}).
+The first takeaway is about attribution. The untuned base is already strong enough to make the tuned guard's gains easy to misread. By F1 at its own operating point, the base (0.713) beats both open guards. By threshold-free in-house AUPRC, however, it sits \emph{between} them at 0.696 [0.666, 0.730], below ShieldGemma-2b (0.712) and above Llama-Guard-3-1B (0.639). So the base is not uniformly superior in-house; the stronger claim is out-of-distribution, where its novel aggregate AUPRC reaches 0.886.
 
-Second, LoRA adds a real but \emph{localized} gain: aggregate F1 on the identical 2,018 paired rows (each model at its own clean in-distribution calibration) rises from 0.713 to 0.794 (delta $+0.081$, 95\% CI [0.062, 0.100], McNemar $p < 1\mathrm{e}{-4}$). Decomposing this delta per benchmark shows it is concentrated almost entirely in the in-distribution axes and is essentially flat on the two in-house held-out benchmarks (JailbreakBench $+0.012$, XSTest $-0.023$; macro $-0.005$). The threshold-free picture is symmetric and sharper: tuning \emph{raises} the guard's in-house AUPRC from the base's 0.696 to 0.844, yet \emph{lowers} its novel-set AUPRC from the base's 0.886 to 0.781 --- LoRA specializes the ranker to the in-distribution regime at the cost of out-of-distribution ranking.
+The second takeaway is about what LoRA actually buys. On the identical 2,018 paired rows, aggregate F1 rises from 0.713 to 0.794 (delta $+0.081$, 95\% CI [0.062, 0.100], McNemar $p < 1\mathrm{e}{-4}$), but almost all of that gain is in-distribution. On the two in-house held-out benchmarks the delta is essentially flat (JailbreakBench $+0.012$, XSTest $-0.023$; macro $-0.005$). The threshold-free view is sharper still: tuning raises in-house AUPRC from 0.696 to 0.844 while lowering the novel aggregate from 0.886 to 0.781. In other words, LoRA improves fit to the training regime and weakens out-of-distribution ranking robustness.
 
-The base's in-house shortfall is concentrated, not uniform. Per-benchmark, the base's low in-house AUPRC (0.696) comes almost entirely from BeaverTails --- where the zero-shot base over-flags edgy-but-benign prompts (AUPRC 0.618, and this set is 52\% of the pool) --- and from jailbreak\_classification, which the zero-shot base \emph{inverts} (0.451, below chance); on the other four in-house benchmarks and all three novel sets the base already ranks well (0.79--0.98). Tuning's in-house AUPRC lift is therefore mostly the repair of these two weak spots (jailbreak\_classification $0.451 \to 0.999$) plus improved score comparability across benchmarks --- the pooled-versus-macro-mean gap shrinks from 0.080 (base 0.696 vs 0.776) to 0.026 (tuned 0.844 vs 0.870) --- rather than a broad gain in discrimination. This also explains the base's counterintuitive in-house-below-novel ordering: it is a benchmark-composition effect (the in-house pool contains the base's two blind spots; the novel pool does not), not evidence that the base generalizes better to unseen data than to seen data.
+Why does the pooled in-house score still favor tuning so strongly? The base has two specific blind spots: BeaverTails, where it over-flags edgy benign prompts, and jailbreak\_classification, which it nearly inverts. Tuning mostly repairs those failures and makes scores more comparable across benchmarks; it does not deliver a broad uplift everywhere. That is also why the base can look worse in-house than on the novel pool: the in-house mixture contains its two weak benchmarks, whereas the novel pool does not.
 
 \begin{table*}[t]
 \small
@@ -539,24 +644,41 @@ xstest & in-house held-out & 0.856 & 0.833 & $-0.023$ \\
 \label{fig:base-vs-tuned}
 \end{figure}
 
-The pattern is unambiguous within its scope: every large positive delta is in-distribution (the extreme case, jailbreak\_classification, $+0.641$, is a task the base essentially could not do), while the two in-house held-out benchmarks barely move (JailbreakBench $+0.012$, XSTest $-0.023$; macro $-0.005$), including a small regression on the over-refusal probe (XSTest). \Cref{fig:base-vs-tuned} visualizes this split. LoRA specializes the guard to the training distribution's label conventions and formatting; on the two in-house held-out benchmarks it does not measurably improve --- and on over-refusal can mildly degrade --- generalization.
+The per-benchmark delta pattern is therefore easy to read in \Cref{fig:base-vs-tuned}: the large gains are in-distribution, while the held-out pair is flat-to-negative. Measured on the novel benchmarks, this interpretation survives intact. The untuned base outranks the tuned guard on AUPRC, while both reach essentially the same best-threshold F1. The guard's novel lead over Llama-Guard is therefore inherited from the base, not produced by tuning. Within the scope of this study, LoRA is specialization rather than demonstrated transfer.
 
-We have now measured the base on the novel benchmarks, which \textbf{confirms and sharpens} this claim. Out-of-distribution, the \emph{untuned} base ranks higher than the tuned guard (aggregate AUPRC over the three balanced sets 0.886 [0.870, 0.900] vs 0.781 [0.751, 0.811], non-overlapping CIs), while both reach essentially the same best-threshold F1 (0.792 vs 0.796). Fine-tuning therefore does not merely fail to help OOD --- it \emph{degrades the guard's OOD score ranking / operating-point robustness}: a lower AUPRC means a worse precision--recall trade-off across thresholds, even though a per-distribution re-tuned threshold would recover the same peak F1 (a re-tuning that is, by definition, unavailable on unseen data). This resolves the earlier tension between Contribution \#2 (tuning does not improve --- and on OOD ranking actively harms --- generalization) and Contribution \#3 (the tuned guard still beats Llama-Guard on novel data): the guard's novel-set lead is \emph{inherited from the base}, not produced by LoRA, and the base in fact beats Llama-Guard by an even larger margin.
+This is the constructive complement to prior reports that fine-tuning can \emph{destroy} safety alignment: here tuning ``works,'' but the measurable gain is mostly regime-specific.
 
-This is the constructive complement to prior reports that fine-tuning can \emph{destroy} safety alignment: here tuning ``works,'' yet the measurable gain is memorization of the in-distribution operating regime rather than demonstrated transferable safety competence.
+\subsubsection{A narrow theoretical rationale}
+\label{sec:theory-rationale}
+
+The OOD result above is empirical, but there is a clean reason to care about preserving the base model's unsafe-vs-safe ordering. Let $b(x)$ and $t(x)$ be the base and tuned unsafe scores, and let $X^+$ and $X^-$ be independent unsafe and safe prompts from an OOD distribution. AUROC has the pairwise form
+\[
+\mathrm{AUROC}(s)
+= \Pr[s(X^+) > s(X^-)]
++ \tfrac{1}{2}\Pr[s(X^+) = s(X^-)].
+\]
+Therefore, if tuning changes the base model's pairwise comparison on at most an $\varepsilon$ fraction of unsafe--safe pairs, then
+\[
+\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \varepsilon.
+\]
+A sharper one-sided version counts only the fraction of pairs whose comparison worsens. Moreover, if the tuned score stays uniformly close to the base score, $|t(x)-b(x)| \le \delta$, then only pairs with base margin $|b(X^+) - b(X^-)| \le 2\delta$ can flip, which gives
+\[
+\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \Pr[|b(X^+) - b(X^-)| \le 2\delta].
+\]
+\Cref{app:rank-preservation} gives a short proof. On a fixed tie-free test set, the appendix also gives a finite-sample AP bound: if tuning reverses $K$ unsafe--safe pairs relative to the base ranking, then $|\mathrm{AP}(t)-\mathrm{AP}(b)| \le K/(2n_+)$, with a sharper rank-discounted form showing that flips near the top of the ranking hurt most. The point of these results is narrow but useful: they explain why base-rank preservation is a sensible OOD objective and why AUPRC can be much more fragile than AUROC. The theory does \emph{not} prove our empirical AUPRC numbers from first principles; it only characterizes one mechanism by which ranking damage appears.
 
 \subsection{Cross-family and scaling: six bases, and why tuning \emph{converges} OOD}
 \label{sec:cross-family}
 
-To test whether the base-vs-tuned pattern is a SmolLM3 artifact, we apply the \emph{identical} LoRA recipe and guard calibration to five further instruction-tuned bases spanning three vendors and $0.5$--$2.7\times$ the size --- Qwen2.5-1.5B, SmolLM2-1.7B, DeepSeek-R1-Distill-Qwen-1.5B (a reasoning-distilled base), Qwen3-4B, and Qwen3-8B --- and score all six on the \emph{identical} frozen rows (\Cref{tab:slm-sweep}). (Matched-FPR thresholds for the reused open guards use a pooled-test approximation here rather than the SmolLM3 run's dev-derived thresholds.)
+To test whether the SmolLM3 result is an anomaly, we apply the \emph{identical} LoRA recipe and guard calibration to five further instruction-tuned bases spanning three vendors and 1.5--8B --- Qwen2.5-1.5B, SmolLM2-1.7B, DeepSeek-R1-Distill-Qwen-1.5B, Qwen3-4B, and Qwen3-8B --- and score all six on the \emph{identical} frozen rows (\Cref{tab:slm-sweep}). (Matched-FPR thresholds for the reused open guards use a pooled-test approximation here rather than the SmolLM3 run's dev-derived thresholds.)
 
-\textbf{Tuning specializes in-distribution on every base.} In-house AUPRC rises for all six, from base scores as low as 0.522 to tuned scores of 0.81--0.88; the lift is largest for the weakest base (DeepSeek's reasoning base, $0.522\!\to\!0.813$, $+0.291$) and substantial even for the strongest (Qwen3-8B, $0.748\!\to\!0.880$). Every tuned guard beats the open guards Llama-Guard-3-1B (0.639) and ShieldGemma-2b (0.712) on in-house AUPRC.
+The sweep shows that SmolLM3 is not an outlier. The identical LoRA recipe improves in-house AUPRC on every base, from 0.522--0.748 before tuning to 0.813--0.882 after tuning. Every tuned guard beats Llama-Guard-3-1B and ShieldGemma-2b on in-house AUPRC.
 
-\textbf{Out-of-distribution, tuning is \emph{convergent}, not uniformly degrading} --- the sweep's central finding. The six \emph{untuned} bases span a wide novel-AUPRC range, 0.602 (DeepSeek) to 0.886 (SmolLM3), a spread of 0.284; yet after the identical tuning they collapse into a tight band, 0.739--0.795 (spread 0.056, a $5\times$ compression). Fine-tuning on the in-distribution guard data drives every base toward the \emph{same} out-of-distribution operating regime regardless of where it started: the change $\Delta_{\text{novel}}=\text{tuned}-\text{base}$ decreases monotonically with the base's own novel AUPRC, from $+0.137$ (weakest base) to $-0.105$ (strongest), crossing zero near a base AUPRC of $\approx$0.77. SmolLM3's headline result --- tuning \emph{degrades} its novel ranking (\S\ref{sec:base-vs-tuned}) --- is thus the \emph{strong-base} case of a general phenomenon: tuning erases a base's idiosyncratic out-of-distribution strength. On a base that is already an excellent zero-shot OOD guard (SmolLM3, 0.886) tuning is a net OOD loss; on a weak one (DeepSeek's reasoning base, which does not natively emit a verdict, 0.602) it is a large gain; in between (SmolLM2, Qwen2.5, Qwen3) it is roughly neutral. The practical consequence is that the \emph{base} matters far less for out-of-distribution behaviour than the in-distribution regime the tuning imprints --- but it still governs the deployed in-house operating point and cost: the two Qwen3 bases give the strongest tuned guards (in-house AUPRC 0.88, matched-FPR@0.10 F1 0.74--0.75) at 4--8B, while the 1.5--3B bases reach 0.81--0.85 at a fraction of the memory (\Cref{sec:recommendations}).
+The interesting behavior is again out-of-distribution. The untuned bases span a wide novel-AUPRC range, 0.602 to 0.886, but the tuned versions collapse into a narrow band, 0.739 to 0.795. Tuning therefore acts like a \emph{convergence operator} on OOD ranking: it helps weak bases, hurts strong ones, and is roughly neutral in the middle. SmolLM3 is the strong-base case of that general pattern, not an exception. The practical lesson is that base choice matters a great deal for in-house accuracy and cost, but much less for tuned OOD behavior than teams often assume. Whether this convergence is intrinsic to fine-tuning or specific to the \emph{supervised} objective --- and can be resisted by a KL-regularized objective --- is the subject of \S\ref{sec:rl-vs-ft}.
 
 \begin{table*}[t]
 \small\centering\setlength{\tabcolsep}{4pt}
-\caption{Six bases under the \emph{identical} LoRA recipe, calibration, and frozen rows: in-house and novel (three balanced sets) AUPRC for the untuned base $\to$ tuned guard, the novel change $\Delta_{\text{novel}}$, matched-FPR@0.10 F1, and batch=1 latency. Bases span novel AUPRC 0.60--0.89, but the tuned guards \emph{converge} to 0.74--0.80: tuning degrades strong-OOD bases (SmolLM3), helps weak ones (DeepSeek), and is roughly neutral between --- $\Delta_{\text{novel}}$ falls monotonically with base strength.}
+\caption{Six bases under the \emph{identical} LoRA recipe, calibration, and frozen rows: in-house and novel (three balanced sets) AUPRC for the untuned base $\to$ tuned guard, the novel change $\Delta_{\text{novel}}$, matched-FPR@0.10 F1, and batch=1 latency. Bases span novel AUPRC 0.60--0.89, but the tuned guards \emph{converge} to 0.74--0.80: tuning degrades strong-OOD bases (SmolLM3), helps weak ones (DeepSeek), and is roughly neutral in between --- $\Delta_{\text{novel}}$ broadly decreases as base strength rises, but not monotonically.}
 \label{tab:slm-sweep}
 \begin{tabular}{llcccc}
 \toprule
@@ -575,20 +697,75 @@ Qwen3-8B              & 8B & 0.748 $\to$ 0.880 & 0.765 $\to$ 0.751 & $-0.014$ & 
 \end{tabular}
 \end{table*}
 
+\subsection{The fine-tuning \emph{objective} controls the OOD convergence: SFT vs.\ DPO vs.\ GRPO}
+\label{sec:rl-vs-ft}
+
+The convergence in \Cref{tab:slm-sweep} is a property of the \emph{supervised} objective, not of fine-tuning as such. SFT maximizes the likelihood of the gold verdict token on in-distribution rows; nothing anchors the network to its pretrained behavior, so the OOD ranking is free to drift into the tuned band. Preference- and RL-style objectives add exactly such an anchor --- a Kullback--Leibler penalty to a frozen reference (the untuned base). We therefore re-run the sweep with two alternatives to SFT, holding the base, LoRA configuration (\Cref{tab:lora}), training pool, and frozen evaluation rows fixed and varying \emph{only} the objective:
+\begin{itemize}
+\item \textbf{DPO} (Direct Preference Optimization): offline preference optimization on pairs (prompt; chosen $=$ correct verdict, rejected $=$ wrong verdict) with a reference-model KL. RLHF-family, though RL-free in its mathematics.
+\item \textbf{GRPO} (Group Relative Policy Optimization): genuine online RL --- sample verdicts, reward correctness, advantage-normalize within a group of samples, KL to the reference.
+\end{itemize}
+To remove a hardware confound (\S\ref{sec:repro-hw}), all three objectives are trained \emph{and} evaluated on a single CUDA stack; the SFT column of \Cref{tab:rl-vs-ft} is thus re-measured and runs slightly above the MPS values of \Cref{tab:slm-sweep}.
+
+\Cref{tab:rl-vs-ft} shows a clean division of labor. \emph{In-distribution}, SFT is strongest on every base: the KL penalty that helps DPO and GRPO out-of-distribution holds them back in-distribution at these default hyperparameters. \emph{Out-of-distribution}, the ordering inverts on the non-reasoning mid-to-large bases --- DPO matches or beats SFT on novel AUPRC (SmolLM2 0.850 vs.\ 0.797; Qwen2.5 0.815 vs.\ 0.792; SmolLM3 0.880 vs.\ 0.812) --- and both DPO and GRPO stay close to the untuned base's novel score rather than collapsing to a narrow tuned band: the reference KL resists the convergence operator. GRPO barely moves off the base in either direction; a single-token verdict yields a near-binary reward with little within-group variance, so the policy-gradient signal is weak (61 of 300 groups had zero reward variance on the reasoning base). The reasoning-distilled DeepSeek base is the outlier: both DPO and GRPO underperform SFT there, because the base cannot emit a parseable verdict at the decision position without first emitting chain-of-thought, which starves both the preference pairs and the reward.
+
+\begin{table*}[t]
+\small\centering\setlength{\tabcolsep}{5pt}
+\caption{Same base, pool, LoRA recipe, and frozen rows; only the fine-tuning \emph{objective} varies (SFT vs.\ DPO vs.\ GRPO), all trained \emph{and} scored on one CUDA stack. Threshold-free in-house and novel (three balanced sets) AUPRC; novel$_{\text{base}}$ is the untuned base. SFT leads in-house on every base, but out-of-distribution DPO matches or beats it on the non-reasoning bases (\textbf{bold} where DPO novel $>$ SFT novel), and DPO/GRPO stay near novel$_{\text{base}}$ rather than converging --- the reference-model KL resists the collapse of \Cref{tab:slm-sweep}. Qwen3-8B DPO did not fit training on a 40\,GB card. $^\ast$reasoning-distilled base; $^\dagger$primary base.}
+\label{tab:rl-vs-ft}
+\begin{tabular}{ll cc cc cc c}
+\toprule
+ & & \multicolumn{2}{c}{SFT} & \multicolumn{2}{c}{DPO} & \multicolumn{2}{c}{GRPO} & base \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+Base & Params & in-h.\ & novel & in-h.\ & novel & in-h.\ & novel & novel \\
+\midrule
+DeepSeek-R1-Distill$^\ast$ & 1.5B & 0.808 & 0.772 & 0.596 & 0.585 & 0.523 & 0.601 & 0.600 \\
+Qwen2.5-1.5B          & 1.5B & 0.863 & 0.792 & 0.704 & \textbf{0.815} & 0.689 & 0.801 & 0.797 \\
+SmolLM2-1.7B          & 1.7B & 0.850 & 0.797 & 0.725 & \textbf{0.850} & 0.635 & 0.778 & 0.774 \\
+SmolLM3-3B$^\dagger$  & 3B   & 0.881 & 0.812 & 0.821 & \textbf{0.880} & 0.699 & 0.886 & 0.885 \\
+Qwen3-4B              & 4B   & 0.877 & 0.757 & 0.715 & 0.756 & 0.685 & 0.737 & 0.742 \\
+Qwen3-8B              & 8B   & 0.885 & 0.812 & \multicolumn{2}{c}{--- (OOM)} & 0.726 & 0.769 & 0.765 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Tuning each objective fairly.}
+The in-distribution gap above could merely reflect under-tuned baselines, so we run a per-objective hyperparameter search on the primary base (SmolLM3-3B): Optuna TPE, 16 trials each over learning rate, LoRA rank, warmup, and (for DPO/GRPO) the KL strength $\beta$, \emph{selecting on in-distribution dev AUPRC} and tracking novel AUPRC without optimizing it (\Cref{tab:hpo}). Two results follow. First, for SFT the learning rate \emph{is} the OOD knob: across trials, higher lr raises dev AUPRC but lowers novel almost monotonically (dev-optimal lr $2.2\times10^{-4}$ gives novel 0.793; the gentlest lr $3.2\times10^{-5}$ gives novel 0.896). Selecting on an in-distribution validation set --- standard practice --- therefore steers SFT straight into the OOD-collapsing regime. Second, once tuned, \emph{DPO dominates SFT}: its best-dev configuration reaches dev AUPRC 0.868 (matching SFT's 0.869) while holding novel at 0.890, a $+0.097$ OOD gap at equal in-distribution accuracy. The default DPO was simply under-trained in-distribution; a stronger KL ($\beta{=}0.5$) with a higher lr recovers in-distribution accuracy without surrendering OOD robustness. GRPO's best configuration still cannot gain in-distribution (dev 0.685 $\approx$ base), consistent with the weak single-token reward. The claim is therefore not ``RL beats SFT'' unconditionally, but the sharper one that \emph{in-distribution model selection actively degrades SFT's OOD ranking, whereas a KL-regularized objective makes OOD robustness the default and, once tuned, is Pareto-competitive in-distribution.}
+
+\begin{table}[t]
+\small\centering\setlength{\tabcolsep}{5pt}
+\caption{Per-objective HPO on SmolLM3-3B (Optuna TPE, 16 trials, selected on in-distribution dev AUPRC; novel tracked, not optimized). Tuned DPO matches SFT in-distribution while keeping a $+0.097$ novel advantage. ``SFT (novel$^\star$)'' is the best novel \emph{found} during the SFT search --- reachable only by sacrificing the dev objective, i.e.\ by \emph{not} selecting the model one would deploy.}
+\label{tab:hpo}
+\begin{tabular}{lccl}
+\toprule
+Objective & dev (in-dist) & novel (OOD) & best HPs \\
+\midrule
+SFT             & \textbf{0.869} & 0.793 & lr $2.2\!\times\!10^{-4}$, r32 \\
+\quad(novel$^\star$) & 0.843 & \emph{0.896} & lr $3.2\!\times\!10^{-5}$, r16 \\
+DPO             & 0.868 & \textbf{0.890} & lr $2.9\!\times\!10^{-5}$, r64, $\beta{=}0.5$ \\
+GRPO            & 0.685 & \textbf{0.901} & lr $4.9\!\times\!10^{-6}$, r64, $\beta{=}0.01$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reproducibility across hardware.}
+\label{sec:repro-hw}
+The primary results were produced on Apple MPS and this sweep on NVIDIA A100s, so we separate the two hardware effects. Re-scoring the \emph{same} SmolLM3 weights on both devices changes novel AUPRC by $\le 0.001$ --- rank-based AUPRC is insensitive to the $\sim\!10^{-3}$ logit differences between Metal and CUDA. Re-\emph{training} SFT on CUDA, however, moves novel AUPRC by $+0.03$ to $+0.06$ across bases, always in CUDA's favor (\Cref{tab:rl-vs-ft} SFT vs.\ \Cref{tab:slm-sweep}): a genuine training-run effect from kernel and nondeterminism differences, which makes the MPS numbers mildly pessimistic on OOD. The convergence and objective findings hold under both stacks; we report single-stack CUDA numbers for the objective comparison so that SFT, DPO, and GRPO differ only in objective.
+
 \subsection{Mitigation: a base\,$\oplus$\,tuned ensemble recovers OOD ranking}
 \label{sec:ensemble}
 
-The base-vs-tuned split suggests a cheap, training-free fix: if the untuned base is the better \emph{out-of-distribution} ranker and the tuned guard the better \emph{in-distribution} ranker, averaging their judgments should recover OOD robustness. Because AUPRC depends only on score \emph{ranking} and the two models are calibrated very differently (base $T{=}7.0$ vs tuned $T{=}2.1$), we first map each model's raw $P(\text{unsafe})$ through a fixed monotone transform --- its empirical CDF (probability integral transform) fit on the in-distribution in-house rows --- and then average the two normalized scores. The map is applied \emph{per prompt} (no batch statistics), so the ensemble is exactly deployable; we fit it on in-distribution data only and evaluate on rows \emph{disjoint} from the fit set (the in-house held-out and novel benchmarks), so the reported AUPRCs are leakage-free. A single model's AUPRC is invariant to any monotone map, so the base and tuned endpoints in \Cref{tab:ensemble} are unchanged.
+The base-vs-tuned split suggests a cheap, training-free fix: if the untuned base is the better \emph{out-of-distribution} ranker and the tuned guard the better \emph{in-distribution} ranker, averaging their judgments should recover OOD robustness. Because AUPRC depends only on score \emph{ranking} and the two models are calibrated very differently (base $T{=}7.0$ vs tuned $T{=}2.1$), we first map each model's raw $P(\text{unsafe})$ through its empirical CDF (probability integral transform) fitted on the in-distribution in-house rows and then average the two normalized scores. The map is applied \emph{per prompt} (no batch statistics), so the ensemble is exactly deployable; we fit it on in-distribution data only and evaluate on rows \emph{disjoint} from the fit set (the in-house held-out and novel benchmarks), so the reported AUPRCs are leakage-free. A strictly increasing map leaves single-model AUROC and AUPRC unchanged, but an empirical CDF is only weakly monotone and can introduce OOD ties. We therefore use the CDF map only to align the two score scales before averaging, and we treat the single-model endpoints in \Cref{tab:ensemble} as reference scores from the original rankings.
 
 The deployable ensemble beats \emph{both} constituents out-of-distribution, on both families (\Cref{tab:ensemble}). Its novel AUPRC is 0.896 (SmolLM3) and 0.847 (Qwen2.5), exceeding the tuned guard by $+0.115$ [0.093, 0.139] and $+0.089$ [0.065, 0.112], and even the strong untuned base by $+0.010$ [0.001, 0.020] and $+0.052$ [0.037, 0.067] (paired bootstrap, all four CIs exclude zero). Even the parameter-free raw-probability average --- no normalization, trivially deployable per prompt --- already beats the tuned guard OOD (0.883 / 0.791); the CDF normalization supplies the remainder. Ensembling the two \emph{fine-tuned} models across families, with no base in the mix, also beats either alone (novel AUPRC 0.806 vs 0.781 / 0.758), so cross-family diversity contributes independently of the base.
 
-This is a robustness--specialization \emph{trade}, not a free lunch on every axis. The ensemble weight interpolates between the tuned model's in-distribution specialization and the base's OOD robustness: equal weight (\Cref{tab:ensemble}) maximizes the OOD gain but concedes some in-distribution \emph{pooled} AUPRC, because the base is weak on two in-distribution benchmarks (\S\ref{sec:base-vs-tuned}). A light blend ($\sim$10\% base) instead Pareto-improves the tuned model --- both in-house pooled ($0.844\!\to\!0.847$) and novel ($0.781\!\to\!0.807$) rise (weight sweep in the released \texttt{ensemble\_probe.py}). Either way, a purely inference-time combination --- no retraining, no extra labels --- converts the paper's central negative (tuning degrades OOD ranking) into a positive: the base's operating-point robustness is recoverable while keeping a tuned model in the loop. We report this as an operating-point-independent (AUPRC) result on the established benchmarks; folding the ensemble into the matched-FPR and latency accounting (two forward passes) is left to \S\ref{sec:future}.
+This is a robustness--specialization \emph{trade-off}, not a free lunch on every axis. The ensemble weight interpolates between the tuned model's in-distribution specialization and the base's OOD robustness: equal weight (\Cref{tab:ensemble}) maximizes the OOD gain but concedes some in-distribution \emph{pooled} AUPRC, because the base is weak on two in-distribution benchmarks (\S\ref{sec:base-vs-tuned}). A light blend ($\sim$10\% base) instead Pareto-improves the tuned model --- both in-house pooled ($0.844\!\to\!0.847$) and novel ($0.781\!\to\!0.807$) rise (weight sweep in the released \texttt{ensemble\_probe.py}). Either way, a purely inference-time combination --- no retraining, no extra labels --- converts the paper's central negative (tuning degrades OOD ranking) into a positive: the base's operating-point robustness is recoverable while keeping a tuned model in the loop. We report this as an operating-point-independent (AUPRC) result on the established benchmarks; folding the ensemble into the matched-FPR and latency accounting (two forward passes) is left to \S\ref{sec:future}.
 
 \begin{table}[t]
 \small
 \centering
 \setlength{\tabcolsep}{4pt}
-\caption{Deployable base\,$\oplus$\,tuned ensemble (threshold-free AUPRC). Each model's score is normalized by an empirical-CDF map fit on in-distribution data and applied per prompt; evaluation is on rows \emph{disjoint} from the fit set. The equal-weight ensemble beats both the tuned guard and the untuned base out-of-distribution on both families (paired-bootstrap CIs vs.\ tuned and vs.\ base both exclude zero).}
+\caption{Deployable base\,$\oplus$\,tuned ensemble (threshold-free AUPRC). Each model's score is normalized by an empirical-CDF map fit on in-distribution data and applied per prompt; evaluation is on rows \emph{disjoint} from the fit set. Because the empirical CDF is a step function, it can introduce OOD ties, so the single-model endpoints are reported from the original rankings and the normalized scores are used only inside the ensemble. The equal-weight ensemble beats both the tuned guard and the untuned base out-of-distribution on both families (paired-bootstrap CIs vs.\ tuned and vs.\ base both exclude zero).}
 \label{tab:ensemble}
 \begin{tabular}{lcccc}
 \toprule
@@ -606,7 +783,7 @@ base\,$\oplus$\,tuned (deployable) & 0.956 & \textbf{0.896} & 0.864 & \textbf{0.
 \subsection{Case study: a saturated domain benchmark and its hardened rebuild}
 \label{sec:mortgage-casestudy}
 
-The base-vs-tuned finding above is not specific to our novel sets: the winner also moves when we control a benchmark's difficulty directly. Take a domain guard task --- mortgage fair-lending, compliance, and security-misuse prompts. The obvious benchmark is \emph{saturated}: the flag and allow classes are lexically separable (overt violations vs.\ clean textbook questions) and the negatives sit near probability zero, so a floor threshold trivially divides them and the local base, the in-domain fine-tune, and ShieldGemma-2b all score near the ceiling ($\approx$0.99 AUPRC) and are statistically indistinguishable (Llama-Guard-3-1B is the lone exception at 0.827). A saturated set cannot rank the leading guards apart, so we replace it with a hardened one.
+The base-vs-tuned finding above is not specific to our novel sets: the winner also moves when we control benchmark difficulty directly. The mortgage case study makes that concrete. On the original mortgage set, almost every small guard is near ceiling, so the benchmark cannot meaningfully separate them. We therefore replace that saturated set with a hardened, trap-typed version that forces the models to distinguish genuine violations from benign prompts that merely look risky.
 
 The hardened set\footnote{Released in the artifact bundle as \texttt{guard\_benchmark\_hard.jsonl} (334 items) and scored by \texttt{eval\_mortgage\_hard.py}; the saturated legacy set \texttt{guard\_benchmark.jsonl} is released alongside. Full paths are in the repository README.} contains 334 trap-typed items (195 unsafe / 139 safe; 284 \emph{very-hard} and 50 \emph{borderline}; loan-officer and consumer personas) engineered to defeat surface cues (\Cref{tab:hardcomp}). It mixes disguised \emph{positives} --- minimal-pair twins, euphemism, coded-proxy, buried instruction-injection, dual-use, and multi-turn setups --- with hard \emph{negatives}: benign prompts that look risky, such as fair-lending education questions, legitimate business-justified underwriting, and over-refusal bait. The set has no train/dev split, so we report operating-point-independent AUPRC and Optimal-F1 as the fair primary, plus accuracy, recall, precision, and FPR at each system's own best-F1 point (gpt-5.4-mini at its native point).
 
@@ -632,7 +809,7 @@ coded\_proxy & 13 \\
 \end{tabular}
 \end{table}
 
-Three things follow (\Cref{tab:mortgage-casestudy}). First, the hardened set \textbf{de-saturates} the comparison: where the saturated version left every system near the ceiling, here threshold-free AUPRC spreads from 0.82 to 0.92 and accuracy from 0.65 to 0.95. Second, the difficulty is \textbf{over-blocking, not misses}: every small guard keeps high recall on the disguised positives (0.93--0.95; minimal-pair and coded-proxy catch-rates $\approx$1.0) but pays a steep false-positive rate on the hard negatives (base 0.53, general-safety guard 0.74, mortgage-SFT 0.27). The frontier gpt-5.4-mini sits at FPR 0.065 for comparable recall (0.96). We stress this last comparison is \emph{not} a matched operating point --- each local guard is read at its own best-F1 threshold and gpt at its fixed native point --- so it is suggestive of a small-guard-vs-frontier capability gap rather than a controlled one; the threshold-free AUPRC below is the claim we lean on. Third, the \textbf{winner is benchmark-dependent} (on the fair, threshold-free AUPRC): the in-domain mortgage-SFT --- indistinguishable on the saturated set --- has the highest AUPRC here (0.924), ahead of the untuned base (0.892; the gap is within overlapping CIs) and clearly ahead of the general-safety guard (0.824). This is the \emph{opposite} in-domain-tuning verdict from the general novel benchmarks (\S\ref{sec:base-vs-tuned}), where the untuned base outranks the tuned guard --- so whether in-domain fine-tuning helps depends on whether the hard test is in-domain or general OOD.
+Three points matter (\Cref{tab:mortgage-casestudy}). First, the hardened set finally separates the systems: AUPRC now spans 0.82 to 0.92 instead of bunching near ceiling. Second, the failure mode is over-blocking, not missed harmful prompts: every small guard retains high recall on the disguised positives but pays a steep false-positive rate on the hard negatives, while gpt-5.4-mini holds FPR 0.065 at comparable recall. We stress that this gpt comparison is \emph{not} a matched operating point; the threshold-free AUPRC is the claim we lean on. Third, the winner flips again. The in-domain mortgage-SFT has the highest AUPRC here, ahead of the untuned base and clearly ahead of the general-safety guard. That is the opposite of the general-OOD result, where the untuned base outranks the tuned guard. So even the answer to ``does fine-tuning help?'' depends on the benchmark regime.
 
 \begin{table*}[t]
 \centering
@@ -653,58 +830,6 @@ gpt-5.4-mini (frontier ceiling) & --- & --- & \textbf{0.949} & \textbf{0.959} & 
 
 We present this as a case study, not a headline benchmark: the hardened set is seed-scale (334 items) and single-annotator, and because every system keeps high recall the discriminating signal lives in AUPRC and FPR rather than recall. Absolute magnitudes will move under broader adjudication; the robust reading is comparative --- the de-saturation, the small-guard-vs-frontier FPR gap, and the benchmark-dependent fine-tuning verdict (in-domain tuning leads \emph{here} but the untuned base leads on general OOD) --- all instances of the benchmark choosing the winner.
 
-\subsection{Operating-point fairness: rankings depend on the threshold}
-\label{sec:operating-point-fairness}
-
-Guard rankings shift substantially with the decision threshold, so any comparison that reads F1 at each model's \emph{native} operating point conflates classifier quality with operating-point choice. Concretely, at native thresholds Llama-Guard-3-1B posts a higher F1 than ShieldGemma-2b (0.673 vs 0.424), but this ordering \textbf{reverses} under both threshold-free AUPRC (0.639 vs 0.712) and best-threshold Optimal-F1 (0.672 vs 0.730): a ranking flip that is purely an artifact of where each model's alarm is set. \Cref{fig:operating-point-flip} shows this flip. Only our model received a dev-tuned threshold; the baselines were fixed points. We therefore report both threshold-free AUPRC and a matched-FPR comparison, with paired-bootstrap CIs where available.
-
-\begin{figure}[t]
-\includegraphics[width=\columnwidth]{figures/fig3_operating_point_flip.pdf}
-\caption{ShieldGemma-2b vs Llama-Guard-3-1B under native-threshold F1, threshold-free AUPRC, and matched-FPR@0.10: the native-F1 ranking inverts under both operating-point-fair metrics.}
-\label{fig:operating-point-flip}
-\end{figure}
-
-Threshold-free, the guard leads the open guards across every in-house pooling, on point estimates (baseline AUPRCs carry no CIs):
-
-\begin{table}[t]
-\small
-\centering
-\setlength{\tabcolsep}{4pt}
-\caption{Threshold-free AUPRC across in-house poolings. The guard leads on point estimates; only the guard carries CIs.}
-\label{tab:auprc-poolings}
-\begin{tabular}{lrrr}
-\toprule
-System & \makecell[r]{AUPRC\\in-house pooled} & \makecell[r]{AUPRC\\in-dist} & \makecell[r]{AUPRC\\in-house held-out} \\
-\midrule
-Guard & 0.844 [0.825, 0.866] & 0.846 & 0.860 [0.803, 0.909] \\
-ShieldGemma-2b & 0.712 & 0.702 & 0.785 \\
-Llama-Guard-3-1B & 0.639 & 0.610 & 0.762 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-At a conservative operating point (each tunable system's threshold set so its FPR$=$0.10 on the in-distribution \emph{dev} split), the ranking is preserved on point estimates but all systems are pushed to low recall. The realized \emph{test} FPRs are not identical --- guard 0.051, Llama-Guard-3-1B 0.101, ShieldGemma-2b 0.125 --- so ``matched-FPR@0.10'' is matched on the \emph{dev} split; on the test pool the guard is in fact held to a \emph{stricter} operating point than the baselines, which disadvantages rather than flatters it:
-
-\begin{table}[t]
-\small
-\centering
-\caption{Dev-matched FPR$=$0.10 operating point (threshold set so FPR$=$0.10 on the in-distribution dev split; realized \emph{test} FPRs differ and are shown in the FPR column). gpt-5.4-mini and the keyword matcher are at their fixed native points.}
-\label{tab:matched-fpr}
-\begin{tabular}{lrrr}
-\toprule
-System & Recall & F1 & FPR \\
-\midrule
-Guard & 0.431 & 0.581 & 0.051 \\
-ShieldGemma-2b & 0.341 & 0.464 & 0.125 \\
-Llama-Guard-3-1B & 0.242 & 0.360 & 0.101 \\
-keyword matcher & 0.096 & 0.168 & 0.047 \\
-gpt-5.4-mini (fixed native point) & 0.856 & 0.784 & 0.321 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Why native-threshold F1 comparisons mislead: gpt-5.4-mini's native point trades a high FPR (0.321) for high recall (0.856), producing an F1 of 0.784 that is not comparable to a guard evaluated at FPR 0.051. Conversely, the matched-FPR@0.10 constraint makes \emph{every} system conservative --- the guard's recall there is only 0.431 --- so matched-FPR alone understates absolute capability. The two views are complementary: matched-FPR fixes the confound of who got to tune a threshold, and AUPRC is the threshold-free summary that removes operating-point choice entirely. Read together they give a consistent picture on point estimates --- guard $>$ ShieldGemma-2b $>$ Llama-Guard-3-1B --- with the one formally supported (non-overlapping-CI) statement being the guard's novel-set lead over Llama-Guard (see \Cref{subsec:novel}).
-
 \subsection{Limitations}
 \label{sec:limitations}
 
@@ -714,13 +839,13 @@ We frame these results as a measurement and controlled study, not a state-of-the
 
 \textbf{Operating point and matched-FPR conservatism.} A single global threshold is structurally in-distribution-optimized, and guard rankings depend heavily on the decision threshold. Our matched-FPR@0.10 comparison forces all systems into a conservative regime: at that operating point the guard's recall is only 0.431 (F1 0.581, FPR 0.051). We therefore treat threshold-free AUPRC as the fair primary summary and matched-FPR as a secondary, deliberately strict view.
 
-\textbf{Statistical support is uneven.} Only four comparisons carry CIs (guard pooled/in-house-held-out AUPRC, guard-vs-Llama novel aggregate, base-vs-tuned F1 delta, guard-vs-GPT $\Delta$F1). Baseline AUPRCs are point estimates, so the pooled/in-dist ``leads'' and the matched-FPR ranking are point-estimate claims, not significance tests. We reserve ``decisive'' for the single non-overlapping-CI result (novel guard vs Llama-Guard).
+\textbf{Statistical support is uneven.} Several headline comparisons carry CIs --- guard pooled and in-house-held-out AUPRC, base and guard novel aggregates, guard-vs-Llama novel aggregate, base-vs-tuned and guard-vs-GPT deltas, ensemble deltas, and the mortgage AUPRCs --- but ShieldGemma-2b and Llama-Guard-3-1B remain point estimates on the in-house pool. The pooled/in-dist ``leads'' and the matched-FPR ranking are therefore point-estimate claims, not significance tests. We reserve ``decisive'' for the novel-aggregate comparisons whose system-level CIs do not overlap.
 
 \textbf{GPT is a tie, not a beat, and threshold-advantaged.} Against gpt-5.4-mini the guard shows no significant F1 difference (\Cref{tab:frontier}); the comparison uses the guard's dev-tuned threshold against gpt's fixed native point (no matched-FPR comparison is possible), and the latency edge is cross-substrate (local vs remote API) --- an efficiency, not accuracy, advantage.
 
 \textbf{Novel-set win is inherited, not tuned.} The guard's novel-set lead over Llama-Guard reflects inherited base competence, not LoRA --- the untuned base outranks the tuned guard OOD (\Cref{sec:base-vs-tuned}). The result is anchored on operating-point-independent AUPRC and Optimal-F1, so it does not depend on any calibration choice.
 
-\textbf{Generalization claim rests on two benchmarks.} The ``PEFT specializes but does not improve generalization'' finding is evidenced by only the two in-house held-out benchmarks (JailbreakBench, XSTest); it is not a broad OOD-generalization result.
+\textbf{Generalization claim is still benchmark-bounded.} The strongest evidence that PEFT specializes rather than improving OOD ranking comes from the three balanced novel benchmarks plus the two in-house held-out sets, all in prompt-only moderation. That is meaningful held-out evidence, but it is still not a universal generalization claim across response moderation, tool-use safety, or arbitrary unseen domains.
 
 \textbf{ShieldGemma out-of-regime and pending on the novel set.} ShieldGemma-2b is designed for content-policy / general-guideline moderation and is not an injection detector; using it across our red-team axes is somewhat out of its designed regime, so its numbers may understate its intended performance. On the in-house held-out set its AUPRC is 0.785 vs the guard's 0.860. Its results on the four novel held-out benchmarks are \textbf{pending} (Gemma-2 stalls on the throttled MPS laptop) and are not reported here; we make no ShieldGemma novel-set claim.
 
@@ -744,11 +869,9 @@ Guard rankings are fragile not only across operating points and benchmarks but \
 
 \section{Conclusion and Future Work}
 
-We presented a binary \emph{input-prompt} safety guard --- the prompt-classification component of the \textsc{agent-bouncer} project --- obtained by parameter-efficient fine-tuning of SmolLM3-3B on a single consumer laptop (Apple M4 Max, MPS, no CUDA). The guard emits a single-token verdict in one forward pass. Our central finding is a measurement one: guard rankings depend heavily on the decision threshold, so we evaluate at matched FPR, with threshold-free AUPRC/AUROC, paired-bootstrap 95\% CIs, and McNemar tests. Building the pipeline surfaced and let us fix real evaluation bugs (calibration leak, batch-amortized latency, per-model-only threshold tuning, GPT error-to-``unsafe'' default, exact-string decontamination).
+This paper's main contribution is a measurement claim. Safety-guard rankings are not stable when models are compared at different operating points or on different benchmark regimes. An operating-point-fair protocol --- threshold-free AUPRC/AUROC, matched-FPR comparisons, paired uncertainty, and leak-free calibration --- makes that instability visible.
 
-Under this protocol the results are modest and specific rather than sweeping (headline numbers in \Cref{tab:headline}). On threshold-free AUPRC the guard surpasses Llama-Guard-3-1B decisively --- the only non-overlapping-CI cross-system result, and it holds on the novel held-out benchmarks --- and it exceeds ShieldGemma-2b on the in-house pooled / in-dist / in-house-held-out sets on point estimates (ShieldGemma's novel runs are pending). It is a statistical tie with gpt-5.4-mini on F1 at \textasciitilde{}4x lower batch=1 latency and no API cost: an efficiency win at parity accuracy, not an accuracy beat.
-
-Our base-vs-tuned decomposition tempers the fine-tuning narrative (numbers in \Cref{tab:base-vs-tuned,tab:novel-auprc}). The zero-shot base is already a competent classifier, and LoRA's gains are almost entirely in-distribution: the two in-house held-out benchmarks barely move, and on the novel benchmarks the \emph{untuned} base actually outranks the tuned guard (aggregate AUPRC over the three balanced sets 0.886 vs 0.781, disjoint CIs) at tied peak F1. The guard's out-of-distribution lead is therefore inherited base competence, and tuning \emph{degrades} out-of-distribution ranking rather than improving generalization. This pattern is not specific to SmolLM3: a six-base sweep (three vendors, 1.5--8B; \Cref{sec:cross-family}) shows the identical tuning \emph{converges} every base's out-of-distribution ranking into a narrow, model-independent band --- degrading strong-OOD bases like SmolLM3 yet \emph{helping} weak ones such as a reasoning-distilled base --- so ``tuning degrades OOD'' is really the strong-base face of a convergence effect. And where it degrades, it is cheaply reversible: a training-free, per-prompt ensemble of the base and tuned models recovers the base's out-of-distribution ranking, beating \emph{both} constituents on the novel benchmarks (\Cref{sec:ensemble}). The degradation is thus a remediable property of the tuned model, not a dead end. The mortgage case study (\S\ref{sec:mortgage-casestudy}) makes the point in a domain: a saturated benchmark bunches the leading systems near the ceiling, while a hardened, trap-typed rebuild de-saturates the field and exposes a small-guard-vs-frontier over-blocking gap (benign FPR 0.27--0.74 vs.\ 0.065) --- and the fine-tuning verdict flips (in-domain tuning leads there, the untuned base leads on general OOD). The recurring lesson is that a guard's apparent quality is inseparable from the operating point and the benchmark it is measured on.
+Under that protocol, the 3B local guard is competitive, but the deeper result is about what tuning changes and what it does not. LoRA improves in-distribution performance, yet on novel benchmarks the untuned base is the stronger ranker and the tuned guard's lead over Llama-Guard is inherited rather than created. The six-base sweep shows this is a broader convergence effect, and the hardened mortgage case study shows that changing the benchmark regime can flip the winner again. The safe conclusion is therefore narrower than ``our guard wins'': the benchmark and the operating point can choose different winners, so any guard claim must be scoped to the evaluation regime that produced it.
 
 \subsection{Future Work}\label{sec:future}
 
@@ -762,9 +885,105 @@ Our base-vs-tuned decomposition tempers the fine-tuning narrative (numbers in \C
   \item \textbf{Completing the baseline matrix.} Resolving the pending ShieldGemma-2b runs on the novel held-out benchmarks, and measuring open-guard latency, for a complete threshold-free and efficiency comparison.
 \end{itemize}
 
-Code, calibration, and the full evaluation protocol are released as open code --- the evaluation scripts plus a single orchestrating reproduction notebook (\texttt{paper\_reproduction.ipynb}) --- to support reproduction at laptop scale.
+Code, calibration, and the evaluation protocol are released openly: the notebook reproduces the headline in-house, novel, base-vs-tuned, mortgage, and frontier tables, and the cross-family and ensemble analyses are reproduced by their named scripts.
 
 \emph{Baseline note: \texttt{gpt-5.4-mini} is a hosted commercial API model with no public paper or model card; we cite it as an API baseline rather than a bibliographic reference.}
+
+\appendix
+
+\section{Rank-Preservation Rationale}
+\label{app:rank-preservation}
+
+This appendix states the narrow theorem used in \S\ref{sec:theory-rationale}. It is not a claim that the paper becomes a theory paper; it is only a justification for why preserving the base model's OOD ordering is a sensible objective.
+
+\paragraph{Setup.}
+Let $X^+$ be an independent unsafe prompt and $X^-$ an independent safe prompt from the same OOD evaluation distribution. For any score function $s$, define
+\[
+H_s(X^+,X^-)=
+\begin{cases}
+1   & \text{if } s(X^+) > s(X^-),\\
+\tfrac{1}{2} & \text{if } s(X^+) = s(X^-),\\
+0   & \text{if } s(X^+) < s(X^-).
+\end{cases}
+\]
+Then $\mathrm{AUROC}(s)=\mathrm{E}[H_s(X^+,X^-)]$.
+
+\paragraph{Proposition A.1.}
+Let $b$ be the base score and $t$ the tuned score. If
+\[
+\varepsilon = \Pr[H_b(X^+,X^-) \neq H_t(X^+,X^-)],
+\]
+then
+\[
+\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \varepsilon.
+\]
+
+\paragraph{Proof.}
+For every unsafe--safe pair,
+\[
+H_b(X^+,X^-) - H_t(X^+,X^-)
+\le \mathbf{1}[H_b(X^+,X^-) \neq H_t(X^+,X^-)].
+\]
+Taking expectations,
+\[
+\mathrm{AUROC}(b) - \mathrm{AUROC}(t)
+= \mathrm{E}[H_b - H_t]
+\le \mathrm{E}[\mathbf{1}[H_b \neq H_t]]
+= \varepsilon,
+\]
+which rearranges to the stated bound.
+
+\paragraph{Sharper one-sided form.}
+The two-sided disagreement rate is slightly loose because it counts both harmful and beneficial ranking changes. If
+\[
+\varepsilon_{\downarrow} = \Pr[H_t(X^+,X^-) < H_b(X^+,X^-)],
+\]
+then the same argument gives
+\[
+\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \varepsilon_{\downarrow}.
+\]
+
+\paragraph{Uniform-drift corollary.}
+If $|t(x)-b(x)| \le \delta$ for every prompt $x$, then an unsafe--safe pair can change order only when the base margin is small:
+\[
+|b(X^+) - b(X^-)| \le 2\delta.
+\]
+Hence
+\[
+\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \Pr[|b(X^+) - b(X^-)| \le 2\delta].
+\]
+Indeed, if $|b(X^+) - b(X^-)| > 2\delta$, then the perturbation
+\[
+[t(X^+) - b(X^+)] - [t(X^-) - b(X^-)]
+\]
+has magnitude at most $2\delta$, so it cannot reverse the sign of $b(X^+) - b(X^-)$. Therefore pairwise disagreement can occur only on the event $|b(X^+) - b(X^-)| \le 2\delta$, and Proposition~A.1 yields the bound.
+
+\paragraph{Proposition A.2 (finite-sample AP perturbation bound).}
+Fix a tie-free test set with $n_+$ unsafe rows and let $\mathrm{AP}(s)$ be the average precision of score $s$ on that ranked list. Let $K$ be the number of unsafe--safe pairs ordered differently by $b$ and $t$. Then
+\[
+|\mathrm{AP}(t) - \mathrm{AP}(b)| \le \frac{K}{2n_+}.
+\]
+More sharply, there is a decomposition into $K$ adjacent unsafe--safe swaps such that the $k$th swap changes AP by at most
+\[
+\frac{1}{n_+(r_k+1)},
+\]
+where $r_k$ is the rank at which that adjacent swap occurs. So flips near the top of the ranking hurt AP most.
+
+\paragraph{Proof sketch.}
+Transform the ranking induced by $b$ into the ranking induced by $t$ using adjacent swaps, ignoring same-label permutations that do not affect AP. Only unsafe--safe swaps can change AP, and one can realize the discordant unsafe--safe pairs with $K$ such swaps. For one adjacent swap, suppose the moved unsafe item is the $j$th unsafe row and it moves from rank $r+1$ to rank $r$. Only that item's precision term changes, from $j/(r+1)$ to $j/r$, so
+\[
+|\Delta \mathrm{AP}| = \frac{1}{n_+}\left(\frac{j}{r} - \frac{j}{r+1}\right)
+= \frac{1}{n_+}\frac{j}{r(r+1)}
+\le \frac{1}{n_+(r+1)}
+\le \frac{1}{2n_+},
+\]
+because $j \le r$ and $r \ge 1$. Summing over the $K$ unsafe--safe swaps gives the stated bound.
+
+\paragraph{What this does and does not justify.}
+Proposition~A.1 explains one mechanism behind our empirical AUROC behavior: if tuning worsens many unsafe--safe orderings, OOD AUROC must fall, and more generally if total pairwise disagreement is small then AUROC cannot fall by much. Proposition~A.2 is the finite-sample AP analogue: it makes the top-of-ranking sensitivity explicit, but it is still a perturbation bound rather than a proof of any specific observed drop. That is why base-rank preservation is a reasonable mitigation target, while our headline AUPRC claims remain empirical.
+
+\paragraph{Monotone transforms.}
+If $g$ is strictly increasing, then $s_g(x)=g(s(x))$ preserves every pairwise comparison made by $s$. AUROC is therefore unchanged. The same ordering invariance leaves the threshold-free precision--recall curve, and therefore average precision/AUPRC computed from the full ranked list, unchanged when ties are handled consistently. An empirical CDF fitted on finite in-distribution data is only weakly monotone, however: it is a step function, so OOD scores can collapse into ties. In that case AUROC remains well defined with half-credit ties, while AUPRC invariance becomes tie-convention dependent up to the introduced tie mass. In \Cref{sec:ensemble} we therefore use the empirical-CDF map only to align score scales before averaging and report the single-model endpoints from the original rankings.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
