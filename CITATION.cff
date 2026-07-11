@@ -1,15 +1,31 @@
 cff-version: 1.2.0
-message: "If you use Agent Bouncer, please cite it."
-title: "Agent Bouncer: a tiny, fast safety bouncer for LLMs and agents"
+message: "If you use this work, please cite the paper below."
+title: "The Benchmark Chooses the Winner: Operating Points, Fine-Tuning, and the Fragility of Safety-Guard Rankings"
 authors:
-  - family-names: Contributors
-    given-names: Agent Bouncer
+  - family-names: Rahimi
+    given-names: Reza
+    email: reza.rahimi@jazzx.ai
+    affiliation: "JazzX AI"
 license: Apache-2.0
-version: 0.0.1
 date-released: "2026-07-01"
 keywords:
   - llm
   - agent
   - guardrail
+  - safety
   - prompt-injection
   - small-language-model
+  - benchmark
+  - fine-tuning
+  - dpo
+  - grpo
+  - out-of-distribution
+preferred-citation:
+  type: article
+  title: "The Benchmark Chooses the Winner: Operating Points, Fine-Tuning, and the Fragility of Safety-Guard Rankings"
+  authors:
+    - family-names: Rahimi
+      given-names: Reza
+      email: reza.rahimi@jazzx.ai
+      affiliation: "JazzX AI"
+  year: 2026
