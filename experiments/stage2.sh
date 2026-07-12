@@ -14,10 +14,12 @@ declare -A MID=(
   [qwen3-4b]="Qwen/Qwen3-4B"
   [qwen3-8b]="Qwen/Qwen3-8B"
 )
-if [ "${ONLY_8B:-0}" = "1" ]; then BASES=(qwen3-8b); else BASES=(qwen2.5-1.5b smollm2-1.7b deepseek-r1-1.5b qwen3-4b); fi
+if [ "${ONLY_8B:-0}" = "1" ]; then BASES=(qwen3-8b); else BASES=(qwen2.5-1.5b smollm2-1.7b deepseek-r1-1.5b qwen3-4b qwen3-8b); fi
 for base in "${BASES[@]}"; do
   for obj in sft dpo grpo; do
     for seed in 42 43 44; do
+      # Qwen3-8B DPO needs a reference model and OOMs on 40GB (as reported in the paper); skip it.
+      if [ "$base" = "qwen3-8b" ] && [ "$obj" = "dpo" ]; then echo "===== SKIP $base-dpo (OOM on 40GB, per paper) ====="; continue; fi
       TAG=${base}-clean-${obj}-s${seed}; OUT=outputs/$TAG
       if [ -f "$ND/summary_${TAG}.json" ]; then echo "===== [$(date +%H:%M)] SKIP (summary exists) $TAG ====="; continue; fi
       echo "===== [$(date +%H:%M)] TRAIN $TAG (${MID[$base]}) ====="
@@ -26,6 +28,7 @@ for base in "${BASES[@]}"; do
       else
         MODEL_ID="${MID[$base]}" OUT=$OUT TECHNIQUE=$obj OR_BENCH_CAP=0 GUARD_SEED=$seed python3 -u experiments/train_guard_pref.py 2>&1 | tail -3
       fi
+      if [ ! -f "$OUT/adapter/adapter_config.json" ]; then echo "===== [$(date +%H:%M)] TRAIN FAILED/OOM $TAG -- skipping eval ====="; continue; fi
       echo "===== [$(date +%H:%M)] EVAL $TAG ====="
       MODEL_ID="${MID[$base]}" ADAPTER=$OUT/adapter TAG=$TAG FROZEN_ROWS=$FR python3 -u experiments/guard_eval_pipeline.py 2>&1 | tail -4
       rm -rf "$OUT"/checkpoint-* 2>/dev/null   # drop intermediate checkpoints; keep adapter + summary + scores
