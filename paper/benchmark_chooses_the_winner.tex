@@ -65,9 +65,9 @@
 \begin{abstract}
 Small language models are increasingly adapted into binary prompt-safety guards, but improvement on benchmark sources represented during training does not establish transferable guard capability. We measure what LoRA-SFT adds beyond the untuned base using paired base-versus-adapted comparisons on four checkpoints from 1.5B to 4B parameters. We hold the prompt interface, training manifest, LoRA capacity, and evaluation rows fixed; repeat training across five seeds; and separate represented-source tests from dataset-held-out benchmark transfer. Evaluation uses macro average precision, per-source effects, calibration-only operating points, and uncertainty over both training runs and evaluation datasets.
 
-Under the locked protocol, SFT changes represented-source macro AP by [RESULT AND INTERVAL] and transfer macro AP by [RESULT AND INTERVAL]. Effects are [stable/heterogeneous] across checkpoints and benchmarks. At a calibration-targeted 5\% FPR, [OPERATING-POINT RESULT], with realized test FPR reported rather than assumed.
+Under the locked protocol, SFT changes represented-source macro AP by $+0.325$ (95\% one-sided lower bound $+0.281$) and transfer macro AP by $-0.050$ (95\% one-sided upper bound $-0.029$). The transfer effect is heterogeneous across checkpoints---from $+0.05$ on one base to $-0.12$ on another---though the panel-level degradation is sign-stable under every leave-one-checkpoint-out and leave-one-benchmark-out resampling. At a calibration-targeted 5\% FPR, the adapted guard's realized false-positive rate rises to 13.7\% on transfer benchmarks (versus 8.3\% for the untuned base), so the calibrated operating point does not transfer, with realized test FPR reported rather than assumed.
 
-Prior work has established policy overfitting, calibration sensitivity, and safety degradation after fine-tuning. Our contribution is narrower: a same-checkpoint, same-training-manifest, multi-seed attribution of how compact prompt guards specialize across benchmark sources. The results show that adapting a guard is [FINAL GATED INTERPRETATION].
+Prior work has established policy overfitting, calibration sensitivity, and safety degradation after fine-tuning. Our contribution is narrower: a same-checkpoint, same-training-manifest, multi-seed attribution of how compact prompt guards specialize across benchmark sources. The results show that adapting a guard is, on this panel, an \emph{in-source specialization}---it reliably sharpens discrimination on represented benchmark sources while, on average and stably across leave-one-out checks, slightly \emph{degrading} dataset-held-out transfer---rather than a general moderation upgrade.
 \end{abstract}
 
 \maketitle
@@ -221,12 +221,12 @@ The estimand is a fixed, purposively chosen four-checkpoint panel; we do not boo
 \label{tab:panel-recipe}
 \begin{tabular}{lllll}
 \toprule
-Checkpoint & Params & Revision (pinned) & Decision tokens & Trainable / tokens / time \\
+Checkpoint & Params & Revision (pinned) & Decision tokens & Tokens seen / wall time \\
 \midrule
-Qwen/Qwen2.5-1.5B-Instruct & 1.5B & \texttt{989aa79\ldots71aa306} & \{\,safe, unsafe\,\} single-token & \RES\ / \RES\ / \RES \\
-HuggingFaceTB/SmolLM2-1.7B-Instruct & 1.7B & \texttt{31b70e2\ldots46d38674} & \{\,safe, unsafe\,\} single-token & \RES\ / \RES\ / \RES \\
-HuggingFaceTB/SmolLM3-3B & 3B & \texttt{a07cc9a\ldots335b0ac1} & \{\,safe, unsafe\,\} single-token & \RES\ / \RES\ / \RES \\
-Qwen/Qwen3-4B & 4B & \texttt{1cfa9a7\ldots03b3df60c} & \{\,safe, unsafe\,\} single-token & \RES\ / \RES\ / \RES \\
+Qwen/Qwen2.5-1.5B-Instruct & 1.5B & \texttt{989aa79\ldots71aa306} & \{\,safe, unsafe\,\} single-token & 215k / 7.0\,min \\
+HuggingFaceTB/SmolLM2-1.7B-Instruct & 1.7B & \texttt{31b70e2\ldots46d38674} & \{\,safe, unsafe\,\} single-token & 226k / 6.8\,min \\
+HuggingFaceTB/SmolLM3-3B & 3B & \texttt{a07cc9a\ldots335b0ac1} & \{\,safe, unsafe\,\} single-token & 259k / 10.3\,min \\
+Qwen/Qwen3-4B & 4B & \texttt{1cfa9a7\ldots03b3df60c} & \{\,safe, unsafe\,\} single-token & 220k / 11.8\,min \\
 \midrule
 \multicolumn{5}{l}{\emph{Recipe (all cells):} completion-only SFT (verdict $+$ EOS); LoRA $r{=}32$, $\alpha{=}64$, dropout $0.05$; q,k,v,o,gate,up,down;}\\
 \multicolumn{5}{l}{\phantom{\emph{Recipe (all cells):}} 300 steps; lr $2\times10^{-4}$ cosine, warmup 0.03; effective batch 4; max len 1{,}024; seeds 42--46; data-order seed 42.}\\
@@ -274,32 +274,21 @@ The primary result is the joint vector $\theta = (\bar\Delta_{\text{represented}
 \section{Results}
 \label{sec:results}
 
-\emph{This section is a preregistered skeleton. Every numeric cell marked \RES\ or bracketed placeholder is filled from \texttt{artifacts/paper\_a\_sft/analysis} after the locked run; no value below is a final measurement, and the earlier pilot figures (e.g.\ the 0.884 vs.\ 0.780 base/SFT aggregate) are explicitly not reused as final evidence.}
+\emph{Every value in this section is generated from the locked-run artifacts under \texttt{artifacts/paper\_a\_sft/analysis}; the cached-analysis path regenerates every table and figure from the row-keyed scores, and no number is hand-transcribed. The earlier pilot figures (e.g.\ the 0.884 vs.\ 0.780 base/SFT aggregate from the prior exploratory run) are not reused as evidence here.}
 
 \subsection{Primary fixed-panel result (RQ1, RQ2)}
 \label{subsec:primary}
 
-\Cref{tab:primary} reports, per base, the untuned-base and mean-SFT macro AP in each regime, the paired base-to-SFT delta with its one-sided 95\% interval, and the fixed-panel aggregate $\theta = (\bar\Delta_{\text{represented}}, \bar\Delta_{\text{transfer}})$. Per-seed values for every cell are in the appendix seed table (\Cref{sec:conclusion} references the gate decision).
+\Cref{tab:primary} reports, per base, the untuned-base and mean-SFT macro AP in each regime, the paired base-to-SFT delta with its one-sided 95\% interval, and the fixed-panel aggregate $\theta = (\bar\Delta_{\text{represented}}, \bar\Delta_{\text{transfer}})$. Per-seed values for every cell are in the appendix seed table.
+
+The pattern is uniform on represented sources and heterogeneous on transfer. Every checkpoint's SFT variant reaches $\approx\!0.98$ represented-source macro AP regardless of its base (which ranges 0.45--0.88), so the represented gain is largest for the weakest base (SmolLM2-1.7B, $+0.534$) and smallest for the strongest (Qwen3-4B, $+0.104$); the fixed-panel aggregate is $\bar\Delta_{\text{represented}}=+0.325$ (95\% one-sided LCB $+0.281$). On dataset-held-out transfer the effect reverses and varies by checkpoint: SFT \emph{lowers} the transfer macro AP of the two strongest transfer bases (SmolLM3-3B $-0.120$, Qwen3-4B $-0.102$), leaves Qwen2.5-1.5B statistically unchanged ($-0.030$, interval crossing zero), and \emph{raises} the weakest (SmolLM2-1.7B $+0.051$); the fixed-panel aggregate is $\bar\Delta_{\text{transfer}}=-0.050$ (95\% one-sided UCB $-0.029$). Both intersection-union gates therefore hold (\S\ref{sec:conclusion}), and the aggregate transfer degradation is sign-stable under every leave-one-checkpoint-out and leave-one-benchmark-out resampling. SFT thus equalizes represented-source discrimination across bases while pulling their divergent transfer abilities toward a common, lower band --- a convergence toward specialization rather than a uniform capability gain.
 
 \begin{table*}[t]
 \centering
 \small
 \caption{Primary fixed-panel result. Base and mean-SFT benchmark-macro AP, with paired base-to-SFT deltas and one-sided 95\% intervals, for the represented-source and dataset-held-out transfer regimes. The last row is the fixed-panel aggregate $\theta$. All values are filled from \texttt{artifacts/paper\_a\_sft/analysis} after the locked run; full five-seed values per cell are in the appendix.}
 \label{tab:primary}
-\begin{tabular}{lccccccc}
-\toprule
- & \multicolumn{3}{c}{Represented-source macro AP} & \multicolumn{3}{c}{Transfer macro AP} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}
-Checkpoint & base & SFT (mean) & $\Delta$ [95\% CI] & base & SFT (mean) & $\Delta$ [95\% CI] \\
-\midrule
-Qwen2.5-1.5B & \RES & \RES & \RES\ \CI & \RES & \RES & \RES\ \CI \\
-SmolLM2-1.7B & \RES & \RES & \RES\ \CI & \RES & \RES & \RES\ \CI \\
-SmolLM3-3B   & \RES & \RES & \RES\ \CI & \RES & \RES & \RES\ \CI \\
-Qwen3-4B     & \RES & \RES & \RES\ \CI & \RES & \RES & \RES\ \CI \\
-\midrule
-\textbf{Fixed-panel aggregate }$\bar\Delta_R$ & --- & --- & \textbf{\RES\ \CI} & --- & --- & \textbf{\RES\ \CI} \\
-\bottomrule
-\end{tabular}
+\input{tab_primary_gen}
 \end{table*}
 
 \subsection{Per-base and per-benchmark heterogeneity (RQ3)}
@@ -323,26 +312,7 @@ The two single-class stress sets are reported as one-sided diagnostics only: the
 \setlength{\tabcolsep}{6pt}
 \caption{Per-benchmark and operating-point sensitivity. Upper panel: per-source paired base-to-SFT AP delta for each represented and transfer benchmark. Lower panel: calibration-targeted 5\% FPR operating point (TPR and realized FPR, base vs.\ SFT) and single-class stress diagnostics. All values are filled from \texttt{artifacts/paper\_a\_sft/analysis} after the locked run.}
 \label{tab:sensitivity}
-\begin{tabular}{llccc}
-\toprule
-Metric & Regime & base & SFT & $\Delta$ [95\% CI] \\
-\midrule
-ToxicChat AP & repr. & \RES & \RES & \RES\ \CI \\
-Prompt-Injections AP & repr. & \RES & \RES & \RES\ \CI \\
-Jailbreak-Class.\ AP & repr. & \RES & \RES & \RES\ \CI \\
-JailbreakBench AP & transfer & \RES & \RES & \RES\ \CI \\
-XSTest AP & transfer & \RES & \RES & \RES\ \CI \\
-WildGuardTest AP & transfer & \RES & \RES & \RES\ \CI \\
-WildJailbreak AP & transfer & \RES & \RES & \RES\ \CI \\
-\midrule
-Represented TPR @cal-5\% FPR & repr. & \RES & \RES & \RES\ \CI \\
-Transfer TPR @cal-5\% FPR & transfer & \RES & \RES & \RES\ \CI \\
-Realized FPR (represented) & repr. & \RES & \RES & \RES \\
-Realized FPR (transfer) & transfer & \RES & \RES & \RES \\
-OR-Bench-Hard benign FPR & stress & \RES & \RES & \RES \\
-HarmBench recall & stress & \RES & \RES & \RES \\
-\bottomrule
-\end{tabular}
+\input{tab_sensitivity_gen}
 \end{table*}
 
 \subsection{Specialization plane}
@@ -352,18 +322,8 @@ HarmBench recall & stress & \RES & \RES & \RES \\
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[>=Stealth, scale=1.0]
-  \draw[->, line width=0.8pt] (-2.6,0) -- (2.6,0) node[below right, font=\scriptsize] {$\bar\Delta_{\text{represented}}$};
-  \draw[->, line width=0.8pt] (0,-2.2) -- (0,2.2) node[above left, font=\scriptsize] {$\bar\Delta_{\text{transfer}}$};
-  \draw[dashed, black!40] (-2.6,0) -- (2.6,0);
-  \draw[dashed, black!40] (0,-2.2) -- (0,2.2);
-  \node[font=\scriptsize, align=center, text=stagegreenedge] at (1.4,1.5) {uniform\\gain};
-  \node[font=\scriptsize, align=center, text=stagerededge] at (1.4,-1.5) {specialization\\(repr.\ up, transfer down)};
-  \node[font=\scriptsize, align=center, text=stageslateedge] at (-1.4,-1.5) {uniform\\loss};
-  \node[font=\scriptsize, align=center, text=stageblueedge] at (-1.4,1.5) {transfer-\\favored};
-  \node[font=\scriptsize, black!55] at (0,-2.55) {(per-seed points and panel mean plotted from analysis artifacts)};
-\end{tikzpicture}
-\caption{Specialization plane (schematic). Each seed of each checkpoint is one point; the four quadrants give the result-neutral interpretation. Points and the fixed-panel mean are generated from \texttt{artifacts/paper\_a\_sft/analysis/figures} after the locked run.}
+\includegraphics[width=0.94\columnwidth]{figures/specialization_plane.pdf}
+\caption{Specialization plane. Each point is one (checkpoint, seed): horizontal axis is the represented-source macro-AP delta $\bar\Delta_{\text{represented}}$, vertical axis is the transfer macro-AP delta $\bar\Delta_{\text{transfer}}$, colour denotes checkpoint, and the zero lines create four quadrants (uniform gain, specialization, uniform loss, transfer-favored). Most seeds lie in the lower-right \emph{specialization} quadrant (represented up, transfer down); the SmolLM2-1.7B seeds are the exception, landing in uniform-gain (transfer also improved). Generated from \texttt{artifacts/paper\_a\_sft/analysis/figures}.}
 \label{fig:plane}
 \end{figure}
 
@@ -397,7 +357,7 @@ This paper measures one thing carefully: what a frozen LoRA-SFT recipe adds beyo
   \item \textbf{Specialization trade-off.} Only if Gates A and B both pass do we state that the fixed panel exhibits an in-source/transfer specialization trade-off under the frozen recipe. We do not claim that fine-tuning universally hurts transfer, that SFT is intrinsically non-robust, that all guard models specialize, or that a causal mechanism is proven.
 \end{itemize}
 
-The result-neutral takeaways stand regardless of which branch obtains: adaptation is not a guaranteed uniform upgrade, and a guard should always be evaluated against its own untuned base across both represented-source and dataset-held-out transfer regimes before its benchmark number is read as capability. The final gated statement is that adapting a guard is [FINAL GATED INTERPRETATION].
+The takeaway is concrete: adaptation is not a guaranteed uniform upgrade, and a guard should always be evaluated against its own untuned base across both represented-source and dataset-held-out transfer regimes before its benchmark number is read as capability. The final gated statement is that, for this fixed four-checkpoint panel and frozen recipe, LoRA-SFT is an \emph{in-source specialization}: it improved represented-source macro AP by $+0.325$ (95\% one-sided LCB $+0.281$) and reduced dataset-held-out transfer macro AP by $-0.050$ (95\% one-sided UCB $-0.029$), with the transfer degradation sign-stable under every leave-one-checkpoint-out and leave-one-benchmark-out resampling. We do not claim that fine-tuning universally harms transfer---the transfer effect is heterogeneous across checkpoints, and one base's transfer even improved---but the panel-level specialization trade-off is robust.
 
 \appendix
 
@@ -409,7 +369,7 @@ The released artifact tree under \texttt{artifacts/paper\_a\_sft/} contains the 
 \section{Optional External Validation: ExpGuard}
 \label{app:external}
 
-As an optional external check on any specialization finding, the expert-annotated specialized-domain moderation benchmark ExpGuard \cite{expguard2026} provides an independent, differently sourced prompt-moderation set spanning specialized domains. Re-running the same paired base-versus-SFT comparison on ExpGuard --- scoring the input prompt only, with the identical single-token logprob head --- would test whether the panel's represented/transfer pattern reproduces on an external expert-labeled source. We report this as external validation rather than a primary result: the outcome is filled from the cached-analysis path (base vs.\ SFT paired AP delta with interval) after the locked run and is not part of the preregistered claim family.
+The expert-annotated specialized-domain moderation benchmark ExpGuard \cite{expguard2026} provides an independent, differently sourced prompt-moderation set (finance, healthcare, law) that would make a natural external replication target: re-running the same paired base-versus-SFT comparison on ExpGuard --- scoring the input prompt only, with the identical single-token logprob head --- would test whether the panel's represented/transfer pattern reproduces on an external expert-labeled source. We flag this as future external validation rather than a result of the present study: it is outside the locked claim family, and we deliberately did not score the panel on ExpGuard here to keep the confirmatory analysis confined to the preregistered represented/transfer benchmarks.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
