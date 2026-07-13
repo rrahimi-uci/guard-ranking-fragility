@@ -34,6 +34,13 @@ AUXDIR = "/tmp/ph_aux"
 def run(cmd, **kw):
     return subprocess.run(cmd, check=True, **kw)
 
+# ---------------------------------------------------------------- 0. vendor MathJax (offline SVG math)
+MJ = os.path.join(HERE, "vendor", "mathjax", "tex-svg.js")
+if not os.path.exists(MJ):
+    os.makedirs(os.path.dirname(MJ), exist_ok=True)
+    run(["curl", "-fsSL", "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js", "-o", MJ])
+    print("vendored MathJax:", os.path.getsize(MJ) // 1024, "KB")
+
 # ---------------------------------------------------------------- 1. figures
 os.makedirs(FIGDIR, exist_ok=True)
 srcfig = os.path.join(PAPER, "figures")
@@ -65,7 +72,7 @@ for f in [TEX] + INPUTS:
         t = open(src).read()
         t = t.replace(r"\begin{table*}", r"\begin{table}").replace(r"\end{table*}", r"\end{table}")
         open(os.path.join(TMP, f), "w").write(t)
-run(["pandoc", TEX, "--from=latex", "--to=html5", "--mathml", "--standalone",
+run(["pandoc", TEX, "--from=latex", "--to=html5", "--mathjax", "--standalone",
      "--template=" + os.path.join(HERE, "template.html"),
      "--toc", "--toc-depth=3", "--number-sections", "--section-divs", "--shift-heading-level-by=1",
      "--citeproc", "--bibliography=" + os.path.join(PAPER, "refs.bib"),
@@ -136,8 +143,7 @@ h = re.sub(r'<figure id="(?P<lab>fig:[^"]+)".*?</figure>', fig_repl, h, flags=re
 # 4f. figure images -> SVG, and pandoc's <embed> (used for PDFs) -> responsive <img>
 h = re.sub(r'(figures/[A-Za-z0-9_]+)\.pdf', r'\1.svg', h)
 h = re.sub(r'<embed\s+src="(figures/[^"]+)"\s*/?>', r'<img src="\1" alt="Figure" loading="lazy"/>', h)
-# 4h. stray math artifact
-h = h.replace('^\\S', '<sup>§</sup>')
+# (math is left as TeX in \(...\) / \[...\] for MathJax-SVG to render, per template.html)
 
 # restore TOC
 if nav:
