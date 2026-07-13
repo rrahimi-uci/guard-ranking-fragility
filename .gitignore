@@ -27,6 +27,12 @@ wandb/
 # Data (downloaded / generated — not committed)
 /data/
 
+# Paper A manifests: raw third-party row text (ToxicChat CC-BY-NC, gated AI2,
+# etc.) must not be redistributed under this repo's Apache-2.0 license
+# (plan sec 6.2 Branch A). The .jsonl row files stay local; the auditable,
+# text-free artifacts (manifest.json, audit/) remain tracked.
+/artifacts/**/manifests/*.jsonl
+
 # Env / secrets
 .env
 .env.local
@@ -35,3 +41,10 @@ wandb/
 .DS_Store
 .idea/
 .vscode/
+
+# Paper A: raw third-party rows (NC-licensed) and large run artifacts — not redistributed in-repo
+artifacts/paper_a_sft/manifests/
+artifacts/paper_a_sft/scores/
+artifacts/paper_a_sft/runs/
+artifacts/paper_a_sft/base_scores/
+artifacts/paper_a_sft/calibration/

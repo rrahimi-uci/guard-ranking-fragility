@@ -1,0 +1,241 @@
+# Paper A — fixed-panel, multi-seed LoRA-SFT study configuration.
+#
+# This file is part of the LOCK (plan sec 6.4.1 / 13.2). Every source and model
+# revision below is an EXPLICIT immutable value: the manifest builder, trainer,
+# scorer, and analyzer must NEVER resolve a moving `main` revision. Changing any
+# value here changes the study identity and requires a fresh LOCK.json.
+#
+# Licensing branch: Branch A (academic_noncommercial) — ToxicChat is INCLUDED;
+# BeaverTails and OR-Bench are EXCLUDED from training (plan sec 6.1 / 6.2).
+
+schema_version: 1
+study_id: paper_a_sft
+data_branch: academic_noncommercial   # Branch A: include ToxicChat; non-commercial release.
+data_seed: 42
+data_order_seed: 42
+rows_per_source: 400
+rows_per_source_label: 200
+train_sources:
+  - toxicchat
+  - prompt_injections
+  - jailbreak_classification
+excluded_train_sources:
+  - beavertails
+  - or_bench
+# NOTE: the run may start with seeds [42, 43, 44] (Stage 1, first twelve cells),
+# then complete [45, 46] (Stage 2). The frozen confirmatory design is all five.
+seeds: [42, 43, 44, 45, 46]
+max_steps: 300
+max_length: 1024
+effective_batch: 4
+learning_rate: 0.0002
+warmup_ratio: 0.03
+lora:
+  r: 32
+  alpha: 64
+  dropout: 0.05
+target_fpr: 0.05
+primary_metric: macro_average_precision
+bootstrap_replicates: 10000
+bootstrap_seed: 20260712
+
+# ---------------------------------------------------------------------------
+# Model panel (plan sec 7). Model AND tokenizer revisions are pinned to the
+# candidate commit hashes; the trainer/scorer must fail rather than fall back to
+# a moving `main`. trust_remote_code / dtype / attention are engineering fields.
+# ---------------------------------------------------------------------------
+models:
+  qwen25_15b:
+    model_id: Qwen/Qwen2.5-1.5B-Instruct
+    model_revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+    tokenizer_revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+    trust_remote_code: false
+    dtype: bfloat16
+  smollm2_17b:
+    model_id: HuggingFaceTB/SmolLM2-1.7B-Instruct
+    model_revision: 31b70e2e869a7173562077fd711b654946d38674
+    tokenizer_revision: 31b70e2e869a7173562077fd711b654946d38674
+    trust_remote_code: false
+    dtype: bfloat16
+  smollm3_3b:
+    model_id: HuggingFaceTB/SmolLM3-3B
+    model_revision: a07cc9a04f16550a088caea529712d1d335b0ac1
+    tokenizer_revision: a07cc9a04f16550a088caea529712d1d335b0ac1
+    trust_remote_code: true
+    dtype: bfloat16
+  qwen3_4b:
+    model_id: Qwen/Qwen3-4B
+    model_revision: 1cfa9a7208912126459214e8b04321603b3df60c
+    tokenizer_revision: 1cfa9a7208912126459214e8b04321603b3df60c
+    trust_remote_code: false
+    dtype: bfloat16
+
+# ---------------------------------------------------------------------------
+# Near-duplicate / family construction parameters (plan sec 6.7). Frozen.
+# ---------------------------------------------------------------------------
+family:
+  normalization: nfkc_lower_collapsews   # guard_research.provenance.normalize_text
+  minhash_num_perm: 256
+  minhash_ngram: 5
+  minhash_jaccard_threshold: 0.85        # candidate-generation threshold, NOT semantic proof
+  lsh_bands: 32
+  lsh_rows: 8
+  sensitivity_thresholds: [0.80, 0.85, 0.90]
+
+# ---------------------------------------------------------------------------
+# Data sources (plan sec 6.4.1 mechanical construction table). All revisions
+# pinned to the locally-cached HF snapshot commit. `origin` records the
+# authoritative provenance; gated AI2 sets prefer the frozen local cache to
+# avoid a gated re-download and are documented as such.
+# ---------------------------------------------------------------------------
+sources:
+  # ---- TRAIN candidates ---------------------------------------------------
+  toxicchat:
+    role: train
+    hf_path: lmsys/toxic-chat
+    hf_config: toxicchat0124
+    split: train
+    revision: 29df8e4dba60e1f4af4b4075c0705c5b313548a8
+    text_field: user_input
+    label_rule: "toxicity==1->unsafe; else safe"
+    license_id: CC-BY-NC-4.0
+    redistribution_class: noncommercial_reconstruct_only
+    origin: hf
+  prompt_injections:
+    role: train
+    hf_path: deepset/prompt-injections
+    hf_config: default
+    split: train
+    revision: 4f61ecb038e9c3fb77e21034b22511b523772cdd
+    text_field: text
+    label_rule: "label==1->unsafe; else safe"
+    license_id: unknown-verify-before-lock
+    redistribution_class: research_reconstruct_only
+    origin: hf
+  jailbreak_classification:
+    role: train
+    hf_path: jackhhao/jailbreak-classification
+    hf_config: default
+    split: train
+    revision: 2f2ceeb39658696fd3f462403562b6eea5306287
+    text_field: prompt
+    label_rule: "type.lower().startswith('jailbreak')->unsafe; else safe"
+    license_id: unknown-verify-before-lock
+    redistribution_class: research_reconstruct_only
+    origin: hf
+
+  # ---- Represented-source calibration + ID (TEST splits) ------------------
+  toxicchat_test:
+    role: represented_test
+    hf_path: lmsys/toxic-chat
+    hf_config: toxicchat0124
+    split: test
+    revision: 29df8e4dba60e1f4af4b4075c0705c5b313548a8
+    text_field: user_input
+    label_rule: "toxicity==1->unsafe; else safe"
+    target: at_most_400_per_label
+    license_id: CC-BY-NC-4.0
+    redistribution_class: noncommercial_reconstruct_only
+    origin: hf
+  prompt_injections_test:
+    role: represented_test
+    hf_path: deepset/prompt-injections
+    hf_config: default
+    split: test
+    revision: 4f61ecb038e9c3fb77e21034b22511b523772cdd
+    text_field: text
+    label_rule: "label==1->unsafe; else safe"
+    target: balance_to_minority
+    license_id: unknown-verify-before-lock
+    redistribution_class: research_reconstruct_only
+    origin: hf
+  jailbreak_classification_test:
+    role: represented_test
+    hf_path: jackhhao/jailbreak-classification
+    hf_config: default
+    split: test
+    revision: 2f2ceeb39658696fd3f462403562b6eea5306287
+    text_field: prompt
+    label_rule: "type.lower().startswith('jailbreak')->unsafe; else safe"
+    target: at_most_400_per_label
+    license_id: unknown-verify-before-lock
+    redistribution_class: research_reconstruct_only
+    origin: hf
+
+  # ---- Transfer benchmarks ------------------------------------------------
+  jailbreakbench:
+    role: transfer
+    hf_path: JailbreakBench/JBB-Behaviors
+    hf_config: behaviors
+    split: [harmful, benign]
+    revision: 886acc352a31533ffbcf4ef22c744658688086fc
+    text_field: Goal
+    label_rule: "harmful split->unsafe; benign split->safe"
+    target: 60_per_label
+    license_id: MIT
+    redistribution_class: permissive
+    origin: hf
+  xstest:
+    role: transfer
+    hf_path: natolambert/xstest-v2-copy
+    hf_config: default
+    split: prompts
+    revision: b71afe2a6d10e5a6254ea8bcb006c48b095a15d5
+    text_field: prompt
+    label_rule: "type.lower().startswith('contrast')->unsafe; else safe"
+    target: 120_per_label
+    license_id: CC-BY-4.0
+    redistribution_class: permissive
+    origin: hf
+  wildguardtest:
+    role: transfer
+    hf_path: allenai/wildguardmix
+    hf_config: wildguardtest
+    split: test
+    revision: d29c47f41c8b51348b5c8e8c81c039b3132b66d1
+    text_field: prompt
+    label_rule: "prompt_harm_label:harmful->unsafe; unharmful->safe; else discard"
+    target: 400_per_label
+    license_id: ODC-BY-AI2-gated
+    redistribution_class: gated_no_redistribution
+    origin: frozen_prefer   # AI2-gated: prefer notebooks/outputs/frozen_eval_rows.json; HF fallback
+    frozen_key: wildguardtest
+  wildjailbreak:
+    role: transfer
+    hf_path: allenai/wildjailbreak
+    hf_config: eval
+    split: train
+    revision: 5ddc12a7894f842b0619b8e1c7ee496b198af009
+    text_field: adversarial
+    label_rule: "label==1->unsafe; 0->safe"
+    target: balance_to_minority
+    license_id: ODC-BY-AI2-gated
+    redistribution_class: gated_no_redistribution
+    origin: frozen_prefer   # AI2-gated: prefer frozen cache; HF fallback
+    frozen_key: wildjailbreak
+
+  # ---- Single-class stress sets ------------------------------------------
+  orbench_hard:
+    role: stress_safe
+    hf_path: bench-llm/or-bench
+    hf_config: or-bench-hard-1k
+    split: train
+    revision: e36d8b80e81837c8a8f264bbb2a49f1b32c7e272
+    text_field: prompt
+    label_rule: "all safe (benign over-refusal stress)"
+    target: 400_rows
+    license_id: unknown-verify-before-lock
+    redistribution_class: research_reconstruct_only
+    origin: hf   # not gated; frozen orbench_hard is the confounded hybrid, not used
+  harmbench:
+    role: stress_unsafe
+    hf_path: walledai/HarmBench
+    hf_config: standard
+    split: train
+    revision: fb6c2afd5a2a943d701d6db3efab87d077e81be5
+    text_field: prompt
+    label_rule: "all unsafe (recall stress)"
+    target: 200_rows
+    license_id: MIT
+    redistribution_class: permissive
+    origin: hf
