@@ -1,67 +1,141 @@
-# Guard Ranking Fragility
+# The Benchmark Chooses the Winner
 
-Paper and full reproduction bundle for
-***"The Benchmark Chooses the Winner: A Fair Evaluation of Small-LLM Safety Guards."***
+Reproduction code, data manifests, and an auditable evidence chain for the paper
 
-A broad measurement study of small-language-model (SLM) safety guards. The recurring theme: **which guard looks best is decided by the evaluation protocol, not just the model.** The same systems reorder under native-threshold vs. matched-FPR vs. threshold-free comparison; parameter-efficient fine-tuning specializes in-distribution while *degrading* out-of-distribution ranking; and the fine-tuning **objective** (SFT vs. DPO vs. GRPO) controls that degradation. We then **ground the study in a high-compliance use case** — a mortgage-lending assistant, whose guard stack layers a **general** safety guard with a **domain-specific** compliance guard (fair-lending, regulatory, security-misuse rules) — and show the general and domain-specific layers need not share a best guard. Scope: all evaluations classify **input prompts**; response/tool-call moderation is future work.
+> **The Benchmark Chooses the Winner: Measuring Fine-Tuning Specialization Across Safety-Guard Benchmarks**
+> Reza Rahimi (JazzX AI)
 
-## Key findings
+Parameter-efficient fine-tuning of a small language model into a prompt-safety
+guard **specializes it to the benchmarks it was trained on**. We measure this
+directly on a fixed panel of four instruction-tuned checkpoints, each fine-tuned
+five times, on a decontaminated corpus — and separate two effects that prior work
+conflates: gains on the *sources represented in training* versus transfer to
+*held-out datasets*. Scope: every evaluation classifies **input prompts** (unsafe =
+harmful content, jailbreak, or prompt injection).
 
-- **Rankings are protocol-dependent.** Native-threshold F1 can *invert* the ordering that threshold-free AUPRC and matched-FPR@0.10 give; we report operating-point-fair metrics with paired-bootstrap CIs.
-- **PEFT specializes in-distribution and degrades OOD ranking.** On three balanced novel benchmarks the untuned base out-ranks the tuned guard (aggregate AUPRC 0.886 vs. 0.781, disjoint CIs). A six-base sweep recasts this as a *convergence* phenomenon: tuning collapses a wide base OOD spread (0.60–0.89) into a narrow tuned band.
-- **The objective controls the convergence.** SFT (supervised) converges OOD; a KL-regularized objective resists it. Once each objective is fairly HPO-tuned on the primary base, **DPO matches SFT in-distribution while dominating it out-of-distribution (+0.097 AUPRC)**; GRPO preserves OOD but a single-token verdict reward is too weak to gain in-distribution.
-- **Training-free mitigation.** A per-prompt base⊕tuned ensemble recovers the degraded OOD ranking without retraining.
+## Headline result
 
-## Layout
+Across the panel (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B; seeds 42–46),
+LoRA-SFT on a decontaminated 1,200-row corpus:
+
+| Effect | Δ macro-AP (base → SFT) | 95% one-sided bound | Gate |
+|---|---|---|---|
+| **Represented** sources (in training) | **+0.325** | LCB **+0.281** | A ✓ (gain > 0) |
+| **Transfer** to held-out datasets | **−0.050** | UCB **−0.029** | B ✓ (change < 0) |
+
+SFT lifts every checkpoint to ≈0.98 macro-AP on represented sources (largest gain
+for the weakest base) but **degrades** aggregate transfer, and the realized
+false-positive rate on held-out data rises from **8.3% (base) to 13.7% (SFT)**.
+Transfer is heterogeneous by checkpoint — SmolLM2 +0.05, Qwen2.5 −0.03,
+Qwen3-4B −0.10, SmolLM3 −0.12 — but both claims are decided by a **family+seed
+hierarchical bootstrap** with **intersection-union claim gates** that are
+leave-one-family-out sign-stable. The conclusion is a measured **in-source
+specialization trade-off**, not a universal "fine-tuning hurts."
+
+All numbers above are regenerated from the committed score table by
+[`make repro`](#reproduce-no-gpu) — see [artifacts/paper_a_sft/analysis/](artifacts/paper_a_sft/analysis).
+
+## Repository layout
 
 ```text
-paper/         ACM paper: benchmark_chooses_the_winner.{tex,pdf}, refs.bib, figures/, tables/, DRAFT.md
-experiments/   producing scripts for every result family (see experiments/README.md)
-notebooks/     reproduction notebooks + bundled benchmark data + (regenerated) outputs/
-docs/          supporting design/results notes
+guard_research/      canonical, auditable library: tie-aware metrics, provenance
+                     (hashing + MinHash), the frozen prompt, calibration thresholds
+experiments/         the six-step Paper A pipeline (prepare → audit → lock →
+                     train → eval → analyze); see experiments/README.md
+configs/             paper_a_sft.yaml — the single study config
+tests/               unit tests for the canonical metrics, thresholds, manifests
+artifacts/paper_a_sft/   the evidence chain: LOCK.json, audit/, analysis/,
+                     scores/scores.parquet (row-keyed hashes + logits, no raw text),
+                     runmeta/
+paper/               the manuscript (tectonic) + generated tables/figures
+paper-html/          the HTML edition (self-contained, offline math)
+benchmark-explore/   an interactive benchmark explorer webpage
+notebooks/           bundled benchmark data + frozen evaluation rows
+docs/                design/planning notes
+legacy/              the earlier broad study + planned Paper B code (quarantined,
+                     still runnable; not part of this reproduction)
 ```
 
-## Setup
+## Install
+
+Python 3.11+.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r notebooks/requirements.txt
+pip install -e ".[all]"          # library + training + figures + dev
+# or, for the exact versions the results were produced with:
+pip install -r requirements.txt
 ```
 
-**Credentials (optional).** The gpt-5.4-mini baseline (`OPENAI_API_KEY`) and gated model downloads (`HF_TOKEN`) need keys; everything else runs without them. Copy `.env.example` to a repo-root `.env` (loaded by the scripts as a fallback) — do **not** put real keys in `notebooks/.env`, since `notebooks/` is meant to be shareable and a gitignored file still travels inside a zip.
+CPU-only reproduction (below) needs just the core: `pip install -e .`.
+
+## Reproduce (no GPU)
+
+Because `scores/scores.parquet` is committed, every table and figure regenerates
+from it on CPU in seconds:
 
 ```bash
-cp .env.example .env   # then fill in keys
+make repro      # analyze committed scores → tables + figures + claim gates
+make test       # 30 unit tests (canonical metrics / thresholds / manifests)
+make selftest   # synthetic end-to-end check of the analysis
+make paper      # build the PDF (needs tectonic)
 ```
 
-## Reproduce
+`make help` lists every target.
 
-Run scripts **from the repo root** (their relative paths assume it):
+## Reproduce from scratch (GPU)
+
+The full pipeline runs in order; steps 1–3 and 6 are CPU, steps 4–5 need a GPU and
+Hugging Face access (`HF_TOKEN`; copy [.env.example](.env.example) → `.env`):
 
 ```bash
-python experiments/guard_eval_pipeline.py      # in-house + novel + base-vs-tuned (per model)
-python experiments/eval_mortgage_hard.py       # hardened mortgage case-study metrics
-python experiments/ensemble_probe.py           # base⊕tuned ensemble sweep
-python experiments/ensemble_deployable.py      # deployable per-prompt PIT ensemble
-python experiments/train_guard_pref.py         # DPO/GRPO/KTO guard trainer (TECHNIQUE=dpo|grpo|kto)
-python experiments/hpo_guard.py                # per-objective Optuna HPO (HPO_METHOD=sft|dpo|grpo)
-python experiments/make_figures.py             # regenerate paper/figures/*.pdf
+make manifests   # 1. build the decontaminated 1,200-row manifest + held-out sets
+make audit       # 2. recompute + hard-assert decontamination (0 train↔eval overlap)
+make lock        # 3. freeze config + manifest hashes into LOCK.json
+make train       # 4. train the 4 × 5 LoRA-SFT panel
+make eval        # 5. score bases + adapters → scores.parquet
+make analyze     # 6. macro-AP + bootstrap + claim gates → tables/figures
 ```
 
-`notebooks/paper_reproduction.ipynb` orchestrates the producing scripts and renders the tables from the emitted JSON (`verify_cached` reads cached artifacts; `recompute` reruns scoring).
+See [experiments/README.md](experiments/README.md) for what each step does.
 
-## Build the paper
+## Auditable evidence chain
 
-`paper/` compiles standalone — figures are committed as vector PDFs, no Python needed:
+The study is designed to be checkable without rerunning the GPU work:
 
-```bash
-cd paper && make          # tectonic -> benchmark_chooses_the_winner.pdf
-```
+- **`LOCK.json`** binds the config, data-manifest hashes, and audit result; the
+  training and scoring steps refuse to run against a mismatched lock.
+- **`audit/`** independently recomputes the decontamination facts and hard-asserts
+  them (zero exact/conflicting train↔eval overlap, label balance, family
+  disjointness).
+- **`scores/scores.parquet`** stores per-row **content hashes and model logits
+  only — never raw prompt text** — so the third-party benchmark text is not
+  redistributed, yet every metric is recomputable.
+- **`analysis/`** holds `results.json`, `claim_checks.json`, per-seed and
+  per-benchmark tables, and the figure, all emitted by the canonical metric module.
 
-## Provenance
+All metrics come from [guard_research/metrics.py](guard_research/metrics.py)
+(sklearn-backed, tie-aware, permutation-invariant) — there is no ad-hoc
+average-precision loop anywhere in the pipeline.
 
-Result numbers trace to `notebooks/outputs/nb-smollm3-guard/*.json` (in-house, novel, base-vs-tuned, mortgage, frontier), `notebooks/outputs/hpo/hpo_best_*.json` (SFT/DPO/GRPO HPO), and the `summary_*.json` files regenerated by the scripts named in `paper/README.md`. These outputs are gitignored (regenerated locally, not committed), so byte-exact reruns require pinning the public benchmark dataset revisions. The SFT/DPO/GRPO comparison and HPO were run on NVIDIA A100s; the earlier primary results on Apple MPS (the paper's reproducibility section quantifies the ≤0.001 eval-hardware and +0.03–0.06 train-hardware effects).
+## Data & provenance
 
-## License
+Training sources are pulled from Hugging Face pinned by revision (ToxicChat,
+Prompt-Injections, Jailbreak-Classification) and the held-out evaluation rows from
+`notebooks/outputs/frozen_eval_rows.json`. Raw non-commercially-licensed manifest
+rows are gitignored; they regenerate deterministically from the builder and config.
+Provenance (NFKC-normalized content/family SHA-256, MinHash near-duplicate families)
+lives in [guard_research/provenance.py](guard_research/provenance.py).
 
-[Apache 2.0](LICENSE). If you use this work, please cite via [CITATION.cff](CITATION.cff).
+## Earlier broad study & Paper B
+
+The broad measurement study this paper was distilled from — protocol-dependent
+ranking, the SFT/DPO/GRPO objective comparison, a mortgage-compliance case study,
+guardrail baselines, an ensemble mitigation, and a fairness probe — is preserved
+under [legacy/](legacy) as the basis for a planned follow-up. It is **not** needed to
+reproduce this paper. Note the metric caveat in [legacy/README.md](legacy/README.md).
+
+## Citation & license
+
+If you use this work, please cite it via [CITATION.cff](CITATION.cff).
+Licensed under [Apache 2.0](LICENSE).
