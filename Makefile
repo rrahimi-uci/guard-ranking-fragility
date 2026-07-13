@@ -49,7 +49,7 @@ test:       ## run the unit tests
 
 ## --- documents -------------------------------------------------------------
 paper:      ## build the paper PDF (needs tectonic)
-	$(MAKE) -C paper
+	$(MAKE) -C paper-a
 paper-html: ## build the HTML edition (needs pandoc, tectonic, pdftocairo)
 	$(PY) paper-html/build.py
 explorer:   ## regenerate the benchmark-explorer content samples (paper-html/explorer)

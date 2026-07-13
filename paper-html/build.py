@@ -23,7 +23,7 @@ from itertools import groupby
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-PAPER = os.path.join(ROOT, "paper")
+PAPER = os.path.join(ROOT, "paper-a")
 TEX = "benchmark_chooses_the_winner.tex"
 INPUTS = ["tab_primary_gen.tex", "tab_sensitivity_gen.tex"]  # \input'd generated tabulars
 OUT = os.path.join(HERE, "index.html")

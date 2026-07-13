@@ -47,7 +47,7 @@ tests/               unit tests for the canonical metrics, thresholds, manifests
 artifacts/paper_a_sft/   the evidence chain: LOCK.json, audit/, analysis/,
                      scores/scores.parquet (row-keyed hashes + logits, no raw text),
                      runmeta/
-paper/               the manuscript (tectonic) + generated tables/figures
+paper-a/             the manuscript (tectonic) + generated tables/figures
 paper-html/          the HTML edition (self-contained, offline math); bundles
                      explorer/ — the interactive benchmark explorer webpage
                      (+ explorer/sources/ — this-work data the explorer samples)
