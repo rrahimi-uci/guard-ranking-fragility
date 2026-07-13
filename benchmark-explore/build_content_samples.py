@@ -15,30 +15,52 @@ Sources (all already local):
 Run from repo root:  python3 benchmark-explore/build_content_samples.py
 """
 import json, os, re
+from collections import OrderedDict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "benchmark-explore", "samples.js")
-PER = 24        # rows shown per benchmark (balanced across labels where possible)
+PER = 30        # rows shown per benchmark (label-balanced + tag-diversified)
 TRUNC = 320     # truncate prompt text to keep the page browsable
 
 def clip(t):
     t = re.sub(r"\s+", " ", str(t)).strip()
     return t[:TRUNC] + " …" if len(t) > TRUNC else t
 
+def even(xs, k):
+    """k items evenly spaced across xs (deterministic, no RNG)."""
+    if k <= 0 or not xs: return []
+    if len(xs) <= k: return list(xs)
+    step = len(xs) / k
+    return [xs[int(i * step)] for i in range(k)]
+
+def diverse(rows, k):
+    """Up to k rows spread across distinct tags: round-robin one per tag per round,
+    even-spaced within each tag so we don't cluster on near-identical prompts."""
+    if len(rows) <= k: return list(rows)
+    groups = OrderedDict()
+    for r in rows:
+        groups.setdefault(r.get("tag", ""), []).append(r)
+    queues = {g: even(v, min(len(v), k)) for g, v in groups.items()}
+    out, qi, order = [], {g: 0 for g in groups}, list(groups)
+    while len(out) < k:
+        progressed = False
+        for g in order:
+            if qi[g] < len(queues[g]):
+                out.append(queues[g][qi[g]]); qi[g] += 1; progressed = True
+                if len(out) >= k: break
+        if not progressed: break
+    return out[:k]
+
 def balanced(rows, per=PER):
-    """rows: list of dicts with 'g' in {0,1}. Return up to `per`, interleaved by label,
-    evenly spaced within each class for variety, deterministic (no RNG)."""
+    """Interleave an unsafe/safe-balanced, tag-diversified sample (deterministic)."""
     pos = [r for r in rows if r["g"] == 1]
     neg = [r for r in rows if r["g"] == 0]
-    def spread(xs, k):
-        if k <= 0 or not xs: return []
-        if len(xs) <= k: return xs
-        step = len(xs) / k
-        return [xs[int(i * step)] for i in range(k)]
-    npos = min(len(pos), per // 2 if neg else per)
+    if not neg: return diverse(pos, per)
+    if not pos: return diverse(neg, per)
+    npos = min(len(pos), per // 2)
     nneg = min(len(neg), per - npos)
     npos = min(len(pos), per - nneg)          # backfill if one class is short
-    P, N = spread(pos, npos), spread(neg, nneg)
+    P, N = diverse(pos, npos), diverse(neg, nneg)
     out = []
     for i in range(max(len(P), len(N))):       # interleave unsafe/safe
         if i < len(P): out.append(P[i])
@@ -48,7 +70,11 @@ def balanced(rows, per=PER):
 SAMPLES = {}
 
 def add(bid, rows, total, extra=None):
-    s = balanced(rows)
+    seen, uniq = set(), []                     # drop exact-duplicate (clipped) prompts
+    for r in rows:
+        if r["t"] in seen: continue
+        seen.add(r["t"]); uniq.append(r)
+    s = balanced(uniq)
     entry = {"n": total, "shown": len(s), "trunc": TRUNC, "rows": s}
     if extra: entry.update(extra)
     SAMPLES[bid] = entry

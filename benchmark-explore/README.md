@@ -27,6 +27,8 @@ build step, no dependencies — everything is inlined into the one file.
 - **Cards**: click any card for a detail drawer.
 - **Table**: pick a tab to see that benchmark's complete record laid out as a
   table, plus **a sample of its actual prompts** (real rows, unsafe = positive).
+  Each sample has an **All / Unsafe / Safe** filter and a **search** box with a
+  live count, for quick exploration.
 
 ## Files
 
@@ -41,7 +43,8 @@ build step, no dependencies — everything is inlined into the one file.
 
 ## A note on the samples
 
-`samples.js` contains a small, balanced **sample** per benchmark (≈24 rows,
+`samples.js` contains a small, label-balanced and **tag-diversified** sample per
+benchmark (30 rows, spread across trap-types / domains / hazards where present,
 prompts truncated), not the full datasets — several sources are non-commercial
 (ToxicChat, BeaverTails are CC BY-NC) and the paper reconstructs rows from the
 public datasets rather than redistributing them. Each entry records the true row
