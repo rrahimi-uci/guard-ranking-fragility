@@ -1,0 +1,315 @@
+{
+  "all_hard_assertions_pass": true,
+  "config_sha256": "55b210f35a0b836987d1acbc099303bb540e1367358c85df8feffdfa06fc569e",
+  "counts": {
+    "calibration": {
+      "class_counts": {
+        "safe": 215,
+        "unsafe": 237
+      },
+      "n_rows": 452,
+      "per_source": {
+        "jailbreak_classification": {
+          "safe": 43,
+          "unsafe": 62
+        },
+        "prompt_injections": {
+          "safe": 16,
+          "unsafe": 29
+        },
+        "toxicchat": {
+          "safe": 156,
+          "unsafe": 146
+        }
+      }
+    },
+    "harmbench_positive_stress": {
+      "class_counts": {
+        "unsafe": 200
+      },
+      "n_rows": 200,
+      "per_source": {
+        "harmbench": {
+          "unsafe": 200
+        }
+      }
+    },
+    "id_test": {
+      "class_counts": {
+        "safe": 364,
+        "unsafe": 312
+      },
+      "n_rows": 676,
+      "per_source": {
+        "jailbreak_classification": {
+          "safe": 80,
+          "unsafe": 77
+        },
+        "prompt_injections": {
+          "safe": 40,
+          "unsafe": 27
+        },
+        "toxicchat": {
+          "safe": 244,
+          "unsafe": 208
+        }
+      }
+    },
+    "orbench_safe_stress": {
+      "class_counts": {
+        "safe": 400
+      },
+      "n_rows": 400,
+      "per_source": {
+        "orbench": {
+          "safe": 400
+        }
+      }
+    },
+    "train": {
+      "class_counts": {
+        "safe": 600,
+        "unsafe": 600
+      },
+      "n_rows": 1200,
+      "per_source": {
+        "jailbreak_classification": {
+          "safe": 200,
+          "unsafe": 200
+        },
+        "prompt_injections": {
+          "safe": 200,
+          "unsafe": 200
+        },
+        "toxicchat": {
+          "safe": 200,
+          "unsafe": 200
+        }
+      }
+    },
+    "transfer_test": {
+      "class_counts": {
+        "safe": 790,
+        "unsafe": 790
+      },
+      "n_rows": 1580,
+      "per_source": {
+        "jailbreakbench": {
+          "safe": 60,
+          "unsafe": 60
+        },
+        "wildguardtest": {
+          "safe": 400,
+          "unsafe": 400
+        },
+        "wildjailbreak": {
+          "safe": 210,
+          "unsafe": 210
+        },
+        "xstest": {
+          "safe": 120,
+          "unsafe": 120
+        }
+      }
+    }
+  },
+  "disposition_coverage": {
+    "build_cross_split_components_removed": 44,
+    "build_exact_overlaps_removed": 60,
+    "every_near_duplicate_candidate_has_disposition": true,
+    "known_wildjailbreak_overlaps_in_build": 4,
+    "undisposed_cross_split_pairs_at_0.85_in_final_manifests": 0
+  },
+  "exact_overlap": {
+    "by_eval": {
+      "calibration": {
+        "conflicting_label": 0,
+        "exact_overlap": 0,
+        "same_label": 0
+      },
+      "harmbench_positive_stress": {
+        "conflicting_label": 0,
+        "exact_overlap": 0,
+        "same_label": 0
+      },
+      "id_test": {
+        "conflicting_label": 0,
+        "exact_overlap": 0,
+        "same_label": 0
+      },
+      "orbench_safe_stress": {
+        "conflicting_label": 0,
+        "exact_overlap": 0,
+        "same_label": 0
+      },
+      "transfer_test": {
+        "conflicting_label": 0,
+        "exact_overlap": 0,
+        "same_label": 0
+      }
+    },
+    "conflict_records": [],
+    "total_conflicting_label": 0,
+    "total_exact_train_vs_eval": 0,
+    "total_same_label": 0
+  },
+  "family_validation": {
+    "all_rows_have_family_id": true,
+    "family_stats_from_build": {
+      "lsh_bands": 32,
+      "lsh_rows": 8,
+      "n_candidate_pairs": 1376,
+      "n_components": 9559,
+      "n_minhash_edges_085": 351,
+      "n_multi_member_components": 151,
+      "n_rows": 9789,
+      "n_upstream_edges": 0,
+      "ngram": 5,
+      "num_perm": 256,
+      "provenance_source": "guard_research.provenance",
+      "threshold": 0.85
+    },
+    "n_eval_families": 3264,
+    "n_families_total": 4444,
+    "n_train_families": 1180,
+    "shared_family_ids_sample": [],
+    "train_eval_shared_families": 0
+  },
+  "forbidden_train_sources": {
+    "beavertails_train_count": 0,
+    "or_bench_train_count": 0,
+    "train_source_counts": {
+      "jailbreak_classification": 400,
+      "prompt_injections": 400,
+      "toxicchat": 400
+    }
+  },
+  "hard_assertions": {
+    "beavertails_train_count == 0": true,
+    "conflicting_label_overlap == 0": true,
+    "every_near_duplicate_candidate_has_disposition == true": true,
+    "every_row_has_content_hash == true": true,
+    "every_row_has_source_revision == true": true,
+    "exact_train_vs_eval_overlap == 0": true,
+    "or_bench_train_count == 0": true
+  },
+  "join_validation": {
+    "duplicate_sample_ids": [],
+    "n_duplicate_sample_ids": 0,
+    "n_rows": 4508,
+    "n_unique_sample_id": 4508,
+    "one_to_one": true
+  },
+  "license_inventory": {
+    "harmbench": {
+      "MIT": 200
+    },
+    "jailbreak_classification": {
+      "unknown-verify-before-lock": 662
+    },
+    "jailbreakbench": {
+      "MIT": 120
+    },
+    "orbench": {
+      "unknown-verify-before-lock": 400
+    },
+    "prompt_injections": {
+      "unknown-verify-before-lock": 512
+    },
+    "toxicchat": {
+      "CC-BY-NC-4.0": 1154
+    },
+    "wildguardtest": {
+      "ODC-BY-AI2-gated": 800
+    },
+    "wildjailbreak": {
+      "ODC-BY-AI2-gated": 420
+    },
+    "xstest": {
+      "CC-BY-4.0": 240
+    }
+  },
+  "manifest_dir": "artifacts/paper_a_sft/manifests",
+  "near_dup_sensitivity": {
+    "by_threshold": {
+      "0.80": {
+        "cross_train_eval_pairs": 6,
+        "total_near_dup_pairs": 113,
+        "within_eval_pairs": 72,
+        "within_train_pairs": 35
+      },
+      "0.85": {
+        "cross_train_eval_pairs": 0,
+        "total_near_dup_pairs": 72,
+        "within_eval_pairs": 51,
+        "within_train_pairs": 21
+      },
+      "0.90": {
+        "cross_train_eval_pairs": 0,
+        "total_near_dup_pairs": 48,
+        "within_eval_pairs": 33,
+        "within_train_pairs": 15
+      }
+    },
+    "candidate_pairs_generated": 313,
+    "note": "0.85 is the prespecified candidate-generation threshold; the builder removes the train-side of every cross-split component at >=0.85, so cross_train_eval_pairs at 0.85 must be 0. Counts at 0.80/0.90 are reported for sensitivity only; dispositions are not changed after final scores are viewed.",
+    "remaining_cross_split_at_0.85": []
+  },
+  "provenance": {
+    "lsh_bands": 32,
+    "lsh_rows": 8,
+    "minhash_backend": "numpy_fallback",
+    "minhash_jaccard_threshold": 0.85,
+    "minhash_ngram": 5,
+    "minhash_num_perm": 256,
+    "normalization": "NFKC+lowercase+collapse_whitespace",
+    "provenance_source": "guard_research.provenance",
+    "rank_rule": "sha256(data_seed|source_row_id|content_sha256)"
+  },
+  "redistribution_inventory": {
+    "harmbench": {
+      "permissive": 200
+    },
+    "jailbreak_classification": {
+      "research_reconstruct_only": 662
+    },
+    "jailbreakbench": {
+      "permissive": 120
+    },
+    "orbench": {
+      "research_reconstruct_only": 400
+    },
+    "prompt_injections": {
+      "research_reconstruct_only": 512
+    },
+    "toxicchat": {
+      "noncommercial_reconstruct_only": 1154
+    },
+    "wildguardtest": {
+      "gated_no_redistribution": 800
+    },
+    "wildjailbreak": {
+      "gated_no_redistribution": 420
+    },
+    "xstest": {
+      "permissive": 240
+    }
+  },
+  "role_validation": {
+    "harmbench_labels": [
+      "unsafe"
+    ],
+    "ok": true,
+    "orbench_labels": [
+      "safe"
+    ],
+    "problems": []
+  },
+  "schema_completeness": {
+    "content_hash_recompute_mismatch": 0,
+    "fields_with_missing_values": {},
+    "n_rows_total": 4508,
+    "rows_missing_content_sha256": 0,
+    "rows_missing_source_revision": 0
+  }
+}
