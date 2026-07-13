@@ -25,3 +25,11 @@ corresponding code is quarantined under [`../legacy/`](../legacy).
   reproduction notebook ([`../notebooks/`](../notebooks)).
 - [mortgage-benchmark-hard-results.md](mortgage-benchmark-hard-results.md) — results
   from the hardened mortgage-compliance benchmark.
+
+## Reviews & background
+
+- [review-2026-07-12.md](review-2026-07-12.md) — a technical re-review of the earlier
+  broad-study manuscript; the recommendation to narrow to the focused specialization
+  result is what this repo now implements.
+- [metrics-survey.md](metrics-survey.md) — survey of related-work evaluation metrics
+  (background for the evaluation protocol).
