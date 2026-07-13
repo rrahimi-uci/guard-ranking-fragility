@@ -11,11 +11,12 @@ Safety Guards</title>
   --line:#e6e9f0; --line2:#eef1f6; --brand:#4f46e5; --brand2:#4338ca;
   --sh1:0 1px 2px rgba(16,24,40,.05); --sh2:0 4px 16px rgba(16,24,40,.07); --sh3:0 14px 38px rgba(16,24,40,.14);
   --topH:56px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  --serif:"Iowan Old Style",Charter,"Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:16px/1.68 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.68 var(--sans);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 a{color:var(--brand);text-decoration:none}
 a:hover{text-decoration:underline}
@@ -59,16 +60,22 @@ h1.title{font-size:33px;line-height:1.14;letter-spacing:-.025em;font-weight:800;
 .abstract{background:linear-gradient(180deg,#f7f8fe,#fbfcfe);border:1px solid #e6e8f6;border-left:3px solid var(--brand);
   border-radius:12px;padding:18px 22px;margin:26px 0 8px}
 .abstract-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--brand2);margin-bottom:8px}
-.abstract p{margin:0 0 10px;color:var(--ink2);font-size:14.5px}.abstract p:last-child{margin-bottom:0}
+.abstract p{font-family:var(--serif);margin:0 0 11px;color:#2c3542;font-size:15.5px;line-height:1.72}.abstract p:last-child{margin-bottom:0}
 
 .content section{scroll-margin-top:calc(var(--topH) + 14px)}
 .content h2{font-size:24px;font-weight:750;letter-spacing:-.02em;margin:44px 0 14px;padding-top:18px;border-top:1px solid var(--line);line-height:1.2}
 .content section:first-of-type h2{border-top:none;padding-top:8px}
 .content h3{font-size:18.5px;font-weight:700;letter-spacing:-.01em;margin:30px 0 10px;color:var(--ink)}
 .content h4{font-size:15px;font-weight:700;margin:22px 0 8px;color:var(--ink)}
-.content p{margin:0 0 15px;color:var(--ink2)}
-.content ul,.content ol{color:var(--ink2);padding-left:22px}
-.content li{margin:5px 0}
+.content p,.content li{font-family:var(--serif);font-size:17px;line-height:1.78;color:#27303c;-webkit-font-smoothing:auto}
+.content p{margin:0 0 16px}
+.content ul,.content ol{padding-left:24px;margin:14px 0}
+.content li{margin:7px 0}
+.content li::marker{color:var(--muted)}
+/* MathJax-SVG math */
+mjx-container[display="true"]{margin:22px 0 !important;overflow-x:auto;overflow-y:hidden;padding:4px 2px 8px}
+mjx-container{color:var(--ink);max-width:100%}
+.content .math.display{display:block;text-align:center;margin:22px 0;overflow-x:auto}
 .header-anchor{color:inherit;text-decoration:none}
 .header-anchor:hover{text-decoration:none}
 
@@ -240,9 +247,9 @@ bases, and why tuning <em>converges</em> OOD</a></li>
 class="toc-section-number">5.8</span> The fine-tuning <em>objective</em>
 controls the OOD convergence: SFT vs. DPO vs. GRPO</a></li>
 <li><a href="#sec:ensemble" id="toc-sec:ensemble"><span
-class="toc-section-number">5.9</span> Mitigation: a
-base <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math> tuned
-ensemble recovers OOD ranking</a></li>
+class="toc-section-number">5.9</span> Mitigation: a base <span
+class="math inline">\(\oplus\)</span> tuned ensemble recovers OOD
+ranking</a></li>
 <li><a href="#sec:mortgage-casestudy"
 id="toc-sec:mortgage-casestudy"><span
 class="toc-section-number">5.10</span> The domain-specific compliance
@@ -456,10 +463,9 @@ aggregate)</td>
 </tr>
 <tr>
 <td style="text-align: left;">F1 (paired vs guard)</td>
-<td style="text-align: left;">no
-sig. diff. (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>F1
-+0.011,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>0.14</mn></mrow><annotation encoding="application/x-tex">p=0.14</annotation></semantics></math>)</td>
+<td style="text-align: left;">no sig. diff. (<span
+class="math inline">\(\Delta\)</span>F1 +0.011, <span
+class="math inline">\(p=0.14\)</span>)</td>
 <td style="text-align: left;">—</td>
 <td style="text-align: left;">—</td>
 <td style="text-align: left;">native point 0.784</td>
@@ -475,14 +481,14 @@ sig. diff. (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML">
 </table></div></div>
 <p>We are explicit about limits. Matched-FPR@0.10 is deliberately
 conservative, so AUPRC is our fair primary summary; at the
-<em>deployed</em> operating point (T=2.10,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><mn>0.59</mn></mrow><annotation encoding="application/x-tex">\tau=0.59</annotation></semantics></math>)
-the guard still over-blocks benign prompts, which is a real deployment
-concern. ShieldGemma is run somewhat outside its designed content-policy
-regime and its novel-benchmark numbers are still pending; a single
-global threshold remains structurally in-distribution-optimized. The
-paper should therefore be read as a controlled measurement study about
-ranking fragility, not as a universal leaderboard claim.</p>
+<em>deployed</em> operating point (T=2.10, <span
+class="math inline">\(\tau=0.59\)</span>) the guard still over-blocks
+benign prompts, which is a real deployment concern. ShieldGemma is run
+somewhat outside its designed content-policy regime and its
+novel-benchmark numbers are still pending; a single global threshold
+remains structurally in-distribution-optimized. The paper should
+therefore be read as a controlled measurement study about ranking
+fragility, not as a universal leaderboard claim.</p>
 <section id="contributions" class="level3" data-number="1.1">
 <h3 data-number="1.1"><span class="header-section-number">1.1</span>
 Contributions</h3>
@@ -506,10 +512,9 @@ the stronger OOD ranker, and the same pattern extends across multiple
 base families.</p></li>
 <li><p><strong>A practical implication claim.</strong> We show that the
 same fragility reappears when benchmark regime changes, and that a
-simple inference-time
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math>tuned
-ensemble can recover much of the lost OOD robustness without
-retraining.</p></li>
+simple inference-time base<span
+class="math inline">\(\oplus\)</span>tuned ensemble can recover much of
+the lost OOD robustness without retraining.</p></li>
 <li><p><strong>An objective claim.</strong> We show the OOD degradation
 is a property of the <em>supervised</em> objective rather than of
 fine-tuning per se: a KL-regularized objective (DPO, GRPO) resists the
@@ -635,10 +640,9 @@ class="citation" data-cites="majhi2025gpuguard">(Majhi et al.
 That line argues small, cheap classifiers can serve as practical guards.
 We share the efficiency motivation — our guard is laptop-trained (~71
 min / 300 steps, bf16, Apple M4 Max, MPS, no CUDA) and runs locally at
-~<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4</mn><mo>×</mo></mrow><annotation encoding="application/x-tex">4\times</annotation></semantics></math>
-lower latency than gpt-5.4-mini (124 ms vs ~512 ms per request; see the
-latency caveat in <a href="#subsec:frontier"
-data-reference-type="ref+Label"
+~<span class="math inline">\(4\times\)</span> lower latency than
+gpt-5.4-mini (124 ms vs ~512 ms per request; see the latency caveat in
+<a href="#subsec:frontier" data-reference-type="ref+Label"
 data-reference="subsec:frontier">5.4</a>). Our distinct contribution is
 not a smaller classifier but a <em>rigorously fair comparison</em> on a
 3B generative guard: operating-point-fair evaluation (matched-FPR +
@@ -748,31 +752,29 @@ prediction. A prompt to be screened is wrapped in a fixed instruction
 template and the model is asked to emit a one-word verdict,
 <code>safe</code> or <code>unsafe</code>. Rather than sampling text, we
 read the logits at the final position and restrict attention to the two
-verdict tokens. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mtext mathvariant="normal">safe</mtext></msub><annotation encoding="application/x-tex">z_{\text{safe}}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mtext mathvariant="normal">unsafe</mtext></msub><annotation encoding="application/x-tex">z_{\text{unsafe}}</annotation></semantics></math>
-be those logits; the guard score is a temperature-scaled two-way softmax
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mrow><mrow><mi mathvariant="normal">exp</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mtext mathvariant="normal">unsafe</mtext></msub><mi>/</mi><mi>T</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><mrow><mi mathvariant="normal">exp</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mtext mathvariant="normal">safe</mtext></msub><mi>/</mi><mi>T</mi><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mtext mathvariant="normal">unsafe</mtext></msub><mi>/</mi><mi>T</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
-P(\text{unsafe}) = \frac{\exp(z_{\text{unsafe}}/T)}{\exp(z_{\text{safe}}/T) + \exp(z_{\text{unsafe}}/T)}.
-\end{equation}</annotation></semantics></math> A single forward pass
-yields the score (<a class="xref" href="#fig:logprob-head">Figure&nbsp;2</a>)
-— no autoregressive decoding, no multi-token or chain-of-thought
-generation. This keeps inference cheap and makes the guard a proper
-threshold-free scorer, so it can be summarized by AUPRC/AUROC in
-addition to a hard verdict. A prompt is flagged <code>unsafe</code> when
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo><mo>≥</mo><mi>τ</mi></mrow><annotation encoding="application/x-tex">P(\text{unsafe}) \ge \tau</annotation></semantics></math>
-for a fixed decision threshold
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>.</p>
+verdict tokens. Let <span class="math inline">\(z_{\text{safe}}\)</span>
+and <span class="math inline">\(z_{\text{unsafe}}\)</span> be those
+logits; the guard score is a temperature-scaled two-way softmax <span
+class="math display">\[\begin{equation}
+P(\text{unsafe}) =
+\frac{\exp(z_{\text{unsafe}}/T)}{\exp(z_{\text{safe}}/T) +
+\exp(z_{\text{unsafe}}/T)}.
+\end{equation}\]</span> A single forward pass yields the score (<a class="xref" href="#fig:logprob-head">Figure&nbsp;2</a>) — no autoregressive decoding,
+no multi-token or chain-of-thought generation. This keeps inference
+cheap and makes the guard a proper threshold-free scorer, so it can be
+summarized by AUPRC/AUROC in addition to a hard verdict. A prompt is
+flagged <code>unsafe</code> when <span
+class="math inline">\(P(\text{unsafe}) \ge \tau\)</span> for a fixed
+decision threshold <span class="math inline">\(\tau\)</span>.</p>
 <figure id="fig:logprob-head" data-latex-placement="t">
 
 <figcaption><span class="tnum">Figure&nbsp;2.</span> The single-token logprob head. A prompt is wrapped in a
 fixed instruction template and passed once through the LoRA-adapted
 SmolLM3-3B; the last-position logits over <code>{safe, unsafe}</code>
-are turned into
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(\text{unsafe})</annotation></semantics></math>
-by a temperature-scaled two-way softmax, and the prompt is flagged when
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo><mo>≥</mo><mi>τ</mi></mrow><annotation encoding="application/x-tex">P(\text{unsafe}) \ge \tau</annotation></semantics></math>.</figcaption>
+are turned into <span class="math inline">\(P(\text{unsafe})\)</span> by
+a temperature-scaled two-way softmax, and the prompt is flagged when
+<span class="math inline">\(P(\text{unsafe}) \ge
+\tau\)</span>.</figcaption>
 </figure>
 </section>
 <section id="model-selection-small-language-models" class="level3"
@@ -800,20 +802,18 @@ tokens.</p>
 <section id="calibration" class="level3" data-number="3.3">
 <h3 data-number="3.3"><span class="header-section-number">3.3</span>
 Calibration</h3>
-<p>The temperature
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
-(temperature scaling <span class="citation"
-data-cites="guo2017calibration">(Guo et al. 2017)</span>) and threshold
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-are the only post-training free parameters, and both are fit exclusively
-on an <strong>in-distribution dev split</strong> drawn from the four
-in-distribution benchmarks (BeaverTails, ToxicChat, Prompt Injections,
-Jailbreak Classification). The two in-house held-out benchmarks
-(JailbreakBench, XSTest) and the four novel benchmarks contribute zero
-rows to calibration; this is a deliberate correction of an earlier
-pipeline in which held-out dev rows had leaked into
-temperature/threshold fitting. The clean, leak-free calibration yields
-the values in <a class="xref" href="#tab:calibration">Table&nbsp;2</a>.</p>
+<p>The temperature <span class="math inline">\(T\)</span> (temperature
+scaling <span class="citation" data-cites="guo2017calibration">(Guo et
+al. 2017)</span>) and threshold <span
+class="math inline">\(\tau\)</span> are the only post-training free
+parameters, and both are fit exclusively on an <strong>in-distribution
+dev split</strong> drawn from the four in-distribution benchmarks
+(BeaverTails, ToxicChat, Prompt Injections, Jailbreak Classification).
+The two in-house held-out benchmarks (JailbreakBench, XSTest) and the
+four novel benchmarks contribute zero rows to calibration; this is a
+deliberate correction of an earlier pipeline in which held-out dev rows
+had leaked into temperature/threshold fitting. The clean, leak-free
+calibration yields the values in <a class="xref" href="#tab:calibration">Table&nbsp;2</a>.</p>
 <div id="tab:calibration" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;2.</span> Post-training calibration parameters, fit on the
 in-distribution dev split only.</div><div class="tscroll"><table>
 
@@ -825,22 +825,21 @@ in-distribution dev split only.</div><div class="tscroll"><table>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">Temperature
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math></td>
+<td style="text-align: left;">Temperature <span
+class="math inline">\(T\)</span></td>
 <td style="text-align: right;">2.10</td>
 </tr>
 <tr>
-<td style="text-align: left;">Decision threshold
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math></td>
+<td style="text-align: left;">Decision threshold <span
+class="math inline">\(\tau\)</span></td>
 <td style="text-align: right;">0.59</td>
 </tr>
 </tbody>
 </table></div></div>
-<p>Because
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-is tuned on in-distribution dev data, a single global threshold is
-structurally in-distribution-optimized; we treat this as a limitation
-and, for cross-model comparison, additionally report matched-FPR and
+<p>Because <span class="math inline">\(\tau\)</span> is tuned on
+in-distribution dev data, a single global threshold is structurally
+in-distribution-optimized; we treat this as a limitation and, for
+cross-model comparison, additionally report matched-FPR and
 threshold-free operating points rather than relying on the tuned point
 alone.</p>
 </section>
@@ -872,11 +871,10 @@ summarizes the recipe.</p>
 </tr>
 <tr>
 <td style="text-align: left;">Adapter</td>
-<td style="text-align: left;">LoRA, rank
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mn>32</mn></mrow><annotation encoding="application/x-tex">r=32</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>64</mn></mrow><annotation encoding="application/x-tex">\alpha=64</annotation></semantics></math>,
-dropout
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.05</mn><annotation encoding="application/x-tex">0.05</annotation></semantics></math></td>
+<td style="text-align: left;">LoRA, rank <span
+class="math inline">\(r=32\)</span>, <span
+class="math inline">\(\alpha=64\)</span>, dropout <span
+class="math inline">\(0.05\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">Target modules</td>
@@ -884,9 +882,8 @@ dropout
 </tr>
 <tr>
 <td style="text-align: left;">Loss</td>
-<td style="text-align: left;">Completion-only (verdict token
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>+</mi><annotation encoding="application/x-tex">+</annotation></semantics></math>
-EOS)</td>
+<td style="text-align: left;">Completion-only (verdict token <span
+class="math inline">\(+\)</span> EOS)</td>
 </tr>
 <tr>
 <td style="text-align: left;">Trainable params</td>
@@ -924,15 +921,15 @@ Task and label mapping</h3>
 <p>The guard is a binary classifier that emits a single-token verdict,
 <code>safe</code> or <code>unsafe</code>. We read the logits at the last
 position, take a softmax over the <code>{safe, unsafe}</code> token
-pair, and treat the resulting
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(\text{unsafe})</annotation></semantics></math>
-as the decision score. A prompt is labeled <code>unsafe</code> if it
-should be blocked (harmful content, successful jailbreak/injection,
-policy-violating request) and <code>safe</code> otherwise; the
-over-refusal axis contributes benign-but-superficially-risky prompts
-whose core signal is unnecessary refusal, alongside contrast items that
-preserve the binary safe/unsafe framing. All evaluations reduce to this
-one score per row, obtained in a single forward pass.</p>
+pair, and treat the resulting <span
+class="math inline">\(P(\text{unsafe})\)</span> as the decision score. A
+prompt is labeled <code>unsafe</code> if it should be blocked (harmful
+content, successful jailbreak/injection, policy-violating request) and
+<code>safe</code> otherwise; the over-refusal axis contributes
+benign-but-superficially-risky prompts whose core signal is unnecessary
+refusal, alongside contrast items that preserve the binary safe/unsafe
+framing. All evaluations reduce to this one score per row, obtained in a
+single forward pass.</p>
 </section>
 <section id="benchmarks-and-terminology" class="level3"
 data-number="3.6">
@@ -952,20 +949,20 @@ of them; three are source-family held-out and OR-Bench-Hard is a
 held-out configuration of a family also seen in training (§<a class="xref" href="#sec:decontam">3.9</a>).</p></li>
 </ul>
 <p>All splits are near-balanced after filtering (<a class="xref" href="#tab:benchmarks">Table&nbsp;4</a>). HarmBench is an all-harmful
-stress set (no negatives), so it is scored by mean
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(\text{unsafe})</annotation></semantics></math>
-rather than F1/AUPRC and is <strong>excluded</strong> from any aggregate
-AUPRC.</p>
+stress set (no negatives), so it is scored by mean <span
+class="math inline">\(P(\text{unsafe})\)</span> rather than F1/AUPRC and
+is <strong>excluded</strong> from any aggregate AUPRC.</p>
 <div id="tab:benchmarks" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;4.</span> Benchmarks: source, safety axis, split role, and test
 statistics. Sources are Hugging Face datasets at
-<code>huggingface.co/datasets/</code><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo stretchy="false" form="prefix">⟨</mo><annotation encoding="application/x-tex">\langle</annotation></semantics></math><code>source</code><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo stretchy="false" form="postfix">⟩</mo><annotation encoding="application/x-tex">\rangle</annotation></semantics></math>.
-“Test n (uns:safe)” is the balanced test-split size and its unsafe:safe
-composition (each class capped at 400). The four in-distribution and two
-in-house-held-out sets form the 2<span>,</span>018-row in-house pool;
-the three balanced novel sets total
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>800</mn><mo>+</mo><mn>420</mn><mo>+</mo><mn>800</mn><mo>=</mo><mn>2</mn><mo>,</mo><mn>020</mn></mrow><annotation encoding="application/x-tex">800+420+800=2{,}020</annotation></semantics></math>
-rows (WildJailbreak is smaller because its balanced <code>eval</code>
-split yields 210 per class after filtering; per-set AUPRC in <a class="xref" href="#tab:novel-auprc">Table&nbsp;9</a>); HarmBench is 200 all-unsafe
+<code>huggingface.co/datasets/</code><span
+class="math inline">\(\langle\)</span><code>source</code><span
+class="math inline">\(\rangle\)</span>. “Test n (uns:safe)” is the
+balanced test-split size and its unsafe:safe composition (each class
+capped at 400). The four in-distribution and two in-house-held-out sets
+form the 2<span>,</span>018-row in-house pool; the three balanced novel
+sets total <span class="math inline">\(800+420+800=2{,}020\)</span> rows
+(WildJailbreak is smaller because its balanced <code>eval</code> split
+yields 210 per class after filtering; per-set AUPRC in <a class="xref" href="#tab:novel-auprc">Table&nbsp;9</a>); HarmBench is 200 all-unsafe
 rows scored separately. OR-Bench-Hard is balanced by construction — its
 benign over-refusal half is <code>or-bench-hard-1k</code> and its unsafe
 half is imported from <code>or-bench-toxic</code> — so its “over-refusal
@@ -1078,30 +1075,25 @@ still stresses benign-risky prompts and refusal behavior.</p>
 <p><strong>Train/dev/test separation (per benchmark).</strong> Only the
 four <em>in-distribution</em> sets contribute training and calibration
 data: each is split into a train portion (LoRA fine-tuning only), a dev
-portion (fitting
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-only), and a class-balanced test portion; the
-<strong>1<span>,</span>102</strong> in-distribution dev rows come
-exclusively from these four (JailbreakBench and XSTest contribute
-<em>zero</em> dev/train rows). The two <em>in-house-held-out</em> sets
-and the four <em>novel</em> sets are <strong>test-only</strong>: the
-guard never sees them in training or calibration. Novel sets are
-additionally held out at the <em>source-family</em> level (the whole
-dataset family is excluded from training) with near-duplicate filtering,
-so held-out evaluation measures transfer rather than memorization. All
-test splits are near-balanced — within
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>6%
-of parity after filtering (<a class="xref" href="#tab:benchmarks">Table&nbsp;4</a>) —
-rather than exactly matched: Prompt Injections (32:36,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>6%
-off parity) and JailbreakBench (58:62,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>3%)
-are in fact slightly <em>further</em> from balance than the over-refusal
-probe XSTest (123:117,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>2.5%).
-HarmBench is all-unsafe (no negatives). <a class="xref" href="#fig:pools">Figure&nbsp;3</a> shows
+portion (fitting <span class="math inline">\(T\)</span> and <span
+class="math inline">\(\tau\)</span> only), and a class-balanced test
+portion; the <strong>1<span>,</span>102</strong> in-distribution dev
+rows come exclusively from these four (JailbreakBench and XSTest
+contribute <em>zero</em> dev/train rows). The two
+<em>in-house-held-out</em> sets and the four <em>novel</em> sets are
+<strong>test-only</strong>: the guard never sees them in training or
+calibration. Novel sets are additionally held out at the
+<em>source-family</em> level (the whole dataset family is excluded from
+training) with near-duplicate filtering, so held-out evaluation measures
+transfer rather than memorization. All test splits are near-balanced —
+within <span class="math inline">\(\approx\)</span>6% of parity after
+filtering (<a class="xref" href="#tab:benchmarks">Table&nbsp;4</a>) — rather than exactly matched:
+Prompt Injections (32:36, <span class="math inline">\(\approx\)</span>6%
+off parity) and JailbreakBench (58:62, <span
+class="math inline">\(\approx\)</span>3%) are in fact slightly
+<em>further</em> from balance than the over-refusal probe XSTest
+(123:117, <span class="math inline">\(\approx\)</span>2.5%). HarmBench
+is all-unsafe (no negatives). <a class="xref" href="#fig:pools">Figure&nbsp;3</a> shows
 the split-and-evaluation flow.</p>
 <figure id="fig:pools" data-latex-placement="t">
 
@@ -1136,10 +1128,9 @@ model is described separately in <span class="citation"
 data-cites="fedorov2024llamaguard3_1b">(Fedorov et al. 2024)</span>; we
 do not use it.)</p></li>
 <li><p><strong>ShieldGemma-2b</strong> — its guideline prompt, scored by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">Yes</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(\text{Yes})</annotation></semantics></math>.
-ShieldGemma is a content-policy / general-guideline guard and is used
-somewhat outside its designed regime here; it is not an injection
-detector.</p></li>
+<span class="math inline">\(P(\text{Yes})\)</span>. ShieldGemma is a
+content-policy / general-guideline guard and is used somewhat outside
+its designed regime here; it is not an injection detector.</p></li>
 <li><p><strong>Keyword matcher</strong> — a simple substring/keyword
 baseline.</p></li>
 </ul>
@@ -1148,8 +1139,7 @@ baseline.</p></li>
 single-token logprob head and no training, on the identical 2,018 test
 rows as the tuned guard. To keep the comparison fair, the base receives
 its <em>own</em> clean calibration — a base-specific temperature and
-threshold
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7.00</mn><mo>,</mo><mi>τ</mi><mo>=</mo><mn>0.51</mn></mrow><annotation encoding="application/x-tex">T{=}7.00,\tau{=}0.51</annotation></semantics></math>),
+threshold (<span class="math inline">\(T{=}7.00,\tau{=}0.51\)</span>),
 fit on the identical in-distribution dev split with the identical
 NLL-plus-F1 protocol used for the tuned guard — so each model is read at
 its own best in-distribution operating point rather than a shared or
@@ -1164,19 +1154,18 @@ Metrics and which comparisons carry CIs</h3>
 threshold, and the threshold-free summaries AUPRC and AUROC. Because
 only our guard receives a dev-tuned threshold while baselines are fixed
 operating points, we additionally compare all tunable systems at
-<strong>matched-FPR@0.10</strong> (threshold chosen so FPR
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>=</mo><mn>0.10</mn></mrow><annotation encoding="application/x-tex">=0.10</annotation></semantics></math>
-on the in-distribution dev split) and rely on AUPRC as the fair
-threshold-free summary. Uncertainty is reported by the bootstrap over
-the shared evaluation rows (2<span>,</span>000 resamples). We
-distinguish two uses precisely: a <em>single-system</em> interval (e.g.,
-the guard’s pooled AUPRC) is an ordinary percentile bootstrap CI,
-whereas a <em>paired-bootstrap</em> CI is on the <em>difference</em>
-between two systems scored on the same rows (e.g., base
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>−</mi><annotation encoding="application/x-tex">-</annotation></semantics></math>
-tuned); we use “paired” only for the latter. These row bootstraps
-capture conditional sampling variation given fixed weights, not
-training-run or across-benchmark variance (§<a class="xref" href="#sec:limitations">5.11</a>).
+<strong>matched-FPR@0.10</strong> (threshold chosen so FPR <span
+class="math inline">\(=0.10\)</span> on the in-distribution dev split)
+and rely on AUPRC as the fair threshold-free summary. Uncertainty is
+reported by the bootstrap over the shared evaluation rows
+(2<span>,</span>000 resamples). We distinguish two uses precisely: a
+<em>single-system</em> interval (e.g., the guard’s pooled AUPRC) is an
+ordinary percentile bootstrap CI, whereas a <em>paired-bootstrap</em> CI
+is on the <em>difference</em> between two systems scored on the same
+rows (e.g., base <span class="math inline">\(-\)</span> tuned); we use
+“paired” only for the latter. These row bootstraps capture conditional
+sampling variation given fixed weights, not training-run or
+across-benchmark variance (§<a class="xref" href="#sec:limitations">5.11</a>).
 Pairwise agreement/disagreement between systems is tested with McNemar,
 which tests discordance in the binary predictions rather than equality
 of F1. Latency is measured at true batch=1 (p50/p90).</p>
@@ -1216,22 +1205,21 @@ the four novel benchmarks (WildGuardTest, WildJailbreak, HarmBench) are
 held out at the source-<em>family</em> level, so the guard is evaluated
 on data from families it never saw in training. <strong>OR-Bench-Hard is
 the exception and we are explicit about it:</strong> it is a held-out
-<em>configuration</em> (<code>or-bench-hard-1k</code>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>+</mi><annotation encoding="application/x-tex">+</annotation></semantics></math>
-<code>or-bench-toxic</code>) of <code>bench-llm/or-bench</code>, and
-training draws 1<span>,</span>000 safe prompts from a <em>different</em>
-configuration (<code>or-bench-80k</code>) of the same family.
-OR-Bench-Hard is therefore training-unseen at the row level but not
-family-disjoint; readers who require strict source-family OOD should
-read the novel aggregate as the WildGuardTest/WildJailbreak pair plus
-the family-overlapping OR-Bench-Hard, and the fully family-disjoint
-evidence as the two Wild sets (where the
-base-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>-tuned
-ordering also holds). The row-level filter we execute is normalized
-exact-string exclusion, not a full near-duplicate sweep; we describe
-near-duplicate detection as the recommended companion protocol rather
-than claiming an exhaustively executed sweep of the release
-pipeline.</p>
+<em>configuration</em> (<code>or-bench-hard-1k</code> <span
+class="math inline">\(+\)</span> <code>or-bench-toxic</code>) of
+<code>bench-llm/or-bench</code>, and training draws 1<span>,</span>000
+safe prompts from a <em>different</em> configuration
+(<code>or-bench-80k</code>) of the same family. OR-Bench-Hard is
+therefore training-unseen at the row level but not family-disjoint;
+readers who require strict source-family OOD should read the novel
+aggregate as the WildGuardTest/WildJailbreak pair plus the
+family-overlapping OR-Bench-Hard, and the fully family-disjoint evidence
+as the two Wild sets (where the base-<span
+class="math inline">\(&gt;\)</span>-tuned ordering also holds). The
+row-level filter we execute is normalized exact-string exclusion, not a
+full near-duplicate sweep; we describe near-duplicate detection as the
+recommended companion protocol rather than claiming an exhaustively
+executed sweep of the release pipeline.</p>
 </section>
 </section>
 <section id="sec:impl" class="level2" data-number="4">
@@ -1258,18 +1246,15 @@ released with the code (<code>requirements.txt</code>).</p>
 data-number="4.3">
 <h3 data-number="4.3"><span class="header-section-number">4.3</span>
 Model configuration and hyperparameters</h3>
-<p>Fine-tuning uses LoRA
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mn>32</mn></mrow><annotation encoding="application/x-tex">r=32</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>64</mn></mrow><annotation encoding="application/x-tex">\alpha=64</annotation></semantics></math>,
-dropout 0.05) on all seven projection matrices (q, k, v, o, gate, up,
-down) with a completion-only objective on the verdict token plus EOS:
-60.5M trainable parameters (1.93% of 3.14B), bf16 model weights on the
-MPS laptop that produced the released adapter (also bf16 on CUDA), 300
-optimizer steps in
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>71
-minutes, seed 42. The bf16 weights make the model’s logits — and hence
-the softmax scores — heavily tied, which is why tie-aware AUPRC/AUROC
-matter here (§<a class="xref" href="#sec:metric-correction">5.11</a>). The
+<p>Fine-tuning uses LoRA (<span class="math inline">\(r=32\)</span>,
+<span class="math inline">\(\alpha=64\)</span>, dropout 0.05) on all
+seven projection matrices (q, k, v, o, gate, up, down) with a
+completion-only objective on the verdict token plus EOS: 60.5M trainable
+parameters (1.93% of 3.14B), bf16 model weights on the MPS laptop that
+produced the released adapter (also bf16 on CUDA), 300 optimizer steps
+in <span class="math inline">\(\approx\)</span>71 minutes, seed 42. The
+bf16 weights make the model’s logits — and hence the softmax scores —
+heavily tied, which is why tie-aware AUPRC/AUROC matter here (§<a class="xref" href="#sec:metric-correction">5.11</a>). The
 full recipe is in <a class="xref" href="#tab:lora">Table&nbsp;3</a> and the post-training calibration values
 in <a class="xref" href="#tab:calibration">Table&nbsp;2</a>.</p>
 </section>
@@ -1297,12 +1282,10 @@ byte-exact reruns.</p>
 <h3 data-number="4.5"><span class="header-section-number">4.5</span>
 System architecture</h3>
 <p><a class="xref" href="#fig:pipeline">Figure&nbsp;1</a> shows the end-to-end pipeline (data
-splits
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-fine-tuning and calibration
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-frozen evaluation) and <a class="xref" href="#fig:logprob-head">Figure&nbsp;2</a>
-the single-token logprob head that all systems are read through.</p>
+splits <span class="math inline">\(\to\)</span> fine-tuning and
+calibration <span class="math inline">\(\to\)</span> frozen evaluation)
+and <a class="xref" href="#fig:logprob-head">Figure&nbsp;2</a> the single-token logprob head
+that all systems are read through.</p>
 </section>
 </section>
 <section id="sec:results" class="level2" data-number="5">
@@ -1321,13 +1304,12 @@ ShieldGemma’s novel runs are pending and the novel sets are reported as
 a separate pool in <a href="#subsec:novel"
 data-reference-type="ref+Label" data-reference="subsec:novel">5.3</a>.
 Matched-FPR@0.10 sets each tunable system’s threshold so that its FPR is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.10</mn><annotation encoding="application/x-tex">0.10</annotation></semantics></math>
-<em>on the in-distribution dev split</em>; the realized <em>test</em>
-FPRs then differ (guard 0.051, Llama-Guard-3-1B 0.101, ShieldGemma-2b
-0.125; <a class="xref" href="#tab:matched-fpr">Table&nbsp;8</a>), so the systems are matched on
-dev, not exactly on test. gpt-5.4-mini is reported at its fixed native
-decision point (no tunable threshold), so it is not directly comparable
-at matched FPR.</p>
+<span class="math inline">\(0.10\)</span> <em>on the in-distribution dev
+split</em>; the realized <em>test</em> FPRs then differ (guard 0.051,
+Llama-Guard-3-1B 0.101, ShieldGemma-2b 0.125; <a class="xref" href="#tab:matched-fpr">Table&nbsp;8</a>),
+so the systems are matched on dev, not exactly on test. gpt-5.4-mini is
+reported at its fixed native decision point (no tunable threshold), so
+it is not directly comparable at matched FPR.</p>
 <div id="tab:main-inhouse" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;5.</span> Main comparison on the in-house pool (2,018 balanced test
 rows). AUPRC is threshold-free; recall/F1/FPR are reported at
 matched-FPR@0.10; gpt-5.4-mini is shown at its fixed native decision
@@ -1416,13 +1398,12 @@ therefore useful but not benign: it reaches pooled micro-F1 0.794, yet
 the overall deployed FPR is 0.306, so this is not a plug-and-play
 operating point for production.</p>
 <div id="tab:perbench" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;6.</span> Per-benchmark in-house results. Threshold-free AUPRC (unsafe =
-positive) for each system, and
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>tuned
-F1 at each model’s clean in-distribution calibration. Sets marked
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>†</mi><annotation encoding="application/x-tex">\dagger</annotation></semantics></math>
-are in-house held-out (test-only, zero train/dev rows); the rest are
-in-distribution. “n (uns:safe)” is the balanced test size. Novel per-set
-AUPRC is in <a class="xref" href="#tab:novel-auprc">Table&nbsp;9</a>.</div><div class="tscroll"><table>
+positive) for each system, and base<span
+class="math inline">\(\to\)</span>tuned F1 at each model’s clean
+in-distribution calibration. Sets marked <span
+class="math inline">\(\dagger\)</span> are in-house held-out (test-only,
+zero train/dev rows); the rest are in-distribution. “n (uns:safe)” is
+the balanced test size. Novel per-set AUPRC is in <a class="xref" href="#tab:novel-auprc">Table&nbsp;9</a>.</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -1432,8 +1413,8 @@ AUPRC is in <a class="xref" href="#tab:novel-auprc">Table&nbsp;9</a>.</div><div 
 <th style="text-align: right;">Base</th>
 <th style="text-align: right;">Llama-G-3-1B</th>
 <th style="text-align: right;">ShieldGemma-2b</th>
-<th style="text-align: right;">F1
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>tuned</th>
+<th style="text-align: right;">F1 base<span
+class="math inline">\(\to\)</span>tuned</th>
 </tr>
 </thead>
 <tbody>
@@ -1444,9 +1425,8 @@ base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics
 <td style="text-align: right;">0.618</td>
 <td style="text-align: right;">0.553</td>
 <td style="text-align: right;">0.653</td>
-<td style="text-align: right;">0.691
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.716</td>
+<td style="text-align: right;">0.691 <span
+class="math inline">\(\to\)</span> 0.716</td>
 </tr>
 <tr>
 <td style="text-align: left;">ToxicChat</td>
@@ -1455,9 +1435,8 @@ base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics
 <td style="text-align: right;">0.854</td>
 <td style="text-align: right;">0.661</td>
 <td style="text-align: right;">0.951</td>
-<td style="text-align: right;">0.766
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.915</td>
+<td style="text-align: right;">0.766 <span
+class="math inline">\(\to\)</span> 0.915</td>
 </tr>
 <tr>
 <td style="text-align: left;">Prompt Injections</td>
@@ -1466,9 +1445,8 @@ base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics
 <td style="text-align: right;">0.783</td>
 <td style="text-align: right;">0.790</td>
 <td style="text-align: right;">0.656</td>
-<td style="text-align: right;">0.690
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.828</td>
+<td style="text-align: right;">0.690 <span
+class="math inline">\(\to\)</span> 0.828</td>
 </tr>
 <tr>
 <td style="text-align: left;">Jailbreak Classification</td>
@@ -1477,33 +1455,30 @@ base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics
 <td style="text-align: right;">0.448</td>
 <td style="text-align: right;">0.660</td>
 <td style="text-align: right;">0.820</td>
-<td style="text-align: right;">0.339
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.980</td>
+<td style="text-align: right;">0.339 <span
+class="math inline">\(\to\)</span> 0.980</td>
 </tr>
 <tr>
-<td
-style="text-align: left;">JailbreakBench<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>†</mo></msup><annotation encoding="application/x-tex">^\dagger</annotation></semantics></math></td>
+<td style="text-align: left;">JailbreakBench<span
+class="math inline">\(^\dagger\)</span></td>
 <td style="text-align: left;">120 (58:62)</td>
 <td style="text-align: right;">0.805</td>
 <td style="text-align: right;"><strong>0.963</strong></td>
 <td style="text-align: right;">0.801</td>
 <td style="text-align: right;">0.676</td>
-<td style="text-align: right;">0.809
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.821</td>
+<td style="text-align: right;">0.809 <span
+class="math inline">\(\to\)</span> 0.821</td>
 </tr>
 <tr>
-<td
-style="text-align: left;">XSTest<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>†</mo></msup><annotation encoding="application/x-tex">^\dagger</annotation></semantics></math></td>
+<td style="text-align: left;">XSTest<span
+class="math inline">\(^\dagger\)</span></td>
 <td style="text-align: left;">240 (123:117)</td>
 <td style="text-align: right;">0.862</td>
 <td style="text-align: right;"><strong>0.975</strong></td>
 <td style="text-align: right;">0.724</td>
 <td style="text-align: right;">0.822</td>
-<td style="text-align: right;">0.856
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.833</td>
+<td style="text-align: right;">0.856 <span
+class="math inline">\(\to\)</span> 0.833</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Pooled
@@ -1513,9 +1488,8 @@ style="text-align: left;">XSTest<math display="inline" xmlns="http://www.w3.org/
 <td style="text-align: right;">0.697</td>
 <td style="text-align: right;">0.624</td>
 <td style="text-align: right;">0.710</td>
-<td style="text-align: right;">0.713
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.794</td>
+<td style="text-align: right;">0.713 <span
+class="math inline">\(\to\)</span> 0.794</td>
 </tr>
 </tbody>
 </table></div></div>
@@ -1534,18 +1508,15 @@ core measurement warning of the paper is therefore simple: a comparison
 at each model’s preferred operating point can change who appears best.
 This inversion is not merely a point-estimate artifact: on a paired
 bootstrap over the identical 2<span>,</span>018 in-house rows (tie-aware
-AP),
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>AUPRC(ShieldGemma
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>−</mi><annotation encoding="application/x-tex">-</annotation></semantics></math>
-Llama-Guard)
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>=</mo><mi>+</mi><mn>0.085</mn></mrow><annotation encoding="application/x-tex">= +0.085</annotation></semantics></math>
-[0.052, 0.118] and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>native-F1
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>=</mo><mi>−</mi><mn>0.249</mn></mrow><annotation encoding="application/x-tex">= -0.249</annotation></semantics></math>
-[<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.283</mn></mrow><annotation encoding="application/x-tex">-0.283</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.218</mn></mrow><annotation encoding="application/x-tex">-0.218</annotation></semantics></math>],
-both excluding zero, so the two systems swap order with statistical
-support in <em>both</em> directions.</p>
+AP), <span class="math inline">\(\Delta\)</span>AUPRC(ShieldGemma <span
+class="math inline">\(-\)</span> Llama-Guard) <span
+class="math inline">\(= +0.085\)</span> [0.052, 0.118] and <span
+class="math inline">\(\Delta\)</span>native-F1 <span
+class="math inline">\(= -0.249\)</span> [<span
+class="math inline">\(-0.283\)</span>, <span
+class="math inline">\(-0.218\)</span>], both excluding zero, so the two
+systems swap order with statistical support in <em>both</em>
+directions.</p>
 <figure id="fig:operating-point-flip" data-latex-placement="t">
 <img src="figures/fig3_operating_point_flip.svg" alt="Figure" loading="lazy"/>
 <figcaption><span class="tnum">Figure&nbsp;5.</span> ShieldGemma-2b versus Llama-Guard-3-1B under
@@ -1561,9 +1532,9 @@ paired-bootstrap 95% CIs on the in-house-pooled AUPRC for all three
 systems (identical 2<span>,</span>018 rows, 2<span>,</span>000
 resamples). The guard leads with non-overlapping CIs. The AUROC ordering
 matches AUPRC, and the ShieldGemma-vs-Llama-Guard rank inversion (§<a class="xref" href="#sec:operating-point-fairness">5.2</a>) persists under
-AUROC (0.740 vs. 0.662); the
-ShieldGemma<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>Llama-Guard
-AUPRC gap has a paired CI excluding zero (§<a class="xref" href="#sec:operating-point-fairness">5.2</a>). “in-h.” =
+AUROC (0.740 vs. 0.662); the ShieldGemma<span
+class="math inline">\(&gt;\)</span>Llama-Guard AUPRC gap has a paired CI
+excluding zero (§<a class="xref" href="#sec:operating-point-fairness">5.2</a>). “in-h.” =
 in-house.</div><div class="tscroll"><table>
 
 <tbody>
@@ -1625,21 +1596,19 @@ in-house.</div><div class="tscroll"><table>
 </tr>
 </tbody>
 </table></div></div>
-<p>At a dev-matched
-FPR<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>=</mo><annotation encoding="application/x-tex">=</annotation></semantics></math>0.10
+<p>At a dev-matched FPR<span class="math inline">\(=\)</span>0.10
 operating point, all tunable systems become conservative. The realized
 <em>test</em> FPRs are not identical — guard 0.051, Llama-Guard-3-1B
 0.101, ShieldGemma-2b 0.125 — so “matched-FPR@0.10” is matched on the
 <em>dev</em> split rather than exactly on test; on the test pool the
 guard is in fact held to a stricter operating point than the baselines
 (<a class="xref" href="#tab:matched-fpr">Table&nbsp;8</a>).</p>
-<div id="tab:matched-fpr" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;8.</span> Dev-matched
-FPR<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>=</mo><annotation encoding="application/x-tex">=</annotation></semantics></math>0.10
-operating point (threshold set so
-FPR<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>=</mo><annotation encoding="application/x-tex">=</annotation></semantics></math>0.10
-on the in-distribution dev split; realized <em>test</em> FPRs differ and
-are shown in the FPR column). gpt-5.4-mini and the keyword matcher are
-at their fixed native points.</div><div class="tscroll"><table>
+<div id="tab:matched-fpr" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;8.</span> Dev-matched FPR<span class="math inline">\(=\)</span>0.10
+operating point (threshold set so FPR<span
+class="math inline">\(=\)</span>0.10 on the in-distribution dev split;
+realized <em>test</em> FPRs differ and are shown in the FPR column).
+gpt-5.4-mini and the keyword matcher are at their fixed native
+points.</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -1695,21 +1664,19 @@ Novel held-out benchmarks (guard never trained on them)</h3>
 <p>This is the paper’s clearest empirical result. On the three balanced
 benchmarks the guard never trained on (two of them fully
 source-family-disjoint; OR-Bench-Hard family-overlapping, §<a class="xref" href="#sec:decontam">3.9</a>), the ranking is untuned base
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>
-tuned guard
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>
-Llama-Guard-3-1B, and the first two gaps are supported by
-non-overlapping aggregate CIs.</p>
+<span class="math inline">\(&gt;\)</span> tuned guard <span
+class="math inline">\(&gt;\)</span> Llama-Guard-3-1B, and the first two
+gaps are supported by non-overlapping aggregate CIs.</p>
 <div id="tab:novel-auprc" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;9.</span> Threshold-free AUPRC (tie-aware) on the novel held-out
 benchmarks. The untuned base outranks the tuned guard, which in turn
 beats Llama-Guard-3-1B; the aggregate is over the three balanced sets
-(2,020 rows) and excludes HarmBench.
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>‡</mo></msup><annotation encoding="application/x-tex">^\ddagger</annotation></semantics></math>OR-Bench-Hard
-is a held-out <em>configuration</em> of <code>bench-llm/or-bench</code>,
-a family that also supplies 1<span>,</span>000 training prompts, so it
-is training-unseen but not source-family-disjoint (§<a class="xref" href="#sec:decontam">3.9</a>); the
-base-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>-tuned
-ordering also holds on the two family-disjoint sets alone.</div><div class="tscroll"><table>
+(2,020 rows) and excludes HarmBench. <span
+class="math inline">\(^\ddagger\)</span>OR-Bench-Hard is a held-out
+<em>configuration</em> of <code>bench-llm/or-bench</code>, a family that
+also supplies 1<span>,</span>000 training prompts, so it is
+training-unseen but not source-family-disjoint (§<a class="xref" href="#sec:decontam">3.9</a>); the
+base-<span class="math inline">\(&gt;\)</span>-tuned ordering also holds
+on the two family-disjoint sets alone.</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -1733,8 +1700,8 @@ ordering also holds on the two family-disjoint sets alone.</div><div class="tscr
 <td style="text-align: right;">0.578</td>
 </tr>
 <tr>
-<td
-style="text-align: left;">orbench_hard<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>‡</mo></msup><annotation encoding="application/x-tex">^\ddagger</annotation></semantics></math></td>
+<td style="text-align: left;">orbench_hard<span
+class="math inline">\(^\ddagger\)</span></td>
 <td style="text-align: right;">0.938</td>
 <td style="text-align: right;">0.836</td>
 <td style="text-align: right;">0.725</td>
@@ -1765,29 +1732,28 @@ guard (0.780), which in turn beats Llama-Guard-3-1B (0.685), with
 non-overlapping 95% CIs.</figcaption>
 </figure>
 <p>The tuned guard still beats Llama-Guard-3-1B decisively: 0.780
-[0.751, 0.809] versus 0.685 [0.657, 0.715] (paired
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>AUPRC
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.095</mn></mrow><annotation encoding="application/x-tex">+0.095</annotation></semantics></math>
-[0.063, 0.126]). But the more important point is attribution. The
-<em>untuned</em> base ranks higher still at 0.884 [0.869, 0.899] (paired
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>AUPRC
-over the tuned guard
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.104</mn></mrow><annotation encoding="application/x-tex">+0.104</annotation></semantics></math>
-[0.077, 0.133]), while best-threshold F1 is essentially tied across base
-and tuned guard (0.792 vs. 0.796). So the tuned guard’s novel-set
-advantage over Llama-Guard is real, but it is inherited from the base
-rather than created by LoRA. Fine-tuning preserves peak achievable F1
-and worsens the score ranking across thresholds.</p>
+[0.751, 0.809] versus 0.685 [0.657, 0.715] (paired <span
+class="math inline">\(\Delta\)</span>AUPRC <span
+class="math inline">\(+0.095\)</span> [0.063, 0.126]). But the more
+important point is attribution. The <em>untuned</em> base ranks higher
+still at 0.884 [0.869, 0.899] (paired <span
+class="math inline">\(\Delta\)</span>AUPRC over the tuned guard <span
+class="math inline">\(+0.104\)</span> [0.077, 0.133]), while
+best-threshold F1 is essentially tied across base and tuned guard (0.792
+vs. 0.796). So the tuned guard’s novel-set advantage over Llama-Guard is
+real, but it is inherited from the base rather than created by LoRA.
+Fine-tuning preserves peak achievable F1 and worsens the score ranking
+across thresholds.</p>
 <p>This novel aggregate is one of the manuscript’s decisive comparisons:
 the guard beats Llama-Guard-3-1B with non-overlapping system-level CIs,
 and the untuned base outranks the tuned guard by the same criterion. The
 aggregate is over the three balanced novel sets (2,020 rows);
 <strong>HarmBench is excluded</strong>. On HarmBench, mean predicted
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(\text{unsafe})</annotation></semantics></math>
-follows the same ordering (base 0.967, guard 0.780, Llama-Guard-3-1B
-0.390), but that comparison is calibration-dependent and only
-suggestive. ShieldGemma-2b remains <strong>pending</strong> on the novel
-benchmarks, so we make no ShieldGemma novel-set claim.</p>
+<span class="math inline">\(P(\text{unsafe})\)</span> follows the same
+ordering (base 0.967, guard 0.780, Llama-Guard-3-1B 0.390), but that
+comparison is calibration-dependent and only suggestive. ShieldGemma-2b
+remains <strong>pending</strong> on the novel benchmarks, so we make no
+ShieldGemma novel-set claim.</p>
 </section>
 <section id="subsec:frontier" class="level3" data-number="5.4">
 <h3 data-number="5.4"><span class="header-section-number">5.4</span>
@@ -1798,21 +1764,17 @@ shows no statistically significant F1 difference.</p>
 <div id="tab:frontier" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;10.</span> Guard versus gpt-5.4-mini on paired rows: no statistically
 significant F1 difference (not an equivalence test) at roughly 4x lower
 batch=1 latency. All 2<span>,</span>018 rows are paired (gpt answered
-every row; <strong>0</strong> abstentions/API errors), and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>F1
-is computed from the <em>unrounded</em> per-row F1 (guard 0.7943, gpt
-0.7834), giving
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.011</mn></mrow><annotation encoding="application/x-tex">+0.011</annotation></semantics></math>;
-subtracting the rounded display values instead gives
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.010</mn><annotation encoding="application/x-tex">0.010</annotation></semantics></math>.
-This frontier comparison uses the re-grounded gpt run (gpt F1
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.783</mn><annotation encoding="application/x-tex">0.783</annotation></semantics></math>),
-which changed 131 of 2<span>,</span>018 predictions versus the initial
-run displayed at gpt’s native operating point elsewhere (F1
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.784</mn><annotation encoding="application/x-tex">0.784</annotation></semantics></math>,
-<a class="xref" href="#tab:main-inhouse">Table&nbsp;5</a>); the two runs differ by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>0.001</mn></mrow><annotation encoding="application/x-tex">&lt;0.001</annotation></semantics></math>
-in F1.</div><div class="tscroll"><table>
+every row; <strong>0</strong> abstentions/API errors), and <span
+class="math inline">\(\Delta\)</span>F1 is computed from the
+<em>unrounded</em> per-row F1 (guard 0.7943, gpt 0.7834), giving <span
+class="math inline">\(+0.011\)</span>; subtracting the rounded display
+values instead gives <span class="math inline">\(0.010\)</span>. This
+frontier comparison uses the re-grounded gpt run (gpt F1 <span
+class="math inline">\(0.783\)</span>), which changed 131 of
+2<span>,</span>018 predictions versus the initial run displayed at gpt’s
+native operating point elsewhere (F1 <span
+class="math inline">\(0.784\)</span>, <a class="xref" href="#tab:main-inhouse">Table&nbsp;5</a>); the two runs differ by <span
+class="math inline">\(&lt;0.001\)</span> in F1.</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -1822,22 +1784,20 @@ in F1.</div><div class="tscroll"><table>
 </thead>
 <tbody>
 <tr>
-<td
-style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>F1
-(guard
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>−</mi><annotation encoding="application/x-tex">-</annotation></semantics></math>
-gpt)</td>
-<td
-style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.011</mn></mrow><annotation encoding="application/x-tex">+0.011</annotation></semantics></math></td>
+<td style="text-align: left;"><span
+class="math inline">\(\Delta\)</span>F1 (guard <span
+class="math inline">\(-\)</span> gpt)</td>
+<td style="text-align: left;"><span
+class="math inline">\(+0.011\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">95% CI</td>
-<td
-style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mi>−</mi><mn>0.004</mn><mo>,</mo><mn>0.026</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[-0.004, 0.026]</annotation></semantics></math></td>
+<td style="text-align: left;"><span class="math inline">\([-0.004,
+0.026]\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;">McNemar
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math></td>
+<td style="text-align: left;">McNemar <span
+class="math inline">\(p\)</span></td>
 <td style="text-align: left;">0.14</td>
 </tr>
 <tr>
@@ -1857,9 +1817,8 @@ at parity with gpt-5.4-mini on F1 at roughly 4x lower latency (124 ms vs
 ~512 ms per request).</figcaption>
 </figure>
 <p>This comparison should be read narrowly. The F1 difference is not
-significant (McNemar
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>0.14</mn></mrow><annotation encoding="application/x-tex">p=0.14</annotation></semantics></math>;
-CI spans zero), so we report <strong>no statistically significant
+significant (McNemar <span class="math inline">\(p=0.14\)</span>; CI
+spans zero), so we report <strong>no statistically significant
 difference</strong> — which is a failure to detect a gap, <em>not</em>
 an equivalence result; we did not pre-register a non-inferiority margin,
 so we do not claim the guard “equals” gpt. Note also that McNemar tests
@@ -1908,21 +1867,18 @@ in-house; the stronger claim is out-of-distribution, where its novel
 aggregate AUPRC reaches 0.884.</p>
 <p>The second takeaway is about what LoRA actually buys. On the
 identical 2,018 paired rows, aggregate F1 rises from 0.713 to 0.794
-(delta
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.081</mn></mrow><annotation encoding="application/x-tex">+0.081</annotation></semantics></math>,
-95% CI [0.062, 0.100], McNemar
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>&lt;</mo><mn>1</mn><mi mathvariant="normal">e</mi><mrow><mi>−</mi><mn>4</mn></mrow></mrow><annotation encoding="application/x-tex">p &lt; 1\mathrm{e}{-4}</annotation></semantics></math>),
-but almost all of that gain is in-distribution. On the two in-house
-held-out benchmarks the delta is essentially flat (JailbreakBench
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.012</mn></mrow><annotation encoding="application/x-tex">+0.012</annotation></semantics></math>,
-XSTest
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.023</mn></mrow><annotation encoding="application/x-tex">-0.023</annotation></semantics></math>;
-macro
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.005</mn></mrow><annotation encoding="application/x-tex">-0.005</annotation></semantics></math>).
-The threshold-free view is sharper still: tuning raises in-house AUPRC
-from 0.697 to 0.833 while lowering the novel aggregate from 0.884 to
-0.780. In other words, LoRA improves fit to the training regime and
-weakens out-of-distribution ranking robustness.</p>
+(delta <span class="math inline">\(+0.081\)</span>, 95% CI [0.062,
+0.100], McNemar <span class="math inline">\(p &lt;
+1\mathrm{e}{-4}\)</span>), but almost all of that gain is
+in-distribution. On the two in-house held-out benchmarks the delta is
+essentially flat (JailbreakBench <span
+class="math inline">\(+0.012\)</span>, XSTest <span
+class="math inline">\(-0.023\)</span>; macro <span
+class="math inline">\(-0.005\)</span>). The threshold-free view is
+sharper still: tuning raises in-house AUPRC from 0.697 to 0.833 while
+lowering the novel aggregate from 0.884 to 0.780. In other words, LoRA
+improves fit to the training regime and weakens out-of-distribution
+ranking robustness.</p>
 <p>Why does the pooled in-house score still favor tuning so strongly?
 The base has two specific blind spots: BeaverTails, where it over-flags
 edgy benign prompts, and jailbreak_classification, which it nearly
@@ -1937,36 +1893,31 @@ discrimination, we also report the alignment-free macro-AUPRC
 (unweighted mean of the six per-benchmark AUPRCs in <a class="xref" href="#tab:perbench">Table&nbsp;6</a>): guard <strong>0.866</strong>
 vs. base <strong>0.774</strong>. The tuned-over-base ranking therefore
 holds under macro-AUPRC as well as pooled, so it is not a pooling
-artifact. But the gap shrinks from
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.136</mn><annotation encoding="application/x-tex">0.136</annotation></semantics></math>
-pooled
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.833</mn><annotation encoding="application/x-tex">0.833</annotation></semantics></math>
-vs. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.697</mn><annotation encoding="application/x-tex">0.697</annotation></semantics></math>)
-to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.092</mn><annotation encoding="application/x-tex">0.092</annotation></semantics></math>
-macro, which quantifies the split: roughly
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.092</mn><annotation encoding="application/x-tex">0.092</annotation></semantics></math>
-of the in-house advantage is within-set discrimination and roughly
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.044</mn><annotation encoding="application/x-tex">0.044</annotation></semantics></math>
-is the cross-benchmark score alignment that pooling additionally credits
-— consistent with tuning making scores more comparable across sets, and
-with the base’s larger pooled-vs-macro drop
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.697</mn><mspace width="-0.167em"></mspace><mo>→</mo><mspace width="-0.167em"></mspace><mn>0.774</mn></mrow><annotation encoding="application/x-tex">0.697\!\to\!0.774</annotation></semantics></math>
-vs. the guard’s
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.833</mn><mspace width="-0.167em"></mspace><mo>→</mo><mspace width="-0.167em"></mspace><mn>0.866</mn></mrow><annotation encoding="application/x-tex">0.833\!\to\!0.866</annotation></semantics></math>).</p>
+artifact. But the gap shrinks from <span
+class="math inline">\(0.136\)</span> pooled (<span
+class="math inline">\(0.833\)</span> vs. <span
+class="math inline">\(0.697\)</span>) to <span
+class="math inline">\(0.092\)</span> macro, which quantifies the split:
+roughly <span class="math inline">\(0.092\)</span> of the in-house
+advantage is within-set discrimination and roughly <span
+class="math inline">\(0.044\)</span> is the cross-benchmark score
+alignment that pooling additionally credits — consistent with tuning
+making scores more comparable across sets, and with the base’s larger
+pooled-vs-macro drop (<span
+class="math inline">\(0.697\!\to\!0.774\)</span> vs. the guard’s <span
+class="math inline">\(0.833\!\to\!0.866\)</span>).</p>
 <div id="tab:base-vs-tuned" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;11.</span> Per-benchmark base-vs-tuned F1 decomposition on the identical
 2,018 in-house test rows, each model at its own clean in-distribution
-calibration (tuned
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>2.10</mn><mo>,</mo><mi>τ</mi><mo>=</mo><mn>0.59</mn></mrow><annotation encoding="application/x-tex">T{=}2.10,\tau{=}0.59</annotation></semantics></math>;
-base
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7.00</mn><mo>,</mo><mi>τ</mi><mo>=</mo><mn>0.51</mn></mrow><annotation encoding="application/x-tex">T{=}7.00,\tau{=}0.51</annotation></semantics></math>).
-Positive deltas are concentrated in-distribution; the two in-house
-held-out benchmarks move only marginally (macro
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.005</mn></mrow><annotation encoding="application/x-tex">-0.005</annotation></semantics></math>).
-Deltas are computed from unrounded F1 and can therefore differ by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>±</mi><mn>0.001</mn></mrow><annotation encoding="application/x-tex">\pm0.001</annotation></semantics></math>
-from subtracting the rounded columns shown here (ToxicChat,
-BeaverTails); the figure uses the same unrounded deltas.</div><div class="tscroll"><table>
+calibration (tuned <span
+class="math inline">\(T{=}2.10,\tau{=}0.59\)</span>; base <span
+class="math inline">\(T{=}7.00,\tau{=}0.51\)</span>). Positive deltas
+are concentrated in-distribution; the two in-house held-out benchmarks
+move only marginally (macro <span
+class="math inline">\(-0.005\)</span>). Deltas are computed from
+unrounded F1 and can therefore differ by <span
+class="math inline">\(\pm0.001\)</span> from subtracting the rounded
+columns shown here (ToxicChat, BeaverTails); the figure uses the same
+unrounded deltas.</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -1983,48 +1934,48 @@ BeaverTails); the figure uses the same unrounded deltas.</div><div class="tscrol
 <td style="text-align: left;">in-dist</td>
 <td style="text-align: right;">0.339</td>
 <td style="text-align: right;">0.980</td>
-<td
-style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.641</mn></mrow><annotation encoding="application/x-tex">+0.641</annotation></semantics></math></td>
+<td style="text-align: right;"><span
+class="math inline">\(+0.641\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">toxicchat</td>
 <td style="text-align: left;">in-dist</td>
 <td style="text-align: right;">0.766</td>
 <td style="text-align: right;">0.915</td>
-<td
-style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.150</mn></mrow><annotation encoding="application/x-tex">+0.150</annotation></semantics></math></td>
+<td style="text-align: right;"><span
+class="math inline">\(+0.150\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">prompt_injections</td>
 <td style="text-align: left;">in-dist</td>
 <td style="text-align: right;">0.690</td>
 <td style="text-align: right;">0.828</td>
-<td
-style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.138</mn></mrow><annotation encoding="application/x-tex">+0.138</annotation></semantics></math></td>
+<td style="text-align: right;"><span
+class="math inline">\(+0.138\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">beavertails</td>
 <td style="text-align: left;">in-dist</td>
 <td style="text-align: right;">0.691</td>
 <td style="text-align: right;">0.716</td>
-<td
-style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.024</mn></mrow><annotation encoding="application/x-tex">+0.024</annotation></semantics></math></td>
+<td style="text-align: right;"><span
+class="math inline">\(+0.024\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">jailbreakbench</td>
 <td style="text-align: left;">in-house held-out</td>
 <td style="text-align: right;">0.809</td>
 <td style="text-align: right;">0.821</td>
-<td
-style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.012</mn></mrow><annotation encoding="application/x-tex">+0.012</annotation></semantics></math></td>
+<td style="text-align: right;"><span
+class="math inline">\(+0.012\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">xstest</td>
 <td style="text-align: left;">in-house held-out</td>
 <td style="text-align: right;">0.856</td>
 <td style="text-align: right;">0.833</td>
-<td
-style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.023</mn></mrow><annotation encoding="application/x-tex">-0.023</annotation></semantics></math></td>
+<td style="text-align: right;"><span
+class="math inline">\(-0.023\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Aggregate (paired
@@ -2032,16 +1983,14 @@ rows)</strong></td>
 <td style="text-align: left;"></td>
 <td style="text-align: right;"><strong>0.713</strong></td>
 <td style="text-align: right;"><strong>0.794</strong></td>
-<td
-style="text-align: right;"><strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.081</mn></mrow><annotation encoding="application/x-tex">+0.081</annotation></semantics></math>
-[0.062, 0.100]</strong></td>
+<td style="text-align: right;"><strong><span
+class="math inline">\(+0.081\)</span> [0.062, 0.100]</strong></td>
 </tr>
 </tbody>
 </table></div></div>
 <figure id="fig:base-vs-tuned" data-latex-placement="t">
 <img src="figures/fig4_base_vs_tuned.svg" alt="Figure" loading="lazy"/>
-<figcaption><span class="tnum">Figure&nbsp;9.</span> Per-benchmark base
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
+<figcaption><span class="tnum">Figure&nbsp;9.</span> Per-benchmark base <span class="math inline">\(\to\)</span>
 tuned F1 delta. LoRA gains are positive in-distribution and
 flat-to-negative on the in-house held-out benchmarks.</figcaption>
 </figure>
@@ -2061,44 +2010,38 @@ measurable gain is mostly regime-specific.</p>
 A narrow theoretical rationale</h4>
 <p>The OOD result above is empirical, but there is a clean reason to
 care about preserving the base model’s unsafe-vs-safe ordering. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">b(x)</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">t(x)</annotation></semantics></math>
-be the base and tuned unsafe scores, and let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>X</mi><mo>+</mo></msup><annotation encoding="application/x-tex">X^+</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>X</mi><mo>−</mo></msup><annotation encoding="application/x-tex">X^-</annotation></semantics></math>
-be independent unsafe and safe prompts from an OOD distribution. AUROC
-has the pairwise form
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mi mathvariant="normal">Pr</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">[</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>&gt;</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo><mo>+</mo><mstyle displaystyle="false"><mfrac><mn>1</mn><mn>2</mn></mfrac></mstyle><mrow><mi mathvariant="normal">Pr</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">[</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">\mathrm{AUROC}(s)
+<span class="math inline">\(b(x)\)</span> and <span
+class="math inline">\(t(x)\)</span> be the base and tuned unsafe scores,
+and let <span class="math inline">\(X^+\)</span> and <span
+class="math inline">\(X^-\)</span> be independent unsafe and safe
+prompts from an OOD distribution. AUROC has the pairwise form <span
+class="math display">\[\mathrm{AUROC}(s)
 = \Pr[s(X^+) &gt; s(X^-)]
-+ \tfrac{1}{2}\Pr[s(X^+) = s(X^-)].</annotation></semantics></math>
-Therefore, if tuning changes the base model’s pairwise comparison on at
-most an
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ε</mi><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math>
-fraction of unsafe–safe pairs, then
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>≥</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>ε</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \varepsilon.</annotation></semantics></math>
-A sharper one-sided version counts only the fraction of pairs whose
-comparison worsens. Moreover, if the tuned score stays uniformly close
-to the base score,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mi>t</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mi>δ</mi></mrow><annotation encoding="application/x-tex">|t(x)-b(x)| \le \delta</annotation></semantics></math>,
-then only pairs with base margin
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>2</mn><mi>δ</mi></mrow><annotation encoding="application/x-tex">|b(X^+) - b(X^-)| \le 2\delta</annotation></semantics></math>
-can flip, which gives
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>≥</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mrow><mi mathvariant="normal">Pr</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">[</mo><mo stretchy="false" form="prefix">|</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>2</mn><mi>δ</mi><mo stretchy="false" form="postfix">]</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \Pr[|b(X^+) - b(X^-)| \le 2\delta].</annotation></semantics></math>
-<a href="#app:rank-preservation" data-reference-type="ref+Label"
++ \tfrac{1}{2}\Pr[s(X^+) = s(X^-)].\]</span> Therefore, if tuning
+changes the base model’s pairwise comparison on at most an <span
+class="math inline">\(\varepsilon\)</span> fraction of unsafe–safe
+pairs, then <span class="math display">\[\mathrm{AUROC}(t) \ge
+\mathrm{AUROC}(b) - \varepsilon.\]</span> A sharper one-sided version
+counts only the fraction of pairs whose comparison worsens. Moreover, if
+the tuned score stays uniformly close to the base score, <span
+class="math inline">\(|t(x)-b(x)| \le \delta\)</span>, then only pairs
+with base margin <span class="math inline">\(|b(X^+) - b(X^-)| \le
+2\delta\)</span> can flip, which gives <span
+class="math display">\[\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) -
+\Pr[|b(X^+) - b(X^-)| \le 2\delta].\]</span> <a
+href="#app:rank-preservation" data-reference-type="ref+Label"
 data-reference="app:rank-preservation">8</a> gives a short proof. On a
 fixed tie-free test set, the appendix also gives a finite-sample AP
-bound: if tuning reverses
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-unsafe–safe pairs relative to the base ranking, then
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">P</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">P</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mi>K</mi><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><msub><mi>n</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">|\mathrm{AP}(t)-\mathrm{AP}(b)| \le K/(2n_+)</annotation></semantics></math>,
-with a sharper rank-discounted form showing that flips near the top of
-the ranking hurt most. The point of these results is narrow but useful:
-they explain why base-rank preservation is a sensible OOD objective and
-why AUPRC can be much more fragile than AUROC. The theory does
-<em>not</em> prove our empirical AUPRC numbers from first principles; it
-only characterizes one mechanism by which ranking damage appears.</p>
+bound: if tuning reverses <span class="math inline">\(K\)</span>
+unsafe–safe pairs relative to the base ranking, then <span
+class="math inline">\(|\mathrm{AP}(t)-\mathrm{AP}(b)| \le
+K/(2n_+)\)</span>, with a sharper rank-discounted form showing that
+flips near the top of the ranking hurt most. The point of these results
+is narrow but useful: they explain why base-rank preservation is a
+sensible OOD objective and why AUPRC can be much more fragile than
+AUROC. The theory does <em>not</em> prove our empirical AUPRC numbers
+from first principles; it only characterizes one mechanism by which
+ranking damage appears.</p>
 </section>
 </section>
 <section id="sec:cross-family" class="level3" data-number="5.7">
@@ -2135,37 +2078,32 @@ objective — and can be resisted by a KL-regularized objective — is the
 subject of §<a class="xref" href="#sec:rl-vs-ft">5.8</a>.</p>
 <div id="tab:slm-sweep" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;12.</span> Six bases under the <em>identical</em> LoRA recipe,
 calibration, and frozen rows: in-house and novel (three balanced sets)
-AUPRC for the untuned base
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-tuned guard, the novel change
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi mathvariant="normal">Δ</mi><mtext mathvariant="normal">novel</mtext></msub><annotation encoding="application/x-tex">\Delta_{\text{novel}}</annotation></semantics></math>,
-matched-FPR@0.10 F1, and batch=1 latency. Bases span novel AUPRC
-0.60–0.89, but the tuned guards <em>converge</em> to 0.74–0.80: tuning
-degrades strong-OOD bases (SmolLM3), helps weak ones (DeepSeek), and is
-roughly neutral in between —
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi mathvariant="normal">Δ</mi><mtext mathvariant="normal">novel</mtext></msub><annotation encoding="application/x-tex">\Delta_{\text{novel}}</annotation></semantics></math>
-broadly decreases as base strength rises, but not monotonically. AUPRC
-values here use the pre-correction AP helper and are pending tie-aware
+AUPRC for the untuned base <span class="math inline">\(\to\)</span>
+tuned guard, the novel change <span
+class="math inline">\(\Delta_{\text{novel}}\)</span>, matched-FPR@0.10
+F1, and batch=1 latency. Bases span novel AUPRC 0.60–0.89, but the tuned
+guards <em>converge</em> to 0.74–0.80: tuning degrades strong-OOD bases
+(SmolLM3), helps weak ones (DeepSeek), and is roughly neutral in between
+— <span class="math inline">\(\Delta_{\text{novel}}\)</span> broadly
+decreases as base strength rises, but not monotonically. AUPRC values
+here use the pre-correction AP helper and are pending tie-aware
 regeneration (§<a class="xref" href="#sec:metric-correction">5.11</a>); the
-SmolLM3, Qwen2.5, and SmolLM2 rows shift by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≤</mo><mn>0.034</mn></mrow><annotation encoding="application/x-tex">\le 0.034</annotation></semantics></math>
-under tie-aware recomputation without changing the convergence pattern
-(e.g., SmolLM3 novel
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.886</mn><mspace width="-0.167em"></mspace><mo>→</mo><mspace width="-0.167em"></mspace><mn>0.884</mn></mrow><annotation encoding="application/x-tex">0.886\!\to\!0.884</annotation></semantics></math>
-base,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.781</mn><mspace width="-0.167em"></mspace><mo>→</mo><mspace width="-0.167em"></mspace><mn>0.780</mn></mrow><annotation encoding="application/x-tex">0.781\!\to\!0.780</annotation></semantics></math>
-tuned).</div><div class="tscroll"><table>
+SmolLM3, Qwen2.5, and SmolLM2 rows shift by <span
+class="math inline">\(\le 0.034\)</span> under tie-aware recomputation
+without changing the convergence pattern (e.g., SmolLM3 novel <span
+class="math inline">\(0.886\!\to\!0.884\)</span> base, <span
+class="math inline">\(0.781\!\to\!0.780\)</span> tuned).</div><div class="tscroll"><table>
 
 <thead>
 <tr>
 <th style="text-align: left;">Base</th>
 <th style="text-align: left;">Params</th>
-<th style="text-align: center;">in-house
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>tuned</th>
-<th style="text-align: center;">novel
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>tuned</th>
-<th
-style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi mathvariant="normal">Δ</mi><mtext mathvariant="normal">novel</mtext></msub><annotation encoding="application/x-tex">\Delta_{\text{novel}}</annotation></semantics></math></th>
+<th style="text-align: center;">in-house base<span
+class="math inline">\(\to\)</span>tuned</th>
+<th style="text-align: center;">novel base<span
+class="math inline">\(\to\)</span>tuned</th>
+<th style="text-align: center;"><span
+class="math inline">\(\Delta_{\text{novel}}\)</span></th>
 <th style="text-align: center;">mF1@.10 / lat. ms</th>
 </tr>
 </thead>
@@ -2173,79 +2111,67 @@ style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998
 <tr>
 <td style="text-align: left;">DeepSeek-R1-Distill (reasoning)</td>
 <td style="text-align: left;">1.5B</td>
-<td style="text-align: center;">0.522
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.813</td>
-<td style="text-align: center;">0.602
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.739</td>
-<td
-style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.137</mn></mrow><annotation encoding="application/x-tex">+0.137</annotation></semantics></math></td>
+<td style="text-align: center;">0.522 <span
+class="math inline">\(\to\)</span> 0.813</td>
+<td style="text-align: center;">0.602 <span
+class="math inline">\(\to\)</span> 0.739</td>
+<td style="text-align: center;"><span
+class="math inline">\(+0.137\)</span></td>
 <td style="text-align: center;">0.613 / 117</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen2.5-1.5B</td>
 <td style="text-align: left;">1.5B</td>
-<td style="text-align: center;">0.681
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.821</td>
-<td style="text-align: center;">0.795
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.758</td>
-<td
-style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.037</mn></mrow><annotation encoding="application/x-tex">-0.037</annotation></semantics></math></td>
+<td style="text-align: center;">0.681 <span
+class="math inline">\(\to\)</span> 0.821</td>
+<td style="text-align: center;">0.795 <span
+class="math inline">\(\to\)</span> 0.758</td>
+<td style="text-align: center;"><span
+class="math inline">\(-0.037\)</span></td>
 <td style="text-align: center;">0.607 / 84</td>
 </tr>
 <tr>
 <td style="text-align: left;">SmolLM2-1.7B</td>
 <td style="text-align: left;">1.7B</td>
-<td style="text-align: center;">0.635
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.845</td>
-<td style="text-align: center;">0.775
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.795</td>
-<td
-style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.020</mn></mrow><annotation encoding="application/x-tex">+0.020</annotation></semantics></math></td>
+<td style="text-align: center;">0.635 <span
+class="math inline">\(\to\)</span> 0.845</td>
+<td style="text-align: center;">0.775 <span
+class="math inline">\(\to\)</span> 0.795</td>
+<td style="text-align: center;"><span
+class="math inline">\(+0.020\)</span></td>
 <td style="text-align: center;">0.626 / 119</td>
 </tr>
 <tr>
 <td style="text-align: left;">SmolLM3-3B <em>(primary)</em></td>
 <td style="text-align: left;">3B</td>
-<td style="text-align: center;">0.696
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.844</td>
-<td style="text-align: center;"><strong>0.886</strong>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.781</td>
-<td
-style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.105</mn></mrow><annotation encoding="application/x-tex">-0.105</annotation></semantics></math></td>
+<td style="text-align: center;">0.696 <span
+class="math inline">\(\to\)</span> 0.844</td>
+<td style="text-align: center;"><strong>0.886</strong> <span
+class="math inline">\(\to\)</span> 0.781</td>
+<td style="text-align: center;"><span
+class="math inline">\(-0.105\)</span></td>
 <td style="text-align: center;">0.581 / 124</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen3-4B</td>
 <td style="text-align: left;">4B</td>
-<td style="text-align: center;">0.699
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-<strong>0.882</strong></td>
-<td style="text-align: center;">0.742
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.767</td>
-<td
-style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.025</mn></mrow><annotation encoding="application/x-tex">+0.025</annotation></semantics></math></td>
+<td style="text-align: center;">0.699 <span
+class="math inline">\(\to\)</span> <strong>0.882</strong></td>
+<td style="text-align: center;">0.742 <span
+class="math inline">\(\to\)</span> 0.767</td>
+<td style="text-align: center;"><span
+class="math inline">\(+0.025\)</span></td>
 <td style="text-align: center;"><strong>0.753</strong> / 112</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen3-8B</td>
 <td style="text-align: left;">8B</td>
-<td style="text-align: center;">0.748
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.880</td>
-<td style="text-align: center;">0.765
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-0.751</td>
-<td
-style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.014</mn></mrow><annotation encoding="application/x-tex">-0.014</annotation></semantics></math></td>
+<td style="text-align: center;">0.748 <span
+class="math inline">\(\to\)</span> 0.880</td>
+<td style="text-align: center;">0.765 <span
+class="math inline">\(\to\)</span> 0.751</td>
+<td style="text-align: center;"><span
+class="math inline">\(-0.014\)</span></td>
 <td style="text-align: center;">0.738 / 111</td>
 </tr>
 <tr>
@@ -2284,12 +2210,10 @@ training pool, and frozen evaluation rows fixed and varying
 <em>only</em> the objective:</p>
 <ul>
 <li><p><strong>DPO</strong> (Direct Preference Optimization): offline
-preference optimization on pairs (prompt; chosen
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>=</mo><annotation encoding="application/x-tex">=</annotation></semantics></math>
-correct verdict, rejected
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>=</mo><annotation encoding="application/x-tex">=</annotation></semantics></math>
-wrong verdict) with a reference-model KL. RLHF-family, though RL-free in
-its mathematics.</p></li>
+preference optimization on pairs (prompt; chosen <span
+class="math inline">\(=\)</span> correct verdict, rejected <span
+class="math inline">\(=\)</span> wrong verdict) with a reference-model
+KL. RLHF-family, though RL-free in its mathematics.</p></li>
 <li><p><strong>GRPO</strong> (Group Relative Policy Optimization):
 genuine online RL — sample verdicts, reward correctness,
 advantage-normalize within a group of samples, KL to the
@@ -2325,8 +2249,7 @@ sample — reward starvation does not apply. DPO fails on DeepSeek for the
 simpler reason that its KL penalty anchors to the reference, and
 DeepSeek’s base is the <em>worst</em> OOD ranker in the sweep (novel
 0.600): anchoring to a poor reference preserves its poor ranking (DPO
-0.585, GRPO 0.601, both
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>
+0.585, GRPO 0.601, both <span class="math inline">\(\approx\)</span>
 base), whereas unanchored SFT is free to drift upward (0.772). This
 sharpens the general claim: the reference KL preserves the base’s OOD
 ranking, which helps only when the base ranks well — so it rescues the
@@ -2335,22 +2258,19 @@ objective on strong bases (SmolLM3) and cannot on weak ones
 <div id="tab:rl-vs-ft" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;13.</span> Same base, pool, LoRA recipe, and frozen rows; only the
 fine-tuning <em>objective</em> varies (SFT vs. DPO vs. GRPO), all
 trained <em>and</em> scored on one CUDA stack. Threshold-free in-house
-and novel (three balanced sets) AUPRC;
-novel<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi></mi><mtext mathvariant="normal">base</mtext></msub><annotation encoding="application/x-tex">_{\text{base}}</annotation></semantics></math>
-is the untuned base. SFT leads in-house on every base, but
-out-of-distribution DPO matches or beats it on the non-reasoning bases
-(<strong>bold</strong> where DPO novel
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>
-SFT novel), and DPO/GRPO stay near
-novel<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi></mi><mtext mathvariant="normal">base</mtext></msub><annotation encoding="application/x-tex">_{\text{base}}</annotation></semantics></math>
+and novel (three balanced sets) AUPRC; novel<span
+class="math inline">\(_{\text{base}}\)</span> is the untuned base. SFT
+leads in-house on every base, but out-of-distribution DPO matches or
+beats it on the non-reasoning bases (<strong>bold</strong> where DPO
+novel <span class="math inline">\(&gt;\)</span> SFT novel), and DPO/GRPO
+stay near novel<span class="math inline">\(_{\text{base}}\)</span>
 rather than converging — the reference-model KL resists the collapse of
 <a class="xref" href="#tab:slm-sweep">Table&nbsp;12</a>. Qwen3-8B DPO did not fit training
-on a 40 GB card.
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>*</mo></msup><annotation encoding="application/x-tex">^\ast</annotation></semantics></math>reasoning-distilled
-base;
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>†</mo></msup><annotation encoding="application/x-tex">^\dagger</annotation></semantics></math>primary
-base. AUPRC values use the pre-correction AP helper (per-row scores for
-these runs were not cached); pending tie-aware regeneration (§<a class="xref" href="#sec:metric-correction">5.11</a>), and
+on a 40 GB card. <span
+class="math inline">\(^\ast\)</span>reasoning-distilled base; <span
+class="math inline">\(^\dagger\)</span>primary base. AUPRC values use
+the pre-correction AP helper (per-row scores for these runs were not
+cached); pending tie-aware regeneration (§<a class="xref" href="#sec:metric-correction">5.11</a>), and
 we treat this objective comparison as <em>exploratory</em> (see §<a class="xref" href="#sec:rl-vs-ft">5.8</a>).</div><div class="tscroll"><table>
 
 <thead>
@@ -2378,8 +2298,8 @@ Base</td>
 <td style="text-align: center;">novel</td>
 </tr>
 <tr>
-<td
-style="text-align: left;">DeepSeek-R1-Distill<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>*</mo></msup><annotation encoding="application/x-tex">^\ast</annotation></semantics></math></td>
+<td style="text-align: left;">DeepSeek-R1-Distill<span
+class="math inline">\(^\ast\)</span></td>
 <td style="text-align: left;">1.5B</td>
 <td style="text-align: center;">0.808</td>
 <td style="text-align: center;">0.772</td>
@@ -2412,8 +2332,8 @@ style="text-align: left;">DeepSeek-R1-Distill<math display="inline" xmlns="http:
 <td style="text-align: center;">0.774</td>
 </tr>
 <tr>
-<td
-style="text-align: left;">SmolLM3-3B<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>†</mo></msup><annotation encoding="application/x-tex">^\dagger</annotation></semantics></math></td>
+<td style="text-align: left;">SmolLM3-3B<span
+class="math inline">\(^\dagger\)</span></td>
 <td style="text-align: left;">3B</td>
 <td style="text-align: center;">0.881</td>
 <td style="text-align: center;">0.812</td>
@@ -2454,60 +2374,54 @@ fairly.</h5>
 <p>The in-distribution gap above could merely reflect under-tuned
 baselines, so we run a per-objective hyperparameter search on the
 primary base (SmolLM3-3B): Optuna TPE, 16 trials each over learning rate
-and LoRA rank (plus warmup for SFT and the KL strength
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>
-for DPO/GRPO), <em>selecting on in-distribution dev AUPRC</em> and
-tracking novel AUPRC without optimizing it (<a class="xref" href="#tab:hpo">Table&nbsp;14</a>). Two
-results follow. First, for SFT the learning rate <em>is</em> the OOD
-knob: across trials, higher lr raises dev AUPRC but lowers novel almost
-monotonically (dev-optimal lr
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2.2</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>4</mn></mrow></msup></mrow><annotation encoding="application/x-tex">2.2\times10^{-4}</annotation></semantics></math>
-gives novel 0.793; the gentlest lr
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3.2</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup></mrow><annotation encoding="application/x-tex">3.2\times10^{-5}</annotation></semantics></math>
-gives novel 0.896). Selecting on an in-distribution validation set —
-standard practice — therefore steers SFT straight into the
-OOD-collapsing regime. Second, once tuned, DPO is
-<em>Pareto-competitive</em> with SFT and higher on OOD in this search:
-its best-dev configuration reaches dev AUPRC 0.868 (matching SFT’s
-0.869) while holding novel at 0.890, a
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.097</mn></mrow><annotation encoding="application/x-tex">+0.097</annotation></semantics></math>
-OOD gap at equal in-distribution accuracy. We label this
-<strong>exploratory</strong>: the novel-OOD metric is inspected in every
-HPO trial (it is tracked, not held out), each configuration is trained
-once at 120 steps rather than the full 300, and the selected winner is
-not retrained-and-frozen — so we do not claim “DPO dominates SFT” as a
-confirmed result, only that a KL-regularized objective reaches OOD
-robustness without an in-distribution penalty in this search. The
-default DPO was simply under-trained in-distribution; a stronger KL
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\beta{=}0.5</annotation></semantics></math>)
-with a higher lr recovers in-distribution accuracy without surrendering
-OOD robustness. GRPO’s best configuration still cannot gain
-in-distribution (dev 0.685
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>
-base), consistent with the weak single-token reward. The claim is
-therefore not “RL beats SFT” unconditionally, but the sharper one that
-<em>in-distribution model selection actively degrades SFT’s OOD ranking,
-whereas a KL-regularized objective makes OOD robustness the default and,
-once tuned, is Pareto-competitive in-distribution.</em> This is the
-guard-ranking instance of a broader, concurrent finding that
+and LoRA rank (plus warmup for SFT and the KL strength <span
+class="math inline">\(\beta\)</span> for DPO/GRPO), <em>selecting on
+in-distribution dev AUPRC</em> and tracking novel AUPRC without
+optimizing it (<a class="xref" href="#tab:hpo">Table&nbsp;14</a>). Two results follow. First, for SFT the
+learning rate <em>is</em> the OOD knob: across trials, higher lr raises
+dev AUPRC but lowers novel almost monotonically (dev-optimal lr <span
+class="math inline">\(2.2\times10^{-4}\)</span> gives novel 0.793; the
+gentlest lr <span class="math inline">\(3.2\times10^{-5}\)</span> gives
+novel 0.896). Selecting on an in-distribution validation set — standard
+practice — therefore steers SFT straight into the OOD-collapsing regime.
+Second, once tuned, DPO is <em>Pareto-competitive</em> with SFT and
+higher on OOD in this search: its best-dev configuration reaches dev
+AUPRC 0.868 (matching SFT’s 0.869) while holding novel at 0.890, a <span
+class="math inline">\(+0.097\)</span> OOD gap at equal in-distribution
+accuracy. We label this <strong>exploratory</strong>: the novel-OOD
+metric is inspected in every HPO trial (it is tracked, not held out),
+each configuration is trained once at 120 steps rather than the full
+300, and the selected winner is not retrained-and-frozen — so we do not
+claim “DPO dominates SFT” as a confirmed result, only that a
+KL-regularized objective reaches OOD robustness without an
+in-distribution penalty in this search. The default DPO was simply
+under-trained in-distribution; a stronger KL (<span
+class="math inline">\(\beta{=}0.5\)</span>) with a higher lr recovers
+in-distribution accuracy without surrendering OOD robustness. GRPO’s
+best configuration still cannot gain in-distribution (dev 0.685 <span
+class="math inline">\(\approx\)</span> base), consistent with the weak
+single-token reward. The claim is therefore not “RL beats SFT”
+unconditionally, but the sharper one that <em>in-distribution model
+selection actively degrades SFT’s OOD ranking, whereas a KL-regularized
+objective makes OOD robustness the default and, once tuned, is
+Pareto-competitive in-distribution.</em> This is the guard-ranking
+instance of a broader, concurrent finding that
 constrained/KL-regularized fine-tuning objectives mitigate
 fine-tuning-induced degradation in general LLMs <span class="citation"
 data-cites="vennemeyer2026objective">(Vennemeyer et al. 2026)</span>; we
-do not claim the
-objective<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>robustness
-link as new, only its effect on guard <em>OOD ranking</em>.</p>
+do not claim the objective<span
+class="math inline">\(\to\)</span>robustness link as new, only its
+effect on guard <em>OOD ranking</em>.</p>
 <div id="tab:hpo" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;14.</span> Per-objective HPO on SmolLM3-3B (Optuna TPE, 16 trials,
 selected on in-distribution dev AUPRC; novel tracked, not optimized).
-Tuned DPO matches SFT in-distribution while keeping a
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.097</mn></mrow><annotation encoding="application/x-tex">+0.097</annotation></semantics></math>
-novel advantage. “SFT
-(novel<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>⋆</mo></msup><annotation encoding="application/x-tex">^\star</annotation></semantics></math>)”
-is the best novel <em>found</em> during the SFT search — reachable only
-by sacrificing the dev objective, i.e. by <em>not</em> selecting the
-model one would deploy. <em>Exploratory:</em> the novel-OOD metric is
-inspected in every HPO trial (§<a class="xref" href="#sec:rl-vs-ft">5.8</a>), so
-this is not a clean held-out test; AUPRC uses the pre-correction helper
-(§<a class="xref" href="#sec:metric-correction">5.11</a>).</div><div class="tscroll"><table>
+Tuned DPO matches SFT in-distribution while keeping a <span
+class="math inline">\(+0.097\)</span> novel advantage. “SFT (novel<span
+class="math inline">\(^\star\)</span>)” is the best novel <em>found</em>
+during the SFT search — reachable only by sacrificing the dev objective,
+i.e. by <em>not</em> selecting the model one would deploy.
+<em>Exploratory:</em> the novel-OOD metric is inspected in every HPO
+trial (§<a class="xref" href="#sec:rl-vs-ft">5.8</a>), so this is not a clean held-out
+test; AUPRC uses the pre-correction helper (§<a class="xref" href="#sec:metric-correction">5.11</a>).</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -2522,36 +2436,32 @@ this is not a clean held-out test; AUPRC uses the pre-correction helper
 <td style="text-align: left;">SFT</td>
 <td style="text-align: center;"><strong>0.869</strong></td>
 <td style="text-align: center;">0.793</td>
-<td style="text-align: left;">lr
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2.2</mn><mspace width="-0.167em"></mspace><mo>×</mo><mspace width="-0.167em"></mspace><msup><mn>10</mn><mrow><mi>−</mi><mn>4</mn></mrow></msup></mrow><annotation encoding="application/x-tex">2.2\!\times\!10^{-4}</annotation></semantics></math>,
-r32</td>
+<td style="text-align: left;">lr <span
+class="math inline">\(2.2\!\times\!10^{-4}\)</span>, r32</td>
 </tr>
 <tr>
-<td
-style="text-align: left;">(novel<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>⋆</mo></msup><annotation encoding="application/x-tex">^\star</annotation></semantics></math>)</td>
+<td style="text-align: left;">(novel<span
+class="math inline">\(^\star\)</span>)</td>
 <td style="text-align: center;">0.843</td>
 <td style="text-align: center;"><em>0.896</em></td>
-<td style="text-align: left;">lr
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3.2</mn><mspace width="-0.167em"></mspace><mo>×</mo><mspace width="-0.167em"></mspace><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup></mrow><annotation encoding="application/x-tex">3.2\!\times\!10^{-5}</annotation></semantics></math>,
-r16</td>
+<td style="text-align: left;">lr <span
+class="math inline">\(3.2\!\times\!10^{-5}\)</span>, r16</td>
 </tr>
 <tr>
 <td style="text-align: left;">DPO</td>
 <td style="text-align: center;">0.868</td>
 <td style="text-align: center;"><strong>0.890</strong></td>
-<td style="text-align: left;">lr
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2.9</mn><mspace width="-0.167em"></mspace><mo>×</mo><mspace width="-0.167em"></mspace><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup></mrow><annotation encoding="application/x-tex">2.9\!\times\!10^{-5}</annotation></semantics></math>,
-r64,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\beta{=}0.5</annotation></semantics></math></td>
+<td style="text-align: left;">lr <span
+class="math inline">\(2.9\!\times\!10^{-5}\)</span>, r64, <span
+class="math inline">\(\beta{=}0.5\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">GRPO</td>
 <td style="text-align: center;">0.685</td>
 <td style="text-align: center;"><strong>0.901</strong></td>
-<td style="text-align: left;">lr
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4.9</mn><mspace width="-0.167em"></mspace><mo>×</mo><mspace width="-0.167em"></mspace><msup><mn>10</mn><mrow><mi>−</mi><mn>6</mn></mrow></msup></mrow><annotation encoding="application/x-tex">4.9\!\times\!10^{-6}</annotation></semantics></math>,
-r64,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>=</mo><mn>0.01</mn></mrow><annotation encoding="application/x-tex">\beta{=}0.01</annotation></semantics></math></td>
+<td style="text-align: left;">lr <span
+class="math inline">\(4.9\!\times\!10^{-6}\)</span>, r64, <span
+class="math inline">\(\beta{=}0.01\)</span></td>
 </tr>
 </tbody>
 </table></div></div>
@@ -2563,48 +2473,39 @@ hardware.</h5>
 <p>The primary results were produced on Apple MPS and this sweep on
 NVIDIA A100s, so we separate the two hardware effects. Re-scoring the
 <em>same</em> SmolLM3 weights on both devices changes novel AUPRC by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≤</mo><mn>0.001</mn></mrow><annotation encoding="application/x-tex">\le 0.001</annotation></semantics></math>
-— rank-based AUPRC is insensitive to the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>∼</mo><mspace width="-0.167em"></mspace><msup><mn>10</mn><mrow><mi>−</mi><mn>3</mn></mrow></msup></mrow><annotation encoding="application/x-tex">\sim\!10^{-3}</annotation></semantics></math>
+<span class="math inline">\(\le 0.001\)</span> — rank-based AUPRC is
+insensitive to the <span class="math inline">\(\sim\!10^{-3}\)</span>
 logit differences between Metal and CUDA. Re-<em>training</em> SFT on
 CUDA, however, moves novel AUPRC across bases (<a class="xref" href="#tab:rl-vs-ft">Table&nbsp;13</a> SFT
-vs. <a class="xref" href="#tab:slm-sweep">Table&nbsp;12</a>) over the range
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.010</mn></mrow><annotation encoding="application/x-tex">-0.010</annotation></semantics></math>
-to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.061</mn></mrow><annotation encoding="application/x-tex">+0.061</annotation></semantics></math>
-(median
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mi>+</mi><mn>0.03</mn></mrow><annotation encoding="application/x-tex">\approx +0.03</annotation></semantics></math>),
-favoring CUDA on five of six bases: a genuine training-run effect from
-kernel and nondeterminism differences. This makes the MPS numbers a mild
-<em>tendency</em> toward OOD-pessimism rather than a uniform rule —
-Qwen3-4B is the exception
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.010</mn></mrow><annotation encoding="application/x-tex">-0.010</annotation></semantics></math>,
-CUDA slightly worse), and SmolLM2 barely moves
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.002</mn></mrow><annotation encoding="application/x-tex">+0.002</annotation></semantics></math>).
-The in-house column is also mixed (two of six deltas are slightly
-negative), so we do not lean on a directional hardware correction. The
-convergence and objective findings hold under both stacks; we report
-single-stack CUDA numbers for the objective comparison so that SFT, DPO,
-and GRPO differ only in objective.</p>
+vs. <a class="xref" href="#tab:slm-sweep">Table&nbsp;12</a>) over the range <span
+class="math inline">\(-0.010\)</span> to <span
+class="math inline">\(+0.061\)</span> (median <span
+class="math inline">\(\approx +0.03\)</span>), favoring CUDA on five of
+six bases: a genuine training-run effect from kernel and nondeterminism
+differences. This makes the MPS numbers a mild <em>tendency</em> toward
+OOD-pessimism rather than a uniform rule — Qwen3-4B is the exception
+(<span class="math inline">\(-0.010\)</span>, CUDA slightly worse), and
+SmolLM2 barely moves (<span class="math inline">\(+0.002\)</span>). The
+in-house column is also mixed (two of six deltas are slightly negative),
+so we do not lean on a directional hardware correction. The convergence
+and objective findings hold under both stacks; we report single-stack
+CUDA numbers for the objective comparison so that SFT, DPO, and GRPO
+differ only in objective.</p>
 </section>
 </section>
 <section id="sec:ensemble" class="level3" data-number="5.9">
 <h3 data-number="5.9"><span class="header-section-number">5.9</span>
-Mitigation: a
-base <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math> tuned
+Mitigation: a base <span class="math inline">\(\oplus\)</span> tuned
 ensemble recovers OOD ranking</h3>
 <p>The base-vs-tuned split suggests a cheap, training-free fix: if the
 untuned base is the better <em>out-of-distribution</em> ranker and the
 tuned guard the better <em>in-distribution</em> ranker, averaging their
 judgments should recover OOD robustness. Because AUPRC depends only on
 score <em>ranking</em> and the two models are calibrated very
-differently (base
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7.0</mn></mrow><annotation encoding="application/x-tex">T{=}7.0</annotation></semantics></math>
-vs tuned
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>2.1</mn></mrow><annotation encoding="application/x-tex">T{=}2.1</annotation></semantics></math>),
-we first map each model’s raw
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(\text{unsafe})</annotation></semantics></math>
-through its empirical CDF (probability integral transform) fitted on the
+differently (base <span class="math inline">\(T{=}7.0\)</span> vs tuned
+<span class="math inline">\(T{=}2.1\)</span>), we first map each model’s
+raw <span class="math inline">\(P(\text{unsafe})\)</span> through its
+empirical CDF (probability integral transform) fitted on the
 in-distribution in-house rows and then average the two normalized
 scores. The map is applied <em>per prompt</em> (no batch statistics), so
 the ensemble is exactly deployable; we fit it on in-distribution data
@@ -2618,21 +2519,18 @@ in <a class="xref" href="#tab:ensemble">Table&nbsp;15</a> as reference scores fr
 original rankings.</p>
 <p>The deployable ensemble beats <em>both</em> constituents on the
 <em>novel</em> benchmarks for both model families (<a class="xref" href="#tab:ensemble">Table&nbsp;15</a>). Its novel AUPRC is 0.896
-(SmolLM3) and 0.847 (Qwen2.5), exceeding the tuned guard by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.115</mn></mrow><annotation encoding="application/x-tex">+0.115</annotation></semantics></math>
-[0.093, 0.139] and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.089</mn></mrow><annotation encoding="application/x-tex">+0.089</annotation></semantics></math>
-[0.065, 0.112], and even the strong untuned base by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.010</mn></mrow><annotation encoding="application/x-tex">+0.010</annotation></semantics></math>
-[0.001, 0.020] and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.052</mn></mrow><annotation encoding="application/x-tex">+0.052</annotation></semantics></math>
-[0.037, 0.067] (paired bootstrap, all four CIs exclude zero). On the
-in-house held-out pool the picture is one-sided in the tuned guard’s
-favor but not the base’s: the ensemble beats the tuned guard on both
-families and the base on Qwen2.5 (0.864 vs. 0.828), while trailing the
-base on SmolLM3 (0.956 vs. 0.972) — the base is already very strong on
-the SmolLM3 held-out pair. The out-of-distribution recovery, which is
-the mitigation we claim, holds on both families. Even the parameter-free
+(SmolLM3) and 0.847 (Qwen2.5), exceeding the tuned guard by <span
+class="math inline">\(+0.115\)</span> [0.093, 0.139] and <span
+class="math inline">\(+0.089\)</span> [0.065, 0.112], and even the
+strong untuned base by <span class="math inline">\(+0.010\)</span>
+[0.001, 0.020] and <span class="math inline">\(+0.052\)</span> [0.037,
+0.067] (paired bootstrap, all four CIs exclude zero). On the in-house
+held-out pool the picture is one-sided in the tuned guard’s favor but
+not the base’s: the ensemble beats the tuned guard on both families and
+the base on Qwen2.5 (0.864 vs. 0.828), while trailing the base on
+SmolLM3 (0.956 vs. 0.972) — the base is already very strong on the
+SmolLM3 held-out pair. The out-of-distribution recovery, which is the
+mitigation we claim, holds on both families. Even the parameter-free
 raw-probability average — no normalization, trivially deployable per
 prompt — already beats the tuned guard OOD (0.883 / 0.791); the CDF
 normalization supplies the remainder. Ensembling the two
@@ -2645,44 +2543,38 @@ model’s in-distribution specialization and the base’s OOD robustness:
 equal weight (<a class="xref" href="#tab:ensemble">Table&nbsp;15</a>) maximizes the OOD gain but
 concedes some in-distribution <em>pooled</em> AUPRC, because the base is
 weak on two in-distribution benchmarks (§<a class="xref" href="#sec:base-vs-tuned">5.6</a>). A
-light blend
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>∼</mo><annotation encoding="application/x-tex">\sim</annotation></semantics></math>10%
-base) instead Pareto-improves the tuned model — both in-house pooled
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.844</mn><mspace width="-0.167em"></mspace><mo>→</mo><mspace width="-0.167em"></mspace><mn>0.847</mn></mrow><annotation encoding="application/x-tex">0.844\!\to\!0.847</annotation></semantics></math>)
-and novel
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.781</mn><mspace width="-0.167em"></mspace><mo>→</mo><mspace width="-0.167em"></mspace><mn>0.807</mn></mrow><annotation encoding="application/x-tex">0.781\!\to\!0.807</annotation></semantics></math>)
-rise (weight sweep in the released <code>ensemble_probe.py</code>).
-Either way, a purely inference-time combination — no retraining, no
-extra labels — converts the paper’s central negative (tuning degrades
-OOD ranking) into a positive: the base’s operating-point robustness is
-recoverable while keeping a tuned model in the loop. This is the
-guard-specific instance of an established result — that an ensemble of a
-standard and a robust model, calibrated only on in-distribution data,
-recovers OOD accuracy without sacrificing in-distribution accuracy <span
-class="citation" data-cites="kumar2022calibrated">(Kumar et al.
-2022)</span>; our
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math>tuned
-pairing (base
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>=</mo><annotation encoding="application/x-tex">=</annotation></semantics></math>
-robust OOD ranker, tuned
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>=</mo><annotation encoding="application/x-tex">=</annotation></semantics></math>
-in-distribution specialist) is a direct application, not a new
-ensembling method. We report this as an operating-point-independent
-(AUPRC) result on the established benchmarks; folding the ensemble into
-the matched-FPR and latency accounting (two forward passes) is left to
-§<a class="xref" href="#sec:future">7.1</a>.</p>
-<div id="tab:ensemble" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;15.</span> Deployable
-base <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math> tuned
-ensemble (threshold-free AUPRC). Each model’s score is normalized by an
-empirical-CDF map fit on in-distribution data and applied per prompt;
-evaluation is on rows <em>disjoint</em> from the fit set. Because the
-empirical CDF is a step function, it can introduce OOD ties, so the
-single-model endpoints are reported from the original rankings and the
-normalized scores are used only inside the ensemble. The equal-weight
-ensemble beats both the tuned guard and the untuned base
-out-of-distribution on both families (paired-bootstrap CIs vs. tuned and
-vs. base both exclude zero). AUPRC values use the pre-correction AP
-helper; pending tie-aware regeneration (§<a class="xref" href="#sec:metric-correction">5.11</a>).</div><div class="tscroll"><table>
+light blend (<span class="math inline">\(\sim\)</span>10% base) instead
+Pareto-improves the tuned model — both in-house pooled (<span
+class="math inline">\(0.844\!\to\!0.847\)</span>) and novel (<span
+class="math inline">\(0.781\!\to\!0.807\)</span>) rise (weight sweep in
+the released <code>ensemble_probe.py</code>). Either way, a purely
+inference-time combination — no retraining, no extra labels — converts
+the paper’s central negative (tuning degrades OOD ranking) into a
+positive: the base’s operating-point robustness is recoverable while
+keeping a tuned model in the loop. This is the guard-specific instance
+of an established result — that an ensemble of a standard and a robust
+model, calibrated only on in-distribution data, recovers OOD accuracy
+without sacrificing in-distribution accuracy <span class="citation"
+data-cites="kumar2022calibrated">(Kumar et al. 2022)</span>; our
+base<span class="math inline">\(\oplus\)</span>tuned pairing (base <span
+class="math inline">\(=\)</span> robust OOD ranker, tuned <span
+class="math inline">\(=\)</span> in-distribution specialist) is a direct
+application, not a new ensembling method. We report this as an
+operating-point-independent (AUPRC) result on the established
+benchmarks; folding the ensemble into the matched-FPR and latency
+accounting (two forward passes) is left to §<a class="xref" href="#sec:future">7.1</a>.</p>
+<div id="tab:ensemble" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;15.</span> Deployable base <span
+class="math inline">\(\oplus\)</span> tuned ensemble (threshold-free
+AUPRC). Each model’s score is normalized by an empirical-CDF map fit on
+in-distribution data and applied per prompt; evaluation is on rows
+<em>disjoint</em> from the fit set. Because the empirical CDF is a step
+function, it can introduce OOD ties, so the single-model endpoints are
+reported from the original rankings and the normalized scores are used
+only inside the ensemble. The equal-weight ensemble beats both the tuned
+guard and the untuned base out-of-distribution on both families
+(paired-bootstrap CIs vs. tuned and vs. base both exclude zero). AUPRC
+values use the pre-correction AP helper; pending tie-aware regeneration
+(§<a class="xref" href="#sec:metric-correction">5.11</a>).</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -2715,9 +2607,8 @@ System</td>
 <td style="text-align: center;">0.795</td>
 </tr>
 <tr>
-<td
-style="text-align: left;">base <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math> tuned
-(deployable)</td>
+<td style="text-align: left;">base <span
+class="math inline">\(\oplus\)</span> tuned (deployable)</td>
 <td style="text-align: center;">0.956</td>
 <td style="text-align: center;"><strong>0.896</strong></td>
 <td style="text-align: center;">0.864</td>
@@ -2846,24 +2737,23 @@ this corrects an earlier version of this paper — the in-domain fine-tune
 does <em>not</em> reliably beat the base on this set. Under the
 tie-aware metric (§<a class="xref" href="#sec:metric-correction">5.11</a>)
 Mortgage-SFT (0.895) and the untuned base (0.890) are statistically
-indistinguishable: the point gap is only
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.005</mn></mrow><annotation encoding="application/x-tex">+0.005</annotation></semantics></math>,
-the marginal CIs overlap almost entirely (0.895 [0.848, 0.938] vs. 0.890
-[0.852, 0.923]), and a tie-aware paired bootstrap on the 334 shared rows
-gives
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>AUPRC
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.005</mn></mrow><annotation encoding="application/x-tex">+0.005</annotation></semantics></math>
-[<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.034</mn></mrow><annotation encoding="application/x-tex">-0.034</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>0.041</mn></mrow><annotation encoding="application/x-tex">+0.041</annotation></semantics></math>],
-whose CI includes zero. (The earlier “winner changes” reading was an
-artifact of an order-dependent AP implementation that inflated
-Mortgage-SFT via a 68-row score tie.) The in-domain fine-tune does,
-however, clearly beat the <em>general-safety</em> guard (0.895
-vs. 0.820) and cut its false-positive rate (0.273 vs. 0.741). So the
-honest mortgage takeaway is narrower: a domain-specific fine-tune
-sharply reduces over-blocking relative to the general guard, but does
-not out-rank the strong untuned base by AUPRC — consistent with the
-general-OOD finding rather than opposed to it.</p>
+indistinguishable: the point gap is only <span
+class="math inline">\(+0.005\)</span>, the marginal CIs overlap almost
+entirely (0.895 [0.848, 0.938] vs. 0.890 [0.852, 0.923]), and a
+tie-aware paired bootstrap on the 334 shared rows gives <span
+class="math inline">\(\Delta\)</span>AUPRC <span
+class="math inline">\(+0.005\)</span> [<span
+class="math inline">\(-0.034\)</span>, <span
+class="math inline">\(+0.041\)</span>], whose CI includes zero. (The
+earlier “winner changes” reading was an artifact of an order-dependent
+AP implementation that inflated Mortgage-SFT via a 68-row score tie.)
+The in-domain fine-tune does, however, clearly beat the
+<em>general-safety</em> guard (0.895 vs. 0.820) and cut its
+false-positive rate (0.273 vs. 0.741). So the honest mortgage takeaway
+is narrower: a domain-specific fine-tune sharply reduces over-blocking
+relative to the general guard, but does not out-rank the strong untuned
+base by AUPRC — consistent with the general-OOD finding rather than
+opposed to it.</p>
 <div id="tab:mortgage-casestudy" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;17.</span> Results on the hardened mortgage benchmark (334 items). AUPRC
 is threshold-free (fair primary); Opt-F1 is the <em>oracle</em>
 best-threshold F1 (upper bound; threshold selected on the test labels
@@ -2968,44 +2858,38 @@ distinct guard scores and 24 distinct Llama-Guard scores across the
 are now computed with the tie-aware, non-interpolated definitions
 (grouped equal scores for AP; average ranks for AUROC;
 <code>scikit-learn</code>-canonical). The correction is small for the
-well-behaved sets — in-house pooled guard AUPRC
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.844</mn><mspace width="-0.167em"></mspace><mo>→</mo><mspace width="-0.167em"></mspace><mn>0.833</mn></mrow><annotation encoding="application/x-tex">0.844\!\to\!0.833</annotation></semantics></math>,
-novel aggregate base/guard/Llama
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.886</mn><mi>/</mi><mn>0.781</mn><mi>/</mi><mn>0.701</mn><mspace width="-0.167em"></mspace><mo>→</mo><mspace width="-0.167em"></mspace><mn>0.884</mn><mi>/</mi><mn>0.780</mn><mi>/</mi><mn>0.685</mn></mrow><annotation encoding="application/x-tex">0.886/0.781/0.701\!\to\!0.884/0.780/0.685</annotation></semantics></math>
+well-behaved sets — in-house pooled guard AUPRC <span
+class="math inline">\(0.844\!\to\!0.833\)</span>, novel aggregate
+base/guard/Llama <span
+class="math inline">\(0.886/0.781/0.701\!\to\!0.884/0.780/0.685\)</span>
 — and leaves every ordering and CI-disjointness conclusion intact (the
-ShieldGemma-vs-Llama flip, the
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>tuned
-OOD gap, and the guard’s decisive in-house and novel leads all survive).
-It is <em>not</em> small for one claim: the hardened-mortgage set gave
-Mortgage-SFT a 68-row score tie that the old helper resolved favorably,
-inflating its AP from a tie-aware
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.895</mn><annotation encoding="application/x-tex">0.895</annotation></semantics></math>
-to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.924</mn><annotation encoding="application/x-tex">0.924</annotation></semantics></math>;
-under the corrected metric Mortgage-SFT and the base are statistically
-indistinguishable (§<a class="xref" href="#sec:mortgage-casestudy">5.10</a>), and we have retracted
+ShieldGemma-vs-Llama flip, the base<span
+class="math inline">\(&gt;\)</span>tuned OOD gap, and the guard’s
+decisive in-house and novel leads all survive). It is <em>not</em> small
+for one claim: the hardened-mortgage set gave Mortgage-SFT a 68-row
+score tie that the old helper resolved favorably, inflating its AP from
+a tie-aware <span class="math inline">\(0.895\)</span> to <span
+class="math inline">\(0.924\)</span>; under the corrected metric
+Mortgage-SFT and the base are statistically indistinguishable (§<a class="xref" href="#sec:mortgage-casestudy">5.10</a>), and we have retracted
 the “winner changes” reading accordingly. The primary in-house, novel,
 and mortgage tables (Tables&nbsp;<a class="xref" href="#tab:main-inhouse">5</a>, <a class="xref" href="#tab:perbench">6</a>, <a class="xref" href="#tab:auprc-poolings">7</a>, <a class="xref" href="#tab:novel-auprc">9</a> and <a class="xref" href="#tab:mortgage-casestudy">17</a>)
 are fully recomputed tie-aware; the multi-base sweep, objective, HPO,
 and ensemble tables (Tables&nbsp;<a class="xref" href="#tab:slm-sweep">12</a>, <a class="xref" href="#tab:rl-vs-ft">13</a>, <a class="xref" href="#tab:hpo">14</a> and <a class="xref" href="#tab:ensemble">15</a>)
 are flagged for tie-aware regeneration (per-row scores for several of
-those runs were not cached), with observed shifts
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≤</mo><mn>0.034</mn></mrow><annotation encoding="application/x-tex">\le 0.034</annotation></semantics></math>
-that do not change the reported orderings.</p>
+those runs were not cached), with observed shifts <span
+class="math inline">\(\le 0.034\)</span> that do not change the reported
+orderings.</p>
 <p><strong>Deployed operating point over-blocks.</strong> At the
-deployed point
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>2.10</mn></mrow><annotation encoding="application/x-tex">T=2.10</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><mn>0.59</mn></mrow><annotation encoding="application/x-tex">\tau=0.59</annotation></semantics></math>)
-the guard’s overall FPR is 0.306 — roughly 31% of benign in-house
-prompts are flagged <code>unsafe</code>. This is a real deployment
-concern: a global
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-tuned for balanced F1 on in-dist dev data is too aggressive for many
-production settings, which would need a higher, application-specific
-threshold (trading recall for fewer false positives). We report the
-deployed point for transparency, but we do not recommend
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><mn>0.59</mn></mrow><annotation encoding="application/x-tex">\tau=0.59</annotation></semantics></math>
-as an out-of-the-box safe default.</p>
+deployed point (<span class="math inline">\(T=2.10\)</span>, <span
+class="math inline">\(\tau=0.59\)</span>) the guard’s overall FPR is
+0.306 — roughly 31% of benign in-house prompts are flagged
+<code>unsafe</code>. This is a real deployment concern: a global <span
+class="math inline">\(\tau\)</span> tuned for balanced F1 on in-dist dev
+data is too aggressive for many production settings, which would need a
+higher, application-specific threshold (trading recall for fewer false
+positives). We report the deployed point for transparency, but we do not
+recommend <span class="math inline">\(\tau=0.59\)</span> as an
+out-of-the-box safe default.</p>
 <p><strong>Operating point and matched-FPR conservatism.</strong> A
 single global threshold is structurally in-distribution-optimized, and
 guard rankings depend heavily on the decision threshold. Our
@@ -3055,11 +2939,11 @@ four novel held-out benchmarks are <strong>pending</strong> (Gemma-2
 stalls on the throttled MPS laptop) and are not reported here; we make
 no ShieldGemma novel-set claim.</p>
 <p><strong>HarmBench metric is calibration-dependent.</strong> The
-HarmBench comparison (mean
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">unsafe</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(\text{unsafe})</annotation></semantics></math>
-0.780 vs 0.390) compares raw probabilities across differently
-temperature-scaled models; it is suggestive, not decisive, and HarmBench
-is excluded from the aggregate AUPRC.</p>
+HarmBench comparison (mean <span
+class="math inline">\(P(\text{unsafe})\)</span> 0.780 vs 0.390) compares
+raw probabilities across differently temperature-scaled models; it is
+suggestive, not decisive, and HarmBench is excluded from the aggregate
+AUPRC.</p>
 <p><strong>Dataset licensing.</strong> ToxicChat is non-commercial; it
 is eval-only for any released model and cannot be used to train a
 distributed guard.</p>
@@ -3077,13 +2961,12 @@ generalization claims should therefore be read as suggestive;
 leave-one-benchmark-out and multi-seed analyses are needed to firm them
 up.</p>
 <p><strong>Balanced prevalence vs. production base rates.</strong> All
-pools are near-balanced (in-house
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>50%
-unsafe, mortgage 58%), whereas inline screening usually runs at much
-lower unsafe prevalence. Precision, F1, and AUPRC are
-prevalence-dependent, so the balanced-set numbers overstate production
-precision at a fixed FPR; a deployment audit should report
-precision/cost at the target base rate.</p>
+pools are near-balanced (in-house <span
+class="math inline">\(\approx\)</span>50% unsafe, mortgage 58%), whereas
+inline screening usually runs at much lower unsafe prevalence.
+Precision, F1, and AUPRC are prevalence-dependent, so the balanced-set
+numbers overstate production precision at a fixed FPR; a deployment
+audit should report precision/cost at the target base rate.</p>
 <p><strong>Prompt-label provenance (BeaverTails).</strong> BeaverTails’
 <code>is_safe</code> annotation is a QA-pair (response-in-context)
 safety label; our pipeline discards the response and uses it as a
@@ -3122,10 +3005,10 @@ landscape from each model’s <em>published, self-reported</em> results
 (<a class="xref" href="#tab:guardrail-published">Table&nbsp;19</a>) and then state plainly
 why those numbers cannot be read as a leaderboard.</p>
 <div id="tab:guardrail-specs" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;18.</span> Specialized guardrail models: specifications and deployment
-profile. VRAM is a BF16 estimate
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>2
-bytes/param); latency class is qualitative. “PI/JB” =
-prompt-injection/jailbreak detection. Sources in <a class="xref" href="#tab:guardrail-published">Table&nbsp;19</a>.</div><div class="tscroll"><table>
+profile. VRAM is a BF16 estimate (<span
+class="math inline">\(\approx\)</span>2 bytes/param); latency class is
+qualitative. “PI/JB” = prompt-injection/jailbreak detection. Sources in
+<a class="xref" href="#tab:guardrail-published">Table&nbsp;19</a>.</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -3241,10 +3124,10 @@ style="text-align: left;"><code>safe</code>/<code>unsafe</code>+cat</td>
 specialized guardrail models (each model’s own paper/card; “n/r” = not
 reported). <strong>These are not a controlled comparison</strong>:
 protocols, test splits, and label mappings differ across rows (e.g.,
-Qwen3Guard’s “strict” maps
-<em>controversial</em><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>unsafe;
-ShieldGemma re-runs some baselines). We include them for landscape
-context only; our controlled numbers are in Tables&nbsp;<a class="xref" href="#tab:main-inhouse">5</a> and <a class="xref" href="#tab:novel-auprc">9</a>.
+Qwen3Guard’s “strict” maps <em>controversial</em><span
+class="math inline">\(\to\)</span>unsafe; ShieldGemma re-runs some
+baselines). We include them for landscape context only; our controlled
+numbers are in Tables&nbsp;<a class="xref" href="#tab:main-inhouse">5</a> and <a class="xref" href="#tab:novel-auprc">9</a>.
 F1 unless noted.</div><div class="tscroll"><table>
 
 <thead>
@@ -3359,20 +3242,18 @@ benchmark (self-reported; not controlled).</h5>
 0.821) <span class="citation" data-cites="zeng2024shieldgemma">(Zeng et
 al. 2024)</span>; Qwen3Guard-4B leads ToxicChat (0.828) <span
 class="citation" data-cites="qwen3guard2025">(Qwen Team 2025)</span>;
-WildGuard-7B and Qwen3Guard-8B tie on WildGuardTest
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>≈</mo><annotation encoding="application/x-tex">\approx</annotation></semantics></math>0.889) <span
-class="citation" data-cites="han2024wildguard qwen3guard2025">(Han et
-al. 2024; Qwen Team 2025)</span>; Qwen3Guard-8B leads HarmBench and
-XSTest in the columns reported here <span class="citation"
-data-cites="qwen3guard2025">(Qwen Team 2025)</span>; and Prompt Guard
-2-86M dominates the (distinct) prompt-injection task (AUC 0.998) <span
-class="citation" data-cites="meta2025promptguard2_86m">(Meta AI
-2025c)</span>. Qwen3Guard reports the strongest recent generalist
-profile — top score on 8 of 14 English benchmarks, with even its 0.6B
-variant rivaling models
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>10</mn><mo>×</mo></mrow><annotation encoding="application/x-tex">10\times</annotation></semantics></math>
-larger <span class="citation" data-cites="qwen3guard2025">(Qwen Team
-2025)</span>.</p>
+WildGuard-7B and Qwen3Guard-8B tie on WildGuardTest (<span
+class="math inline">\(\approx\)</span>0.889) <span class="citation"
+data-cites="han2024wildguard qwen3guard2025">(Han et al. 2024; Qwen Team
+2025)</span>; Qwen3Guard-8B leads HarmBench and XSTest in the columns
+reported here <span class="citation" data-cites="qwen3guard2025">(Qwen
+Team 2025)</span>; and Prompt Guard 2-86M dominates the (distinct)
+prompt-injection task (AUC 0.998) <span class="citation"
+data-cites="meta2025promptguard2_86m">(Meta AI 2025c)</span>. Qwen3Guard
+reports the strongest recent generalist profile — top score on 8 of 14
+English benchmarks, with even its 0.6B variant rivaling models <span
+class="math inline">\(10\times\)</span> larger <span class="citation"
+data-cites="qwen3guard2025">(Qwen Team 2025)</span>.</p>
 </section>
 <section id="why-this-is-not-a-leaderboard." class="level5"
 data-number="6.1.0.2">
@@ -3426,7 +3307,7 @@ ShieldGemma-2b 0.464 match the dev-derived values of <a class="xref" href="#tab:
 test-derived). Test-derived matching is mildly leaky but
 <em>flatters</em> the baselines, so the guard’s mF1 lead (0.581) is
 conservative under this mix. AUPRC values are tie-aware (§<a class="xref" href="#sec:metric-correction">5.11</a>),
-except <span class="math inline">$<sup>§</sup>$</span>Llama-Guard-3-8B, whose
+except <span class="math inline">\(^\S\)</span>Llama-Guard-3-8B, whose
 per-row scores were not cached and whose AUPRC is pending tie-aware
 regeneration.</div><div class="tscroll"><table>
 
@@ -3462,7 +3343,7 @@ regeneration.</div><div class="tscroll"><table>
 </tr>
 <tr>
 <td style="text-align: left;">Llama-Guard-3-8B<span
-class="math inline">$<sup>§</sup>$</span></td>
+class="math inline">\(^\S\)</span></td>
 <td style="text-align: center;">8B</td>
 <td style="text-align: center;">0.750</td>
 <td style="text-align: center;">0.833</td>
@@ -3544,16 +3425,15 @@ benign-adjacent prompts.</div><div class="tscroll"><table>
 <p>Three findings matter. <strong>(1) OOD ranking depends on what
 question we ask.</strong> Among the general moderation guards with
 continuous scores, the novel-set AUPRC order is Llama-Guard-3-8B (0.833)
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>
-our tuned guard (0.780)
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math>
-Llama-Guard-3-1B (0.685), while the untuned base remains strongest
-overall at 0.884. At the deployable matched-FPR@0.10 operating point,
-however, our 3B guard leads Llama-Guard-3-8B on F1 (0.581 vs. 0.475).
-This is the same ranking-fragility story as the main paper, now within
-the specialized-guard subset. <strong>(2) Over-blocking is widespread
-among recall-first guards.</strong> Qwen3Guard-4B and WildGuard-7B both
-post heavy false-positive rates on OR-Bench-hard (0.81 and 0.73), an
+<span class="math inline">\(&gt;\)</span> our tuned guard (0.780) <span
+class="math inline">\(&gt;\)</span> Llama-Guard-3-1B (0.685), while the
+untuned base remains strongest overall at 0.884. At the deployable
+matched-FPR@0.10 operating point, however, our 3B guard leads
+Llama-Guard-3-8B on F1 (0.581 vs. 0.475). This is the same
+ranking-fragility story as the main paper, now within the
+specialized-guard subset. <strong>(2) Over-blocking is widespread among
+recall-first guards.</strong> Qwen3Guard-4B and WildGuard-7B both post
+heavy false-positive rates on OR-Bench-hard (0.81 and 0.73), an
 independent cross-vendor confirmation of the over-refusal failure mode
 isolated in §<a class="xref" href="#sec:mortgage-casestudy">5.10</a>. <strong>(3) Prompt
 Guard 2 is a specialized detector, not a general moderator.</strong> In
@@ -3591,9 +3471,8 @@ any 1.5–3B base (SmolLM2, Qwen2.5, SmolLM3) reaches in-house AUPRC
 out-of-distribution behavior across bases (<a class="xref" href="#sec:cross-family">§5.7</a>), the base barely affects OOD
 robustness — so choose on in-house accuracy, cost, and license, not on
 hoped-for generalization; and where OOD robustness is paramount, keep
-the untuned base in a
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math>tuned
-ensemble (<a class="xref" href="#sec:ensemble">§5.9</a>).</p></li>
+the untuned base in a base<span
+class="math inline">\(\oplus\)</span>tuned ensemble (<a class="xref" href="#sec:ensemble">§5.9</a>).</p></li>
 <li><p><strong>Best prompt-injection / jailbreak detector.</strong>
 Prompt Guard 2-86M — 0.903 measured in-house-injection AUPRC, 0.998
 published jailbreak AUC, 0.17 GB BF16, and 92 ms published on an A100 (a
@@ -3609,9 +3488,8 @@ moderation still needs an operating-point audit.</p></li>
 laptop-trained 3B guard: among the locally measured general content
 guards it leads in-house (AUPRC 0.833) and at matched-FPR (F1 0.581) at
 6 GB / 124 ms, and shows no statistically significant F1 difference from
-gpt-5.4-mini; the untuned base or a
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math>tuned
-ensemble (§<a class="xref" href="#sec:ensemble">5.9</a>) is preferable when
+gpt-5.4-mini; the untuned base or a base<span
+class="math inline">\(\oplus\)</span>tuned ensemble (§<a class="xref" href="#sec:ensemble">5.9</a>) is preferable when
 out-of-distribution robustness dominates.</p></li>
 <li><p><strong>Best for real-time production.</strong> For pure
 injection/jailbreak gating, Prompt Guard 2 (encoder, single forward
@@ -3656,13 +3534,13 @@ over-blocking relative to the general guard (though it only ties the
 base on AUPRC). So a team should select and calibrate each layer against
 a benchmark that matches that layer’s regime, hold every candidate to a
 matched operating point, and — where out-of-distribution robustness on
-the general layer matters most — keep the untuned base in a
-base<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math>tuned
-ensemble. A small on-premises model is a viable substrate for this at
-batch=1 latency and no per-call cost; the load-bearing caveat is that
-this paper measures only the input-prompt layer, and the same discipline
-must be re-run for response and tool-call moderation before a full
-query-and-response stack can claim to be evaluated.</p>
+the general layer matters most — keep the untuned base in a base<span
+class="math inline">\(\oplus\)</span>tuned ensemble. A small on-premises
+model is a viable substrate for this at batch=1 latency and no per-call
+cost; the load-bearing caveat is that this paper measures only the
+input-prompt layer, and the same discipline must be re-run for response
+and tool-call moderation before a full query-and-response stack can
+claim to be evaluated.</p>
 <section id="sec:future" class="level3" data-number="7.1">
 <h3 data-number="7.1"><span class="header-section-number">7.1</span>
 Future Work</h3>
@@ -3673,8 +3551,7 @@ base’s OOD score ranking (<a class="xref" href="#sec:base-vs-tuned">§5.6</a>)
 training recipes — broad, family-decontaminated data plus regularization
 — that add in-distribution competence <em>without</em> losing the
 untuned base’s operating-point robustness on unseen distributions. The
-training-free
-base <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>⊕</mi><annotation encoding="application/x-tex">\oplus</annotation></semantics></math> tuned
+training-free base <span class="math inline">\(\oplus\)</span> tuned
 ensemble (<a class="xref" href="#sec:ensemble">§5.9</a>) is a first, inference-time step —
 it recovers OOD ranking at the cost of a second forward pass — but a
 training-time recipe that bakes both into one model, and an accounting
@@ -3752,46 +3629,39 @@ preserving the base model’s OOD ordering is a sensible objective.</p>
 <section id="setup." class="level5" data-number="8.0.0.1">
 <h5 data-number="8.0.0.1"><span
 class="header-section-number">8.0.0.1</span> Setup.</h5>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>X</mi><mo>+</mo></msup><annotation encoding="application/x-tex">X^+</annotation></semantics></math>
-be an independent unsafe prompt and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>X</mi><mo>−</mo></msup><annotation encoding="application/x-tex">X^-</annotation></semantics></math>
-an independent safe prompt from the same OOD evaluation distribution.
-For any score function
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>,
-define
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mi>s</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mn>1</mn></mtd><mtd columnalign="left" style="text-align: left"><mrow><mtext mathvariant="normal">if </mtext><mspace width="0.333em"></mspace></mrow><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>&gt;</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mstyle displaystyle="false"><mfrac><mn>1</mn><mn>2</mn></mfrac></mstyle></mtd><mtd columnalign="left" style="text-align: left"><mrow><mtext mathvariant="normal">if </mtext><mspace width="0.333em"></mspace></mrow><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>0</mn></mtd><mtd columnalign="left" style="text-align: left"><mrow><mtext mathvariant="normal">if </mtext><mspace width="0.333em"></mspace></mrow><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>&lt;</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">H_s(X^+,X^-)=
+<p>Let <span class="math inline">\(X^+\)</span> be an independent unsafe
+prompt and <span class="math inline">\(X^-\)</span> an independent safe
+prompt from the same OOD evaluation distribution. For any score function
+<span class="math inline">\(s\)</span>, define <span
+class="math display">\[H_s(X^+,X^-)=
 \begin{cases}
 1   &amp; \text{if } s(X^+) &gt; s(X^-),\\
 \tfrac{1}{2} &amp; \text{if } s(X^+) = s(X^-),\\
 0   &amp; \text{if } s(X^+) &lt; s(X^-).
-\end{cases}</annotation></semantics></math> Then
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi mathvariant="normal">E</mi><mo stretchy="false" form="prefix">[</mo><msub><mi>H</mi><mi>s</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\mathrm{AUROC}(s)=\mathrm{E}[H_s(X^+,X^-)]</annotation></semantics></math>.</p>
+\end{cases}\]</span> Then <span
+class="math inline">\(\mathrm{AUROC}(s)=\mathrm{E}[H_s(X^+,X^-)]\)</span>.</p>
 </section>
 <section id="proposition-a.1." class="level5" data-number="8.0.0.2">
 <h5 data-number="8.0.0.2"><span
 class="header-section-number">8.0.0.2</span> Proposition A.1.</h5>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-be the base score and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
-the tuned score. If
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi><mo>=</mo><mrow><mi mathvariant="normal">Pr</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">[</mo><msub><mi>H</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>≠</mo><msub><mi>H</mi><mi>t</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">\varepsilon = \Pr[H_b(X^+,X^-) \neq H_t(X^+,X^-)],</annotation></semantics></math>
-then
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>≥</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>ε</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \varepsilon.</annotation></semantics></math></p>
+<p>Let <span class="math inline">\(b\)</span> be the base score and
+<span class="math inline">\(t\)</span> the tuned score. If <span
+class="math display">\[\varepsilon = \Pr[H_b(X^+,X^-) \neq
+H_t(X^+,X^-)],\]</span> then <span
+class="math display">\[\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) -
+\varepsilon.\]</span></p>
 </section>
 <section id="proof." class="level5" data-number="8.0.0.3">
 <h5 data-number="8.0.0.3"><span
 class="header-section-number">8.0.0.3</span> Proof.</h5>
-<p>For every unsafe–safe pair,
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msub><mi>H</mi><mi>t</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>≤</mo><mn>𝟏</mn><mo stretchy="false" form="prefix">[</mo><msub><mi>H</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>≠</mo><msub><mi>H</mi><mi>t</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">H_b(X^+,X^-) - H_t(X^+,X^-)
-\le \mathbf{1}[H_b(X^+,X^-) \neq H_t(X^+,X^-)].</annotation></semantics></math>
-Taking expectations,
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi mathvariant="normal">E</mi><mo stretchy="false" form="prefix">[</mo><msub><mi>H</mi><mi>b</mi></msub><mo>−</mo><msub><mi>H</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>≤</mo><mi mathvariant="normal">E</mi><mo stretchy="false" form="prefix">[</mo><mn>𝟏</mn><mo stretchy="false" form="prefix">[</mo><msub><mi>H</mi><mi>b</mi></msub><mo>≠</mo><msub><mi>H</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">]</mo><mo stretchy="false" form="postfix">]</mo><mo>=</mo><mi>ε</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">\mathrm{AUROC}(b) - \mathrm{AUROC}(t)
+<p>For every unsafe–safe pair, <span class="math display">\[H_b(X^+,X^-)
+- H_t(X^+,X^-)
+\le \mathbf{1}[H_b(X^+,X^-) \neq H_t(X^+,X^-)].\]</span> Taking
+expectations, <span class="math display">\[\mathrm{AUROC}(b) -
+\mathrm{AUROC}(t)
 = \mathrm{E}[H_b - H_t]
 \le \mathrm{E}[\mathbf{1}[H_b \neq H_t]]
-= \varepsilon,</annotation></semantics></math> which rearranges to the
-stated bound.</p>
+= \varepsilon,\]</span> which rearranges to the stated bound.</p>
 </section>
 <section id="sharper-one-sided-form." class="level5"
 data-number="8.0.0.4">
@@ -3799,99 +3669,76 @@ data-number="8.0.0.4">
 class="header-section-number">8.0.0.4</span> Sharper one-sided
 form.</h5>
 <p>The two-sided disagreement rate is slightly loose because it counts
-both harmful and beneficial ranking changes. If
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mo>↓</mo></msub><mo>=</mo><mrow><mi mathvariant="normal">Pr</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">[</mo><msub><mi>H</mi><mi>t</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>&lt;</mo><msub><mi>H</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo>,</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">\varepsilon_{\downarrow} = \Pr[H_t(X^+,X^-) &lt; H_b(X^+,X^-)],</annotation></semantics></math>
-then the same argument gives
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>≥</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msub><mi>ε</mi><mo>↓</mo></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \varepsilon_{\downarrow}.</annotation></semantics></math></p>
+both harmful and beneficial ranking changes. If <span
+class="math display">\[\varepsilon_{\downarrow} = \Pr[H_t(X^+,X^-) &lt;
+H_b(X^+,X^-)],\]</span> then the same argument gives <span
+class="math display">\[\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) -
+\varepsilon_{\downarrow}.\]</span></p>
 </section>
 <section id="uniform-drift-corollary." class="level5"
 data-number="8.0.0.5">
 <h5 data-number="8.0.0.5"><span
 class="header-section-number">8.0.0.5</span> Uniform-drift
 corollary.</h5>
-<p>If
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mi>t</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mi>δ</mi></mrow><annotation encoding="application/x-tex">|t(x)-b(x)| \le \delta</annotation></semantics></math>
-for every prompt
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>,
-then an unsafe–safe pair can change order only when the base margin is
-small:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>2</mn><mi>δ</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">|b(X^+) - b(X^-)| \le 2\delta.</annotation></semantics></math>
-Hence
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>≥</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">U</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">C</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mrow><mi mathvariant="normal">Pr</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">[</mo><mo stretchy="false" form="prefix">|</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>2</mn><mi>δ</mi><mo stretchy="false" form="postfix">]</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) - \Pr[|b(X^+) - b(X^-)| \le 2\delta].</annotation></semantics></math>
-Indeed, if
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>&gt;</mo><mn>2</mn><mi>δ</mi></mrow><annotation encoding="application/x-tex">|b(X^+) - b(X^-)| &gt; 2\delta</annotation></semantics></math>,
-then the perturbation
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mi>t</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo><mo>−</mo><mo stretchy="false" form="prefix">[</mo><mi>t</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[t(X^+) - b(X^+)] - [t(X^-) - b(X^-)]</annotation></semantics></math>
-has magnitude at most
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mi>δ</mi></mrow><annotation encoding="application/x-tex">2\delta</annotation></semantics></math>,
-so it cannot reverse the sign of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">b(X^+) - b(X^-)</annotation></semantics></math>.
-Therefore pairwise disagreement can occur only on the event
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>+</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>b</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>X</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>2</mn><mi>δ</mi></mrow><annotation encoding="application/x-tex">|b(X^+) - b(X^-)| \le 2\delta</annotation></semantics></math>,
-and Proposition A.1 yields the bound.</p>
+<p>If <span class="math inline">\(|t(x)-b(x)| \le \delta\)</span> for
+every prompt <span class="math inline">\(x\)</span>, then an unsafe–safe
+pair can change order only when the base margin is small: <span
+class="math display">\[|b(X^+) - b(X^-)| \le 2\delta.\]</span> Hence
+<span class="math display">\[\mathrm{AUROC}(t) \ge \mathrm{AUROC}(b) -
+\Pr[|b(X^+) - b(X^-)| \le 2\delta].\]</span> Indeed, if <span
+class="math inline">\(|b(X^+) - b(X^-)| &gt; 2\delta\)</span>, then the
+perturbation <span class="math display">\[[t(X^+) - b(X^+)] - [t(X^-) -
+b(X^-)]\]</span> has magnitude at most <span
+class="math inline">\(2\delta\)</span>, so it cannot reverse the sign of
+<span class="math inline">\(b(X^+) - b(X^-)\)</span>. Therefore pairwise
+disagreement can occur only on the event <span
+class="math inline">\(|b(X^+) - b(X^-)| \le 2\delta\)</span>, and
+Proposition A.1 yields the bound.</p>
 </section>
 <section id="proposition-a.2-finite-sample-ap-perturbation-bound."
 class="level5" data-number="8.0.0.6">
 <h5 data-number="8.0.0.6"><span
 class="header-section-number">8.0.0.6</span> Proposition A.2
 (finite-sample AP perturbation bound).</h5>
-<p>Fix a tie-free test set with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mo>+</mo></msub><annotation encoding="application/x-tex">n_+</annotation></semantics></math>
-unsafe rows and let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">P</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{AP}(s)</annotation></semantics></math>
-be the average precision of score
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
-on that ranked list. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-be the number of unsafe–safe pairs ordered differently by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>.
-Then
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">P</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">P</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mfrac><mi>K</mi><mrow><mn>2</mn><msub><mi>n</mi><mo>+</mo></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">|\mathrm{AP}(t) - \mathrm{AP}(b)| \le \frac{K}{2n_+}.</annotation></semantics></math>
-More sharply, there is a decomposition into
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-adjacent unsafe–safe swaps such that the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>th
-swap changes AP by at most
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mn>1</mn><mrow><msub><mi>n</mi><mo>+</mo></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>r</mi><mi>k</mi></msub><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">\frac{1}{n_+(r_k+1)},</annotation></semantics></math>
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mi>k</mi></msub><annotation encoding="application/x-tex">r_k</annotation></semantics></math>
-is the rank at which that adjacent swap occurs. So flips near the top of
-the ranking hurt AP most.</p>
+<p>Fix a tie-free test set with <span class="math inline">\(n_+\)</span>
+unsafe rows and let <span class="math inline">\(\mathrm{AP}(s)\)</span>
+be the average precision of score <span class="math inline">\(s\)</span>
+on that ranked list. Let <span class="math inline">\(K\)</span> be the
+number of unsafe–safe pairs ordered differently by <span
+class="math inline">\(b\)</span> and <span
+class="math inline">\(t\)</span>. Then <span
+class="math display">\[|\mathrm{AP}(t) - \mathrm{AP}(b)| \le
+\frac{K}{2n_+}.\]</span> More sharply, there is a decomposition into
+<span class="math inline">\(K\)</span> adjacent unsafe–safe swaps such
+that the <span class="math inline">\(k\)</span>th swap changes AP by at
+most <span class="math display">\[\frac{1}{n_+(r_k+1)},\]</span> where
+<span class="math inline">\(r_k\)</span> is the rank at which that
+adjacent swap occurs. So flips near the top of the ranking hurt AP
+most.</p>
 </section>
 <section id="proof-sketch." class="level5" data-number="8.0.0.7">
 <h5 data-number="8.0.0.7"><span
 class="header-section-number">8.0.0.7</span> Proof sketch.</h5>
-<p>Transform the ranking induced by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-into the ranking induced by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
-using adjacent swaps, ignoring same-label permutations that do not
-affect AP. Only unsafe–safe swaps can change AP, and one can realize the
-discordant unsafe–safe pairs with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-such swaps. For one adjacent swap, suppose the moved unsafe item is the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>th
-unsafe row and it moves from rank
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">r+1</annotation></semantics></math>
-to rank
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>.
-Only that item’s precision term changes, from
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mi>r</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">j/(r+1)</annotation></semantics></math>
-to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi><mi>/</mi><mi>r</mi></mrow><annotation encoding="application/x-tex">j/r</annotation></semantics></math>,
-so
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mi mathvariant="normal">Δ</mi><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">P</mi></mrow><mo stretchy="false" form="prefix">|</mo><mo>=</mo><mfrac><mn>1</mn><msub><mi>n</mi><mo>+</mo></msub></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mi>j</mi><mi>r</mi></mfrac><mo>−</mo><mfrac><mi>j</mi><mrow><mi>r</mi><mo>+</mo><mn>1</mn></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><msub><mi>n</mi><mo>+</mo></msub></mfrac><mfrac><mi>j</mi><mrow><mi>r</mi><mo stretchy="false" form="prefix">(</mo><mi>r</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mo>≤</mo><mfrac><mn>1</mn><mrow><msub><mi>n</mi><mo>+</mo></msub><mo stretchy="false" form="prefix">(</mo><mi>r</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mo>≤</mo><mfrac><mn>1</mn><mrow><mn>2</mn><msub><mi>n</mi><mo>+</mo></msub></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">|\Delta \mathrm{AP}| = \frac{1}{n_+}\left(\frac{j}{r} - \frac{j}{r+1}\right)
+<p>Transform the ranking induced by <span
+class="math inline">\(b\)</span> into the ranking induced by <span
+class="math inline">\(t\)</span> using adjacent swaps, ignoring
+same-label permutations that do not affect AP. Only unsafe–safe swaps
+can change AP, and one can realize the discordant unsafe–safe pairs with
+<span class="math inline">\(K\)</span> such swaps. For one adjacent
+swap, suppose the moved unsafe item is the <span
+class="math inline">\(j\)</span>th unsafe row and it moves from rank
+<span class="math inline">\(r+1\)</span> to rank <span
+class="math inline">\(r\)</span>. Only that item’s precision term
+changes, from <span class="math inline">\(j/(r+1)\)</span> to <span
+class="math inline">\(j/r\)</span>, so <span
+class="math display">\[|\Delta \mathrm{AP}| =
+\frac{1}{n_+}\left(\frac{j}{r} - \frac{j}{r+1}\right)
 = \frac{1}{n_+}\frac{j}{r(r+1)}
 \le \frac{1}{n_+(r+1)}
-\le \frac{1}{2n_+},</annotation></semantics></math> because
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi><mo>≤</mo><mi>r</mi></mrow><annotation encoding="application/x-tex">j \le r</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>≥</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">r \ge 1</annotation></semantics></math>.
-Summing over the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-unsafe–safe swaps gives the stated bound.</p>
+\le \frac{1}{2n_+},\]</span> because <span class="math inline">\(j \le
+r\)</span> and <span class="math inline">\(r \ge 1\)</span>. Summing
+over the <span class="math inline">\(K\)</span> unsafe–safe swaps gives
+the stated bound.</p>
 </section>
 <section id="what-this-does-and-does-not-justify." class="level5"
 data-number="8.0.0.8">
@@ -3912,12 +3759,9 @@ headline AUPRC claims remain empirical.</p>
 <section id="monotone-transforms." class="level5" data-number="8.0.0.9">
 <h5 data-number="8.0.0.9"><span
 class="header-section-number">8.0.0.9</span> Monotone transforms.</h5>
-<p>If
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>
-is strictly increasing, then
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>g</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">s_g(x)=g(s(x))</annotation></semantics></math>
-preserves every pairwise comparison made by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>.
+<p>If <span class="math inline">\(g\)</span> is strictly increasing,
+then <span class="math inline">\(s_g(x)=g(s(x))\)</span> preserves every
+pairwise comparison made by <span class="math inline">\(s\)</span>.
 AUROC is therefore unchanged. The same ordering invariance leaves the
 threshold-free precision–recall curve, and therefore average
 precision/AUPRC computed from the full ranked list, unchanged when ties
@@ -4065,10 +3909,10 @@ Models.”</span> <em>NeurIPS 2024</em>. <a
 href="https://arxiv.org/abs/2406.18510">https://arxiv.org/abs/2406.18510</a>.
 </div>
 <div id="ref-kang2025r2guard" class="csl-entry" role="listitem">
-Kang, Mintong, and Bo Li. 2025.
-<span>“<span><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mn>2</mn></msup><annotation encoding="application/x-tex">R^2</annotation></semantics></math></span>-Guard:
-Robust Reasoning Enabled LLM Guardrail via Knowledge-Enhanced Logical
-Reasoning.”</span> <em>ICLR 2025</em>. <a
+Kang, Mintong, and Bo Li. 2025. <span>“<span><span
+class="math inline">\(R^2\)</span></span>-Guard: Robust Reasoning
+Enabled LLM Guardrail via Knowledge-Enhanced Logical Reasoning.”</span>
+<em>ICLR 2025</em>. <a
 href="https://arxiv.org/abs/2407.05557">https://arxiv.org/abs/2407.05557</a>.
 </div>
 <div id="ref-kumar2022calibrated" class="csl-entry" role="listitem">
@@ -4223,6 +4067,16 @@ role="doc-backlink">↩︎</a></p></li>
   </main>
 </div>
 
+<script>
+// MathJax (SVG output, vendored locally — renders math beautifully & offline)
+window.MathJax={
+  tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:true},
+  svg:{fontCache:'global'},
+  chtml:{},
+  options:{skipHtmlTags:['script','noscript','style','textarea','pre','code','annotation','annotation-xml']}
+};
+</script>
+<script src="vendor/mathjax/tex-svg.js" id="MathJax-script" async></script>
 <script>
 // reading progress bar
 const prog=document.getElementById('progress');
