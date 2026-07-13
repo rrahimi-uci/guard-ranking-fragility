@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "guard-research"
+version = "0.1.0"
+description = "Canonical, auditable building blocks and pipeline for 'The Benchmark Chooses the Winner' — measuring fine-tuning specialization across safety-guard benchmarks."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Reza Rahimi" }]
+keywords = ["safety-guard", "llm", "benchmark", "fine-tuning", "specialization", "reproducibility", "auditable"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+]
+
+# Core: everything needed to reproduce the paper's tables and figures on CPU
+# from the committed score table (metrics, provenance, thresholds, analysis).
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "scikit-learn>=1.4",
+    "pandas>=2.0",
+    "pyarrow>=14",          # scores.parquet I/O
+    "pyyaml>=6.0",          # config
+    "transformers>=4.40",   # frozen prompt / chat-template rendering, decision tokens
+]
+
+[project.optional-dependencies]
+# GPU training + scoring (pipeline steps 4-5) and Hugging Face manifest sourcing (step 1).
+train = [
+    "torch>=2.2",
+    "peft>=0.10",
+    "trl>=0.8",
+    "datasets>=2.18",
+    "accelerate>=0.29",
+    "safetensors>=0.4",
+]
+figures = ["matplotlib>=3.8"]           # regenerate the specialization-plane figure
+hash = ["datasketch>=1.6"]              # optional faster MinHash backend (numpy fallback otherwise)
+dev = ["pytest>=8.0"]
+all = ["guard-research[train,figures,hash,dev]"]
+
+[project.urls]
+Repository = "https://github.com/rezarahimi/guard-ranking-fragility"
+
+[tool.setuptools]
+packages = ["guard_research"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
