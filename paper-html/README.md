@@ -6,13 +6,17 @@ Evaluation of Small-LLM Safety Guards,"* generated from the LaTeX source.
 ## Open it
 
 Double-click **`index.html`** (or drag it into a browser). No server needed;
-the figures load from the sibling `figures/` folder.
+the figures load from the sibling `figures/` folder. The top bar links to the
+bundled **Benchmark Explorer** (`explorer/index.html`) and the canonical PDF.
+
+The folder is self-contained: zip or copy `paper-html/` and the reading edition,
+its figures, offline math, and the explorer all travel together.
 
 ## Features
 
 - **Sticky section sidebar** (table of contents) with scroll-spy highlighting —
   jump to any section/subsection; a reading-progress bar tracks position.
-- **All 21 tables as real HTML tables** — numbered "Table N.", with the caption
+- **Every table as a real HTML table** — numbered "Table N.", with the caption
   above and horizontal scrolling for wide tables.
 - **Cross-references resolved** — every `\Cref`/`\ref` becomes a live link
   ("Table 7", "Figure 3", "§5.2") using the numbers from LaTeX's `.aux`.
@@ -45,3 +49,5 @@ post-processes captions, cross-references, table wrappers, and figure images.
 - `build.py` — the generator described above.
 - `figures/` — SVG figures.
 - `vendor/mathjax/` — vendored MathJax (offline SVG math).
+- `explorer/` — the bundled **Benchmark Explorer** single-page app
+  (`explorer/index.html`, self-contained; see `explorer/README.md`).

@@ -22,7 +22,8 @@ corresponding code is quarantined under [`../legacy/`](../legacy).
 - [paper-b-development-checkpoint-plan.md](paper-b-development-checkpoint-plan.md) —
   development checkpoints for the follow-up.
 - [smollm3-guard-plan.md](smollm3-guard-plan.md) — plan behind the SmolLM3 guard
-  reproduction notebook ([`../notebooks/`](../notebooks)).
+  reproduction notebook (the broad-study notebooks were removed from the repo;
+  their builders remain under [`../legacy/experiments/`](../legacy/experiments)).
 - [mortgage-benchmark-hard-results.md](mortgage-benchmark-hard-results.md) — results
   from the hardened mortgage-compliance benchmark.
 

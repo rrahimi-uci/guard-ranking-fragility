@@ -198,7 +198,7 @@ sources:
     target: 400_per_label
     license_id: ODC-BY-AI2-gated
     redistribution_class: gated_no_redistribution
-    origin: frozen_prefer   # AI2-gated: prefer notebooks/outputs/frozen_eval_rows.json; HF fallback
+    origin: frozen_prefer   # AI2-gated: prefer data/frozen_eval_rows.json; HF fallback
     frozen_key: wildguardtest
   wildjailbreak:
     role: transfer
