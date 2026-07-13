@@ -240,22 +240,26 @@ move</a></li>
 <li><a href="#sec:base-vs-tuned" id="toc-sec:base-vs-tuned"><span
 class="toc-section-number">5.6</span> Base-vs-tuned decomposition: PEFT
 specializes in-distribution and degrades OOD ranking</a></li>
+<li><a href="#sec:external-grounding"
+id="toc-sec:external-grounding"><span
+class="toc-section-number">5.7</span> External grounding: an
+expert-annotated domain benchmark and a fairness trade-off</a></li>
 <li><a href="#sec:cross-family" id="toc-sec:cross-family"><span
-class="toc-section-number">5.7</span> Cross-family and scaling: six
+class="toc-section-number">5.8</span> Cross-family and scaling: six
 bases, and why tuning <em>converges</em> OOD</a></li>
 <li><a href="#sec:rl-vs-ft" id="toc-sec:rl-vs-ft"><span
-class="toc-section-number">5.8</span> The fine-tuning <em>objective</em>
+class="toc-section-number">5.9</span> The fine-tuning <em>objective</em>
 controls the OOD convergence: SFT vs. DPO vs. GRPO</a></li>
 <li><a href="#sec:ensemble" id="toc-sec:ensemble"><span
-class="toc-section-number">5.9</span> Mitigation: a base <span
+class="toc-section-number">5.10</span> Mitigation: a base <span
 class="math inline">\(\oplus\)</span> tuned ensemble recovers OOD
 ranking</a></li>
 <li><a href="#sec:mortgage-casestudy"
 id="toc-sec:mortgage-casestudy"><span
-class="toc-section-number">5.10</span> The domain-specific compliance
+class="toc-section-number">5.11</span> The domain-specific compliance
 layer: a saturated mortgage benchmark and its hardened rebuild</a></li>
 <li><a href="#sec:limitations" id="toc-sec:limitations"><span
-class="toc-section-number">5.11</span> Limitations</a></li>
+class="toc-section-number">5.12</span> Limitations</a></li>
 </ul></li>
 <li><a href="#sec:guardrails" id="toc-sec:guardrails"><span
 class="toc-section-number">6</span> Guardrail-model landscape and
@@ -366,7 +370,7 @@ each layer and how to tune it, and the general and domain-specific
 layers are two different regimes — exactly the situation in which a
 benchmark or operating point can choose a different winner. We therefore
 run the broad study on general benchmarks and then instantiate the
-domain-specific layer as a mortgage case study (§<a class="xref" href="#sec:mortgage-casestudy">5.10</a>).</p>
+domain-specific layer as a mortgage case study (§<a class="xref" href="#sec:mortgage-casestudy">5.11</a>).</p>
 <p>Methodologically, we evaluate a small local guard — SmolLM3-3B
 fine-tuned with LoRA into a one-forward-pass <code>{safe, unsafe}</code>
 classifier — under an operating-point-fair protocol: threshold-free
@@ -376,7 +380,7 @@ general in-house and novel-benchmark suite (§<a class="xref" href="#sec:base-vs
 data-reference-type="ref" data-reference="subsec:novel">5.3</a>); the
 domain-specific use case is measured on a hardened, trap-typed mortgage
 benchmark carrying fair-lending, compliance, and security-misuse
-categories (§<a class="xref" href="#sec:mortgage-casestudy">5.10</a>). Scope is deliberately
+categories (§<a class="xref" href="#sec:mortgage-casestudy">5.11</a>). Scope is deliberately
 bounded: this paper measures the <strong>input-prompt</strong> layer —
 every evaluation here, general and domain-specific, classifies input
 prompts. Response/output moderation and agent tool-call surfaces are the
@@ -393,7 +397,7 @@ guard in AUPRC (0.884 vs. 0.780, non-overlapping CIs) at essentially
 tied peak F1. Third, the same instability reappears when we change
 either the model family or the benchmark regime: identical tuning drives
 six bases toward a narrow OOD band, and on a hardened mortgage benchmark
-the in-domain fine-tune is the point-estimate leader (§<a class="xref" href="#sec:mortgage-casestudy">5.10</a>).</p>
+the in-domain fine-tune is the point-estimate leader (§<a class="xref" href="#sec:mortgage-casestudy">5.11</a>).</p>
 <p>Our emphasis is on <em>how</em> we measure, and we are careful with
 the word “held-out,” which we split into two distinct pools throughout
 the paper:</p>
@@ -520,7 +524,7 @@ is a property of the <em>supervised</em> objective rather than of
 fine-tuning per se: a KL-regularized objective (DPO, GRPO) resists the
 convergence, and once each objective is fairly tuned by per-objective
 hyperparameter search, DPO matches SFT in-distribution while dominating
-it out-of-distribution (<a class="xref" href="#sec:rl-vs-ft">§5.8</a>).</p></li>
+it out-of-distribution (<a class="xref" href="#sec:rl-vs-ft">§5.9</a>).</p></li>
 </ul>
 </section>
 </section>
@@ -713,10 +717,10 @@ on general small-LLM content guards</strong> showing that
 parameter-efficient tuning preserves peak F1 while <em>degrading</em>
 out-of-distribution score ranking — so the untuned base is the stronger
 OOD ranker (<a class="xref" href="#sec:base-vs-tuned">§5.6</a>); (ii) a six-base sweep that
-recasts this as an OOD-ranking <em>convergence</em> pattern (<a class="xref" href="#sec:cross-family">§5.7</a>); and (iii) the integration of
+recasts this as an OOD-ranking <em>convergence</em> pattern (<a class="xref" href="#sec:cross-family">§5.8</a>); and (iii) the integration of
 the pieces above into one reproducible, laptop-scale controlled study,
-with the objective (<a class="xref" href="#sec:rl-vs-ft">§5.8</a>)
-and inference-time-ensemble (<a class="xref" href="#sec:ensemble">§5.9</a>)
+with the objective (<a class="xref" href="#sec:rl-vs-ft">§5.9</a>)
+and inference-time-ensemble (<a class="xref" href="#sec:ensemble">§5.10</a>)
 results positioned as guard-specific instances of the general principles
 cited above rather than new principles. The laptop-trained guard, the
 controlled comparison of specialized guards (<a class="xref" href="#sec:guardrails">§6</a>),
@@ -795,7 +799,7 @@ vendors and 1.5–8B — <strong>Qwen2.5-1.5B</strong>,
 <strong>SmolLM2-1.7B</strong>,
 <strong>DeepSeek-R1-Distill-Qwen-1.5B</strong> (reasoning-distilled),
 <strong>Qwen3-4B</strong>, and <strong>Qwen3-8B</strong> — and report
-the cross-family and scaling comparison in <a class="xref" href="#sec:cross-family">§5.7</a>. The recipe transfers to any
+the cross-family and scaling comparison in <a class="xref" href="#sec:cross-family">§5.8</a>. The recipe transfers to any
 base that tokenizes <code>safe</code>/<code>unsafe</code> as single
 tokens.</p>
 </section>
@@ -1117,7 +1121,7 @@ point). Our parser maps a valid <code>safe</code>/<code>unsafe</code>
 verdict and abstains on API errors; a limitation is that the run used an
 unversioned alias without fixed decoding, so a reproducible rerun should
 pin a dated <code>gpt-5.4-mini-YYYY-MM-DD</code> snapshot with
-deterministic settings (§<a class="xref" href="#sec:limitations">5.11</a>). We
+deterministic settings (§<a class="xref" href="#sec:limitations">5.12</a>). We
 refer to this fixed prompted rule as gpt’s “native point” in the
 tables.</p></li>
 <li><p><strong>Llama-Guard-3-1B</strong> <span class="citation"
@@ -1165,7 +1169,7 @@ is on the <em>difference</em> between two systems scored on the same
 rows (e.g., base <span class="math inline">\(-\)</span> tuned); we use
 “paired” only for the latter. These row bootstraps capture conditional
 sampling variation given fixed weights, not training-run or
-across-benchmark variance (§<a class="xref" href="#sec:limitations">5.11</a>).
+across-benchmark variance (§<a class="xref" href="#sec:limitations">5.12</a>).
 Pairwise agreement/disagreement between systems is tested with McNemar,
 which tests discordance in the binary predictions rather than equality
 of F1. Latency is measured at true batch=1 (p50/p90).</p>
@@ -1254,7 +1258,7 @@ parameters (1.93% of 3.14B), bf16 model weights on the MPS laptop that
 produced the released adapter (also bf16 on CUDA), 300 optimizer steps
 in <span class="math inline">\(\approx\)</span>71 minutes, seed 42. The
 bf16 weights make the model’s logits — and hence the softmax scores —
-heavily tied, which is why tie-aware AUPRC/AUROC matter here (§<a class="xref" href="#sec:metric-correction">5.11</a>). The
+heavily tied, which is why tie-aware AUPRC/AUROC matter here (§<a class="xref" href="#sec:metric-correction">5.12</a>). The
 full recipe is in <a class="xref" href="#tab:lora">Table&nbsp;3</a> and the post-training calibration values
 in <a class="xref" href="#tab:calibration">Table&nbsp;2</a>.</p>
 </section>
@@ -1267,7 +1271,7 @@ in-house, novel, base-vs-tuned, mortgage, and frontier-reground tables
 from the emitted JSON, in either a <code>verify_cached</code> mode (read
 locally cached artifacts) or a <code>recompute</code> mode (rerun
 scoring), with a validation checklist against the reported numbers. The
-cross-family (<a class="xref" href="#sec:cross-family">§5.7</a>) and ensemble (<a class="xref" href="#sec:ensemble">§5.9</a>) analyses are produced by their
+cross-family (<a class="xref" href="#sec:cross-family">§5.8</a>) and ensemble (<a class="xref" href="#sec:ensemble">§5.10</a>) analyses are produced by their
 own named scripts (<code>run_extra_models.sh</code>,
 <code>guard_eval_pipeline.py</code>, <code>ensemble_probe.py</code>,
 <code>ensemble_deployable.py</code>) rather than the notebook, and the
@@ -1847,7 +1851,7 @@ cuts over-blocking relative to the general guard but only ties the
 untuned base on AUPRC, while a frontier model holds a far lower
 false-positive rate at its native decision point (no threshold-free
 score is available for it); and on general out-of-distribution
-benchmarks the untuned base outranks the tuned guard (§<a class="xref" href="#sec:base-vs-tuned">5.6</a>, §<a class="xref" href="#sec:mortgage-casestudy">5.10</a>).</figcaption>
+benchmarks the untuned base outranks the tuned guard (§<a class="xref" href="#sec:base-vs-tuned">5.6</a>, §<a class="xref" href="#sec:mortgage-casestudy">5.11</a>).</figcaption>
 </figure>
 </section>
 <section id="sec:base-vs-tuned" class="level3" data-number="5.6">
@@ -2044,8 +2048,55 @@ from first principles; it only characterizes one mechanism by which
 ranking damage appears.</p>
 </section>
 </section>
-<section id="sec:cross-family" class="level3" data-number="5.7">
+<section id="sec:external-grounding" class="level3" data-number="5.7">
 <h3 data-number="5.7"><span class="header-section-number">5.7</span>
+External grounding: an expert-annotated domain benchmark and a fairness
+trade-off</h3>
+<p>Two checks probe whether the base-vs-tuned finding is an artifact of
+our own benchmark construction, on data we did not build.</p>
+<p><strong>A grounded external domain benchmark.</strong> We re-run the
+base-vs-tuned comparison on <strong>ExpGuardTest</strong>
+(<code>6rightjade/expguardmix</code>), an expert-annotated
+prompt-moderation set spanning finance, healthcare, and law
+(2<span>,</span>275 test prompts the guard never trained on; cc-by-4.0).
+Scoring the input prompt only (its <code>prompt_label</code> as gold),
+the pattern replicates on grounded expert labels: the untuned base
+reaches tie-aware AUPRC 0.955 versus the tuned guard’s 0.943, a
+base<span class="math inline">\(-\)</span>tuned <span
+class="math inline">\(\Delta\)</span>AUPRC of <span
+class="math inline">\(+0.012\)</span> [0.005, 0.020] (paired bootstrap;
+CI excludes zero). Per domain the base leads on finance (0.957
+vs. 0.948) and healthcare (0.953 vs. 0.927), with a narrow reversal on
+law (0.956 vs. 0.960). The aggregate gap is small — both models are
+strong on this relatively clean set — but its direction matches our
+novel benchmarks on an independent, expert-labeled source. This is the
+grounded domain bar the mortgage case study (§<a class="xref" href="#sec:mortgage-casestudy">5.11</a>) lacks.</p>
+<p><strong>A fairness trade-off.</strong> The base is the better OOD
+<em>ranker</em>, but ranking is not the only operating-point property
+that matters in a compliance setting. Motivated by MortarBench’s report
+of bias against non-English borrower names <span class="citation"
+data-cites="toles2026mortarbench">(Toles et al. 2026)</span>, we run a
+counterfactual name-swap audit of the guard itself: 12 unambiguously
+benign lending prompts <span class="math inline">\(\times\)</span> 24
+first<span class="math inline">\(+\)</span>last names across six
+perceived-origin groups (288 gold-safe prompts), swapping <em>only</em>
+the applicant name, so any group difference is a false-positive bias.
+The <em>untuned base</em> is not name-invariant: its mean <span
+class="math inline">\(P(\text{unsafe})\)</span> varies across origin
+groups with a parity gap of 0.052 [0.005, 0.089] (bootstrap over
+templates; CI excludes zero), scoring African- and Arabic-associated
+names highest — a bias with fair-lending (ECOA/Reg-B) implications.
+Fine-tuning <em>removes</em> it: the tuned guard’s parity gap falls to
+0.001 [0.000, 0.003] and it flags zero benign prompts. The base-vs-tuned
+relationship is therefore a genuine <em>trade-off</em>, not a strict
+ordering: the base ranks better out-of-distribution while the tuned
+guard is markedly fairer on name counterfactuals. The base <span
+class="math inline">\(\oplus\)</span> tuned ensemble (<a class="xref" href="#tab:ensemble">Table&nbsp;15</a>) is one way to keep a tuned model —
+and its fairness — in the loop while recovering the base’s OOD
+ranking.</p>
+</section>
+<section id="sec:cross-family" class="level3" data-number="5.8">
+<h3 data-number="5.8"><span class="header-section-number">5.8</span>
 Cross-family and scaling: six bases, and why tuning <em>converges</em>
 OOD</h3>
 <p>To test whether the SmolLM3 result is an anomaly, we apply the
@@ -2056,43 +2107,47 @@ Qwen3-8B — and score all six on the <em>identical</em> frozen rows (<a class="
 reused open guards use a pooled-test approximation here rather than the
 SmolLM3 run’s dev-derived thresholds.)</p>
 <p>The sweep shows that SmolLM3 is not an outlier. The identical LoRA
-recipe improves in-house AUPRC on every base, from 0.522–0.748 before
-tuning to 0.813–0.882 after tuning. Every tuned guard beats
+recipe improves in-house AUPRC on every base, from 0.524–0.727 before
+tuning to 0.829–0.882 after tuning. Every tuned guard beats
 Llama-Guard-3-1B and ShieldGemma-2b on in-house AUPRC.</p>
 <p>The interesting behavior is again out-of-distribution. The untuned
-bases span a wide novel-AUPRC range, 0.602 to 0.886, but the tuned
-versions collapse into a narrow band, 0.739 to 0.795. Tuning therefore
+bases span a wide novel-AUPRC range, 0.598 to 0.883, but the tuned
+versions collapse into a narrow band, 0.660 to 0.719. Tuning therefore
 behaves, <em>for this single SFT recipe</em>, like a <em>convergence
 operator</em> on OOD ranking: it helps weak bases, hurts strong ones,
 and is roughly neutral in the middle. SmolLM3 is the strong-base case of
-that pattern, not an exception. We state this as a recipe-specific
-observation rather than an intrinsic law of fine-tuning: each base is
-trained once (seed 42) under one shared recipe, and re-training on a
-different hardware stack alone moves novel AUPRC by up to 0.06 (§<a class="xref" href="#sec:repro-hw">5.8</a>) — comparable to some
-base-to-tuned changes here — so the pattern needs multi-seed replication
-before it can be called causal. The practical lesson is that base choice
-matters a great deal for in-house accuracy and cost, but much less for
-tuned OOD behavior than teams often assume. Whether this convergence is
-intrinsic to fine-tuning or specific to the <em>supervised</em>
-objective — and can be resisted by a KL-regularized objective — is the
-subject of §<a class="xref" href="#sec:rl-vs-ft">5.8</a>.</p>
+that pattern, not an exception. This sweep is run on the <em>clean</em>
+source-family-disjoint split across <strong>three training
+seeds</strong> (42/43/44) with tight seed spread (novel range <span
+class="math inline">\(\le 0.03\)</span> for most cells), so the
+convergence pattern is stable to seed rather than a single-run artifact;
+we nonetheless state it as a recipe-specific observation rather than an
+intrinsic law of fine-tuning, since it is one shared recipe. The
+practical lesson is that base choice matters a great deal for in-house
+accuracy and cost, but much less for tuned OOD behavior than teams often
+assume. Whether this convergence is intrinsic to fine-tuning or specific
+to the <em>supervised</em> objective — and can be resisted by a
+KL-regularized objective — is the subject of §<a class="xref" href="#sec:rl-vs-ft">5.9</a>.</p>
 <div id="tab:slm-sweep" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;12.</span> Six bases under the <em>identical</em> LoRA recipe,
-calibration, and frozen rows: in-house and novel (three balanced sets)
-AUPRC for the untuned base <span class="math inline">\(\to\)</span>
-tuned guard, the novel change <span
+calibration, and frozen rows, on the <strong>clean
+source-family-disjoint split</strong>, tie-aware AUPRC, reported as the
+<strong>mean over three training seeds</strong> (42/43/44): in-house and
+novel (three balanced sets) AUPRC for the untuned base <span
+class="math inline">\(\to\)</span> tuned guard, the novel change <span
 class="math inline">\(\Delta_{\text{novel}}\)</span>, matched-FPR@0.10
-F1, and batch=1 latency. Bases span novel AUPRC 0.60–0.89, but the tuned
-guards <em>converge</em> to 0.74–0.80: tuning degrades strong-OOD bases
-(SmolLM3), helps weak ones (DeepSeek), and is roughly neutral in between
-— <span class="math inline">\(\Delta_{\text{novel}}\)</span> broadly
-decreases as base strength rises, but not monotonically. AUPRC values
-here use the pre-correction AP helper and are pending tie-aware
-regeneration (§<a class="xref" href="#sec:metric-correction">5.11</a>); the
-SmolLM3, Qwen2.5, and SmolLM2 rows shift by <span
-class="math inline">\(\le 0.034\)</span> under tie-aware recomputation
-without changing the convergence pattern (e.g., SmolLM3 novel <span
-class="math inline">\(0.886\!\to\!0.884\)</span> base, <span
-class="math inline">\(0.781\!\to\!0.780\)</span> tuned).</div><div class="tscroll"><table>
+F1, and batch=1 latency (A100). Bases span novel AUPRC 0.60–0.88, but
+the tuned guards <em>converge</em> to a narrow 0.66–0.72 band: tuning
+degrades strong-OOD bases (SmolLM3 <span
+class="math inline">\(\Delta_{\text{novel}}=-0.187\)</span>), helps weak
+ones (DeepSeek <span class="math inline">\(+0.062\)</span>), and is
+roughly neutral in between — <span
+class="math inline">\(\Delta_{\text{novel}}\)</span> broadly decreases
+as base strength rises, though not monotonically. Seed spread is tight
+(novel range <span class="math inline">\(\le 0.03\)</span> across seeds
+for most cells; up to <span class="math inline">\(0.11\)</span> for the
+DeepSeek SFT-novel outlier). These are the uncontaminated, tie-aware,
+multi-seed numbers that supersede the earlier single-seed
+version.</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -2111,90 +2166,90 @@ class="math inline">\(\Delta_{\text{novel}}\)</span></th>
 <tr>
 <td style="text-align: left;">DeepSeek-R1-Distill (reasoning)</td>
 <td style="text-align: left;">1.5B</td>
-<td style="text-align: center;">0.522 <span
-class="math inline">\(\to\)</span> 0.813</td>
-<td style="text-align: center;">0.602 <span
-class="math inline">\(\to\)</span> 0.739</td>
+<td style="text-align: center;">0.524 <span
+class="math inline">\(\to\)</span> 0.829</td>
+<td style="text-align: center;">0.598 <span
+class="math inline">\(\to\)</span> 0.660</td>
 <td style="text-align: center;"><span
-class="math inline">\(+0.137\)</span></td>
-<td style="text-align: center;">0.613 / 117</td>
+class="math inline">\(+0.062\)</span></td>
+<td style="text-align: center;">0.666 / 78</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen2.5-1.5B</td>
 <td style="text-align: left;">1.5B</td>
 <td style="text-align: center;">0.681 <span
-class="math inline">\(\to\)</span> 0.821</td>
+class="math inline">\(\to\)</span> 0.860</td>
 <td style="text-align: center;">0.795 <span
-class="math inline">\(\to\)</span> 0.758</td>
+class="math inline">\(\to\)</span> 0.705</td>
 <td style="text-align: center;"><span
-class="math inline">\(-0.037\)</span></td>
-<td style="text-align: center;">0.607 / 84</td>
+class="math inline">\(-0.090\)</span></td>
+<td style="text-align: center;">0.713 / 78</td>
 </tr>
 <tr>
 <td style="text-align: left;">SmolLM2-1.7B</td>
 <td style="text-align: left;">1.7B</td>
-<td style="text-align: center;">0.635 <span
-class="math inline">\(\to\)</span> 0.845</td>
-<td style="text-align: center;">0.775 <span
-class="math inline">\(\to\)</span> 0.795</td>
+<td style="text-align: center;">0.633 <span
+class="math inline">\(\to\)</span> 0.855</td>
+<td style="text-align: center;">0.772 <span
+class="math inline">\(\to\)</span> 0.700</td>
 <td style="text-align: center;"><span
-class="math inline">\(+0.020\)</span></td>
-<td style="text-align: center;">0.626 / 119</td>
+class="math inline">\(-0.072\)</span></td>
+<td style="text-align: center;">0.693 / 65</td>
 </tr>
 <tr>
 <td style="text-align: left;">SmolLM3-3B <em>(primary)</em></td>
 <td style="text-align: left;">3B</td>
 <td style="text-align: center;">0.696 <span
-class="math inline">\(\to\)</span> 0.844</td>
-<td style="text-align: center;"><strong>0.886</strong> <span
-class="math inline">\(\to\)</span> 0.781</td>
+class="math inline">\(\to\)</span> 0.873</td>
+<td style="text-align: center;"><strong>0.883</strong> <span
+class="math inline">\(\to\)</span> 0.696</td>
 <td style="text-align: center;"><span
-class="math inline">\(-0.105\)</span></td>
-<td style="text-align: center;">0.581 / 124</td>
+class="math inline">\(-0.187\)</span></td>
+<td style="text-align: center;">0.738 / 93</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen3-4B</td>
 <td style="text-align: left;">4B</td>
-<td style="text-align: center;">0.699 <span
-class="math inline">\(\to\)</span> <strong>0.882</strong></td>
-<td style="text-align: center;">0.742 <span
-class="math inline">\(\to\)</span> 0.767</td>
+<td style="text-align: center;">0.694 <span
+class="math inline">\(\to\)</span> 0.876</td>
+<td style="text-align: center;">0.732 <span
+class="math inline">\(\to\)</span> 0.715</td>
 <td style="text-align: center;"><span
-class="math inline">\(+0.025\)</span></td>
-<td style="text-align: center;"><strong>0.753</strong> / 112</td>
+class="math inline">\(-0.017\)</span></td>
+<td style="text-align: center;">0.734 / 110</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen3-8B</td>
 <td style="text-align: left;">8B</td>
-<td style="text-align: center;">0.748 <span
-class="math inline">\(\to\)</span> 0.880</td>
+<td style="text-align: center;">0.727 <span
+class="math inline">\(\to\)</span> <strong>0.882</strong></td>
 <td style="text-align: center;">0.765 <span
-class="math inline">\(\to\)</span> 0.751</td>
+class="math inline">\(\to\)</span> 0.719</td>
 <td style="text-align: center;"><span
-class="math inline">\(-0.014\)</span></td>
-<td style="text-align: center;">0.738 / 111</td>
+class="math inline">\(-0.046\)</span></td>
+<td style="text-align: center;"><strong>0.744</strong> / 109</td>
 </tr>
 <tr>
 <td style="text-align: left;"><em>base spread</em></td>
 <td style="text-align: left;"></td>
-<td style="text-align: center;">0.522–0.748</td>
-<td colspan="2" style="text-align: left;">0.602–0.886  (spread
-0.284)</td>
+<td style="text-align: center;">0.524–0.727</td>
+<td colspan="2" style="text-align: left;">0.598–0.883  (spread
+0.285)</td>
 <td style="text-align: center;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><em>tuned spread</em></td>
 <td style="text-align: left;"></td>
-<td style="text-align: center;">0.813–0.882</td>
-<td colspan="2" style="text-align: left;">0.739–0.795  (spread
-0.056)</td>
+<td style="text-align: center;">0.829–0.882</td>
+<td colspan="2" style="text-align: left;">0.660–0.719  (spread
+0.059)</td>
 <td style="text-align: center;"></td>
 </tr>
 </tbody>
 </table></div></div>
 </section>
-<section id="sec:rl-vs-ft" class="level3" data-number="5.8">
-<h3 data-number="5.8"><span class="header-section-number">5.8</span> The
+<section id="sec:rl-vs-ft" class="level3" data-number="5.9">
+<h3 data-number="5.9"><span class="header-section-number">5.9</span> The
 fine-tuning <em>objective</em> controls the OOD convergence: SFT vs. DPO
 vs. GRPO</h3>
 <p>The convergence in <a class="xref" href="#tab:slm-sweep">Table&nbsp;12</a> is
@@ -2230,14 +2285,14 @@ that helps DPO and GRPO out-of-distribution holds them back
 in-distribution at these default hyperparameters.
 <em>Out-of-distribution</em>, the ordering inverts on the non-reasoning
 mid-to-large bases — DPO matches or beats SFT on novel AUPRC (SmolLM2
-0.850 vs. 0.797; Qwen2.5 0.815 vs. 0.792; SmolLM3 0.880 vs. 0.812) — and
+0.842 vs. 0.700; Qwen2.5 0.747 vs. 0.705; SmolLM3 0.834 vs. 0.696) — and
 both DPO and GRPO stay close to the untuned base’s novel score rather
 than collapsing to a narrow tuned band: the reference KL resists the
 convergence operator. GRPO barely moves off the base in either
 direction; a single-token verdict yields a near-binary reward with
-little within-group variance, so the policy-gradient signal is weak (61
-of 300 groups had zero reward variance on the reasoning base). The
-reasoning-distilled DeepSeek base is the outlier, but for two
+little within-group variance, so the policy-gradient signal is weak (a
+large fraction of groups have zero reward variance on the reasoning
+base). The reasoning-distilled DeepSeek base is the outlier, but for two
 <em>different</em> reasons that we are careful to separate. GRPO
 underperforms there through <em>reward starvation</em>: it samples
 verdicts online, and a base that emits chain-of-thought before any
@@ -2248,17 +2303,19 @@ verdicts, so its loss is computable regardless of what the base would
 sample — reward starvation does not apply. DPO fails on DeepSeek for the
 simpler reason that its KL penalty anchors to the reference, and
 DeepSeek’s base is the <em>worst</em> OOD ranker in the sweep (novel
-0.600): anchoring to a poor reference preserves its poor ranking (DPO
-0.585, GRPO 0.601, both <span class="math inline">\(\approx\)</span>
-base), whereas unanchored SFT is free to drift upward (0.772). This
+0.598): anchoring to a poor reference preserves its poor ranking (DPO
+0.592, GRPO 0.598, both <span class="math inline">\(\approx\)</span>
+base), whereas unanchored SFT is free to drift upward (0.660). This
 sharpens the general claim: the reference KL preserves the base’s OOD
 ranking, which helps only when the base ranks well — so it rescues the
 objective on strong bases (SmolLM3) and cannot on weak ones
 (DeepSeek).</p>
 <div id="tab:rl-vs-ft" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;13.</span> Same base, pool, LoRA recipe, and frozen rows; only the
 fine-tuning <em>objective</em> varies (SFT vs. DPO vs. GRPO), all
-trained <em>and</em> scored on one CUDA stack. Threshold-free in-house
-and novel (three balanced sets) AUPRC; novel<span
+trained <em>and</em> scored on one CUDA stack, on the clean
+source-family-disjoint split, tie-aware AUPRC, <strong>mean over three
+seeds</strong> (42/43/44). Threshold-free in-house and novel (three
+balanced sets) AUPRC; novel<span
 class="math inline">\(_{\text{base}}\)</span> is the untuned base. SFT
 leads in-house on every base, but out-of-distribution DPO matches or
 beats it on the non-reasoning bases (<strong>bold</strong> where DPO
@@ -2268,10 +2325,8 @@ rather than converging — the reference-model KL resists the collapse of
 <a class="xref" href="#tab:slm-sweep">Table&nbsp;12</a>. Qwen3-8B DPO did not fit training
 on a 40 GB card. <span
 class="math inline">\(^\ast\)</span>reasoning-distilled base; <span
-class="math inline">\(^\dagger\)</span>primary base. AUPRC values use
-the pre-correction AP helper (per-row scores for these runs were not
-cached); pending tie-aware regeneration (§<a class="xref" href="#sec:metric-correction">5.11</a>), and
-we treat this objective comparison as <em>exploratory</em> (see §<a class="xref" href="#sec:rl-vs-ft">5.8</a>).</div><div class="tscroll"><table>
+class="math inline">\(^\dagger\)</span>primary base. We treat this
+objective comparison as <em>exploratory</em> (see §<a class="xref" href="#sec:rl-vs-ft">5.9</a>).</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -2301,104 +2356,105 @@ Base</td>
 <td style="text-align: left;">DeepSeek-R1-Distill<span
 class="math inline">\(^\ast\)</span></td>
 <td style="text-align: left;">1.5B</td>
-<td style="text-align: center;">0.808</td>
-<td style="text-align: center;">0.772</td>
-<td style="text-align: center;">0.596</td>
-<td style="text-align: center;">0.585</td>
-<td style="text-align: center;">0.523</td>
-<td style="text-align: center;">0.601</td>
-<td style="text-align: center;">0.600</td>
+<td style="text-align: center;">0.829</td>
+<td style="text-align: center;">0.660</td>
+<td style="text-align: center;">0.637</td>
+<td style="text-align: center;">0.592</td>
+<td style="text-align: center;">0.522</td>
+<td style="text-align: center;">0.598</td>
+<td style="text-align: center;">0.598</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen2.5-1.5B</td>
 <td style="text-align: left;">1.5B</td>
-<td style="text-align: center;">0.863</td>
-<td style="text-align: center;">0.792</td>
-<td style="text-align: center;">0.704</td>
-<td style="text-align: center;"><strong>0.815</strong></td>
-<td style="text-align: center;">0.689</td>
-<td style="text-align: center;">0.801</td>
-<td style="text-align: center;">0.797</td>
+<td style="text-align: center;">0.860</td>
+<td style="text-align: center;">0.705</td>
+<td style="text-align: center;">0.690</td>
+<td style="text-align: center;"><strong>0.747</strong></td>
+<td style="text-align: center;">0.684</td>
+<td style="text-align: center;">0.796</td>
+<td style="text-align: center;">0.795</td>
 </tr>
 <tr>
 <td style="text-align: left;">SmolLM2-1.7B</td>
 <td style="text-align: left;">1.7B</td>
-<td style="text-align: center;">0.850</td>
-<td style="text-align: center;">0.797</td>
+<td style="text-align: center;">0.855</td>
+<td style="text-align: center;">0.700</td>
 <td style="text-align: center;">0.725</td>
-<td style="text-align: center;"><strong>0.850</strong></td>
-<td style="text-align: center;">0.635</td>
-<td style="text-align: center;">0.778</td>
-<td style="text-align: center;">0.774</td>
+<td style="text-align: center;"><strong>0.842</strong></td>
+<td style="text-align: center;">0.633</td>
+<td style="text-align: center;">0.773</td>
+<td style="text-align: center;">0.772</td>
 </tr>
 <tr>
 <td style="text-align: left;">SmolLM3-3B<span
 class="math inline">\(^\dagger\)</span></td>
 <td style="text-align: left;">3B</td>
-<td style="text-align: center;">0.881</td>
-<td style="text-align: center;">0.812</td>
+<td style="text-align: center;">0.873</td>
+<td style="text-align: center;">0.696</td>
 <td style="text-align: center;">0.821</td>
-<td style="text-align: center;"><strong>0.880</strong></td>
+<td style="text-align: center;"><strong>0.834</strong></td>
 <td style="text-align: center;">0.699</td>
-<td style="text-align: center;">0.886</td>
 <td style="text-align: center;">0.885</td>
+<td style="text-align: center;">0.883</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen3-4B</td>
 <td style="text-align: left;">4B</td>
-<td style="text-align: center;">0.877</td>
-<td style="text-align: center;">0.757</td>
+<td style="text-align: center;">0.876</td>
 <td style="text-align: center;">0.715</td>
-<td style="text-align: center;">0.756</td>
-<td style="text-align: center;">0.685</td>
-<td style="text-align: center;">0.737</td>
-<td style="text-align: center;">0.742</td>
+<td style="text-align: center;">0.708</td>
+<td style="text-align: center;">0.697</td>
+<td style="text-align: center;">0.695</td>
+<td style="text-align: center;">0.733</td>
+<td style="text-align: center;">0.732</td>
 </tr>
 <tr>
 <td style="text-align: left;">Qwen3-8B</td>
 <td style="text-align: left;">8B</td>
-<td style="text-align: center;">0.885</td>
-<td style="text-align: center;">0.812</td>
+<td style="text-align: center;">0.882</td>
+<td style="text-align: center;">0.719</td>
 <td colspan="2" style="text-align: center;">— (OOM)</td>
 <td style="text-align: center;">0.726</td>
-<td style="text-align: center;">0.769</td>
+<td style="text-align: center;">0.762</td>
 <td style="text-align: center;">0.765</td>
 </tr>
 </tbody>
 </table></div></div>
 <section id="tuning-each-objective-fairly." class="level5"
-data-number="5.8.0.1">
-<h5 data-number="5.8.0.1"><span
-class="header-section-number">5.8.0.1</span> Tuning each objective
+data-number="5.9.0.1">
+<h5 data-number="5.9.0.1"><span
+class="header-section-number">5.9.0.1</span> Tuning each objective
 fairly.</h5>
 <p>The in-distribution gap above could merely reflect under-tuned
 baselines, so we run a per-objective hyperparameter search on the
-primary base (SmolLM3-3B): Optuna TPE, 16 trials each over learning rate
-and LoRA rank (plus warmup for SFT and the KL strength <span
-class="math inline">\(\beta\)</span> for DPO/GRPO), <em>selecting on
-in-distribution dev AUPRC</em> and tracking novel AUPRC without
-optimizing it (<a class="xref" href="#tab:hpo">Table&nbsp;14</a>). Two results follow. First, for SFT the
-learning rate <em>is</em> the OOD knob: across trials, higher lr raises
-dev AUPRC but lowers novel almost monotonically (dev-optimal lr <span
-class="math inline">\(2.2\times10^{-4}\)</span> gives novel 0.793; the
-gentlest lr <span class="math inline">\(3.2\times10^{-5}\)</span> gives
-novel 0.896). Selecting on an in-distribution validation set — standard
-practice — therefore steers SFT straight into the OOD-collapsing regime.
-Second, once tuned, DPO is <em>Pareto-competitive</em> with SFT and
-higher on OOD in this search: its best-dev configuration reaches dev
-AUPRC 0.868 (matching SFT’s 0.869) while holding novel at 0.890, a <span
-class="math inline">\(+0.097\)</span> OOD gap at equal in-distribution
-accuracy. We label this <strong>exploratory</strong>: the novel-OOD
-metric is inspected in every HPO trial (it is tracked, not held out),
-each configuration is trained once at 120 steps rather than the full
-300, and the selected winner is not retrained-and-frozen — so we do not
-claim “DPO dominates SFT” as a confirmed result, only that a
-KL-regularized objective reaches OOD robustness without an
-in-distribution penalty in this search. The default DPO was simply
-under-trained in-distribution; a stronger KL (<span
-class="math inline">\(\beta{=}0.5\)</span>) with a higher lr recovers
-in-distribution accuracy without surrendering OOD robustness. GRPO’s
-best configuration still cannot gain in-distribution (dev 0.685 <span
+primary base (SmolLM3-3B): Optuna TPE, 16 trials each for SFT and DPO (8
+for GRPO) over learning rate and LoRA rank (plus warmup for SFT and the
+KL strength <span class="math inline">\(\beta\)</span> for DPO/GRPO),
+<em>selecting on in-distribution dev AUPRC</em> and tracking novel AUPRC
+without optimizing it (<a class="xref" href="#tab:hpo">Table&nbsp;14</a>). Two
+results follow. First, for SFT the learning rate <em>is</em> the OOD
+knob: across trials, higher lr raises dev AUPRC but lowers novel almost
+monotonically (dev-optimal lr <span
+class="math inline">\(2.6\times10^{-4}\)</span> gives novel 0.816; a
+gentler lr gives novel 0.898). Selecting on an in-distribution
+validation set — standard practice — therefore steers SFT straight into
+the OOD-collapsing regime. Second, once tuned, DPO is
+<em>Pareto-competitive</em> with SFT and higher on OOD in this search:
+its best-dev configuration reaches dev AUPRC 0.880 (essentially matching
+SFT’s 0.888) while holding novel at 0.883, a <span
+class="math inline">\(+0.067\)</span> OOD gap at near-equal
+in-distribution accuracy. We label this <strong>exploratory</strong>:
+the novel-OOD metric is inspected in every HPO trial (it is tracked, not
+held out), each configuration is trained once at a reduced step budget
+(120 for SFT/DPO, 80 for GRPO) rather than the full 300, and the
+selected winner is not retrained-and-frozen — so we do not claim “DPO
+dominates SFT” as a confirmed result, only that a KL-regularized
+objective reaches OOD robustness without an in-distribution penalty in
+this search. The default DPO was simply under-trained in-distribution; a
+suitably tuned KL strength and learning rate recover in-distribution
+accuracy without surrendering OOD robustness. GRPO’s best configuration
+still cannot gain in-distribution (dev 0.666 <span
 class="math inline">\(\approx\)</span> base), consistent with the weak
 single-token reward. The claim is therefore not “RL beats SFT”
 unconditionally, but the sharper one that <em>in-distribution model
@@ -2412,16 +2468,21 @@ data-cites="vennemeyer2026objective">(Vennemeyer et al. 2026)</span>; we
 do not claim the objective<span
 class="math inline">\(\to\)</span>robustness link as new, only its
 effect on guard <em>OOD ranking</em>.</p>
-<div id="tab:hpo" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;14.</span> Per-objective HPO on SmolLM3-3B (Optuna TPE, 16 trials,
-selected on in-distribution dev AUPRC; novel tracked, not optimized).
-Tuned DPO matches SFT in-distribution while keeping a <span
-class="math inline">\(+0.097\)</span> novel advantage. “SFT (novel<span
+<div id="tab:hpo" class="tblock"><div class="tcap"><span class="tnum">Table&nbsp;14.</span> Per-objective HPO on SmolLM3-3B (Optuna TPE, selected on
+in-distribution dev AUPRC; novel tracked, not optimized), tie-aware
+AUPRC on the clean split. SFT and DPO use 16 trials <span
+class="math inline">\(\times\)</span> 120 steps; GRPO uses a lighter
+<span class="math inline">\(8\times80\)</span> budget (its online
+rollouts on the CoT-emitting base are expensive, and its conclusion — no
+in-distribution gain — is unchanged). Tuned DPO matches SFT
+in-distribution while keeping a <span
+class="math inline">\(+0.067\)</span> novel advantage. “SFT (novel<span
 class="math inline">\(^\star\)</span>)” is the best novel <em>found</em>
 during the SFT search — reachable only by sacrificing the dev objective,
 i.e. by <em>not</em> selecting the model one would deploy.
 <em>Exploratory:</em> the novel-OOD metric is inspected in every HPO
-trial (§<a class="xref" href="#sec:rl-vs-ft">5.8</a>), so this is not a clean held-out
-test; AUPRC uses the pre-correction helper (§<a class="xref" href="#sec:metric-correction">5.11</a>).</div><div class="tscroll"><table>
+trial (§<a class="xref" href="#sec:rl-vs-ft">5.9</a>), so this is not a clean held-out
+test.</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -2434,67 +2495,62 @@ test; AUPRC uses the pre-correction helper (§<a class="xref" href="#sec:metric-
 <tbody>
 <tr>
 <td style="text-align: left;">SFT</td>
-<td style="text-align: center;"><strong>0.869</strong></td>
-<td style="text-align: center;">0.793</td>
+<td style="text-align: center;"><strong>0.888</strong></td>
+<td style="text-align: center;">0.816</td>
 <td style="text-align: left;">lr <span
-class="math inline">\(2.2\!\times\!10^{-4}\)</span>, r32</td>
+class="math inline">\(2.6\!\times\!10^{-4}\)</span>, r32</td>
 </tr>
 <tr>
 <td style="text-align: left;">(novel<span
 class="math inline">\(^\star\)</span>)</td>
-<td style="text-align: center;">0.843</td>
-<td style="text-align: center;"><em>0.896</em></td>
-<td style="text-align: left;">lr <span
-class="math inline">\(3.2\!\times\!10^{-5}\)</span>, r16</td>
+<td style="text-align: center;">0.839</td>
+<td style="text-align: center;"><em>0.898</em></td>
+<td style="text-align: left;">gentler lr, smaller r</td>
 </tr>
 <tr>
 <td style="text-align: left;">DPO</td>
-<td style="text-align: center;">0.868</td>
-<td style="text-align: center;"><strong>0.890</strong></td>
+<td style="text-align: center;">0.880</td>
+<td style="text-align: center;"><strong>0.883</strong></td>
 <td style="text-align: left;">lr <span
-class="math inline">\(2.9\!\times\!10^{-5}\)</span>, r64, <span
-class="math inline">\(\beta{=}0.5\)</span></td>
+class="math inline">\(3.0\!\times\!10^{-5}\)</span>, r64, <span
+class="math inline">\(\beta{=}0.1\)</span></td>
 </tr>
 <tr>
 <td style="text-align: left;">GRPO</td>
-<td style="text-align: center;">0.685</td>
-<td style="text-align: center;"><strong>0.901</strong></td>
+<td style="text-align: center;">0.666</td>
+<td style="text-align: center;"><strong>0.885</strong></td>
 <td style="text-align: left;">lr <span
-class="math inline">\(4.9\!\times\!10^{-6}\)</span>, r64, <span
-class="math inline">\(\beta{=}0.01\)</span></td>
+class="math inline">\(1.7\!\times\!10^{-7}\)</span>, r64, <span
+class="math inline">\(\beta{=}0.1\)</span></td>
 </tr>
 </tbody>
 </table></div></div>
 </section>
-<section id="sec:repro-hw" class="level5" data-number="5.8.0.2">
-<h5 data-number="5.8.0.2"><span
-class="header-section-number">5.8.0.2</span> Reproducibility across
-hardware.</h5>
-<p>The primary results were produced on Apple MPS and this sweep on
-NVIDIA A100s, so we separate the two hardware effects. Re-scoring the
-<em>same</em> SmolLM3 weights on both devices changes novel AUPRC by
-<span class="math inline">\(\le 0.001\)</span> — rank-based AUPRC is
+<section id="sec:repro-hw" class="level5" data-number="5.9.0.2">
+<h5 data-number="5.9.0.2"><span
+class="header-section-number">5.9.0.2</span> Reproducibility across
+hardware and seeds.</h5>
+<p>The primary SmolLM3 results (Tables&nbsp;<a class="xref" href="#tab:main-inhouse">5</a> and <a class="xref" href="#tab:novel-auprc">9</a>)
+were produced on Apple MPS, whereas the multi-base sweep (<a class="xref" href="#tab:slm-sweep">Table&nbsp;12</a>) and the objective study (<a class="xref" href="#tab:rl-vs-ft">Table&nbsp;13</a>) are a single clean-split CUDA
+stack. We separate two effects. Re-scoring the <em>same</em> SmolLM3
+weights on both devices changes novel AUPRC by <span
+class="math inline">\(\le 0.001\)</span> — rank-based AUPRC is
 insensitive to the <span class="math inline">\(\sim\!10^{-3}\)</span>
-logit differences between Metal and CUDA. Re-<em>training</em> SFT on
-CUDA, however, moves novel AUPRC across bases (<a class="xref" href="#tab:rl-vs-ft">Table&nbsp;13</a> SFT
-vs. <a class="xref" href="#tab:slm-sweep">Table&nbsp;12</a>) over the range <span
-class="math inline">\(-0.010\)</span> to <span
-class="math inline">\(+0.061\)</span> (median <span
-class="math inline">\(\approx +0.03\)</span>), favoring CUDA on five of
-six bases: a genuine training-run effect from kernel and nondeterminism
-differences. This makes the MPS numbers a mild <em>tendency</em> toward
-OOD-pessimism rather than a uniform rule — Qwen3-4B is the exception
-(<span class="math inline">\(-0.010\)</span>, CUDA slightly worse), and
-SmolLM2 barely moves (<span class="math inline">\(+0.002\)</span>). The
-in-house column is also mixed (two of six deltas are slightly negative),
-so we do not lean on a directional hardware correction. The convergence
-and objective findings hold under both stacks; we report single-stack
-CUDA numbers for the objective comparison so that SFT, DPO, and GRPO
-differ only in objective.</p>
+logit differences between Metal and CUDA — so MPS-measured and
+CUDA-measured AUPRCs are on a comparable footing. Training-run
+stochasticity is now measured directly rather than argued: every sweep
+and objective cell is the <em>mean of three seeds</em> (42/43/44) with a
+tight spread (novel range <span class="math inline">\(\le 0.03\)</span>
+across seeds for most cells, up to <span
+class="math inline">\(0.11\)</span> for the DeepSeek SFT outlier), so
+the convergence and objective findings are stable to seed rather than
+single-run artifacts. We report single-stack CUDA numbers for the
+objective comparison so that SFT, DPO, and GRPO differ only in
+objective.</p>
 </section>
 </section>
-<section id="sec:ensemble" class="level3" data-number="5.9">
-<h3 data-number="5.9"><span class="header-section-number">5.9</span>
+<section id="sec:ensemble" class="level3" data-number="5.10">
+<h3 data-number="5.10"><span class="header-section-number">5.10</span>
 Mitigation: a base <span class="math inline">\(\oplus\)</span> tuned
 ensemble recovers OOD ranking</h3>
 <p>The base-vs-tuned split suggests a cheap, training-free fix: if the
@@ -2520,22 +2576,22 @@ original rankings.</p>
 <p>The deployable ensemble beats <em>both</em> constituents on the
 <em>novel</em> benchmarks for both model families (<a class="xref" href="#tab:ensemble">Table&nbsp;15</a>). Its novel AUPRC is 0.896
 (SmolLM3) and 0.847 (Qwen2.5), exceeding the tuned guard by <span
-class="math inline">\(+0.115\)</span> [0.093, 0.139] and <span
-class="math inline">\(+0.089\)</span> [0.065, 0.112], and even the
-strong untuned base by <span class="math inline">\(+0.010\)</span>
-[0.001, 0.020] and <span class="math inline">\(+0.052\)</span> [0.037,
-0.067] (paired bootstrap, all four CIs exclude zero). On the in-house
+class="math inline">\(+0.116\)</span> [0.094, 0.138] and <span
+class="math inline">\(+0.091\)</span> [0.067, 0.112], and even the
+strong untuned base by <span class="math inline">\(+0.012\)</span>
+[0.002, 0.022] and <span class="math inline">\(+0.053\)</span> [0.038,
+0.068] (paired bootstrap, all four CIs exclude zero). On the in-house
 held-out pool the picture is one-sided in the tuned guard’s favor but
 not the base’s: the ensemble beats the tuned guard on both families and
-the base on Qwen2.5 (0.864 vs. 0.828), while trailing the base on
-SmolLM3 (0.956 vs. 0.972) — the base is already very strong on the
+the base on Qwen2.5 (0.864 vs. 0.831), while trailing the base on
+SmolLM3 (0.955 vs. 0.972) — the base is already very strong on the
 SmolLM3 held-out pair. The out-of-distribution recovery, which is the
 mitigation we claim, holds on both families. Even the parameter-free
 raw-probability average — no normalization, trivially deployable per
 prompt — already beats the tuned guard OOD (0.883 / 0.791); the CDF
 normalization supplies the remainder. Ensembling the two
 <em>fine-tuned</em> models across families, with no base in the mix,
-also beats either alone (novel AUPRC 0.806 vs 0.781 / 0.758), so
+also beats either alone (novel AUPRC 0.806 vs 0.780 / 0.756), so
 cross-family diversity contributes independently of the base.</p>
 <p>This is a robustness–specialization <em>trade-off</em>, not a free
 lunch on every axis. The ensemble weight interpolates between the tuned
@@ -2573,8 +2629,7 @@ reported from the original rankings and the normalized scores are used
 only inside the ensemble. The equal-weight ensemble beats both the tuned
 guard and the untuned base out-of-distribution on both families
 (paired-bootstrap CIs vs. tuned and vs. base both exclude zero). AUPRC
-values use the pre-correction AP helper; pending tie-aware regeneration
-(§<a class="xref" href="#sec:metric-correction">5.11</a>).</div><div class="tscroll"><table>
+values are tie-aware (§<a class="xref" href="#sec:metric-correction">5.12</a>).</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -2595,21 +2650,21 @@ System</td>
 <tr>
 <td style="text-align: left;">tuned guard</td>
 <td style="text-align: center;">0.860</td>
-<td style="text-align: center;">0.781</td>
+<td style="text-align: center;">0.780</td>
 <td style="text-align: center;">0.788</td>
 <td style="text-align: center;">0.758</td>
 </tr>
 <tr>
 <td style="text-align: left;">untuned base</td>
 <td style="text-align: center;">0.972</td>
-<td style="text-align: center;">0.886</td>
+<td style="text-align: center;">0.884</td>
 <td style="text-align: center;">0.828</td>
 <td style="text-align: center;">0.795</td>
 </tr>
 <tr>
 <td style="text-align: left;">base <span
 class="math inline">\(\oplus\)</span> tuned (deployable)</td>
-<td style="text-align: center;">0.956</td>
+<td style="text-align: center;">0.955</td>
 <td style="text-align: center;"><strong>0.896</strong></td>
 <td style="text-align: center;">0.864</td>
 <td style="text-align: center;"><strong>0.847</strong></td>
@@ -2617,8 +2672,8 @@ class="math inline">\(\oplus\)</span> tuned (deployable)</td>
 </tbody>
 </table></div></div>
 </section>
-<section id="sec:mortgage-casestudy" class="level3" data-number="5.10">
-<h3 data-number="5.10"><span class="header-section-number">5.10</span>
+<section id="sec:mortgage-casestudy" class="level3" data-number="5.11">
+<h3 data-number="5.11"><span class="header-section-number">5.11</span>
 The domain-specific compliance layer: a saturated mortgage benchmark and
 its hardened rebuild</h3>
 <p>This is our concrete instance of the <strong>domain-specific</strong>
@@ -2735,7 +2790,7 @@ stress that this gpt comparison is <em>not</em> a matched operating
 point; the threshold-free AUPRC is the claim we lean on. Third — and
 this corrects an earlier version of this paper — the in-domain fine-tune
 does <em>not</em> reliably beat the base on this set. Under the
-tie-aware metric (§<a class="xref" href="#sec:metric-correction">5.11</a>)
+tie-aware metric (§<a class="xref" href="#sec:metric-correction">5.12</a>)
 Mortgage-SFT (0.895) and the untuned base (0.890) are statistically
 indistinguishable: the point gap is only <span
 class="math inline">\(+0.005\)</span>, the marginal CIs overlap almost
@@ -2764,7 +2819,7 @@ point. Every small guard over-blocks the hard negatives (FPR 0.27–0.74)
 where the frontier holds 0.065; the in-domain fine-tune sharply cuts
 over-blocking versus the general-safety guard (FPR 0.27 vs. 0.74) but
 does <em>not</em> reliably out-rank the untuned base by AUPRC (0.895
-vs. 0.890; tie-aware, §<a class="xref" href="#sec:metric-correction">5.11</a>).</div><div class="tscroll"><table>
+vs. 0.890; tie-aware, §<a class="xref" href="#sec:metric-correction">5.12</a>).</div><div class="tscroll"><table>
 
 <thead>
 <tr>
@@ -2842,8 +2897,8 @@ buys a lower false-positive rate here, while the untuned base is the
 stronger ranker on general OOD) — instances of the benchmark shaping the
 comparison.</p>
 </section>
-<section id="sec:limitations" class="level3" data-number="5.11">
-<h3 data-number="5.11"><span class="header-section-number">5.11</span>
+<section id="sec:limitations" class="level3" data-number="5.12">
+<h3 data-number="5.12"><span class="header-section-number">5.12</span>
 Limitations</h3>
 <p>We frame these results as a measurement and controlled study, not a
 state-of-the-art claim. Several caveats bound their interpretation.</p>
@@ -2870,15 +2925,22 @@ for one claim: the hardened-mortgage set gave Mortgage-SFT a 68-row
 score tie that the old helper resolved favorably, inflating its AP from
 a tie-aware <span class="math inline">\(0.895\)</span> to <span
 class="math inline">\(0.924\)</span>; under the corrected metric
-Mortgage-SFT and the base are statistically indistinguishable (§<a class="xref" href="#sec:mortgage-casestudy">5.10</a>), and we have retracted
+Mortgage-SFT and the base are statistically indistinguishable (§<a class="xref" href="#sec:mortgage-casestudy">5.11</a>), and we have retracted
 the “winner changes” reading accordingly. The primary in-house, novel,
 and mortgage tables (Tables&nbsp;<a class="xref" href="#tab:main-inhouse">5</a>, <a class="xref" href="#tab:perbench">6</a>, <a class="xref" href="#tab:auprc-poolings">7</a>, <a class="xref" href="#tab:novel-auprc">9</a> and <a class="xref" href="#tab:mortgage-casestudy">17</a>)
-are fully recomputed tie-aware; the multi-base sweep, objective, HPO,
-and ensemble tables (Tables&nbsp;<a class="xref" href="#tab:slm-sweep">12</a>, <a class="xref" href="#tab:rl-vs-ft">13</a>, <a class="xref" href="#tab:hpo">14</a> and <a class="xref" href="#tab:ensemble">15</a>)
-are flagged for tie-aware regeneration (per-row scores for several of
-those runs were not cached), with observed shifts <span
-class="math inline">\(\le 0.034\)</span> that do not change the reported
-orderings.</p>
+are fully recomputed tie-aware. The multi-base sweep, objective, and HPO
+tables (Tables&nbsp;<a class="xref" href="#tab:slm-sweep">12</a>, <a class="xref" href="#tab:rl-vs-ft">13</a> and <a class="xref" href="#tab:hpo">14</a>)
+have since been <em>regenerated from scratch</em> on a clean,
+source-family-disjoint split across three training seeds (42/43/44) with
+tie-aware AUPRC, superseding the earlier single-seed values; the
+ensemble table (<a class="xref" href="#tab:ensemble">Table&nbsp;15</a>) is likewise tie-aware. All
+orderings and the convergence, objective, and mitigation findings are
+unchanged under the regeneration (per-cell shifts <span
+class="math inline">\(\le 0.03\)</span> for the well-behaved sets), and
+on the clean split the base<span class="math inline">\(\to\)</span>tuned
+OOD gap is if anything <em>larger</em> (SmolLM3 <span
+class="math inline">\(\Delta_{\text{novel}}=-0.187\)</span> vs. <span
+class="math inline">\(-0.105\)</span> before).</p>
 <p><strong>Deployed operating point over-blocks.</strong> At the
 deployed point (<span class="math inline">\(T=2.10\)</span>, <span
 class="math inline">\(\tau=0.59\)</span>) the guard’s overall FPR is
@@ -3301,12 +3363,12 @@ BF16 VRAM. Our guard and its untuned base are repeated from Tables&nbsp;<a class
 for reference. Prompt Guard 2 is omitted here because it is evaluated
 only on the injection/jailbreak subsets and is discussed in the text.
 <em>Provenance note:</em> the matched-FPR@0.10 thresholds for the reused
-open guards use the pooled-<em>test</em> approximation of §<a class="xref" href="#sec:cross-family">5.7</a>, not the SmolLM3 run’s
+open guards use the pooled-<em>test</em> approximation of §<a class="xref" href="#sec:cross-family">5.8</a>, not the SmolLM3 run’s
 in-distribution-dev thresholds (Llama-Guard-3-1B 0.360 and
 ShieldGemma-2b 0.464 match the dev-derived values of <a class="xref" href="#tab:matched-fpr">Table&nbsp;8</a>; Llama-Guard-3-8B 0.475 is
 test-derived). Test-derived matching is mildly leaky but
 <em>flatters</em> the baselines, so the guard’s mF1 lead (0.581) is
-conservative under this mix. AUPRC values are tie-aware (§<a class="xref" href="#sec:metric-correction">5.11</a>),
+conservative under this mix. AUPRC values are tie-aware (§<a class="xref" href="#sec:metric-correction">5.12</a>),
 except <span class="math inline">\(^\S\)</span>Llama-Guard-3-8B, whose
 per-row scores were not cached and whose AUPRC is pending tie-aware
 regeneration.</div><div class="tscroll"><table>
@@ -3435,7 +3497,7 @@ specialized-guard subset. <strong>(2) Over-blocking is widespread among
 recall-first guards.</strong> Qwen3Guard-4B and WildGuard-7B both post
 heavy false-positive rates on OR-Bench-hard (0.81 and 0.73), an
 independent cross-vendor confirmation of the over-refusal failure mode
-isolated in §<a class="xref" href="#sec:mortgage-casestudy">5.10</a>. <strong>(3) Prompt
+isolated in §<a class="xref" href="#sec:mortgage-casestudy">5.11</a>. <strong>(3) Prompt
 Guard 2 is a specialized detector, not a general moderator.</strong> In
 this repo it is evaluated only on injection/jailbreak subsets, where it
 scores 0.903 AUPRC in-house and 0.625 on the novel subsets. It is
@@ -3468,11 +3530,11 @@ cross-family sweep carries no CIs, so we state this as a point-estimate
 similarity rather than a significance claim. If efficiency dominates,
 any 1.5–3B base (SmolLM2, Qwen2.5, SmolLM3) reaches in-house AUPRC
 0.82–0.85 at a fraction of the VRAM. Because tuning <em>converges</em>
-out-of-distribution behavior across bases (<a class="xref" href="#sec:cross-family">§5.7</a>), the base barely affects OOD
+out-of-distribution behavior across bases (<a class="xref" href="#sec:cross-family">§5.8</a>), the base barely affects OOD
 robustness — so choose on in-house accuracy, cost, and license, not on
 hoped-for generalization; and where OOD robustness is paramount, keep
 the untuned base in a base<span
-class="math inline">\(\oplus\)</span>tuned ensemble (<a class="xref" href="#sec:ensemble">§5.9</a>).</p></li>
+class="math inline">\(\oplus\)</span>tuned ensemble (<a class="xref" href="#sec:ensemble">§5.10</a>).</p></li>
 <li><p><strong>Best prompt-injection / jailbreak detector.</strong>
 Prompt Guard 2-86M — 0.903 measured in-house-injection AUPRC, 0.998
 published jailbreak AUC, 0.17 GB BF16, and 92 ms published on an A100 (a
@@ -3482,14 +3544,14 @@ than using it alone.</p></li>
 <li><p><strong>Best content-category moderation.</strong> ShieldGemma-2B
 (published OpenAI-Mod F1 0.812; the 9B variant reports 0.821, <a class="xref" href="#tab:guardrail-published">Table&nbsp;19</a>) for policy-category
 outputs; but on our hardened domain set every small guard over-blocks
-(§<a class="xref" href="#sec:mortgage-casestudy">5.10</a>), so category
+(§<a class="xref" href="#sec:mortgage-casestudy">5.11</a>), so category
 moderation still needs an operating-point audit.</p></li>
 <li><p><strong>Best performance/efficiency balance.</strong> Our
 laptop-trained 3B guard: among the locally measured general content
 guards it leads in-house (AUPRC 0.833) and at matched-FPR (F1 0.581) at
 6 GB / 124 ms, and shows no statistically significant F1 difference from
 gpt-5.4-mini; the untuned base or a base<span
-class="math inline">\(\oplus\)</span>tuned ensemble (§<a class="xref" href="#sec:ensemble">5.9</a>) is preferable when
+class="math inline">\(\oplus\)</span>tuned ensemble (§<a class="xref" href="#sec:ensemble">5.10</a>) is preferable when
 out-of-distribution robustness dominates.</p></li>
 <li><p><strong>Best for real-time production.</strong> For pure
 injection/jailbreak gating, Prompt Guard 2 (encoder, single forward
@@ -3552,8 +3614,8 @@ training recipes — broad, family-decontaminated data plus regularization
 — that add in-distribution competence <em>without</em> losing the
 untuned base’s operating-point robustness on unseen distributions. The
 training-free base <span class="math inline">\(\oplus\)</span> tuned
-ensemble (<a class="xref" href="#sec:ensemble">§5.9</a>) is a first, inference-time step —
-it recovers OOD ranking at the cost of a second forward pass — but a
+ensemble (<a class="xref" href="#sec:ensemble">§5.10</a>) is a first, inference-time step
+— it recovers OOD ranking at the cost of a second forward pass — but a
 training-time recipe that bakes both into one model, and an accounting
 of the ensemble under matched-FPR and batch=1 latency, remain
 open.</p></li>
@@ -3564,7 +3626,7 @@ training data (source-family coverage, near-duplicate-filtered) to test
 whether generalization, not just in-distribution fit, can be trained
 in.</p></li>
 <li><p><strong>Broader objective comparison.</strong> We compare SFT,
-DPO, and GRPO here (<a class="xref" href="#sec:rl-vs-ft">§5.8</a>);
+DPO, and GRPO here (<a class="xref" href="#sec:rl-vs-ft">§5.9</a>);
 extending the same controlled setup to objectives we have <em>not</em>
 tested — IPO <span class="citation" data-cites="azar2023ipo">(Azar et
 al. 2024)</span>, KTO <span class="citation"
@@ -3576,7 +3638,7 @@ clean nested train/tune/test protocol and multiple seeds would further
 isolate the objective’s effect on in-distribution specialization versus
 held-out transfer.</p></li>
 <li><p><strong>Hardened, expert-labeled benchmarks.</strong> The
-mortgage case study (<a class="xref" href="#sec:mortgage-casestudy">§5.10</a>) used a seed-scale,
+mortgage case study (<a class="xref" href="#sec:mortgage-casestudy">§5.11</a>) used a seed-scale,
 single-annotator hardened set; expert re-adjudication, scaling, and
 applying the same saturated-vs-hardened rebuild across domains would
 turn the observations — de-saturation and the small-guard-vs-frontier
@@ -3598,7 +3660,7 @@ class="smallcaps">agent-bouncer</span> name. This is the highest-value
 next step and the most direct way to make the “agent” framing empirical
 rather than aspirational.</p></li>
 <li><p><strong>More domain-specific layers.</strong> The mortgage layer
-(<a class="xref" href="#sec:mortgage-casestudy">§5.10</a>) is one instance of a
+(<a class="xref" href="#sec:mortgage-casestudy">§5.11</a>) is one instance of a
 domain guard; regulated deployments in healthcare, insurance, and
 consumer finance each need their own rule set. Building and fairly
 evaluating additional domain layers — and studying how a general and a
@@ -3617,7 +3679,7 @@ analyses are reproduced by their named scripts.</p>
 <p><em>Baseline note: <code>gpt-5.4-mini</code> is a hosted commercial
 API model; we cite it as an API baseline rather than a bibliographic
 reference. For reproducible reruns the dated model snapshot and decoding
-settings should be pinned (our run used an unversioned alias; see §<a class="xref" href="#sec:limitations">5.11</a>).</em></p>
+settings should be pinned (our run used an unversioned alias; see §<a class="xref" href="#sec:limitations">5.12</a>).</em></p>
 </section>
 </section>
 <section id="app:rank-preservation" class="level2" data-number="8">
@@ -3769,9 +3831,9 @@ are handled consistently. An empirical CDF fitted on finite
 in-distribution data is only weakly monotone, however: it is a step
 function, so OOD scores can collapse into ties. In that case AUROC
 remains well defined with half-credit ties, while AUPRC invariance
-becomes tie-convention dependent up to the introduced tie mass. In <a class="xref" href="#sec:ensemble">§5.9</a> we therefore use the empirical-CDF
-map only to align score scales before averaging and report the
-single-model endpoints from the original rankings.</p>
+becomes tie-convention dependent up to the introduced tie mass. In <a class="xref" href="#sec:ensemble">§5.10</a> we therefore use the
+empirical-CDF map only to align score scales before averaging and report
+the single-model endpoints from the original rankings.</p>
 <div id="refs" class="references csl-bib-body hanging-indent"
 role="list">
 <div id="ref-akinrele2026regime" class="csl-entry" role="listitem">
