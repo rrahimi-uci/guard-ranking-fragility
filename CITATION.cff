@@ -1,28 +1,27 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite the paper below."
-title: "The Benchmark Chooses the Winner: A Fair Evaluation of Small-LLM Safety Guards"
+title: "The Benchmark Chooses the Winner: Measuring Fine-Tuning Specialization Across Safety-Guard Benchmarks"
 authors:
   - family-names: Rahimi
     given-names: Reza
     email: reza.rahimi@jazzx.ai
     affiliation: "JazzX AI"
 license: Apache-2.0
-date-released: "2026-07-01"
+date-released: "2026-07-13"
 keywords:
   - llm
-  - agent
-  - guardrail
-  - safety
+  - safety-guard
   - prompt-injection
+  - jailbreak
   - small-language-model
   - benchmark
   - fine-tuning
-  - dpo
-  - grpo
+  - specialization
   - out-of-distribution
+  - reproducibility
 preferred-citation:
   type: article
-  title: "The Benchmark Chooses the Winner: A Fair Evaluation of Small-LLM Safety Guards"
+  title: "The Benchmark Chooses the Winner: Measuring Fine-Tuning Specialization Across Safety-Guard Benchmarks"
   authors:
     - family-names: Rahimi
       given-names: Reza
