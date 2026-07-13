@@ -8,17 +8,18 @@ datasets rather than committing them. Each entry records the true total (n) and 
 are shown, and the page links to the authoritative source for the complete set.
 
 Sources (all already local):
-  notebooks/outputs/frozen_eval_rows.json        6 in-house strata + 4 novel sets (the exact scored rows)
-  notebooks/data/benchmarks/full/guard_benchmark_hard.jsonl   the mortgage set (this work)
-  data/benchmarks/openai_moderation.jsonl        landscape-only reference set
+  data/frozen_eval_rows.json                     6 in-house strata + 4 novel sets (the exact scored rows; gitignored)
+  paper-html/explorer/sources/guard_benchmark_hard.jsonl   the mortgage set (this work; tracked)
+  data/benchmarks/openai_moderation.jsonl        landscape-only reference set (gitignored)
 
-Run from repo root:  python3 benchmark-explore/build_content_samples.py
+Run from repo root:  python3 paper-html/explorer/build_content_samples.py
 """
 import json, os, re
 from collections import OrderedDict
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "benchmark-explore", "samples.js")
+HERE = os.path.dirname(os.path.abspath(__file__))          # paper-html/explorer
+ROOT = os.path.dirname(os.path.dirname(HERE))              # repo root
+OUT = os.path.join(HERE, "samples.js")
 PER = 30        # rows shown per benchmark (label-balanced + tag-diversified)
 TRUNC = 320     # truncate prompt text to keep the page browsable
 
@@ -80,7 +81,7 @@ def add(bid, rows, total, extra=None):
     SAMPLES[bid] = entry
 
 # ---- frozen eval rows: 6 in-house strata + 4 novel sets ----
-fr = json.load(open(os.path.join(ROOT, "notebooks/outputs/frozen_eval_rows.json")))
+fr = json.load(open(os.path.join(ROOT, "data/frozen_eval_rows.json")))
 by = {}
 for t, g, s in zip(fr["test_texts"], fr["gold"], fr["strata"]):
     by.setdefault(s, []).append({"t": clip(t), "g": int(g)})
@@ -91,7 +92,7 @@ for nk, nv in fr["novel"].items():
     add(nk, rows, len(rows))
 
 # ---- mortgage (this work): rich labels; carry trap_type as a tag ----
-mp = os.path.join(ROOT, "notebooks/data/benchmarks/full/guard_benchmark_hard.jsonl")
+mp = os.path.join(HERE, "sources", "guard_benchmark_hard.jsonl")
 mrows, mtot = [], 0
 for line in open(mp):
     line = line.strip()
@@ -115,7 +116,7 @@ if os.path.exists(op):
     add("openai_mod", orows, otot)
 
 # ---- ExpGuardTest (CC BY-4.0): expert-annotated; use a local sample if pulled, else link ----
-ep = os.path.join(ROOT, "benchmark-explore", "expguard_sample.json")
+ep = os.path.join(HERE, "expguard_sample.json")
 if os.path.exists(ep):
     ej = json.load(open(ep))
     erows = [{"t": clip(r["t"]), "g": int(r["g"]), "tag": r.get("tag", "")} for r in ej["rows"]]

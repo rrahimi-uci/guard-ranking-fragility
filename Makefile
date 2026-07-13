@@ -52,8 +52,8 @@ paper:      ## build the paper PDF (needs tectonic)
 	$(MAKE) -C paper
 paper-html: ## build the HTML edition (needs pandoc, tectonic, pdftocairo)
 	$(PY) paper-html/build.py
-explorer:   ## regenerate the benchmark-explorer content samples
-	$(PY) benchmark-explore/build_content_samples.py
+explorer:   ## regenerate the benchmark-explorer content samples (paper-html/explorer)
+	$(PY) paper-html/explorer/build_content_samples.py
 
 clean:      ## remove Python caches
 	find . -type d -name __pycache__ -prune -exec rm -rf {} + ; \

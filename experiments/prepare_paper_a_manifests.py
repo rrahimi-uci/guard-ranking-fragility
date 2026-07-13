@@ -41,7 +41,7 @@ for _p in (_ROOT, _HERE):
 
 import paper_a_manifest_lib as L  # noqa: E402
 
-FROZEN_PATH = os.path.join(_ROOT, "notebooks", "outputs", "frozen_eval_rows.json")
+FROZEN_PATH = os.path.join(_ROOT, "data", "frozen_eval_rows.json")
 
 
 # =============================================================================
@@ -58,7 +58,6 @@ def load_env():
                         os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
         except Exception:
             pass
-    le(os.path.join(_ROOT, "notebooks", ".env"))
     le(os.path.join(_ROOT, ".env"))
     return os.environ.get("HF_TOKEN")
 

@@ -12,7 +12,7 @@ artifact chain under [`artifacts/paper_a_sft/`](../artifacts/paper_a_sft). Run e
 
 | # | Script | What it does |
 |---|---|---|
-| 1 | `prepare_paper_a_manifests.py` | Build the immutable, **decontaminated** 1,200-row training manifest (400/source × 200/label over ToxicChat + Prompt-Injections + Jailbreak-Classification) plus the held-out evaluation sets, from Hugging Face sources pinned by revision and `notebooks/outputs/frozen_eval_rows.json`. Emits content/family hashes and a manifest with full provenance. |
+| 1 | `prepare_paper_a_manifests.py` | Build the immutable, **decontaminated** 1,200-row training manifest (400/source × 200/label over ToxicChat + Prompt-Injections + Jailbreak-Classification) plus the held-out evaluation sets, from Hugging Face sources pinned by revision and the local frozen cache `data/frozen_eval_rows.json`. Emits content/family hashes and a manifest with full provenance. |
 | 2 | `audit_paper_a_splits.py` | Recompute the decontamination facts independently of the builder and **hard-assert** them: zero exact/conflicting train↔eval overlap, label balance, family disjointness. Writes `audit.json` / `audit.md`. |
 | 3 | `lock_paper_a_sft.py` | Freeze the study: write `LOCK.json` binding the config, manifest hashes, and audit result. Created **after** manifests + tests + smoke pass and **before** the final training run. |
 | 4 | `run_paper_a_sft.py` | Train the fixed panel — **4 checkpoints × 5 seeds = 20** completion-only LoRA-SFT adapters (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B). Subcommands: `train` / `smoke` / `validate-runs`. GPU required. |

@@ -48,9 +48,9 @@ artifacts/paper_a_sft/   the evidence chain: LOCK.json, audit/, analysis/,
                      scores/scores.parquet (row-keyed hashes + logits, no raw text),
                      runmeta/
 paper/               the manuscript (tectonic) + generated tables/figures
-paper-html/          the HTML edition (self-contained, offline math)
-benchmark-explore/   an interactive benchmark explorer webpage
-notebooks/           bundled benchmark data + frozen evaluation rows
+paper-html/          the HTML edition (self-contained, offline math); bundles
+                     explorer/ — the interactive benchmark explorer webpage
+                     (+ explorer/sources/ — this-work data the explorer samples)
 docs/                design/planning notes
 legacy/              the earlier broad study + planned Paper B code (quarantined,
                      still runnable; not part of this reproduction)
@@ -122,7 +122,8 @@ average-precision loop anywhere in the pipeline.
 
 Training sources are pulled from Hugging Face pinned by revision (ToxicChat,
 Prompt-Injections, Jailbreak-Classification) and the held-out evaluation rows from
-`notebooks/outputs/frozen_eval_rows.json`. Raw non-commercially-licensed manifest
+a local frozen cache `data/frozen_eval_rows.json` (gitignored; gated AI2 sets fall
+back to Hugging Face when it is absent). Raw non-commercially-licensed manifest
 rows are gitignored; they regenerate deterministically from the builder and config.
 Provenance (NFKC-normalized content/family SHA-256, MinHash near-duplicate families)
 lives in [guard_research/provenance.py](guard_research/provenance.py).
