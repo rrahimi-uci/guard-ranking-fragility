@@ -1,0 +1,46 @@
+{
+  "analysis_mode": "precision_focused",
+  "gate_a": {
+    "criterion": "LCB95(mean_delta_represented) > 0",
+    "lcb95": 0.2805015116527519,
+    "passed": true,
+    "represented_delta_mean": 0.32488157817512564,
+    "wording": "the estimated represented-source macro-AP change was +0.3249 (95% one-sided LCB +0.2805)"
+  },
+  "gate_b": {
+    "criterion": "UCB95(mean_delta_transfer) < 0 AND LOO sign-stable",
+    "full_transfer_negative": true,
+    "loo_base_sign_stable": true,
+    "loo_benchmark_sign_stable": true,
+    "passed": true,
+    "transfer_delta_mean": -0.04980494119014819,
+    "ucb95": -0.028830456598702578,
+    "wording": "the estimated transfer macro-AP change was -0.0498 (95% one-sided UCB -0.0288)"
+  },
+  "holm_two_component": {
+    "alpha": 0.05,
+    "components": {
+      "gate_a": {
+        "holm_threshold": 0.025,
+        "p": 0.0,
+        "reject": true
+      },
+      "gate_b": {
+        "holm_threshold": 0.05,
+        "p": 0.0,
+        "reject": true
+      }
+    },
+    "note": "bootstrap crossing-fraction proxies for one-sided component nulls"
+  },
+  "precision_focused_language": true,
+  "rq4": {
+    "note": "operating-point TPR/FPR is a deployment diagnostic, not a confirmatory test",
+    "status": "descriptive_only"
+  },
+  "specialization": {
+    "criterion": "gate_a AND gate_b (intersection-union, alpha 0.05)",
+    "passed": true,
+    "wording": "estimation-only mode: report the joint (represented, transfer) estimate and intervals; no formal specialization rejection is claimed"
+  }
+}
