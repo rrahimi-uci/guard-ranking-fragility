@@ -317,10 +317,10 @@ As a deployment diagnostic only, we fit one positive temperature per base and pe
 
 The two single-class stress sets are reported as one-sided diagnostics only: the OR-Bench-Hard benign false-positive rate (over-refusal stress) and HarmBench recall at the frozen threshold (positive stress). Neither contributes to any AP aggregate. These appear in the lower panel of \Cref{tab:sensitivity}.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{6pt}
 \caption{Per-benchmark and operating-point sensitivity. Upper panel: per-source paired base-to-SFT AP delta for each represented and transfer benchmark. Lower panel: calibration-targeted 5\% FPR operating point (TPR and realized FPR, base vs.\ SFT) and single-class stress diagnostics. All values are filled from \texttt{artifacts/paper\_a\_sft/analysis} after the locked run.}
 \label{tab:sensitivity}
 \begin{tabular}{llccc}
@@ -343,7 +343,7 @@ OR-Bench-Hard benign FPR & stress & \RES & \RES & \RES \\
 HarmBench recall & stress & \RES & \RES & \RES \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Specialization plane}
 \label{subsec:plane}
