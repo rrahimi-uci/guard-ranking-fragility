@@ -14,7 +14,9 @@ declare -A MID=(
   [qwen3-4b]="Qwen/Qwen3-4B"
   [qwen3-8b]="Qwen/Qwen3-8B"
 )
-if [ "${ONLY_8B:-0}" = "1" ]; then BASES=(qwen3-8b); else BASES=(qwen2.5-1.5b smollm2-1.7b deepseek-r1-1.5b qwen3-4b qwen3-8b); fi
+if [ -n "${BASES_OVERRIDE:-}" ]; then read -ra BASES <<< "$BASES_OVERRIDE"   # space-separated subset for multi-VM fan-out
+elif [ "${ONLY_8B:-0}" = "1" ]; then BASES=(qwen3-8b); else BASES=(qwen2.5-1.5b smollm2-1.7b deepseek-r1-1.5b qwen3-4b qwen3-8b); fi
+echo "BASES = ${BASES[*]}"
 for base in "${BASES[@]}"; do
   for obj in sft dpo grpo; do
     for seed in 42 43 44; do
