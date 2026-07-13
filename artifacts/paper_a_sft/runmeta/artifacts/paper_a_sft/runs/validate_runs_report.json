@@ -1,0 +1,211 @@
+{
+  "cells": {
+    "qwen25_15b/seed_42": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen25_15b/seed_43": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen25_15b/seed_44": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen25_15b/seed_45": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen25_15b/seed_46": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen3_4b/seed_42": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen3_4b/seed_43": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen3_4b/seed_44": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen3_4b/seed_45": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "qwen3_4b/seed_46": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm2_17b/seed_42": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm2_17b/seed_43": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm2_17b/seed_44": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm2_17b/seed_45": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm2_17b/seed_46": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm3_3b/seed_42": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm3_3b/seed_43": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm3_3b/seed_44": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm3_3b/seed_45": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    },
+    "smollm3_3b/seed_46": {
+      "adapter_present": true,
+      "adapter_sha256_ok": true,
+      "config_issues": [],
+      "config_ok": true,
+      "hashes_ok": true,
+      "issues": [],
+      "present": true,
+      "status": "completed"
+    }
+  },
+  "complete": true,
+  "expected_cells": 20,
+  "failed": [],
+  "invalid": [],
+  "missing": [],
+  "runs_root": "/home/rezarahimi/paper_a/artifacts/paper_a_sft/runs",
+  "valid_cells": 20
+}

@@ -1,8 +1,10 @@
-# Paper B — Two Guards, One Risk Budget
+# ARCHIVED/HISTORICAL — Paper B: Two Guards, One Risk Budget
+
+> **Superseded implementation design (2026-07-13):** Use [`paper-b-development-checkpoint-plan.md`](paper-b-development-checkpoint-plan.md) `v2-adversarial-review`. The entire body below is archived rationale. Its “joint calibration,” universal mortgage `BLOCK`, old E3 allocation-grid baseline, six-lock chain, and test-access commands must not be implemented or cited as the current protocol.
 
 ## Document purpose
 
-This is an executable research and implementation specification for a joint general-safety and mortgage-compliance guard stack. It separates three levels of evidence:
+This was the original research sketch for a joint general-safety and mortgage-compliance guard stack. It is not executable or authoritative; current science, commands, and gates live only in the replacement document above. Historically, it separated three levels of evidence:
 
 1. **Existing-data pilot:** implement and debug component scoring, score joins, optimizer mechanics, and decision replay using artifacts already in this repository. The current separately labeled datasets cannot fit or validate a joint policy.
 2. **Publishable joint-stack study:** add family-disjoint, dual-labeled four-quadrant development and untouched test cohorts, plus expert re-adjudication.

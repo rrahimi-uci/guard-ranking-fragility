@@ -1,0 +1,42 @@
+[eval] scoring rows=3308 across 5 splits | device=cuda
+[eval] refusing to score: 8 adapters not completed (need 20/20). Use --allow-incomplete to override. Missing: ['qwen25_15b/seed_45', 'qwen25_15b/seed_46', 'smollm2_17b/seed_45', 'smollm2_17b/seed_46', 'smollm3_3b/seed_45', 'smollm3_3b/seed_46']...
+[eval] scoring rows=3308 across 5 splits | device=cuda
+  [scored] qwen25_15b:base (T=10.526 thr=ok)
+  [scored] smollm2_17b:base (T=15.440 thr=ok)
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 40.65it/s]
+  [scored] smollm3_3b:base (T=3.272 thr=ok)
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 51.54it/s]
+  [scored] qwen3_4b:base (T=7.700 thr=ok)
+  [scored] qwen25_15b:sft:seed_42 (T=1.587 thr=ok)
+  [scored] qwen25_15b:sft:seed_43 (T=1.610 thr=ok)
+  [scored] qwen25_15b:sft:seed_44 (T=1.744 thr=ok)
+  [scored] qwen25_15b:sft:seed_45 (T=1.466 thr=ok)
+  [scored] qwen25_15b:sft:seed_46 (T=1.961 thr=ok)
+  [scored] smollm2_17b:sft:seed_42 (T=1.377 thr=ok)
+  [scored] smollm2_17b:sft:seed_43 (T=1.407 thr=ok)
+  [scored] smollm2_17b:sft:seed_44 (T=1.879 thr=ok)
+  [scored] smollm2_17b:sft:seed_45 (T=1.351 thr=ok)
+  [scored] smollm2_17b:sft:seed_46 (T=1.490 thr=ok)
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 40.64it/s]
+  [scored] smollm3_3b:sft:seed_42 (T=1.615 thr=ok)
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 40.95it/s]
+  [scored] smollm3_3b:sft:seed_43 (T=1.537 thr=ok)
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 40.10it/s]
+  [scored] smollm3_3b:sft:seed_44 (T=1.812 thr=ok)
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 40.44it/s]
+  [scored] smollm3_3b:sft:seed_45 (T=1.537 thr=ok)
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 40.83it/s]
+  [scored] smollm3_3b:sft:seed_46 (T=2.035 thr=ok)
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 51.18it/s]
+  [scored] qwen3_4b:sft:seed_42 (T=1.657 thr=ok)
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 50.69it/s]
+  [scored] qwen3_4b:sft:seed_43 (T=1.644 thr=ok)
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 50.27it/s]
+  [scored] qwen3_4b:sft:seed_44 (T=1.762 thr=ok)
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 50.94it/s]
+  [scored] qwen3_4b:sft:seed_45 (T=2.248 thr=ok)
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 51.22it/s]
+  [scored] qwen3_4b:sft:seed_46 (T=1.412 thr=ok)
+[eval] wrote /home/rezarahimi/paper_a/artifacts/paper_a_sft/scores/scores.parquet (79392 rows, 24 bundles)
+[eval] wrote /home/rezarahimi/paper_a/artifacts/paper_a_sft/scores/metadata.json
+EVAL_DONE
