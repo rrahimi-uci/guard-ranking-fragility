@@ -34,6 +34,10 @@ corresponding code is quarantined under [`../legacy/`](../legacy).
 - [smollm3-guard-plan.md](smollm3-guard-plan.md) — plan behind the SmolLM3 guard
   reproduction notebook (the broad-study notebooks were removed from the repo;
   their builders remain under [`../legacy/experiments/`](../legacy/experiments)).
+- [mortgage-benchmark-build-spec.md](mortgage-benchmark-build-spec.md) — target build
+  spec (v0.2) for the mortgage guard benchmark: request-screening shape, dual labels
+  (general-safety + mortgage-policy), quadrant/fairness/prevalence coverage, decontamination,
+  and evaluation via the canonical tooling. Supersedes the v0.1.0 draft under `data/`.
 - [mortgage-benchmark-hard-results.md](mortgage-benchmark-hard-results.md) — results
   from the hardened mortgage-compliance benchmark.
 
