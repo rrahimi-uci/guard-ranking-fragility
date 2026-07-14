@@ -16,6 +16,12 @@ not live inside evaluation-metric theory.*
 > stay technically correct; if you spot a conflict, the [LaTeX paper](../paper-a/) and the
 > committed results in [`../artifacts/paper_a_sft/analysis/`](../artifacts/paper_a_sft/analysis)
 > win.
+>
+> **Want the full paper-format edition?** This page is the quick read. The complete,
+> **paper-formatted** version — abstract, numbered sections, all six tables (incl. per-seed),
+> the figure, teaching call-out boxes, and references — is
+> [`the-benchmark-chooses-the-winner-annotated.pdf`](the-benchmark-chooses-the-winner-annotated.pdf)
+> (source: [`.tex`](the-benchmark-chooses-the-winner-annotated.tex), builds with `tectonic`).
 
 ---
 
