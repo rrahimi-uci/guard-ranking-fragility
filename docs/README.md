@@ -20,7 +20,10 @@ corresponding code is quarantined under [`../legacy/`](../legacy).
 - [paper-b-joint-compliance-stack-plan.md](paper-b-joint-compliance-stack-plan.md) —
   a joint general + domain-specific compliance guard stack.
 - [paper-b-development-checkpoint-plan.md](paper-b-development-checkpoint-plan.md) —
-  development checkpoints for the follow-up.
+  development checkpoints for the follow-up (the governing `v2-adversarial-review` plan).
+- [paper-b-feasibility-investigation.md](paper-b-feasibility-investigation.md) —
+  independent assessment of whether the Paper B plan is feasible and can reach a
+  solution; recommends a de-scoped measurement-paper landing.
 - [smollm3-guard-plan.md](smollm3-guard-plan.md) — plan behind the SmolLM3 guard
   reproduction notebook (the broad-study notebooks were removed from the repo;
   their builders remain under [`../legacy/experiments/`](../legacy/experiments)).
