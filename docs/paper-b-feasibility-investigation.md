@@ -35,6 +35,15 @@ compute, **unlikely to complete as written**, and even if executed has a
 substantial probability of a null outcome. Recommendation: pursue the de-scoped
 landing in [§7](#7-recommended-feasible-path) deliberately, not as a failure mode.
 
+> **Update ([§9](#9-external-fintech-benchmarks-addendum), 2026-07-13):**
+> Recent external fintech-safety benchmarks (FairHome, FinRED, FinSafetyBench)
+> materially **de-risk the de-scoped path and the P4a construct problem** — they can
+> supply the domain (`D`) dimension with *expert-published* labels and the fairness
+> gate's protected-category structure, roughly halving annotation. They do **not**
+> solve the crux (a *dual-labeled* cohort — all are single-labeled — nor a *naturalistic*
+> one). Net: the recommended measurement paper gets stronger and cheaper; the full
+> confirmatory naturalistic claim is unchanged.
+
 ---
 
 ## 1. What Paper B actually is
@@ -333,3 +342,78 @@ the number to plan around.
    `RETRAIN_REQUIRED`.
 4. Implement + unit-test the E3/E4 selector and the correct dual-prompt scorer before
    collecting any labels.
+
+---
+
+## 9. External fintech benchmarks (addendum)
+
+*Added 2026-07-13 after a review of public fintech-safety benchmarks (prompted by a
+pointer to `datumo/FinRED`). These change the feasibility arithmetic of the de-scoped
+path in §7; they do not change the crux.*
+
+### What's out there
+
+| Benchmark | What it is | Size | Row = | Label(s) | Naturalistic? | License |
+|---|---|---|---|---|---|---|
+| [FairHome](https://arxiv.org/abs/2409.05990) | Fair-housing / fair-lending compliance dataset | ~75,000 | text in real-estate LLM context (request vs output **unverified**) | **binary compliance-risk** + 9 protected categories | unstated (verify) | CC-BY-NC-**SA**-4.0 |
+| [FinRED](https://huggingface.co/datasets/datumo/FinRED) | Financial-safety **red-team** prompts (Korea FSI, 12 experts) | 5,805 | adversarial request | 26-way risk taxonomy | ❌ adversarial/authored | CC-BY-NC-4.0 |
+| [FinSafetyBench](https://arxiv.org/abs/2605.00706) | Financial-compliance request-refusal benchmark | (n/s) | user request | 14 crime/ethics subcats | ~ real-world-**case-grounded** (curated, not raw traffic) | (n/s) |
+| [CNFinBench](https://www.arxiv.org/pdf/2512.09506) | Chinese finance safety/compliance | — | — | multi-dimension | ❌ | — |
+| [TRIDENT](https://arxiv.org/pdf/2507.21134) | LLM safety across finance/medicine/law | — | request | domain safety | — | — |
+
+### What they genuinely help
+
+- **The `D` (financial/mortgage-policy) construct — constraint #1 / P4a.** FairHome
+  (housing/fair-lending, expert-published binary compliance labels) and FinRED (FSI
+  expert taxonomy) provide *externally authored, citable* domain labels. Grounding the
+  `D` target in a published expert benchmark is far more defensible than the legacy
+  `flag` target and reduces the "I am not a mortgage lawyer" construct-validity risk.
+- **The fairness gate almost for free.** FairHome's 9 protected categories directly feed
+  the protected-context counterfactual gate (`Δ_context`) and the existing
+  `name_fairness_probe.py`.
+- **Annotation burden roughly halved.** The single biggest cost was dual-annotation.
+  If a row arrives with an expert-provided *domain* label, only the **general-safety**
+  label `G` must be added (annotated, or scored by the Paper A guard with light human
+  verification). Dual-labeling becomes single-dimension top-up on expert-labeled data.
+- **A bigger, better challenge set.** §7 step 2 can now use these instead of thin
+  authored quartets — hundreds-to-thousands of expert rows, easily past the ~1,522
+  precision floor for the benign (`G0/D0`) rate.
+
+### What they do NOT solve (the crux is unchanged)
+
+- **None is dual-labeled.** Every one carries only its own policy label. The
+  general-safety label `G` on the *same rows* still has to be produced. This is the
+  irreducible task, only made cheaper, not eliminated.
+- **None is "naturalistic" in the plan's strict sense.** FinRED is adversarial;
+  FinSafetyBench is real-world-*case-grounded* but curated; FairHome's provenance is
+  unstated. The plan forbids authored/benchmark rows for the **primary** naturalistic
+  claim (dev plan lines 1261, 1597), so these strengthen the **challenge-set /
+  `precision_focused_measurement`** landing — not the confirmatory naturalistic claim.
+- **Domain drift: "financial" ≠ "mortgage."** FinRED/FinSafetyBench are broad fintech
+  (fraud, authentication, product misinfo); only FairHome is housing/lending-specific.
+  Using them either **reframes** Paper B to "financial-policy screening" (broader, loses
+  some fair-lending sharpness) or requires filtering to the mortgage/housing subset.
+- **Licensing.** All are non-commercial (CC-BY-NC / NC-SA), consistent with the repo's
+  existing reconstruct-only, text-free-artifact handling. FairHome's **ShareAlike** is a
+  genuine copyleft complication for any mixed released cohort — keep sources separate and
+  redistribute only text-free artifacts, as Paper A already does.
+
+### Due-diligence before relying on them
+
+1. **Verify FairHome's row type** — request vs. model output. Paper B screens *requests*;
+   if FairHome labels *outputs*, it fits a response-screen, not the request-screen `D`.
+2. **Confirm provenance** (real vs synthetic) for FairHome/FinSafetyBench — decides
+   whether any of it can support a "naturalistic" (vs challenge-set) framing.
+3. **Decontaminate against Paper A general sources** with the existing MinHash/family
+   machinery before mixing (some financial-safety rows may overlap general jailbreak sets).
+4. **Check license compatibility** for a combined release; default to text-free artifacts.
+
+### Revised recommendation
+
+Adopt these as the **domain backbone of the §7 measurement paper**: use FairHome (and/or
+the mortgage slice of FinRED/FinSafetyBench) as the expert-labeled `D` dimension and the
+protected-category source, annotate only `G` on top, and report the E3/E4 overlap
+mechanism descriptively. This is a *stronger and cheaper* paper than the authored-quartet
+version — but it is still the measurement paper, not the confirmatory naturalistic claim,
+which remains gated on authentic request traffic (§5) and a multi-party governance
+apparatus (§6).
