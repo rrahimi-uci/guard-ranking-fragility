@@ -37,8 +37,7 @@
 
 \title{\textbf{The Benchmark Chooses the Winner}\\[2pt]
 \large An Annotated, Plain-Language Edition\\[2pt]
-\normalsize\itshape Measuring what fine-tuning does to small safety guards --- explained
-for readers new to the metrics}
+\normalsize\itshape Measuring what fine-tuning does to small safety guards --- and a cheap fix}
 \author{Reza Rahimi \\ \small JazzX AI, Los Altos, CA \\ \small\texttt{reza.rahimi@jazzx.ai}}
 \date{}
 
@@ -137,7 +136,7 @@ precision, the bootstrap, and calibration, skip to Section~\ref{sec:design}.
 \subsection{LoRA supervised fine-tuning (SFT)}
 \begin{background}{LoRA-SFT}
 \small
-LoRA fine-tuning does \textbf{not} create a new model. The original model is \textbf{frozen}
+LoRA fine-tuning~\cite{hu2021lora} does \textbf{not} create a new model. The original model is \textbf{frozen}
 (no weight changes). Instead you bolt on a small set of extra trainable weights --- an
 \textbf{adapter} --- plugged into specific matrices inside the model. Only the adapter learns,
 so it is cheap: you train a small fraction of extra parameters (millions, not billions) and
@@ -242,7 +241,7 @@ Checkpoint & Params & Role \\
 \midrule
 Qwen2.5-1.5B-Instruct & 1.5B & base $\to$ 5 SFT seeds \\
 SmolLM2-1.7B-Instruct & 1.7B & base $\to$ 5 SFT seeds \\
-SmolLM3-3B            & 3B   & base $\to$ 5 SFT seeds \\
+SmolLM3-3B~\cite{bakouch2025smollm3}            & 3B   & base $\to$ 5 SFT seeds \\
 Qwen3-4B             & 4B   & base $\to$ 5 SFT seeds \\
 \midrule
 \multicolumn{3}{l}{\emph{Recipe:} LoRA $r{=}32$, $\alpha{=}64$, dropout $0.05$ on
@@ -255,7 +254,7 @@ $2\times10^{-4}$ cosine; effective batch 4; max length 1024.}\\
 
 \subsection{Training data, label mapping, and decontamination}
 Training reads one frozen manifest of \textbf{1{,}200 rows}: 400 from each of three datasets
---- ToxicChat, Prompt-Injections, and Jailbreak-Classification --- with 200 safe and 200
+--- ToxicChat~\cite{lin2023toxicchat}, Prompt-Injections, and Jailbreak-Classification --- with 200 safe and 200
 unsafe per dataset, selected by a fixed hash rank so the row set is identical across every
 model and seed. Each dataset's native label is mapped to safe/unsafe by a fixed rule (e.g.\
 ToxicChat \code{toxicity=1}$\to$unsafe; Prompt-Injections \code{label=1}$\to$unsafe;
@@ -288,10 +287,10 @@ Stress & OR-Bench (all benign), HarmBench (all harmful) & one-sided diagnostics 
 \begin{itemize}
 \item \textbf{Represented} $=$ held-out rows from the three training datasets --- measures
 discrimination on \emph{sources seen in training}.
-\item \textbf{Transfer} $=$ four datasets withheld from training --- measures whether the skill
-\emph{generalizes} (Section~\ref{subsec:regimes}).
-\item \textbf{Stress} $=$ two single-class sets. OR-Bench is all benign (measures false
-alarms); HarmBench is all harmful (measures catch rate). Because each has only one class,
+\item \textbf{Transfer} $=$ four datasets withheld from training~\cite{chao2024jailbreakbench,rottger2024xstest,han2024wildguard,jiang2024wildteaming}
+--- measures whether the skill \emph{generalizes} (Section~\ref{subsec:regimes}).
+\item \textbf{Stress} $=$ two single-class sets. OR-Bench~\cite{cui2024orbench} is all benign (measures false
+alarms); HarmBench~\cite{mazeika2024harmbench} is all harmful (measures catch rate). Because each has only one class,
 \textbf{no AP is computed on them} --- they are diagnostics.
 \end{itemize}
 
@@ -481,8 +480,8 @@ unsafe and the tuned guard scores $0.90$; the ensemble scores $(0.30+0.90)/2 = 0
 \end{background}
 
 Running this on the same data as before (\Cref{tab:compose}): the ensemble keeps almost all of
-the tuned guard's gain on familiar data ($0.99 \to 0.97$) \emph{and} does clearly better than
-the tuned guard on new data ($0.84 \to 0.90$), pulling generalization back up toward the untuned
+the tuned guard's gain on familiar data ($0.98 \to 0.96$) \emph{and} does clearly better than
+the tuned guard on new data ($0.82 \to 0.89$), pulling generalization back up toward the untuned
 base --- without any extra fine-tuning.
 
 \begin{table}[t]
@@ -496,8 +495,8 @@ recovers most of its lost new-data score.}
 Guard & Familiar (represented) & New (transfer) \\
 \midrule
 Untuned base & 0.65 & 0.87 \\
-Tuned (SFT) & \textbf{0.99} & 0.84 \\
-Composed (base $+$ tuned, averaged) & 0.97 & \textbf{0.90} \\
+Tuned (SFT) & \textbf{0.98} & 0.82 \\
+Composed (base $+$ tuned, averaged) & 0.96 & \textbf{0.89} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -506,7 +505,7 @@ Composed (base $+$ tuned, averaged) & 0.97 & \textbf{0.90} \\
 \small
 Composing \textbf{reliably beats the tuned guard} on new data --- for every model in the panel.
 It does \textbf{not} beat a \emph{strong untuned base}: for the strongest model (Qwen3-4B) the
-ensemble is a touch \emph{below} the base on new data (0.93 vs 0.95), and for SmolLM3 it only
+ensemble is a touch \emph{below} the base on new data (0.93 vs 0.94), and for SmolLM3 it only
 ties. So composing is best understood as \textbf{protecting against the damage fine-tuning did},
 not a free lunch that beats everything. Tellingly, it helps most exactly where fine-tuning hurt
 most --- the strong bases (\Cref{tab:composeperm}).
@@ -515,7 +514,7 @@ most --- the strong bases (\Cref{tab:composeperm}).
 Read \Cref{tab:composeperm} across each row: the tuned column is always at or below the untuned
 base on new data (that is the specialization cost from \Cref{tab:primary}); the composed column
 is always at or above the tuned one, and lands back near the base --- most dramatically for
-SmolLM3 (0.82 tuned, back to 0.91) and Qwen3-4B (0.87 tuned, back to 0.93).
+SmolLM3 (0.79 tuned, back to 0.91) and Qwen3-4B (0.84 tuned, back to 0.93).
 
 \begin{table}[t]
 \centering\small
@@ -527,22 +526,23 @@ most.}
 \toprule
 Model (new-data strength of base) & Untuned base & Tuned & Composed \\
 \midrule
-SmolLM2-1.7B (weakest) & 0.79 & 0.86 & 0.87 \\
-Qwen2.5-1.5B & 0.82 & 0.82 & 0.87 \\
-SmolLM3-3B & 0.91 & 0.82 & 0.91 \\
-Qwen3-4B (strongest) & 0.95 & 0.87 & 0.93 \\
+SmolLM2-1.7B (weakest) & 0.79 & 0.84 & 0.86 \\
+Qwen2.5-1.5B & 0.82 & 0.79 & 0.86 \\
+SmolLM3-3B & 0.91 & 0.79 & 0.91 \\
+Qwen3-4B (strongest) & 0.94 & 0.84 & 0.93 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{background}{is this real, or just a trick of averaging?}
 \small
-A fair worry: does averaging two scores help \emph{automatically}, no matter what? Not here.
-Averaging only helps when the two guards make \emph{different} mistakes --- the specialist and
-the generalist are each right on prompts the other gets wrong, so combining them cancels errors;
-if they agreed on everything, averaging would change nothing. A planned control tests exactly
-this (break the two guards' complementarity and the ensemble's advantage should vanish),
-confirming the gain is genuine \emph{teamwork}, not a free bump from averaging any two numbers.
+A fair worry: does averaging two scores help \emph{automatically}, no matter what? No --- it
+needs the tuned guard to actually carry signal. Two control checks pin this down. (1) Scramble
+the tuned guard's scores so they no longer track safe-vs-unsafe: the boost \emph{disappears} (it
+turns negative), so the tuned guard's information is doing the work, not the averaging itself.
+(2) Keep the tuned guard's overall skill but break its \emph{per-row} pairing with the base: the
+boost \emph{survives}. So the gain is a real combination of two informative rankings --- and it
+does not even require the two guards to be right on the exact same prompts.
 \end{background}
 
 \paragraph{What this fix does not solve (yet).} Three honest caveats. (1) These are the same
@@ -652,14 +652,21 @@ datasets are pinned by revision; near-duplicate ``families'' are detected with a
 so the split cannot change with the environment. Full identifiers, hashes, licenses, and
 seed-level outputs are in \code{artifacts/paper\_a\_sft/}.
 
-\section*{Sources and further reading}
-\small
-Guard datasets and benchmarks referenced above: ToxicChat, Prompt-Injections
-(\code{deepset}), Jailbreak-Classification, JailbreakBench, XSTest, WildGuardMix /
-WildGuardTest, WildJailbreak, OR-Bench, and HarmBench. Methods: LoRA (low-rank adaptation) for
-parameter-efficient fine-tuning; temperature scaling for calibration; average precision as a
-threshold-free ranking metric. Related guards include Llama Guard, ShieldGemma, Granite
-Guardian, and WildGuard. For full citations, the formal statistical protocol, and the exact
-lock/audit contract, see the formal paper under \code{paper-a/} and its reference list.
+\section*{Related work}
+This edition draws on: purpose-built prompt guards --- Llama Guard~\cite{inan2023llamaguard},
+ShieldGemma~\cite{zeng2024shieldgemma}, Granite Guardian~\cite{padhi2024graniteguardian},
+WildGuard~\cite{han2024wildguard}, and the parameter-efficient LoRA-Guard~\cite{elesedy2024loraguard};
+evidence that fine-tuning can erode guardrails and that guards lean on surface heuristics
+\cite{hsiung2025guardrails,li2026surfaceheuristics,bassani2025robustness}, which our
+specialization measurement quantifies per checkpoint. The composition remedy (\Cref{sec:fix})
+relates to \emph{weight-space} robust fine-tuning and model soups~\cite{wortsman2022wiseft,wortsman2022modelsoups}
+and to calibrated ensembles under distribution shift~\cite{kumar2022calibrated}; we combine
+\emph{scores} (output-space), needing no shared weights. Other tuning objectives (DPO, GRPO) are
+a separate lever we do not vary here~\cite{rafailov2023dpo,shao2024deepseekmath,vennemeyer2026objective}.
+Guard calibration and evaluation context: \cite{guo2017calibration,liu2025calibration,bassani2024guardbench}.
+For the full formal protocol and the lock/audit contract, see the formal paper under \code{paper-a/}.
+
+\bibliographystyle{plain}
+\bibliography{refs}
 
 \end{document}

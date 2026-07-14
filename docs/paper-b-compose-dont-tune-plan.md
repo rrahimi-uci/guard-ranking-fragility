@@ -34,7 +34,7 @@ objective-axis proposal) as the recommended *near-term* Paper B.
 My first read of the prototype said "the ensemble **beats both** base and SFT on transfer."
 That is **overstated**. Independent re-run with a paired bootstrap shows the calibrated-average
 ensemble beats **SFT for all 4 models**, but beats the **base for only 2 of 4** — it *ties* on
-SmolLM3 and is **significantly worse than the base on Qwen3-4B** (0.930 vs 0.945). The
+SmolLM3 and is **significantly worse than the base on Qwen3-4B** (0.926 vs 0.945). The
 panel-level edge over base is carried by the weak-base models — Paper A's base-competence
 pattern resurfacing *inside* the ensemble. The defensible claim is:
 
@@ -49,37 +49,44 @@ Not "dominates both." That honesty is the paper's spine, not a footnote.
 
 ## 1. The evidence that makes this worth doing
 
-Prototype on the committed `artifacts/paper_a_sft/scores/scores.parquet` (tie-aware macro-AP,
-panel mean over the 4 checkpoints; **transfer is held out from both base and SFT, so it is
-leak-free**). Combiner = mean of the two models' calibrated unsafe-probabilities.
+Computed by the committed, reproducible analyzer
+[`experiments/analyze_composition.py`](../experiments/analyze_composition.py) on the committed
+`artifacts/paper_a_sft/scores/scores.parquet` (canonical tie-aware macro-AP; **mean-of-per-seed
+AP**, matching Paper A; panel mean over the 4 checkpoints; **transfer is held out from both base
+and SFT, so it is leak-free**). Combiner = mean of the two guards' calibrated unsafe-probabilities.
 
 | Guard | represented macro-AP | transfer macro-AP | min(rep, tr) |
 |---|---:|---:|---:|
 | base (untuned) | 0.651 | 0.867 | 0.651 |
-| SFT (tuned) | **0.989** | 0.842 | 0.842 |
-| **base+SFT, calibrated avg** | 0.973 | **0.897** | **0.897** |
-| base+SFT, max | 0.968 | 0.859 | 0.859 |
+| SFT (tuned) | **0.983** | 0.817 | 0.817 |
+| **base+SFT, calibrated avg** | 0.965 | **0.890** | **0.890** |
+| base+SFT, logit avg | 0.942 | 0.897 | 0.897 |
+| base+SFT, max | 0.964 | 0.835 | 0.835 |
 
-The calibrated-average composition keeps represented at 0.973 (−0.016 vs SFT) and lifts
-transfer to 0.897 — **above SFT (0.842) and, at the panel level, above base (0.867)**. Best
-worst-case (min) score by a wide margin.
+The calibrated-average composition keeps represented at 0.965 (−0.018 vs SFT) and lifts transfer
+to 0.890 — **above SFT (0.817) and, at the panel level, above base (0.867)**. Best worst-case
+(min) score by a wide margin. These SFT numbers match Paper A's own (e.g. transfer SFT panel 0.817).
 
 **Per-model (transfer), the honest picture** — composition helps most exactly where SFT hurt
 most, and least where the base was already strong:
 
-| Base (transfer strength) | base | SFT | avg-ensemble | ensemble vs base |
+| Base (transfer strength) | base | SFT | avg-ensemble | ensemble − base [95% CI] |
 |---|---:|---:|---:|---|
-| SmolLM2 (weak, 0.787) | 0.787 | 0.855 | 0.869 | **+0.082 (win)** |
-| Qwen2.5 (0.822) | 0.822 | 0.821 | 0.874 | **+0.052 (win)** |
-| SmolLM3 (0.914) | 0.914 | 0.820 | 0.913 | ≈ tie |
-| Qwen3-4B (strong, 0.945) | 0.945 | 0.872 | 0.930 | −0.015 (loss vs base) |
+| SmolLM2 (weak, 0.787) | 0.787 | 0.838 | 0.864 | **+0.076 [+0.056, +0.101]** (win) |
+| Qwen2.5 (0.822) | 0.822 | 0.791 | 0.863 | **+0.039 [+0.012, +0.071]** (win) |
+| SmolLM3 (0.914) | 0.914 | 0.794 | 0.909 | −0.005 [−0.013, +0.002] (tie) |
+| Qwen3-4B (strong, 0.945) | 0.945 | 0.843 | 0.926 | −0.019 [−0.029, −0.008] (loss) |
 
-**Adversarially reproduced by the review (to be re-confirmed with the locked pipeline):**
-ensemble > SFT is bootstrap-significant for all 4 models; a within-source label-shuffle **null
-control collapses to 0.712** (so the gain is real composition, not variance reduction); a
-convex-weight sweep peaks near `w_sft≈0.25` at ~0.901; and at a deployed 5%-FPR threshold, OOD
-calibration fails for *both* SFT (realized FPR 0.21–0.38) and the ensemble (0.15–0.30) — a
-finding to report, not hide.
+**Verified statistics (committed analyzer, hierarchical bootstrap):** ensemble − SFT on transfer
+is significantly positive for all 4 models (panel +0.074 [+0.059, +0.093]); ensemble − base is a
+significant win for the two weak bases, a tie for SmolLM3, and a significant *loss* for the strong
+Qwen3-4B — so "recovers toward base, gated by base competence," not "dominates." A transfer-blind
+convex-weight sweep (chosen on represented) selects `w_sft≈0.95`. **Two null controls** clarify the
+mechanism: destroying the SFT guard's signal collapses the gain (transfer ens−base +0.030 →
+**−0.165**), but breaking only the *per-row* base↔SFT pairing leaves it intact (**+0.046**) — so
+the gain is a genuine combination of two informative *rankings*, not per-row "teamwork" and not an
+averaging artifact. At a deployed 5%-FPR threshold, OOD calibration fails for *both* SFT (realized
+transfer FPR ~0.15–0.16) and the ensemble (~0.11–0.13) — a finding to report, not hide.
 
 **Why it makes the work better:** Paper A ends on a problem ("fine-tuning specializes"). This
 turns the line of work into problem → **remedy**, and the remedy is cheap, deployable
@@ -104,7 +111,7 @@ base-competence law are the given diagnosis.
 
 **Research questions**
 - **RQ1 (retention):** Does calibrated base+SFT composition keep the represented-source gains?
-  (prototype: 0.989 → 0.973.)
+  (committed analyzer: 0.983 → 0.965.)
 - **RQ2 (recovery):** Does it recover transfer *relative to SFT* — significantly, per model and
   per benchmark — and *toward* the untuned base's level?
 - **RQ3 (when/why):** The base-competence map — weak bases gain, strong bases only tie or lose.
@@ -153,8 +160,10 @@ rule, **not a learned router** (avoids the leakage/bypass surface).
   **per-model and per-benchmark paired CIs** (not a 4-point panel mean), plus
   leave-one-benchmark-out. State plainly that **`base` is single-pass (seed −1)**, so
   base-vs-ensemble CIs rest on adapter-side seed variance only.
-- **Null control:** within-source label shuffle (prototype collapsed to 0.712) as positive
-  evidence the effect is composition, not averaging-variance-reduction.
+- **Null controls (both, committed):** a *signal-destroying* shuffle collapses the gain
+  (transfer ens−base +0.030 → −0.165) — the SFT signal is doing the work; a *per-row* (within-class)
+  shuffle leaves it intact (+0.046) — so it is a combination of informative rankings, not per-row
+  teamwork and not an averaging artifact.
 - **Leak checks:** confirm `probability_calibrated` was fit only on the `calibration` split,
   never on transfer rows (the averaging step makes any calibration leak matter).
 

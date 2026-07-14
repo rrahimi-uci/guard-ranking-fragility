@@ -586,25 +586,25 @@ better):</p>
 </tr>
 <tr>
 <td>tuned (SFT)</td>
-<td><strong>0.99</strong></td>
-<td>0.84</td>
+<td><strong>0.98</strong></td>
+<td>0.82</td>
 </tr>
 <tr>
 <td><strong>composed (base + tuned, averaged)</strong></td>
-<td>0.97</td>
-<td><strong>0.90</strong></td>
+<td>0.96</td>
+<td><strong>0.89</strong></td>
 </tr>
 </tbody>
 </table>
 <p>The ensemble keeps almost all the tuned guard's familiar-data gain
-(0.99 → 0.97) <strong>and</strong> does better than the tuned guard on
-new data (0.84 → 0.90), pulling generalization back toward the base —
+(0.98 → 0.96) <strong>and</strong> does better than the tuned guard on
+new data (0.82 → 0.89), pulling generalization back toward the base —
 with no extra fine-tuning.</p>
 <p><strong>What it does — and doesn't do (be honest).</strong> Composing
 <strong>reliably beats the tuned guard</strong> on new data for
 <em>every</em> model. It does <strong>not</strong> beat a
 <em>strong</em> untuned base: for the strongest model (Qwen3-4B) it's
-slightly <em>below</em> the base on new data (0.93 vs 0.95) and for
+slightly <em>below</em> the base on new data (0.93 vs 0.94) and for
 SmolLM3 it only ties. So it <strong>protects against the damage
 fine-tuning did</strong> — it doesn't dominate everything — and it helps
 most exactly where fine-tuning hurt most (the strong bases):</p>
@@ -621,25 +621,25 @@ most exactly where fine-tuning hurt most (the strong bases):</p>
 <tr>
 <td>SmolLM2-1.7B (weakest)</td>
 <td>0.79</td>
+<td>0.84</td>
 <td>0.86</td>
-<td>0.87</td>
 </tr>
 <tr>
 <td>Qwen2.5-1.5B</td>
 <td>0.82</td>
-<td>0.82</td>
-<td>0.87</td>
+<td>0.79</td>
+<td>0.86</td>
 </tr>
 <tr>
 <td>SmolLM3-3B</td>
 <td>0.91</td>
-<td>0.82</td>
+<td>0.79</td>
 <td>0.91</td>
 </tr>
 <tr>
 <td>Qwen3-4B (strongest)</td>
-<td>0.95</td>
-<td>0.87</td>
+<td>0.94</td>
+<td>0.84</td>
 <td>0.93</td>
 </tr>
 </tbody>

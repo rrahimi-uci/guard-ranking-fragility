@@ -391,25 +391,25 @@ Doing this on the same data (macro-AP, panel mean; higher is better):
 | Guard | Familiar (represented) | New (transfer) |
 |---|---|---|
 | untuned base | 0.65 | 0.87 |
-| tuned (SFT) | **0.99** | 0.84 |
-| **composed (base + tuned, averaged)** | 0.97 | **0.90** |
+| tuned (SFT) | **0.98** | 0.82 |
+| **composed (base + tuned, averaged)** | 0.96 | **0.89** |
 
-The ensemble keeps almost all the tuned guard's familiar-data gain (0.99 → 0.97) **and** does
-better than the tuned guard on new data (0.84 → 0.90), pulling generalization back toward the
+The ensemble keeps almost all the tuned guard's familiar-data gain (0.98 → 0.96) **and** does
+better than the tuned guard on new data (0.82 → 0.89), pulling generalization back toward the
 base — with no extra fine-tuning.
 
 **What it does — and doesn't do (be honest).** Composing **reliably beats the tuned guard** on
 new data for *every* model. It does **not** beat a *strong* untuned base: for the strongest
-model (Qwen3-4B) it's slightly *below* the base on new data (0.93 vs 0.95) and for SmolLM3 it
+model (Qwen3-4B) it's slightly *below* the base on new data (0.93 vs 0.94) and for SmolLM3 it
 only ties. So it **protects against the damage fine-tuning did** — it doesn't dominate
 everything — and it helps most exactly where fine-tuning hurt most (the strong bases):
 
 | Model (new-data strength of base) | untuned base | tuned | composed |
 |---|---|---|---|
-| SmolLM2-1.7B (weakest) | 0.79 | 0.86 | 0.87 |
-| Qwen2.5-1.5B | 0.82 | 0.82 | 0.87 |
-| SmolLM3-3B | 0.91 | 0.82 | 0.91 |
-| Qwen3-4B (strongest) | 0.95 | 0.87 | 0.93 |
+| SmolLM2-1.7B (weakest) | 0.79 | 0.84 | 0.86 |
+| Qwen2.5-1.5B | 0.82 | 0.79 | 0.86 |
+| SmolLM3-3B | 0.91 | 0.79 | 0.91 |
+| Qwen3-4B (strongest) | 0.94 | 0.84 | 0.93 |
 
 **Caveats (early result).** These are the same *legacy* scores as the rest — treat the numbers
 as a signal, not a confirmed result (a clean re-run is needed). Composing improves the *ranking*,
