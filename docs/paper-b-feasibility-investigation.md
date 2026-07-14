@@ -36,13 +36,15 @@ substantial probability of a null outcome. Recommendation: pursue the de-scoped
 landing in [§7](#7-recommended-feasible-path) deliberately, not as a failure mode.
 
 > **Update ([§9](#9-external-fintech-benchmarks-addendum), 2026-07-13):**
-> Recent external fintech-safety benchmarks (FairHome, FinRED, FinSafetyBench)
-> materially **de-risk the de-scoped path and the P4a construct problem** — they can
-> supply the domain (`D`) dimension with *expert-published* labels and the fairness
-> gate's protected-category structure, roughly halving annotation. They do **not**
-> solve the crux (a *dual-labeled* cohort — all are single-labeled — nor a *naturalistic*
-> one). Net: the recommended measurement paper gets stronger and cheaper; the full
-> confirmatory naturalistic claim is unchanged.
+> External fintech-safety benchmarks (FinRED, FinSafetyBench, FairHome) offer *citable,
+> expert/real-world-grounded* financial-compliance labels that help the P4a construct
+> problem and can seed the domain (`D`) dimension — **most usably FinRED/FinSafetyBench**
+> (request-oriented). **FairHome is weaker than it first looked** (a deep-dive found it is
+> mostly fair-housing *steering* with lending a minority slice, labels *responses* not
+> requests, and is *request-gated*). None solves the crux: all are single-labeled (not
+> dual) and none is *naturalistic request traffic*. Net: the de-scoped measurement paper
+> gets modestly cheaper and better-grounded (likely reframed to "financial-policy
+> screening"); the confirmatory naturalistic claim is unchanged.
 
 ---
 
@@ -355,22 +357,49 @@ path in §7; they do not change the crux.*
 
 | Benchmark | What it is | Size | Row = | Label(s) | Naturalistic? | License |
 |---|---|---|---|---|---|---|
-| [FairHome](https://arxiv.org/abs/2409.05990) | Fair-housing / fair-lending compliance dataset | ~75,000 | text in real-estate LLM context (request vs output **unverified**) | **binary compliance-risk** + 9 protected categories | unstated (verify) | CC-BY-NC-**SA**-4.0 |
+| [FairHome](https://arxiv.org/abs/2409.05990) | Fair-**housing** (mostly *steering*) + some fair-lending | ~75,000 | **(query, LLM-response) pair**, labeled at response-sentence level | **binary compliance-risk** + protected-category tags (22.4% carry ≥1) | Zillow/search queries + expert + synthetic aug | CC-BY-NC-**SA**-4.0; **dataset request-gated (email Zillow)** |
 | [FinRED](https://huggingface.co/datasets/datumo/FinRED) | Financial-safety **red-team** prompts (Korea FSI, 12 experts) | 5,805 | adversarial request | 26-way risk taxonomy | ❌ adversarial/authored | CC-BY-NC-4.0 |
 | [FinSafetyBench](https://arxiv.org/abs/2605.00706) | Financial-compliance request-refusal benchmark | (n/s) | user request | 14 crime/ethics subcats | ~ real-world-**case-grounded** (curated, not raw traffic) | (n/s) |
 | [CNFinBench](https://www.arxiv.org/pdf/2512.09506) | Chinese finance safety/compliance | — | — | multi-dimension | ❌ | — |
 | [TRIDENT](https://arxiv.org/pdf/2507.21134) | LLM safety across finance/medicine/law | — | request | domain safety | — | — |
 
+### FairHome, on closer inspection (deep-dive, 2026-07-13)
+
+A closer read of the paper + the [Zillow guardrail repo](https://github.com/zillow/fair-housing-guardrail)
+substantially tempers FairHome's usefulness for Paper B:
+
+- **Lending/mortgage is a minority, and no published percentage exists.** The paper
+  gives *no* domain breakdown. But the dataset's *primary policy target is illegal
+  "steering" in real estate* — a fair-**housing**/brokerage concept (directing clients
+  to neighborhoods by protected class), not mortgage/credit underwriting. Fair *lending*
+  (ECOA) is named in the intro but is secondary. Provenance skews the same way: Zillow
+  plugin + real-estate search queries, i.e. mostly property search/browse/rent/buy.
+  **Estimated mortgage/lending share: a minority — plausibly single-digit to low-tens
+  percent, not the majority.** The exact figure is unknowable from public materials;
+  getting it requires the gated data + filtering for lending/credit/mortgage content.
+- **It is a *response* screen, not a *request* screen.** Rows are (query, LLM-response)
+  pairs labeled at the **response-sentence** level. Paper B's `D` screens the *request*.
+  So FairHome does not drop in as the `D` dimension without relabeling.
+- **The labeled dataset is request-gated** (email Zillow + use-case review); only the
+  guardrail *code* is open. Add an access dependency and possible use restrictions on
+  top of CC-BY-NC-**SA** copyleft.
+
+**Net:** FairHome is a fair-housing *steering* benchmark with a modest, response-labeled,
+gated lending subset — **not** the clean ~75k expert-labeled *mortgage-request* backbone
+the first draft of this addendum implied. Treat it as, at most, a citable source of a few
+thousand lending-adjacent rows (after access + relabeling), or as prior-art to cite —
+not as the `D` cohort.
+
 ### What they genuinely help
 
-- **The `D` (financial/mortgage-policy) construct — constraint #1 / P4a.** FairHome
-  (housing/fair-lending, expert-published binary compliance labels) and FinRED (FSI
-  expert taxonomy) provide *externally authored, citable* domain labels. Grounding the
-  `D` target in a published expert benchmark is far more defensible than the legacy
-  `flag` target and reduces the "I am not a mortgage lawyer" construct-validity risk.
-- **The fairness gate almost for free.** FairHome's 9 protected categories directly feed
-  the protected-context counterfactual gate (`Δ_context`) and the existing
-  `name_fairness_probe.py`.
+- **The `D` (financial/mortgage-policy) construct — constraint #1 / P4a.** FinRED (FSI
+  expert taxonomy) and FinSafetyBench (real-world-case-grounded compliance) provide
+  *externally authored, citable* financial-policy labels; grounding `D` in published
+  expert work is more defensible than the legacy `flag` target. FairHome contributes
+  here only for its *fair-lending steering* slice (see deep-dive above), and as prior art.
+- **The fairness gate almost for free.** FairHome's protected-category tagging (22.4% of
+  rows) is a template for the protected-context counterfactual gate (`Δ_context`) and the
+  existing `name_fairness_probe.py`, even if its rows aren't reused directly.
 - **Annotation burden roughly halved.** The single biggest cost was dual-annotation.
   If a row arrives with an expert-provided *domain* label, only the **general-safety**
   label `G` must be added (annotated, or scored by the Paper A guard with light human
@@ -389,10 +418,12 @@ path in §7; they do not change the crux.*
   unstated. The plan forbids authored/benchmark rows for the **primary** naturalistic
   claim (dev plan lines 1261, 1597), so these strengthen the **challenge-set /
   `precision_focused_measurement`** landing — not the confirmatory naturalistic claim.
-- **Domain drift: "financial" ≠ "mortgage."** FinRED/FinSafetyBench are broad fintech
-  (fraud, authentication, product misinfo); only FairHome is housing/lending-specific.
-  Using them either **reframes** Paper B to "financial-policy screening" (broader, loses
-  some fair-lending sharpness) or requires filtering to the mortgage/housing subset.
+- **Domain drift: "financial" ≠ "mortgage," and even FairHome ≠ "lending."**
+  FinRED/FinSafetyBench are broad fintech (fraud, authentication, product misinfo);
+  FairHome is housing but *mostly steering*, with lending a minority slice (deep-dive
+  above). None is a mortgage-request corpus. Using them either **reframes** Paper B to
+  "financial-" or "housing-policy screening" (broader, loses fair-lending sharpness) or
+  requires filtering to a small mortgage/lending subset.
 - **Licensing.** All are non-commercial (CC-BY-NC / NC-SA), consistent with the repo's
   existing reconstruct-only, text-free-artifact handling. FairHome's **ShareAlike** is a
   genuine copyleft complication for any mixed released cohort — keep sources separate and
@@ -400,20 +431,27 @@ path in §7; they do not change the crux.*
 
 ### Due-diligence before relying on them
 
-1. **Verify FairHome's row type** — request vs. model output. Paper B screens *requests*;
-   if FairHome labels *outputs*, it fits a response-screen, not the request-screen `D`.
-2. **Confirm provenance** (real vs synthetic) for FairHome/FinSafetyBench — decides
-   whether any of it can support a "naturalistic" (vs challenge-set) framing.
+1. ~~Verify FairHome's row type~~ **Resolved:** FairHome labels (query, response) pairs at
+   the response-sentence level (a response screen), and its dataset is request-gated —
+   so it does not drop into the request-screen `D` without access + relabeling.
+2. **Request FinSafetyBench/FinRED data and confirm the mortgage/lending subset size** —
+   how many rows survive filtering to mortgage/credit/housing-finance is the number that
+   decides whether an external set can seed `D` at all.
 3. **Decontaminate against Paper A general sources** with the existing MinHash/family
    machinery before mixing (some financial-safety rows may overlap general jailbreak sets).
-4. **Check license compatibility** for a combined release; default to text-free artifacts.
+4. **Check license compatibility** for a combined release; default to text-free artifacts
+   (note FairHome's ShareAlike copyleft).
 
 ### Revised recommendation
 
-Adopt these as the **domain backbone of the §7 measurement paper**: use FairHome (and/or
-the mortgage slice of FinRED/FinSafetyBench) as the expert-labeled `D` dimension and the
-protected-category source, annotate only `G` on top, and report the E3/E4 overlap
-mechanism descriptively. This is a *stronger and cheaper* paper than the authored-quartet
-version — but it is still the measurement paper, not the confirmatory naturalistic claim,
-which remains gated on authentic request traffic (§5) and a multi-party governance
+Use these as **citable prior art and a construct scaffold**, not as a drop-in `D` cohort.
+The most usable domain backbone is **FinRED / FinSafetyBench** (request-oriented,
+expert/real-world-grounded financial-compliance labels), filtered to the mortgage/lending
+subset if a mortgage framing is kept — accepting that this likely **reframes Paper B to
+"financial-policy screening."** FairHome is best cited as prior art and mined for its
+protected-category/steering structure, not adopted as `D` (it is response-labeled, gated,
+and mostly non-lending). In all cases you still **annotate the general-safety label `G`**
+on the chosen rows, and report the E3/E4 overlap mechanism descriptively. This is still
+the measurement paper, not the confirmatory naturalistic claim, which remains gated on
+authentic request traffic (§5) and a multi-party governance
 apparatus (§6).
