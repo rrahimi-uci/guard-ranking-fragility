@@ -13,6 +13,8 @@
 \usepackage{caption}
 \usepackage[hidelinks]{hyperref}
 \usepackage{parskip}
+\usepackage{tocloft}
+\setlength{\cftbeforesecskip}{3pt}
 
 \graphicspath{{figures/}}
 \captionsetup{font=small,labelfont=bf}
@@ -64,15 +66,17 @@ retrospective ``legacy'' run and are reported as estimates with uncertainty rang
 proven claims; a clean re-run would be needed to confirm them.
 \end{abstract}
 
+\setcounter{tocdepth}{1}
 \tableofcontents
 \bigskip
 \hrule
 \medskip
 
-\noindent\emph{This is a companion to the formal paper (\code{paper-a/}); it uses the same
-committed results (\code{artifacts/paper\_a\_sft/analysis/}) but trades brevity for
-teaching. Where it simplifies, the formal paper is the source of truth.}
+\noindent\emph{This is a companion to the formal paper; it uses the same committed results
+but trades brevity for teaching. Where it simplifies, the formal paper is the source of
+truth.}
 
+\clearpage
 % ============================================================
 \section{Introduction}
 % ============================================================
@@ -299,8 +303,11 @@ For a group $R$, checkpoint $b$, and seed $r$, the metric is the benchmark-macro
 \Delta_R(b,r) = \text{macroAP}_R(\text{SFT}_{b,r}) - \text{macroAP}_R(\text{base}_b),
 \]
 and the panel aggregate averages the four checkpoints (averaging seeds within each):
-$\bar\Delta_R = \tfrac{1}{4}\sum_b\big[\tfrac{1}{5}\sum_r \text{macroAP}_R(\text{SFT}_{b,r}) -
-\text{macroAP}_R(\text{base}_b)\big]$. The primary result is the \emph{pair}
+\[
+\bar\Delta_R = \frac{1}{4}\sum_b\Big[\tfrac{1}{5}\sum_r \text{macroAP}_R(\text{SFT}_{b,r}) -
+\text{macroAP}_R(\text{base}_b)\Big].
+\]
+The primary result is the \emph{pair}
 $(\bar\Delta_{\text{represented}}, \bar\Delta_{\text{transfer}})$ --- we keep both numbers
 rather than collapsing them into one ``specialization score.'' Uncertainty is the paired
 hierarchical bootstrap of Section~\ref{subsec:boot}; the analysis mode is
