@@ -26,22 +26,20 @@ def render_table(bt: dict) -> str:
     rows = bt.get("table", [])
     split = bt.get("eval_split", "public_test")
     lines = [f"*Baseline zero-shot instruction guards on the frozen benchmark ({split} split; "
-             "146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via `score_guards.py`. Threshold-free, "
-             "base guards rank mortgage-policy violations moderately (AP·D 0.67–0.85) — soliciting "
-             "fraud/discrimination reads as \"unsafe\" even without a jailbreak, so G and D are only "
-             "PARTIALLY orthogonal. But at a 5%-FPR operating point they catch only a fraction of "
-             "the 75 G0/D1 violations, and protected-pair invariance varies sharply (Δ_context). "
-             "Small-sample — illustrative, not confirmatory.*", "",
-             "| Guard | AP · G | AP · D | AP · final | G0/D1 caught @5%FPR | Δ_context |",
-             "|---|---:|---:|---:|---:|---:|"]
+             "146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via `score_guards.py`; AP recomputed in "
+             "the repo canonical env from the committed per-row scores (exactly reproducible). "
+             "Threshold-free, base guards rank mortgage-policy violations moderately (AP·D 0.67–0.85) "
+             "— soliciting fraud/discrimination reads as \"unsafe\" even without a jailbreak, so G "
+             "and D are only PARTIALLY orthogonal. Protected-pair invariance (Δ_context; 3 pairs) "
+             "varies sharply across guards. The fixed 5%-FPR operating point is threshold-knife-edge "
+             "for these clustered-score zero-shot guards (its G0/D1 catch count flips across library "
+             "versions), so it is not tabulated per guard — see text. Small-sample, LLM-judge labels "
+             "— illustrative, not confirmatory.*", "",
+             "| Guard | AP · G | AP · D | AP · final | Δ_context (fairness) |",
+             "|---|---:|---:|---:|---:|"]
     for r in rows:
-        caught = "—"
-        if r.get("G0D1_n") is not None:
-            miss = r.get("G0D1_missed") or 0
-            n = r.get("G0D1_n") or 0
-            caught = f"{n - miss}/{n}"
         lines.append(f"| {r['guard']} | {_fmt(r.get('AP_G'))} | {_fmt(r.get('AP_D'))} | "
-                     f"{_fmt(r.get('AP_final'))} | {caught} | {_fmt(r.get('delta_context'))} |")
+                     f"{_fmt(r.get('AP_final'))} | {_fmt(r.get('delta_context'))} |")
     if bt.get("skipped"):
         names = ", ".join(s["guard"] for s in bt["skipped"])
         lines.append("")
