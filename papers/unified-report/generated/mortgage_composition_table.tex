@@ -1,0 +1,19 @@
+% extracted from mortgage_guardrail_benchmark.tex (tab:composition)
+\begin{table}[H]
+\centering\small
+\caption{Composition of the frozen \texttt{v1\_hmda2022} release (994 rows).}
+\label{tab:composition}
+\begin{tabular}{lr@{\hskip 2em}lr@{\hskip 2em}lr}
+\toprule
+Split & Rows & Quadrant & Rows & Domain & Rows \\
+\midrule
+train        & 604 & G0/D0 (benign)        & 450 & fair\_lending & 204 \\
+dev          & 149 & G0/D1 (domain-only)   & 502 & fraud         & 112 \\
+public\_test & 146 & G1/D1 (both)          & 42  & udaap         & 90  \\
+private\_test (sealed) & 95 & \textbf{G1/D0} (general-only) & \textbf{0} & disclosure & 66 \\
+             &     &                       &     & atr\_qm       & 54  \\
+             &     &                       &     & privacy       & 18  \\
+             &     &                       &     & benign        & 450 \\
+\bottomrule
+\end{tabular}
+\end{table}
