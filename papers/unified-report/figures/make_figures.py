@@ -54,7 +54,7 @@ def act1_percheckpoint():
     for i, v in enumerate(tr): ax.text(i + w/2, v + (0.01 if v >= 0 else -0.03), f"{v:+.2f}", ha="center",
                                        va="bottom" if v >= 0 else "top", fontsize=7)
     ax.legend(frameon=False, fontsize=9, loc="upper right")
-    fig.savefig(HERE / "fig_act1_percheckpoint.pdf"); plt.close(fig)
+    fig.savefig(HERE / "fig_act1_percheckpoint.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
 def act3_composition():
@@ -78,7 +78,7 @@ def act3_composition():
     ax.set_ylabel("dataset-held-out transfer macro-AP")
     ax.set_title("Act III: composition recovers transfer above SFT\n(recovery, not dominance — it can dip below base, e.g. Qwen3-4B)")
     ax.legend(frameon=False, fontsize=9, loc="lower right", ncol=3)
-    fig.savefig(HERE / "fig_act3_composition.pdf"); plt.close(fig)
+    fig.savefig(HERE / "fig_act3_composition.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
 def mortgage_quadrant():
@@ -111,7 +111,7 @@ def mortgage_quadrant():
     ax.set_title("Mortgage benchmark: the two labels $G\\times D$ and their 994-row quadrants")
     for s in ax.spines.values(): s.set_visible(False)
     ax.tick_params(length=0)
-    fig.savefig(HERE / "fig_mortgage_quadrant.pdf"); plt.close(fig)
+    fig.savefig(HERE / "fig_mortgage_quadrant.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
 def mortgage_baseline():
@@ -136,7 +136,7 @@ def mortgage_baseline():
     ax2.set_title("Protected-pair gap")
     for i, v in enumerate(dctx): ax2.text(i, v + 0.005, f"{v:.3f}", ha="center", va="bottom", fontsize=7)
     fig.suptitle("Act IV: general guards rank mortgage violations only moderately, and fairness varies", fontsize=10)
-    fig.savefig(HERE / "fig_mortgage_baseline.pdf"); plt.close(fig)
+    fig.savefig(HERE / "fig_mortgage_baseline.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
 def main():
