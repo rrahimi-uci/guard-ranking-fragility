@@ -1,0 +1,221 @@
+\section{Act III --- Compose, don't (re)tune: recovering transfer without retraining}
+\label{sec:actIII}
+
+Act I left us with an uncomfortable asymmetry. Supervised fine-tuning (SFT) buys a large,
+uniform gain on the sources a guard trained on ($\RepDelta$ macro-AP,
+[$\RepCILower,\RepCIUpper$]) while, on average, giving back a little transfer to sources it
+never saw ($\TransferDelta$ [$\TransferCILower,\TransferCIUpper$]), and for the strongest
+base the transfer cost is steep. The instinct is to tune \emph{harder} --- more data, more
+steps, a different objective (that is Act~II). Act~III asks the opposite question:
+\emph{instead of overwriting the base's judgment, can we keep it in the decision?} The base
+checkpoint, before any guard fine-tune, is often a surprisingly good \emph{transfer} scorer
+(in \Cref{sec:actI} three of four bases transfer better than their own SFT guard). If SFT's
+loss is that it has forgotten the base's broad, non-specialized view, then the cheapest repair
+is not to retrain but to \emph{put the base back in the room} at decision time and let it vote.
+
+\begin{background}{Why averaging two imperfect scorers can beat either}
+Two guards that make \emph{different} mistakes carry complementary information. If the SFT guard
+is confident-but-wrong on an off-source prompt while the base is mildly-right (or vice versa),
+averaging their scores cancels part of each one's idiosyncratic error and keeps the signal they
+agree on --- the same variance-reduction intuition behind any ensemble. The catch is that you
+can only average two scores if they live on the \emph{same scale}; a raw margin from one model
+is not comparable to a raw margin from another. That is what the calibration step below is for.
+Composition is not a smarter model; it is a way to \emph{not throw away} a scorer you already
+have.
+\end{background}
+
+\subsection{The fixed composition operator}
+\label{sec:actIII-operator}
+
+The rule is deliberately the simplest thing that could work. For a single input $x$ we run
+\emph{both} the base and one SFT adapter, map each model's raw score to a probability with its
+own calibrator, and report the fixed, equal-weight average:
+\begin{equation}
+s_{\mathrm{comp}}(x) \;=\; \tfrac12\, C_b\!\big(s_b(x)\big) \;+\; \tfrac12\, C_{a}\!\big(s_{a}(x)\big),
+\label{eq:comp}
+\end{equation}
+where $s_b(x)$ and $s_a(x)$ are the base and adapter single-token margins
+$z_{\text{unsafe}}-z_{\text{safe}}$ (the same head used everywhere in this report), and
+$C_b,C_a$ are per-model calibrators. Three design choices in \Cref{eq:comp} are load-bearing,
+and each is fixed \emph{before} looking at any transfer result.
+
+\paragraph{Calibration makes the two scores comparable.}
+A raw margin is not a probability, and two different models emit margins on two different,
+incomparable scales --- a $+2.0$ from the base and a $+2.0$ from the adapter need not mean the
+same confidence. Each calibrator $C(\cdot)$ is a monotone map from raw margin to a probability
+in $[0,1]$, fit \emph{only on a development split} (never on the rows we score), so that after
+calibration a given output value means the same ``probability this is unsafe'' for both models.
+Only then does the average in \Cref{eq:comp} combine like with like rather than letting whichever
+model happens to produce larger raw numbers dominate. Concretely (illustration, not a result):
+if on some prompt the base calibrates to $0.30$ and the adapter to $0.90$, the composed score is
+$0.60$ --- the adapter's alarm is heard but not obeyed outright.
+
+\begin{background}{What a calibrator is, and why ``dev-split only'' matters}
+A calibrator is a tiny one-input function (e.g.\ a fitted logistic or isotonic curve) that
+answers ``given this raw margin, what fraction of prompts with that margin were actually
+unsafe?'' It reshapes the score without reordering it --- so it changes \emph{thresholds and
+comparability}, not ranking (AP is unchanged by a monotone calibrator applied to one model). We
+fit it on a held-out development split so no information from the evaluation rows leaks into the
+operator; this is what keeps the equal-weight average from being a disguised fit to the test set.
+\end{background}
+
+\paragraph{Equal weights, fixed in advance.}
+The $\tfrac12,\tfrac12$ weights are not tuned. Choosing the mixing weight by maximizing transfer
+on the very rows we then report would be circular --- it would let the operator quietly memorize
+the answer. Fixing the weights a~priori means the composition has \emph{no free parameters set on
+the evaluation data}; any transfer it recovers is a property of averaging base and adapter, not of
+a search. (A convex-weight variant that does tune the mixing weight, at $\alpha=\PilotConvexWeight$,
+was visible during development and is therefore reported only as a non-promotable ablation ---
+see \Cref{sec:actIII-ablations}.)
+
+\paragraph{Two inference passes.}
+Because \Cref{eq:comp} needs both $s_b(x)$ and $s_a(x)$, composition runs \emph{two} forward
+passes per input --- the base and the adapter --- roughly doubling inference cost relative to a
+single guard. Nothing is retrained; there is no new checkpoint to store beyond the base and its
+adapter (which a LoRA deployment already keeps). The price of skipping retraining is paid at
+serving time, not training time.
+
+\subsection{Output-space composition vs.\ weight-space merging (WiSE-FT, model soups)}
+\label{sec:actIII-weightspace}
+
+\Cref{eq:comp} combines models in \emph{output space}: it averages what they \emph{say}. The
+better-known alternatives combine models in \emph{weight space}: WiSE-FT and model soups
+\citep{wortsman2022wiseft,wortsman2022modelsoups} build a single merged network by interpolating
+parameters, $\theta_{\mathrm{merge}}=(1-\alpha)\,\theta_{b}+\alpha\,\theta_{a}$, and then run
+\emph{one} forward pass through that merged model. The two families trade off opposite costs.
+
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{Weight-space (WiSE-FT / soups).} One forward pass, no extra serving cost, one
+  artifact to ship. But it requires the two models to live in the \emph{same, interpolable}
+  weight space --- identical architecture and aligned parameters --- and it does no per-model
+  calibration; you interpolate weights and hope the merged head is still well-scaled.
+  \item \textbf{Output-space (ours, \Cref{eq:comp}).} Needs only \emph{comparable output scores},
+  not interpolable weights, so in principle it composes models that could never be merged in
+  weight space, and it calibrates each model before combining. The cost is the second inference
+  pass, and the requirement that both scores be put on a common probability scale first.
+\end{itemize}
+
+We test only the output-space operator here. Because the two approaches optimize different
+constraints, output-space recovery does \emph{not} predict weight-space recovery, and we do not
+claim it does; a direct WiSE-FT rescoring control is a stated gap (\Cref{sec:actIII-ablations}).
+
+\subsection{Results: composition recovers transfer at a small represented cost}
+\label{sec:actIII-results}
+
+\Cref{tab:pilot-summary} reports the fixed-panel macro-AP of each operator in both regimes, plus
+the worst-of-the-two-regimes column $\min(\text{both})$. The pattern is clean. The base is the
+best \emph{transfer} scorer ($\PilotBaseTransfer$) but a poor represented one
+($\PilotBaseRepresented$). SFT inverts that: it is the best \emph{represented} scorer
+($\PilotSFTRepresented$) but the worst transfer scorer ($\PilotSFTTransfer$) --- the Act~I
+specialization, restated. Composition sits between the two on represented ranking
+($\PilotCompositionRepresented$) and \emph{above the base} on transfer
+($\PilotCompositionTransfer$). Read down the $\min(\text{both})$ column, composition is the most
+\emph{balanced} promotable operator: its worst regime ($0.883$) beats both the base's worst
+($0.658$) and SFT's worst ($0.807$). In other words, if you must commit to one scorer without
+knowing whether the next prompt is on-source or off-source, the composition is the safest single
+choice on this panel.
+
+\input{generated/pilot_summary_table}
+
+Against SFT --- the relevant baseline, since composition is a repair \emph{for} an SFT guard ---
+composition changes represented-source macro-AP by $\PilotRepDeltaSFT$
+[$\PilotRepDeltaSFTLow,\PilotRepDeltaSFTHigh$] and transfer by $\PilotTransferDeltaSFT$
+[$\PilotTransferDeltaSFTLow,\PilotTransferDeltaSFTHigh$]. That is the headline trade: it gives
+back under two points of represented ranking to buy back roughly eight points of transfer.
+Against the untuned base, the aggregate transfer gain is smaller and its interval is closer to
+zero, $\PilotTransferDeltaBase$ [$\PilotTransferDeltaBaseLow,\PilotTransferDeltaBaseHigh$]:
+composition edges past the base \emph{on average}, but only for $\PilotNTransferPositiveVsBase$ of
+the four checkpoints individually. All intervals here are descriptive paired percentile-bootstrap
+ranges under the retrospective, estimation-only regime (\PilotEvidenceStatus{}), conditional on
+this fixed panel --- not significance tests and not population claims.
+
+\subsubsection{Per-checkpoint recovery}
+\label{sec:actIII-percheckpoint}
+
+The aggregate hides a more instructive per-checkpoint story, in \Cref{tab:pilot-models}.
+
+\input{generated/pilot_per_model_table}
+
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item \textbf{SmolLM2-1.7B} ($0.790\!\to\!0.830\!\to\!0.857$): the friendly case. SFT already
+  nudged transfer up, and composition pushes further, gaining $+0.027$ over SFT and $+0.067$ over
+  base --- both regimes end up ahead.
+  \item \textbf{Qwen2.5-1.5B} ($0.819\!\to\!0.780\!\to\!0.855$): the clearest \emph{repair}. Here
+  SFT actively \emph{hurt} transfer (an Act~I specialization loss); composition not only reverses
+  it ($+0.075$ vs.\ SFT) but climbs back above the base ($+0.036$).
+  \item \textbf{SmolLM3-3B} ($0.910\!\to\!0.823\!\to\!0.907$): composition almost exactly
+  \emph{undoes} the SFT damage ($+0.084$ vs.\ SFT), landing essentially back at the base
+  ($-0.003$, interval $[-0.012,+0.005]$ straddling zero) --- recovery to the base, not past it.
+  \item \textbf{Qwen3-4B} ($0.944\!\to\!0.794\!\to\!0.914$): the recurring character. It was the
+  worst specializer in Act~I, so composition helps it \emph{most relative to SFT} ($+0.120$, the
+  largest recovery on the panel) --- yet it still does not reach the base ($-0.030$, interval
+  $[-0.043,-0.018]$, entirely below zero). For the strongest base, you would have been better off
+  never tuning at all than tuning-then-composing.
+\end{itemize}
+
+\begin{takeaway}{Recovery, not Pareto dominance}
+Composition beats SFT on transfer for \emph{all four} checkpoints (every ``$\Delta$ vs.\ SFT''
+interval sits above zero), so as a remedy for an already-specialized guard it is reliable on this
+panel. But it does not dominate the base: vs.\ base the four deltas are heterogeneous
+($+0.067,+0.036,-0.003,-0.030$) --- helping two, neutral on one, and \emph{hurting} the strongest
+base (Qwen3-4B). The honest reading is therefore ``composition recovers much of the transfer SFT
+gave up,'' not ``composition is free improvement over doing nothing.'' If transfer is what you
+care about and you have not yet tuned, the base alone can still be the better scorer.
+\end{takeaway}
+
+\subsection{Ranking is not calibration: the operating-point gap}
+\label{sec:actIII-operating}
+
+Everything above is about \emph{ranking} (AP), which needs no threshold. Deployment needs a
+threshold, and here composition's win is only partial. \Cref{tab:pilot-operating} sets each guard's
+threshold for a $\PilotTargetFPRPct$\% false-positive target on calibration negatives and reports
+the \emph{realized} transfer rates. Composition improves recall (macro-TPR $0.517\!\to\!0.639$
+across base$\to$comp, best of the three) and its realized transfer false-alarm rate,
+$\PilotCompositionTransferFPRPct$\%, is much better than SFT's $\PilotSFTTransferFPRPct$\% --- but
+it still overshoots the $\PilotTargetFPRPct$\% target and remains \emph{above the base's}
+$\PilotBaseTransferFPRPct$\%. The pooled-FPR column tells the same story ($0.043/0.170/0.091$ for
+base/SFT/comp). Recovering \emph{rank} did not hand us a threshold that \emph{transfers}: the
+cutoff chosen on calibration data lands in the wrong place off-source.
+
+\input{generated/pilot_operating_point_table}
+
+\begin{takeaway}{Ranking $\neq$ calibration}
+A guard can order unsafe-above-safe well (good AP) and \emph{still} fire at the wrong rate once you
+fix a single cutoff, because the score distribution shifts between the calibration data and the
+transfer data. Composition narrows this gap but does not close it
+($\PilotCompositionTransferFPRPct$\% realized vs.\ a $\PilotTargetFPRPct$\% target). The
+practitioner consequence: treat an AP recovery as a reason to \emph{re-calibrate the threshold on
+the target regime}, never as evidence that the old threshold is safe to reuse.
+\end{takeaway}
+
+\subsection{Ablations, and what Act III does \emph{not} establish}
+\label{sec:actIII-ablations}
+
+\paragraph{The logit-average ablation (non-promotable).}
+The last row of \Cref{tab:pilot-summary} reports averaging the two models' \emph{raw margins}
+before calibration (a logit-space average) rather than the calibrated probabilities of
+\Cref{eq:comp}. It edges the calibrated operator on transfer ($\PilotLogitTransfer$ vs.\
+$\PilotCompositionTransfer$). We nonetheless \emph{do not promote it}: both it and the convex-weight
+variant ($\alpha=\PilotConvexWeight$) were visible while we were developing the method, so choosing
+the operator after seeing that it wins on transfer would be exactly the retrospective cherry-pick
+this report is built to avoid. The calibrated equal-weight average was fixed in advance and is the
+only primary operator; the alternatives are reported for transparency, as ablations, with no claim
+attached.
+
+\paragraph{Stated gaps.}
+This is a pilot, and two controls that would sharpen the mechanism are missing.
+\emph{(i) An equal-cost SFT$+$SFT control.} Composition runs two models; some of its gain could be
+generic two-model ensembling rather than the base's specific complementary view. Composing two
+independent SFT adapters (same 2$\times$ inference cost, no base) would separate ``the base helps''
+from ``any second scorer helps'' --- we have not run it. \emph{(ii) A real WiSE-FT rescoring
+control.} We contrast against weight-space merging conceptually (\Cref{sec:actIII-weightspace}) but
+do not actually rescore a WiSE-FT / soup checkpoint on this panel, so we cannot say which family
+recovers more transfer here.
+
+\paragraph{And what it does not license.}
+No Pareto-dominance claim (composition can leave the strongest base worse off); no causal or
+mechanistic claim (the ensemble intuition is a motivation, not a proof); and no population or
+significance claim (all numbers are descriptive contrasts on a fixed four-checkpoint panel, with a
+manifest inspected during development). Finally, whether this same operator recovers transfer for
+guards tuned with \emph{other objectives} --- the DPO/GRPO arms --- is hypothesis~H2 of Act~II and
+is answered in \Cref{sec:actII} once that locked run lands, not here.

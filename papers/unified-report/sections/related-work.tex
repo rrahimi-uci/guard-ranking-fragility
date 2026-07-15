@@ -1,0 +1,194 @@
+\section{Related work}
+\label{sec:related}
+
+This report sits at the intersection of five literatures: the design of small LLM-based
+\emph{guard classifiers}; the growing evidence that \emph{fine-tuning degrades} or narrows a
+model's safety behavior; the study of \emph{calibration and operating points} for moderation;
+\emph{model composition} in weight versus output space; the \emph{objective axis} of alignment
+(preference optimization and reinforcement learning with verifiable rewards); and the emerging work
+on \emph{domain-specialized guarding} in regulated verticals. We review each in turn and, for each,
+name precisely what it establishes and what our paired, same-checkpoint, cross-objective,
+composition-aware, four-domain design adds. Our contribution is not a new model, metric, or training
+algorithm --- it is a measurement discipline and four evaluation instruments applied to one fixed
+panel, so the contrast throughout is methodological rather than a claim of superior scores.
+
+\begin{background}{How to read this map (for the non-expert)}
+Almost all of the ``guard'' papers below ask \emph{how good is model $X$?} and answer with a single
+benchmark number, usually next to a table of \emph{other} models. That is a \emph{leaderboard}
+question. This report asks a different, paired question: \emph{what did the fine-tune change relative
+to the same model before tuning, and does that change survive on data the guard never saw?} Keep that
+distinction in mind --- most gaps we point to are gaps between a leaderboard number and a paired,
+regime-split delta, not disagreements about which model is ``best.''
+\end{background}
+
+\subsection{Small LLM guard classifiers}
+\label{sec:related-guards}
+The dominant deployment pattern is a compact decoder LLM turned into a binary or taxonomy-tagged
+moderation head. Llama Guard \citep{inan2023llamaguard,llamaguard} introduced the input--output
+safeguard framing and a safety taxonomy, and later iterations pushed toward smaller, cheaper, and
+multimodal variants \citep{meta2024llamaguard2,meta2024llamaguard3_8b,meta2024llamaguard3_1b,%
+fedorov2024llamaguard3_1b,meta2025llamaguard4}. ShieldGemma \citep{zeng2024shieldgemma} and Granite
+Guardian \citep{padhi2024graniteguardian} extend the recipe to other base families with broad harm
+taxonomies; WildGuard \citep{han2024wildguard,wildguard} adds one-stop coverage of prompt harm,
+response harm, and refusal detection; and Qwen3Guard \citep{qwen3guard2025} is a recent open guard on
+the same Qwen family two of our checkpoints come from. Beyond the general-purpose guards, several works
+target narrower slices or richer inference: dedicated prompt-injection detectors
+\citep{meta2024promptguard,meta2025promptguard2_86m,meta2025promptguard2_22m}, reasoning- and
+logic-augmented guardrails \citep{kang2025r2guard}, ensemble-of-experts moderation
+\citep{ghosh2024aegis}, RL-driven multilingual guardrails \citep{deng2025duoguard}, and CPU-class or
+multi-stage pipelines aimed at cost \citep{majhi2025gpuguard}. The parameter-efficient adaptation we
+use --- LoRA \citep{hu2021lora} applied to a chat model to produce a guard --- is exactly the LoRA-Guard
+recipe \citep{elesedy2024loraguard}, and standardized suites such as GuardBench
+\citep{bassani2024guardbench} have made cross-model comparison routine.
+
+What this family reports, almost without exception, is \emph{absolute} moderation performance of
+\emph{one} guard against \emph{different} models on a benchmark. That is precisely the quantity we argue
+is co-produced by the benchmark and therefore uninformative about a specific fine-tune. None of these
+works reports the \emph{paired} base$\to$guard change on identical rows with identical scoring, none
+separates a source \emph{represented in training} from a dataset-held-out \emph{transfer} regime as a
+first-class split (our \Cref{tab:primary}), and none treats the \emph{choice of objective} or a
+\emph{retraining-free composition} as measurable design axes. We reuse the LoRA-Guard recipe not to beat
+these guards on a leaderboard --- we score four small open checkpoints, not the gated production guards
+--- but to isolate what the fine-tune itself does. GuardBench and its peers are the backdrop against
+which our thesis (``the benchmark chooses the winner'') is stated: they normalize the very comparison we
+show is fragile.
+
+\subsection{Fine-tuning degradation and policy / benchmark transfer}
+\label{sec:related-transfer}
+The closest prior evidence is that fine-tuning can \emph{weaken} rather than strengthen safety.
+\citet{hsiung2025guardrails} show that safety guardrails can collapse after fine-tuning and attribute
+the collapse to similarity between the alignment and fine-tuning data --- a mechanism that rhymes with
+our specialization finding, but is measured on a model's own alignment behavior rather than on a guard
+classifier's represented-versus-transfer ranking split. \citet{liu2026domaingeneralizable} document that
+guardrails overfit their training \emph{policy} and propose augmented policy training as a remedy;
+\citet{li2026surfaceheuristics} give a complementary mechanistic account, showing that prompt-attack
+defenses learn \emph{surface heuristics} that do not generalize --- essentially a why for the transfer
+loss we observe empirically. \citet{bassani2025robustness} probe the same fragility from the
+perturbation side, measuring guardrail robustness to input mutations and adversarial attacks, and
+\citet{hackett2025bypassing} demonstrate concrete evasion of injection/jailbreak detectors. Framed most
+generally, \citet{akinrele2026regime} argue that prompt-injection detection is \emph{regime-dependent} ---
+performance is a function of the deployment regime, not a fixed model property --- which is our thesis
+stated for one task with interpretable structural signals. On the objective side,
+\citet{vennemeyer2026objective} show that the fine-tuning \emph{objective} shapes safety, robustness,
+and persona drift; this is the nearest neighbor to our Act~II (\Cref{sec:actII}).
+
+Our addition is the measurement design rather than the qualitative claim. Where these works compare a
+model before and after, or one policy against another, we hold the \emph{checkpoint, manifest, seeds,
+and scorer fixed} and read the paired change as a distribution over a purposively chosen panel with a
+hierarchical bootstrap, and we decompose it into a large represented-source gain versus a near-flat but
+\emph{heterogeneous} transfer change (\Cref{tab:primary}, \Cref{fig:plane}). Crucially, we do not stop
+at ``degradation'': we quantify the specialization geometry per checkpoint and per benchmark, carry it
+to a deployable operating point (\Cref{tab:sensitivity}), and then ask whether an alternative objective
+(\Cref{sec:actII}) or a composition (\Cref{sec:actIII}) changes it. Relative to
+\citet{vennemeyer2026objective} in particular, our objective-axis study is on a \emph{single-token,
+two-outcome} guard and uses the \emph{verifiable label} as the GRPO reward with no learned reward model,
+which is why we \emph{pre-register} a likely single-token null rather than expecting RL to generalize.
+And unlike \citet{liu2026domaingeneralizable}, whose remedy retrains with augmented policies, our
+candidate remedy retrains nothing.
+
+\subsection{Calibration and operating points}
+\label{sec:related-calibration}
+Ranking quality (average precision) and thresholded decision quality are distinct, and the gap between
+them is a calibration problem. \citet{guo2017calibration} established that modern neural networks are
+systematically miscalibrated and that simple post-hoc scaling helps; \citet{liu2025calibration}
+specialized this to LLM-based guard models, showing they are poorly calibrated for reliable content
+moderation; and FlexGuard \citep{flexguard2026} moves past a single fixed threshold toward continuous,
+strictness-adaptive risk scoring. This literature motivates two choices we make: we fit calibrators only
+on a development split before reading any threshold, and we report operating-point behavior (macro- and
+pooled-FPR, TPR, single-class recall) \emph{separately} from ranking.
+
+Our specific contribution to this thread is a clean separation of the two failure modes on the \emph{same}
+guards. In Act~III we show that a composition can recover transfer \emph{ranking} while its realized
+false-alarm rate at a fixed FPR target still misses (\Cref{tab:pilot-operating}): recovering rank does
+not deliver a transferable threshold. In Act~IV the same lesson recurs from the other direction --- for
+tightly clustered guard scores the fixed-threshold operating point is knife-edge and unstable across
+software versions, which is why we deliberately do not tabulate it there. Where the calibration
+literature asks ``is this score a probability?'', we use that machinery to make the sharper point that
+\emph{ranking recovery $\neq$ calibration transfer}, a distinction a benchmark AP number alone hides.
+
+\subsection{Weight-space versus output-space composition}
+\label{sec:related-composition}
+Combining models to improve robustness under distribution shift is well studied in \emph{weight} space:
+WiSE-FT interpolates a fine-tuned model with its zero-shot initialization \citep{wortsman2022wiseft},
+and model soups average the weights of several fine-tunes \citep{wortsman2022modelsoups}, both trading a
+little in-distribution accuracy for out-of-distribution robustness at no extra inference cost. The
+theoretical companion most relevant to us is \citet{kumar2022calibrated}, who show that \emph{calibrated
+ensembles} --- combining models in \emph{output} space after calibration --- can mitigate the
+accuracy--robustness tradeoff under shift; this is the justification behind our composition rule.
+
+Act~III (\Cref{eq:comp}) is deliberately the output-space cousin of these methods: we average the
+base's and the adapter's \emph{calibrated scores} with fixed equal weights, retraining nothing. The
+tradeoff versus WiSE-FT/soups is explicit --- output-space composition needs only comparable scores,
+not interpolable weights, so it is portable across checkpoints that could never be weight-averaged, but
+it pays for two inference passes. We position composition as a \emph{transfer-recovery remedy for guard
+specialization} specifically (represented cost small, transfer recovered relative to SFT and landing
+above base; \Cref{tab:pilot-summary,tab:pilot-models}), and we are explicit about what the pilot does
+\emph{not} include --- the equal-cost SFT+SFT control and an actual WiSE-FT weight-space rescoring are
+left as controls in the roadmap, and the logit-average variant is reported only as a non-promotable
+ablation. To our knowledge this calibrated output-space average has not been evaluated as a targeted fix
+for the represented/transfer split in small safety guards.
+
+\subsection{The objective axis and RL with verifiable rewards}
+\label{sec:related-objective}
+The alignment-objective literature supplies the arms of our Act~II. Direct Preference Optimization
+\citep{rafailov2023dpo} learns from correct-versus-wrong pairs without an explicit reward model, with a
+family of relatives that vary the loss or the reference: KTO \citep{ethayarajh2024kto}, ORPO
+\citep{hong2024orpo}, IPO \citep{azar2023ipo}, and the RLHF lineage from PPO
+\citep{schulman2017ppo,ouyang2022instructgpt}. GRPO \citep{shao2024deepseekmath} popularized group-relative
+policy optimization with \emph{verifiable} rewards, where correctness itself is the signal --- the regime
+we adopt, using the safe/unsafe label as the verifiable reward so no learned reward model is involved.
+
+These methods were developed for \emph{generative} alignment, where the action space is a long sequence
+and exploration over many continuations is what lets reinforcement learning generalize. Our guard emits a
+\emph{single next token} over two outcomes. That structural difference is the whole point of Act~II
+(\Cref{sec:actII}): because the exploration that gives RLVR its edge in the literature is absent in a
+one-token/two-outcome decision, we \emph{pre-register} the hypothesis that GRPO's transfer advantage over
+SFT is small or null, treating a bounded negative result as the expected, reportable outcome rather than a
+disappointment. Holding the panel, manifest, seeds, and scorer identical across SFT, DPO, and GRPO makes
+the objective the only moving part --- a controlled comparison the objective-alignment papers above, which
+each study a single objective on generative tasks, do not provide. \textbf{Act~II results are pending its
+locked GPU run; the design here states the methodology, not an outcome.}
+
+\subsection{Domain-specialized guarding and regulated verticals}
+\label{sec:related-domain}
+A recent line moves guarding from generic harm to \emph{domain compliance}. ExpGuard
+\citep{expguard2026} provides expert-annotated content moderation in specialized domains including
+finance, health, and law --- we adopt it directly as our external, expert-labeled breadth replication
+(\Cref{tab:expguard}; \emph{results partial, table pending its full four-checkpoint run}). FinGuard
+\citep{dou2026finguard} detects financial regulatory non-compliance in LLM interactions; MortarBench
+\citep{toles2026mortarbench} evaluates mortgage loan-origination \emph{agents}; and
+\citet{bowen2024mortgage} measure and mitigate racial bias in LLM mortgage \emph{underwriting}.
+Adjacent security-benchmark methodology such as Gate AI \citep{goehausen2026gateai} rounds out the
+evaluation-design context, and our mortgage instrument is grounded in public HMDA loan-level data
+\citep{hmda2022}.
+
+Each of these captures one facet our four-domain design tries to unify while keeping the honesty stance
+explicit. FinGuard is single-domain and, like the general guards, reports absolute detection rather than
+a paired base-versus-tuned transfer delta. MortarBench evaluates whether an \emph{agent completes} an
+origination task, not whether a \emph{guard detects} a compliance violation, and it does not isolate the
+requests that read as safe yet violate policy. \citet{bowen2024mortgage} study bias in the model's own
+underwriting \emph{decisions}, whereas we study a guard's \emph{detection} behavior and add a
+protected-class \emph{minimal-pair} invariance gate as a fairness signal that ranking alone misses. Our
+mortgage benchmark's distinctive construct is the \emph{dual label} $G\times D$ (\Cref{tab:composition},
+\Cref{fig:pipeline}), whose load-bearing G0/D1 stratum --- looks safe, is a violation --- is exactly the
+case a general-safety score cannot see; the zero-shot baselines (\Cref{tab:baseline}) show these
+compliance violations are only moderately ranked even by the strongest base. Two honesty boundaries
+separate our instruments from the certified-audit reading a reader might infer: the mortgage labels are
+\emph{LLM-judge, policy-card-consistent --- not SME-adjudicated}, and ExpGuard supplies the strictly
+stronger expert-labeled tier but as a \emph{single-label} transfer probe, not a dual-label construct. We
+therefore pair one domain built in depth (mortgage, dual-label plus fairness gate) with three external
+verticals for breadth (finance/health/law via ExpGuard), all scored on the same fixed panel used in
+Acts~I--III so the specialization question can be asked identically across domains.
+
+\begin{takeaway}{The gap this report fills}
+Prior work establishes, separately, that guards can be built cheaply from small LLMs, that fine-tuning can
+degrade or narrow safety, that guards are miscalibrated, that weight-space averaging aids robustness, that
+the objective matters, and that regulated domains need their own benchmarks. What is missing --- and what
+this report supplies on one fixed four-checkpoint panel --- is a single, reproducible, estimation-only
+thread that (i) measures the fine-tune as a \emph{paired, same-checkpoint} represented-versus-transfer
+delta, (ii) treats the training \emph{objective} as a controlled axis with a pre-registered single-token
+GRPO null, (iii) tests a retraining-free \emph{output-space composition} as a targeted transfer-recovery
+remedy, and (iv) carries the same question across \emph{four regulated domains} with a dual-label mortgage
+construct and a fairness invariance gate. We add no new model or metric; we add the discipline of asking,
+at every scale, what the benchmark contributed to the verdict.
+\end{takeaway}

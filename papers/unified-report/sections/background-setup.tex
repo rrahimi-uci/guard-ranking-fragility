@@ -1,0 +1,470 @@
+\section{Background you'll need}
+\label{sec:background}
+
+This report is written to be read by someone with a first course in statistics, a working idea of
+what fine-tuning a small language model means, and a lay familiarity with mortgage lending. Everything
+technical the four acts rely on is defined once here, from the ground up, with the exact equations and
+a worked example wherever a number would otherwise be mysterious. Nothing in this section reports a
+result; it is the vocabulary.
+
+\begin{background}{The one-paragraph orientation}
+A \emph{guard} is a small model placed in front of an assistant: it reads an incoming request and
+labels it \code{safe} or \code{unsafe} before anything acts on it. We build each guard by
+\emph{fine-tuning} a general chat model, and we score it by how well its numeric output \emph{ranks}
+truly-unsafe requests above safe ones. The central move of this report is to always compare a
+fine-tuned guard against the \emph{same model before tuning}, on identical inputs, and to separate two
+kinds of test set: benchmarks whose data the guard \emph{trained on} (represented) and benchmarks it
+\emph{never saw} (transfer). Almost every subtlety below is a way of making that comparison honest.
+\end{background}
+
+\subsection{The guard: a single-token logit-difference head}
+\label{sec:bg-guard}
+
+We do not ask the guard to write a paragraph explaining its decision. We ask it for exactly one
+word and look only at how strongly it leans toward that word. Concretely, a prompt $x$ is wrapped in a
+fixed instruction template asking for a one-word verdict, and we read the model's raw output scores
+--- its \emph{logits} --- at the final position for the two verdict words \code{safe} and
+\code{unsafe}. A logit is the model's un-normalized, pre-probability score for a candidate next token:
+larger means the model favors that token. Writing $z_{\text{unsafe}}(x,t)$ and $z_{\text{safe}}(x,t)$
+for those two logits at the final prompt position $t$, the guard's stored score is their difference,
+\begin{equation}
+\label{eq:score}
+s(x) \;=\; z_{\text{unsafe}}(x,t) \;-\; z_{\text{safe}}(x,t),
+\end{equation}
+which is positive when the model leans \code{unsafe}, negative when it leans \code{safe}, and near zero
+when it is undecided. To read $s(x)$ as a probability we pass the same two logits through a two-way
+softmax,
+\begin{equation}
+\label{eq:prob}
+p(\text{unsafe}\mid x) \;=\; \frac{\exp\!\big(z_{\text{unsafe}}\big)}{\exp\!\big(z_{\text{safe}}\big)+\exp\!\big(z_{\text{unsafe}}\big)}.
+\end{equation}
+For example, if $z_{\text{unsafe}}=2.0$ and $z_{\text{safe}}=1.0$, then $s(x)=1.0$ and
+$p(\text{unsafe}\mid x)=e^{2}/(e^{2}+e^{1})\approx 0.73$. This is what we mean by a
+``single-token logit-difference head'': one forward pass, two numbers, one score. The raw logits are
+the canonical stored value; probabilities in \Cref{eq:prob} and any temperature-rescaled version are
+\emph{derived} from them. Reading the model's own generated verdict text is deliberately never used as
+the primary score, because a free-text answer is harder to score consistently and hides the model's
+actual confidence.
+
+\subsection{Base, SFT, and LoRA}
+\label{sec:bg-sft}
+
+The \emph{base} is the general instruction-tuned chat model \emph{before} we turn it into a guard. It
+is not untrained --- it can already follow the ``answer \code{safe} or \code{unsafe}'' instruction
+zero-shot --- so ``base'' throughout means ``before the guard fine-tune,'' not ``blank.''
+\emph{Supervised fine-tuning} (SFT) then trains that model on labeled examples: for each training
+prompt we know the correct verdict, and we nudge the model to raise the probability it assigns to that
+verdict word. Rather than update all of the model's weights, we use \emph{LoRA} (Low-Rank Adaptation)
+\citep{hu2021lora}: we freeze the original weights and insert a small number of extra trainable
+parameters (a low-rank ``adapter'') into selected weight matrices. LoRA is cheap, fast, and reversible
+--- you can ship the tiny adapter on top of the frozen base --- and it is the standard way guards are
+built in practice \citep{elesedy2024loraguard}. The precise adapter size and which matrices it touches
+are part of the frozen recipe in \Cref{sec:setup}.
+
+\subsection{Average precision, macro-AP, and the accuracy trap}
+\label{sec:bg-ap}
+
+Because $s(x)$ is a continuous score, we can grade a guard \emph{without} committing to a cutoff, by
+asking how well it \emph{ranks}. \emph{Average precision} (AP) collapses the whole
+precision--recall curve into a single number in $[0,1]$: it is near $1$ when the guard tends to give
+genuinely unsafe prompts higher scores than safe ones, and it needs no threshold. Formally, sweeping
+the cutoff from high to low, AP is the recall-weighted average of the precision achieved at each
+true-positive, $\text{AP}=\sum_n (R_n-R_{n-1})\,P_n$, with $P_n,R_n$ the precision and recall after the
+$n$-th ranked item; we use the tie-aware, non-interpolated \code{scikit-learn} definition so the number
+is exactly reproducible.
+
+\begin{background}{A worked AP example}
+Rank five prompts by their guard score, highest first, and write their true labels:
+$[\text{unsafe},\ \text{unsafe},\ \text{safe},\ \text{unsafe},\ \text{safe}]$. There are three unsafe
+prompts, so each one contributes recall $\tfrac13$. The precision at each unsafe prompt as we go down
+the list is $\tfrac11{=}1.00$ (rank 1), $\tfrac22{=}1.00$ (rank 2), and $\tfrac34{=}0.75$ (rank 4). So
+$\text{AP}=\tfrac13(1.00)+\tfrac13(1.00)+\tfrac13(0.75)\approx 0.917$. A perfect ranking (all three
+unsafe prompts on top) would score $1.00$; ranking the safe prompts first would score much lower.
+\end{background}
+
+\emph{Macro}-AP computes AP separately on each benchmark and then averages those per-benchmark values
+with \emph{equal weight}, so one large benchmark cannot dominate a handful of small ones; this is the
+primary metric in every act.
+
+\begin{takeaway}{Why not just report accuracy?}
+On a test set that is $95\%$ safe, a guard that blindly answers \code{safe} to everything scores $95\%$
+accuracy while catching \emph{zero} attacks. Accuracy rewards guessing the majority class; AP and
+macro-AP instead reward putting the unsafe prompts on top, which is the behavior a guard is for. This
+is why ranking, not accuracy, is the currency of this report.
+\end{takeaway}
+
+\subsection{Two evaluation regimes: represented-source vs.\ dataset-held-out transfer}
+\label{sec:bg-regimes}
+
+The single most important distinction in this report is \emph{where the test data came from}.
+\textbf{Represented-source} test rows are held-back examples drawn from a dataset the guard
+\emph{trained on} (different rows, same source). \textbf{Dataset-held-out transfer} rows come from
+datasets whose examples were \emph{never used in training at all}. A gain that appears on
+represented-source tests but not on transfer tests is precisely the signature of a guard
+\emph{specializing} to its training sources rather than becoming a broadly better moderator. One
+honesty caveat travels with the word ``held out'': it means \emph{dataset-held-out} (those rows were
+withheld from fine-tuning), \emph{not} sealed away from the researchers during development --- a
+distinction that forces the retrospective framing discussed in \Cref{sec:bg-estimand}.
+
+\subsection{From scores to decisions: calibration, operating point, TPR/FPR, macro vs.\ pooled}
+\label{sec:bg-op}
+
+Ranking is threshold-free, but a deployed guard must eventually say \code{safe} or \code{unsafe}. An
+\emph{operating point} is the single cutoff on $s(x)$ that converts scores into hard decisions. Picking
+it trades two error rates against each other: the \emph{true-positive rate} (TPR, or recall) is the
+fraction of genuinely unsafe prompts the guard flags, and the \emph{false-positive rate} (FPR) is the
+fraction of genuinely safe prompts it wrongly flags. Raising the cutoff lowers both; lowering it raises
+both. Before thresholding we \emph{calibrate}: we fit a single positive \emph{temperature} that rescales
+the logits (temperature scaling \citep{guo2017calibration}) so the derived probabilities in
+\Cref{eq:prob} are better behaved. Crucially, both the temperature and the cutoff are fit only on a
+separate held-back \emph{calibration} split --- never on the transfer or stress data we report on --- so
+the threshold is not quietly tuned to the test.
+
+Two error rates can be averaged two ways, and the choice matters. \emph{Macro} rates compute the rate
+on each benchmark first and then average across benchmarks (equal weight per benchmark). \emph{Pooled}
+rates lump every row together first and then compute one rate (equal weight per row, so large
+benchmarks dominate). We report both because they can disagree.
+
+\begin{takeaway}{Ranking $\neq$ a transferable threshold}
+A guard can rank well (high AP) yet have no cutoff that holds up off-source: the score
+\emph{distribution} shifts even when the \emph{ordering} is fine. So AP answers ``does it rank?'' and
+the operating point answers ``is there a usable decision boundary?''; the two questions have different
+answers, and a deployment claim from AP alone would miss the gap.
+\end{takeaway}
+
+\subsection{Estimands, the fixed panel, and the paired hierarchical bootstrap}
+\label{sec:bg-estimand}
+
+An \emph{estimand} is the exact quantity our numbers describe. Here it is the average
+before-versus-after change \emph{for the four specific checkpoints we study}, not for ``small guards''
+in general. Those four checkpoints are a \emph{fixed, purposively chosen panel} --- picked deliberately,
+not sampled at random from a population --- so we do not attach uncertainty to the choice of models and
+we do not generalize to unnamed architectures. Every comparison is \emph{paired}: an adapter is always
+compared against \emph{its own base} on the \emph{same rows}, so nothing but the fine-tune differs.
+
+To put a $95\%$ range around a paired change we use a \emph{paired hierarchical bootstrap}. A bootstrap
+estimates how much a result would wobble under resampling by rebuilding the data many times from itself
+and recomputing; the spread of the recomputed values becomes the interval. Ours is \emph{hierarchical}
+because it resamples at two levels at once --- which fine-tuning \emph{seeds} were drawn (within each
+fixed checkpoint), and which groups of near-duplicate evaluation rows (``families,''
+\Cref{sec:setup-decon}) are counted, via one Poisson(1) re-count weight per family. It is \emph{paired}
+because each adapter stays yoked to its base. Because the training rows and their order are held fixed,
+seed-to-seed variation reflects initialization, dropout, and execution nondeterminism --- not
+which examples the guard happened to see. The resulting intervals are \emph{conditional} on this panel,
+these datasets, and this family graph; they are descriptive, not significance tests, and not claims
+about a wider population.
+
+\begin{takeaway}{Retrospective, estimation-only}
+The fine-tuning studies (Acts I--III) were analyzed \emph{after} the benchmarks had been inspected
+during development, so we report point estimates, intervals, and leave-one-out sensitivity checks ---
+but no accept/reject hypothesis test and no ``pass/fail gate.'' Clean provenance does not make an
+inspected benchmark prospective. Confirmatory use would require a freshly locked protocol on a
+genuinely uninspected cohort.
+\end{takeaway}
+
+\subsection{Three fine-tuning objectives: SFT, DPO, GRPO}
+\label{sec:bg-objectives}
+
+Act~II asks whether the \emph{objective} used to fine-tune changes how much a guard specializes. Three
+objectives are compared. \textbf{SFT} minimizes cross-entropy: it directly raises the model's log
+probability of the single correct verdict token. \textbf{DPO} (Direct Preference Optimization
+\citep{rafailov2023dpo}) learns from a \emph{pair} --- the correct verdict versus the wrong one --- and
+increases the correct verdict's relative log-probability margin under a reference-model regularizer, so
+it never needs a separately trained reward model. \textbf{GRPO} (Group Relative Policy Optimization,
+introduced with DeepSeekMath \citep{shao2024deepseekmath}) is reinforcement learning in which the
+\emph{label itself is a verifiable reward} (correct verdict earns reward, otherwise not) and advantages
+are computed relative to a group of sampled outputs --- again with no learned reward model. A structural
+caveat matters for guards and is pre-registered in Act~II: because our action space is a
+\emph{single token with two outcomes}, the exploration that lets RL generalize in richer generation
+tasks is largely absent, so RL's usual transfer edge may be small or null here
+\citep{vennemeyer2026objective}.
+
+\subsection{Output-space composition}
+\label{sec:bg-composition}
+
+Act~III introduces a retraining-free remedy. \emph{Output-space composition} combines two guards by
+averaging their calibrated \emph{output scores} --- not their internal weights. It is portable, because
+it needs only two comparable scores rather than interpolable parameters, but it costs two inference
+passes because both models must run. This contrasts with \emph{weight-space} methods such as WiSE-FT and
+model soups \citep{wortsman2022wiseft,wortsman2022modelsoups}, which average the models' weights and so
+require the models to be weight-compatible. The exact composition rule is given later as
+\Cref{eq:comp}.
+
+\subsection{The mortgage/HMDA vocabulary and the dual-label idea}
+\label{sec:bg-mortgage}
+
+Act~IV moves to regulated domains, where a request can read as perfectly polite text yet, if honored,
+break the law. The mortgage vocabulary below is what the benchmark encodes.
+
+\begin{background}{Mortgage terms, in plain words}
+\textbf{HMDA} --- the U.S.\ Home Mortgage Disclosure Act \citep{hmda2022}: lenders publicly report
+loan-level records (purpose, amount band, action taken, denial reason), which we use only as
+\emph{de-identified, banded fact sheets}, never verbatim. \textbf{Fair lending} bars credit
+discrimination on protected traits. \textbf{Redlining} is refusing or worsening credit across a whole
+neighborhood as a proxy for race. \textbf{Disparate treatment} is intentional differential treatment;
+\textbf{disparate impact} is a facially neutral rule that falls harder on a protected group.
+\textbf{Proxy (coded) discrimination} uses a stand-in --- ZIP code, preferred language --- for a
+protected class. \textbf{ATR/QM} is the ability-to-repay / qualified-mortgage rule.
+\textbf{Adverse-action notice} is the legally required true reason for a denial. \textbf{UDAAP} covers
+unfair, deceptive, or abusive acts and practices.\\[2pt]
+\textbf{The dual-label construct.} Each request carries two \emph{independent} labels:
+$\mathbf{G}$ --- would an ordinary general-safety guard call this \code{unsafe}? --- and $\mathbf{D}$
+--- would honoring it break mortgage policy? The load-bearing stratum is \textbf{G0/D1}: it reads
+\emph{safe} to a general guard yet is a compliance \emph{violation}. That is exactly the case a
+general-safety score cannot see.
+\end{background}
+
+\section{The shared experimental setup}
+\label{sec:setup}
+
+Every study in this report reuses one fixed, purposively chosen panel of four checkpoints and one
+frozen, decontaminated $1{,}200$-row training manifest, scored by the identical single-token
+$z_{\text{unsafe}}-z_{\text{safe}}$ head (\Cref{eq:score}) and the same tie-aware macro-AP, under
+fail-closed provenance \emph{locks} that bind the data, code, and software versions and refuse to run
+if any fingerprint mismatches. This single-panel, single-manifest discipline is what makes SFT, DPO,
+GRPO, composition, and the domain evaluations \emph{directly comparable} rather than three stapled
+results. The \emph{same} four checkpoints recur across all four acts, and \textbf{Qwen3-4B is the
+recurring character}: the strongest base, and --- as the acts will show --- the one that specializes
+most, the one composition helps least, and the best-and-fairest zero-shot mortgage guard.
+
+\subsection{The fixed four-checkpoint panel and pinned revisions}
+\label{sec:setup-panel}
+
+The panel spans two model lineages and $1.5$--$4$B parameters: Qwen2.5-1.5B-Instruct,
+SmolLM2-1.7B-Instruct, SmolLM3-3B \citep{bakouch2025smollm3}, and Qwen3-4B. Each checkpoint is pinned to
+a fixed upstream revision, and for each we verify that \code{safe} and \code{unsafe} map to
+\emph{distinct single tokens} under a fixed convention (leading-space \code{" safe"}/\code{" unsafe"}
+first, no-leading-space fallback), recording the token IDs and strings. \Cref{tab:panel-recipe} lists
+the panel and the frozen recipe together. The estimand is this exact four-checkpoint panel; results are
+not extrapolated to other scales, architectures, or vendors.
+
+\begin{table}[H]
+\centering\small
+\caption{The fixed model panel and the frozen clean-v2 LoRA-SFT recipe (shared by Acts~I--III).
+Revisions are pinned; decision tokens are verified as distinct single tokens per checkpoint.}
+\label{tab:panel-recipe}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll l}
+\toprule
+Checkpoint & Params & Revision (pinned, abbreviated) & Decision tokens \\
+\midrule
+\code{Qwen/Qwen2.5-1.5B-Instruct}        & 1.5B & \code{989aa79\ldots71aa306}  & \{\,safe, unsafe\,\} single-token \\
+\code{HuggingFaceTB/SmolLM2-1.7B-Instruct} & 1.7B & \code{31b70e2\ldots46d38674} & \{\,safe, unsafe\,\} single-token \\
+\code{HuggingFaceTB/SmolLM3-3B}          & 3B   & \code{a07cc9a\ldots335b0ac1} & \{\,safe, unsafe\,\} single-token \\
+\code{Qwen/Qwen3-4B}                     & 4B   & \code{1cfa9a7\ldots03b3df60c} & \{\,safe, unsafe\,\} single-token \\
+\midrule
+\multicolumn{4}{l}{\emph{Recipe (identical for all four bases):} completion-only SFT loss on the verdict $+$ appended EOS;}\\
+\multicolumn{4}{l}{LoRA $r{=}32$, $\alpha{=}64$, dropout $0.05$ on \{q,k,v,o,gate,up,down\}; $300$ optimizer steps;}\\
+\multicolumn{4}{l}{lr $2\times10^{-4}$ cosine schedule, warmup $0.03$; effective batch $4$; max sequence length $1{,}024$;}\\
+\multicolumn{4}{l}{training seeds $42$--$46$ (five per checkpoint), shared data-order seed $42$.}\\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection{The single-token guard formulation and prompt rendering}
+\label{sec:setup-guard}
+
+Every base and every adapter is scored by the same guard formulation from \Cref{sec:bg-guard}: the
+prompt is wrapped in one versioned instruction template asking for a one-word verdict, and the last
+position's \code{safe}/\code{unsafe} logits are read and stored as $s(x)$ (\Cref{eq:score}), with the
+softmax probability (\Cref{eq:prob}) derived from them. The \emph{semantic} system instruction is
+shared verbatim across all four checkpoints, but each model's own chat template renders it differently,
+producing three distinct rendered-template fingerprints across the panel; each is recorded. Long user
+content is budgeted and truncated \emph{before} final rendering, and the runner then asserts that the
+complete classification instruction and wrapper survive the truncation --- a contract check motivated by
+an earlier artifact that could left-truncate the instruction itself. Truncation strategy and scored
+token counts are stored per row.
+
+\subsection{The frozen LoRA-SFT recipe}
+\label{sec:setup-recipe}
+
+The recipe (lower panel of \Cref{tab:panel-recipe}) is fixed identically across all four bases so that
+the only thing varying within Act~I is the checkpoint. It uses a \emph{completion-only} loss --- the
+cross-entropy is applied only to the verdict token and an appended end-of-sequence marker, not to the
+prompt --- with a LoRA adapter of rank $r{=}32$ and scaling $\alpha{=}64$ (dropout $0.05$) inserted into
+the attention and MLP projections (q, k, v, o, gate, up, down). Training runs $300$ optimizer steps at
+learning rate $2\times10^{-4}$ on a cosine schedule with $0.03$ warmup and an effective batch size of
+$4$, at maximum sequence length $1{,}024$. At effective batch $4$, the $1{,}200$-row manifest yields
+exactly $300$ updates --- one complete exposure of the data. Each base is adapted with five training
+seeds ($42$--$46$) that share one data-order seed ($42$), giving $20$ adapters; the four untuned bases
+are scored once and reused, for $24$ model bundles in all.
+
+\subsection{The 1,200-row training manifest and exclusions}
+\label{sec:setup-manifest}
+
+Training reads one frozen manifest and never resamples a live dataset mid-run. It draws $400$ rows each
+from three represented sources --- ToxicChat \citep{lin2023toxicchat}, Prompt-Injections, and
+Jailbreak-Classification --- with $200$ safe and $200$ unsafe rows per source, selected by a hashed rank
+salted with the data seed and frozen as one shared row order across every checkpoint and seed
+(\Cref{tab:manifest}). Two datasets are \emph{deliberately excluded from training}: BeaverTails
+\citep{ji2023beavertails}, because its safety annotation labels the prompt--response interaction rather
+than the prompt alone, and OR-Bench \citep{cui2024orbench}, which is reserved for the benign stress set;
+including either would confound the prompt-only, dataset-held-out design. The study uses the
+non-commercial academic data branch (ToxicChat is CC BY-NC 4.0), so any released adapter inherits a
+non-commercial mark, and no third-party raw text is redistributed --- only pinned identifiers,
+revisions, and content hashes.
+
+\begin{table}[H]
+\centering\small
+\caption{The frozen $1{,}200$-row training manifest (Acts~I--III). All training rows come from three
+represented sources; each contributes $400$ rows balanced $200{:}200$. BeaverTails and OR-Bench are
+excluded from training by design.}
+\label{tab:manifest}
+\begin{tabular}{l l r}
+\toprule
+Represented source & Native label origin & Train rows (safe : unsafe) \\
+\midrule
+ToxicChat (\code{lmsys/toxic-chat})           & prompt toxicity   & $400$ ($200{:}200$) \\
+Prompt-Injections (\code{deepset/prompt-injections}) & prompt injection & $400$ ($200{:}200$) \\
+Jailbreak-Classification (\code{jackhhao/\ldots}) & prompt jailbreak & $400$ ($200{:}200$) \\
+\midrule
+\textbf{Total} & & $\mathbf{1{,}200}$ ($600{:}600$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Three evaluation regimes and decontamination}
+\label{sec:setup-decon}
+
+Evaluation is partitioned into three regimes, forming a spectrum of how ``new'' each test is to the
+guard.
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{Represented-source} $=$ \{ToxicChat, Prompt-Injections, Jailbreak-Classification\} rows
+  \emph{held back} from training. These measure discrimination on sources the guard trained on.
+  \item \textbf{Dataset-held-out transfer} $=$ \{JailbreakBench \citep{chao2024jailbreakbench}, XSTest
+  \citep{rottger2024xstest}, WildGuardTest \citep{han2024wildguard}, WildJailbreak
+  \citep{jiang2024wildteaming}\}, whose rows were withheld from SFT. Because these encode heterogeneous
+  native constructs (harm, refusal, jailbreak, contrast), their macro-average mixes distinct policies;
+  we study \emph{dataset-held-out benchmark transfer}, not one fixed universal policy.
+  \item \textbf{Stress} $=$ \{OR-Bench-Hard benign portion (false-positive rate only), HarmBench
+  \citep{mazeika2024harmbench} (recall only)\}. These are single-class probes: \textbf{no AP or AUROC is
+  computed on stress data}; they only watch for over-blocking (benign FPR) and missed attacks (recall).
+\end{itemize}
+The primary metric within each regime is benchmark-macro AP; the secondary metric is the
+calibration-targeted operating point of \Cref{sec:setup-stats}.
+
+\paragraph{Decontamination (family-isolated splits, MinHash).} To keep near-duplicate rows from
+straddling the train/evaluation and calibration/test boundaries, the builder first preserves the
+authoritative upstream conversation, pair, and scenario identifiers, then adds deterministic character
+$5$-gram \emph{MinHash} edges between near-duplicate rows. It forms the connected components of that
+graph --- ``families'' --- and assigns \emph{whole families} to a single split, so that no family can
+appear in both training and any reported evaluation, or in both calibration and any reported test or
+stress surface. The build \emph{fails closed} if any family crosses a forbidden boundary. This family
+graph also supplies the Poisson(1) re-count weights used by the bootstrap (\Cref{sec:bg-estimand}). An
+independent audit of $24$ hard assertions covers the source exclusions, schema and row identity,
+exact and conflicting-label overlap, pinned revisions and content hashes, selection provenance, family
+disjointness, licenses, and near-duplicate dispositions.
+
+\subsection{Estimands and the statistical protocol}
+\label{sec:setup-stats}
+
+For regime $R$, checkpoint $b$, and seed $r$, the per-regime metric is the equal-weight macro-AP over
+that regime's benchmarks,
+\begin{equation}
+\label{eq:regime-metric}
+M_R(b,r) \;=\; \frac{1}{|K_R|}\sum_{k\in K_R}\mathrm{AP}_k(b,r),
+\end{equation}
+using the tie-aware, non-interpolated \code{scikit-learn} AP. The paired base-to-tuned change for one
+cell is
+\begin{equation}
+\label{eq:delta}
+\Delta_R(b,r) \;=\; M_R(\mathrm{SFT}_{b,r}) \;-\; M_R(\mathrm{base}_b),
+\end{equation}
+and the fixed-panel aggregate averages the four per-checkpoint deltas \emph{without} resampling
+checkpoint identities,
+\begin{equation}
+\label{eq:agg}
+\bar\Delta_R \;=\; \frac{1}{4}\sum_{b}\Big[\tfrac{1}{5}\textstyle\sum_r M_R(\mathrm{SFT}_{b,r})
+\;-\; M_R(\mathrm{base}_b)\Big].
+\end{equation}
+The headline object is the joint vector $\theta=(\bar\Delta_{\text{represented}},
+\bar\Delta_{\text{transfer}})$, kept as a two-dimensional quantity and read off the
+\emph{specialization plane} of \Cref{fig:plane} --- horizontal axis the represented change, vertical the
+transfer change, four quadrants (uniform gain, specialize, uniform loss, transfer-favored) --- rather
+than collapsed into a single ``specialization score.'' The axes and quadrant interpretation are
+result-independent.
+
+\paragraph{Uncertainty.} We attach $95\%$ two-sided intervals with $10{,}000$ paired
+hierarchical-bootstrap replicates (fixed RNG seed $20260712$): checkpoint identities are held fixed, SFT
+seed indices are resampled \emph{within} each checkpoint, and one Poisson(1) weight is drawn per
+recorded family (\Cref{sec:setup-decon}). Leave-one-checkpoint-out and leave-one-transfer-benchmark-out
+values are \emph{deterministic} sensitivity checks, not resampling or population inference. The locked
+analysis mode is \emph{precision-focused}: we report estimates, intervals, and sensitivities, with no
+intersection--union test, multiplicity correction, bootstrap $p$-value, or pass/fail gate.
+
+\paragraph{Calibration-only operating point.} As a secondary deployment diagnostic, we fit one positive
+temperature per bundle on the calibration split, then choose the threshold that maximizes calibration
+recall subject to a one-sided $95\%$ Clopper--Pearson \emph{upper} bound of at most $5\%$ on pooled
+calibration-negative FPR; if no cutoff qualifies, the cell reports \code{NO\_FEASIBLE\_THRESHOLD} as an
+outcome rather than relaxing the target. Temperature and threshold are fit \emph{only} on calibration
+rows --- never on transfer or stress data --- and the audit hard-asserts that calibration shares no
+family with any reported test or stress surface. The Clopper--Pearson bound assumes independent
+Bernoulli negatives, so it is a pooled diagnostic, not a family-aware production guarantee. The
+resulting operating-point rates appear in \Cref{tab:sensitivity} (Act~I) and \Cref{tab:pilot-operating}
+(Act~III).
+
+\subsection{The objective axis (SFT vs.\ DPO vs.\ GRPO): design}
+\label{sec:setup-objective}
+
+Act~II reuses \emph{everything} above --- the same four-checkpoint panel, the same $1{,}200$-row
+manifest, the same seeds, the same single-token scorer, and the same macro-AP plus bootstrap machinery
+--- and varies \emph{only the fine-tuning objective}, so any difference is attributable to the objective
+rather than to data, capacity, or evaluation. SFT is the Act~I arm; DPO and GRPO are the two additional
+arms, both trained against the \emph{verifiable label} with no learned reward model
+(\Cref{sec:bg-objectives}). The hypotheses and decision rules are \textbf{pre-registered and bound into
+the run's lock before execution}: \textbf{H1}, objectives differ mainly on \emph{transfer}, ordered by
+how far each moves the model from its base; \textbf{the GRPO single-token null}, that with a
+one-token/two-outcome action space RL's transfer edge over SFT is small or null (a bounded negative
+result is the \emph{expected, reportable} outcome, not a failure); and \textbf{H2}, that composition
+(\Cref{sec:bg-composition}) recovers transfer in proportion to how far the objective moved from base.
+\textbf{Results are \textsc{pending} the locked GPU run and are reported in \Cref{sec:actII}; no
+objective-axis numbers appear until its per-row scores are committed.}
+
+\subsection{The composition protocol}
+\label{sec:setup-composition}
+
+Act~III's remedy needs no retraining. For a single input we run the base and one SFT adapter, convert
+each raw score to a probability with a calibrator fit only on a development split, and report the fixed
+equal-weight average defined later as \Cref{eq:comp}. The $\tfrac12$ weights are fixed in advance (never
+tuned on test rows), so the only cost is the second inference pass. This is the output-space composition
+of \Cref{sec:bg-composition}; the logit-average and convex-weight variants were visible during
+development and are reported only as non-promotable ablations.
+
+\subsection{Domain evaluation instruments: mortgage and ExpGuard}
+\label{sec:setup-domain}
+
+Act~IV evaluates the \emph{same four checkpoints} on two complementary regulated-domain instruments.
+
+\paragraph{Mortgage (built in depth, dual-label).} We constructed a fixed, HMDA-grounded benchmark whose
+unit is one incoming request carrying two independent labels, general-safety $G$ and mortgage-policy $D$
+(\Cref{sec:bg-mortgage}). Requests are grounded in de-identified, banded HMDA fact sheets --- never
+verbatim records --- through an agentic pipeline that plans, grounds, generates, adversarially mutates,
+and rubric-bound-judges each item, accepting it only if its assigned label matches the target, before a
+provenance-tracked, family-isolated split into the frozen release (\Cref{fig:pipeline}). The benchmark
+has $994$ rows over four $G\times D$ quadrants --- G0/D0 ($450$), G0/D1 ($502$), G1/D1 ($42$), and G1/D0
+($0$, empty by construction) --- with the load-bearing \textbf{G0/D1} stratum (reads safe, is a
+violation) the largest. It spans seven content strata (fair-lending $204$, fraud $112$, UDAAP $90$,
+disclosure $66$, ATR/QM $54$, privacy $18$, and benign $450$) and is split into train $604$ / dev $149$
+/ public-test $146$ / private-test $95$. As a fairness-invariance gate it embeds $39$ protected-class
+\emph{minimal pairs} ($78$ rows) that are identical except for one protected token; the induced
+prediction gap is denoted $\Delta_{\text{context}}$. The row composition is in \Cref{tab:composition} and
+the zero-shot base results (AP$\cdot$G, AP$\cdot$D, $\Delta_{\text{context}}$) in \Cref{tab:baseline}
+(Act~IV).
+
+\begin{takeaway}{A measuring stick, not a legal finding}
+Mortgage labels are assigned by an \emph{LLM judge} against written policy cards --- \emph{not}
+SME-adjudicated (self-consistency only; no human Fleiss-$\kappa$). The G1/D0 quadrant is empty and some
+strata are small. The benchmark \emph{surfaces} guard behavior; it certifies nothing about any real
+lender or model, and licenses no fair-lending claim.
+\end{takeaway}
+
+\paragraph{Finance, health, law (external breadth: ExpGuard).} To test whether the
+specialization/transfer pattern recurs across regulated verticals \emph{with expert labels} --- a
+strictly stronger labeling tier than the mortgage LLM-judge --- we also score the same four checkpoints
+on ExpGuard \citep{expguard2026}, an expert-annotated moderation set of $2{,}275$ rows spanning
+\textbf{finance}, \textbf{health}, and \textbf{law}, using its \code{prompt\_label} for input-prompt
+classification (matching our task). This is a single-label transfer probe, not the mortgage dual-$G\times D$
+construct --- one domain built in depth plus three external verticals for breadth. We report aggregate
+and per-domain AP, base versus tuned. \textbf{The full four-checkpoint per-domain table is still being
+produced; its numbers are \textsc{pending} and will populate \Cref{tab:expguard} once the eval completes
+and its text-free per-row scores are committed --- no partial numbers are stated here.}
