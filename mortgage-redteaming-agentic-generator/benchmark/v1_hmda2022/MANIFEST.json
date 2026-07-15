@@ -1,0 +1,12 @@
+{
+  "version": "0.1.0-agentic",
+  "seed": 20260714,
+  "n_rows": 994,
+  "distributed_splits": {
+    "train": 604,
+    "dev": 149,
+    "public_test": 146
+  },
+  "sealed_rows": 95,
+  "public_index": "public_index.json"
+}
