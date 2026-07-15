@@ -166,14 +166,14 @@ arm is future work: the companion study's LoRA adapters were not retained.)
 > off-the-shelf guards were gated in this run (note under the table).*
 
 <!-- BASELINE_TABLE_START -->
-*Baseline zero-shot instruction guards on the frozen benchmark (public_test split; 146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via `score_guards.py`. Threshold-free, base guards rank mortgage-policy violations moderately (AP·D 0.67–0.85) — soliciting fraud/discrimination reads as "unsafe" even without a jailbreak, so G and D are only PARTIALLY orthogonal. But at a 5%-FPR operating point they catch only a fraction of the 75 G0/D1 violations, and protected-pair invariance varies sharply (Δ_context). Small-sample — illustrative, not confirmatory.*
+*Baseline zero-shot instruction guards on the frozen benchmark (public_test split; 146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via `score_guards.py`; AP recomputed in the repo canonical env from the committed per-row scores (exactly reproducible). Threshold-free, base guards rank mortgage-policy violations moderately (AP·D 0.67–0.85) — soliciting fraud/discrimination reads as "unsafe" even without a jailbreak, so G and D are only PARTIALLY orthogonal. Protected-pair invariance (Δ_context; 3 pairs) varies sharply across guards. The fixed 5%-FPR operating point is threshold-knife-edge for these clustered-score zero-shot guards (its G0/D1 catch count flips across library versions), so it is not tabulated per guard — see text. Small-sample, LLM-judge labels — illustrative, not confirmatory.*
 
-| Guard | AP · G | AP · D | AP · final | G0/D1 caught @5%FPR | Δ_context |
-|---|---:|---:|---:|---:|---:|
-| qwen25_15b_base | 0.681 | 0.793 | 0.793 | 11/75 | 0.183 |
-| qwen3_4b_base | 1.000 | 0.851 | 0.851 | 31/75 | 0.000 |
-| smollm2_17b_base | 0.261 | 0.673 | 0.673 | 7/75 | 0.023 |
-| smollm3_3b_base | 0.546 | 0.735 | 0.735 | 21/75 | 0.010 |
+| Guard | AP · G | AP · D | AP · final | Δ_context (fairness) |
+|---|---:|---:|---:|---:|
+| qwen25_15b_base | 0.681 | 0.793 | 0.793 | 0.183 |
+| qwen3_4b_base | 1.000 | 0.851 | 0.851 | 0.000 |
+| smollm2_17b_base | 0.261 | 0.672 | 0.672 | 0.023 |
+| smollm3_3b_base | 0.546 | 0.733 | 0.733 | 0.010 |
 
 *Not scored (unavailable in this run): llama_guard_3_1b, wildguard_7b.*
 <!-- BASELINE_TABLE_END -->
@@ -182,15 +182,19 @@ arm is future work: the companion study's LoRA adapters were not retained.)
 *Threshold-free*, the base guards rank D-violations moderately well (AP·D **0.67–0.85**, at or
 above their AP·G): soliciting discrimination or fraud reads as "unsafe" to a general instruction
 model even when it is not a jailbreak, so **G and D are only partially orthogonal in practice**.
-The gap appears at the **operating point** — thresholding at a 5% dev-FPR target, the base guards
-catch only **7–31 of 75** G0/D1 violations (miss 44–68), so a deployable general guard still lets
-most safe-looking mortgage-policy violations through. Behavior is heterogeneous: **Qwen3-4B** ranks
-best (AP·D 0.85) *and* is invariant on the protected minimal pairs (Δ_context ≈ 0), while
-**Qwen2.5-1.5B** shows a large protected-attribute score gap (Δ_context 0.18, max 0.51) — the
-minimal-pair gate discriminates guards that AP alone does not. AP·G rests on only 6 G1 positives in
-this split and is correspondingly noisy. These are **small-sample, LLM-judge-labeled, single-split
-diagnostics**: the benchmark is designed to *surface* these behaviors, not to certify any number as
-a fair-lending fact.
+None reaches AP·D near 1, so a large fraction of the subtle G0/D1 stratum is unresolved by ranking
+alone. We deliberately do **not** report a fixed-threshold "caught at 5% FPR" count: for these
+zero-shot guards the unsafe-probability distribution is clustered, so the dev-calibrated threshold
+sits on a knife-edge and its G0/D1 catch count is **not reproducible** — it swung by >50 rows
+between library versions of the quantile routine. That fragility is itself a finding: **naive
+threshold transfer is unreliable for these guards**, so AP (ranking) and Δ_context (invariance) are
+the metrics we report. Behavior is heterogeneous: **Qwen3-4B** ranks best (AP·D 0.85) *and* is
+invariant on the protected minimal pairs (Δ_context ≈ 0), while **Qwen2.5-1.5B** shows a large
+protected-attribute score gap (Δ_context 0.18, max 0.51) — the minimal-pair gate discriminates
+guards that AP alone does not. AP·G rests on only 6 G1 positives in this split and is correspondingly
+noisy. These are **small-sample, LLM-judge-labeled, single-split diagnostics** (3 protected pairs):
+the benchmark is designed to *surface* these behaviors, not to certify any number as a fair-lending
+fact.
 
 ## 7. What this benchmark does *not* establish
 

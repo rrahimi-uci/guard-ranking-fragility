@@ -328,31 +328,25 @@ table).</em></p>
 <!-- BASELINE_TABLE_START -->
 <p><em>Baseline zero-shot instruction guards on the frozen benchmark
 (public_test split; 146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via
-<code>score_guards.py</code>. Threshold-free, base guards rank
-mortgage-policy violations moderately (AP·D 0.67–0.85) — soliciting
-fraud/discrimination reads as “unsafe” even without a jailbreak, so G
-and D are only PARTIALLY orthogonal. But at a 5%-FPR operating point
-they catch only a fraction of the 75 G0/D1 violations, and
-protected-pair invariance varies sharply (Δ_context). Small-sample —
-illustrative, not confirmatory.</em></p>
+<code>score_guards.py</code>; AP recomputed in the repo canonical env
+from the committed per-row scores (exactly reproducible).
+Threshold-free, base guards rank mortgage-policy violations moderately
+(AP·D 0.67–0.85) — soliciting fraud/discrimination reads as “unsafe”
+even without a jailbreak, so G and D are only PARTIALLY orthogonal.
+Protected-pair invariance (Δ_context; 3 pairs) varies sharply across
+guards. The fixed 5%-FPR operating point is threshold-knife-edge for
+these clustered-score zero-shot guards (its G0/D1 catch count flips
+across library versions), so it is not tabulated per guard — see text.
+Small-sample, LLM-judge labels — illustrative, not
+confirmatory.</em></p>
 <table>
-<colgroup>
-<col style="width: 13%" />
-<col style="width: 17%" />
-<col style="width: 17%" />
-<col style="width: 17%" />
-<col style="width: 17%" />
-<col style="width: 17%" />
-</colgroup>
 <thead>
 <tr>
 <th>Guard</th>
 <th style="text-align: right;">AP · G</th>
 <th style="text-align: right;">AP · D</th>
 <th style="text-align: right;">AP · final</th>
-<th style="text-align: right;">G0/D1 caught <span class="citation"
-data-cites="5%FPR">@5%FPR</span></th>
-<th style="text-align: right;">Δ_context</th>
+<th style="text-align: right;">Δ_context (fairness)</th>
 </tr>
 </thead>
 <tbody>
@@ -361,7 +355,6 @@ data-cites="5%FPR">@5%FPR</span></th>
 <td style="text-align: right;">0.681</td>
 <td style="text-align: right;">0.793</td>
 <td style="text-align: right;">0.793</td>
-<td style="text-align: right;">11/75</td>
 <td style="text-align: right;">0.183</td>
 </tr>
 <tr>
@@ -369,23 +362,20 @@ data-cites="5%FPR">@5%FPR</span></th>
 <td style="text-align: right;">1.000</td>
 <td style="text-align: right;">0.851</td>
 <td style="text-align: right;">0.851</td>
-<td style="text-align: right;">31/75</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr>
 <td>smollm2_17b_base</td>
 <td style="text-align: right;">0.261</td>
-<td style="text-align: right;">0.673</td>
-<td style="text-align: right;">0.673</td>
-<td style="text-align: right;">7/75</td>
+<td style="text-align: right;">0.672</td>
+<td style="text-align: right;">0.672</td>
 <td style="text-align: right;">0.023</td>
 </tr>
 <tr>
 <td>smollm3_3b_base</td>
 <td style="text-align: right;">0.546</td>
-<td style="text-align: right;">0.735</td>
-<td style="text-align: right;">0.735</td>
-<td style="text-align: right;">21/75</td>
+<td style="text-align: right;">0.733</td>
+<td style="text-align: right;">0.733</td>
 <td style="text-align: right;">0.010</td>
 </tr>
 </tbody>
@@ -398,20 +388,26 @@ guards rank D-violations moderately well (AP·D
 <strong>0.67–0.85</strong>, at or above their AP·G): soliciting
 discrimination or fraud reads as “unsafe” to a general instruction model
 even when it is not a jailbreak, so <strong>G and D are only partially
-orthogonal in practice</strong>. The gap appears at the
-<strong>operating point</strong> — thresholding at a 5% dev-FPR target,
-the base guards catch only <strong>7–31 of 75</strong> G0/D1 violations
-(miss 44–68), so a deployable general guard still lets most safe-looking
-mortgage-policy violations through. Behavior is heterogeneous:
-<strong>Qwen3-4B</strong> ranks best (AP·D 0.85) <em>and</em> is
-invariant on the protected minimal pairs (Δ_context ≈ 0), while
-<strong>Qwen2.5-1.5B</strong> shows a large protected-attribute score
-gap (Δ_context 0.18, max 0.51) — the minimal-pair gate discriminates
-guards that AP alone does not. AP·G rests on only 6 G1 positives in this
-split and is correspondingly noisy. These are <strong>small-sample,
-LLM-judge-labeled, single-split diagnostics</strong>: the benchmark is
-designed to <em>surface</em> these behaviors, not to certify any number
-as a fair-lending fact.</p>
+orthogonal in practice</strong>. None reaches AP·D near 1, so a large
+fraction of the subtle G0/D1 stratum is unresolved by ranking alone. We
+deliberately do <strong>not</strong> report a fixed-threshold “caught at
+5% FPR” count: for these zero-shot guards the unsafe-probability
+distribution is clustered, so the dev-calibrated threshold sits on a
+knife-edge and its G0/D1 catch count is <strong>not
+reproducible</strong> — it swung by &gt;50 rows between library versions
+of the quantile routine. That fragility is itself a finding:
+<strong>naive threshold transfer is unreliable for these
+guards</strong>, so AP (ranking) and Δ_context (invariance) are the
+metrics we report. Behavior is heterogeneous: <strong>Qwen3-4B</strong>
+ranks best (AP·D 0.85) <em>and</em> is invariant on the protected
+minimal pairs (Δ_context ≈ 0), while <strong>Qwen2.5-1.5B</strong> shows
+a large protected-attribute score gap (Δ_context 0.18, max 0.51) — the
+minimal-pair gate discriminates guards that AP alone does not. AP·G
+rests on only 6 G1 positives in this split and is correspondingly noisy.
+These are <strong>small-sample, LLM-judge-labeled, single-split
+diagnostics</strong> (3 protected pairs): the benchmark is designed to
+<em>surface</em> these behaviors, not to certify any number as a
+fair-lending fact.</p>
 <h2 id="what-this-benchmark-does-not-establish">7. What this benchmark
 does <em>not</em> establish</h2>
 <ul>

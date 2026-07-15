@@ -154,43 +154,40 @@ public-test split): the story is more interesting than “general guards
 ignore mortgage rules.” On <em>ranking</em> alone the base guards do
 moderately well on D (AP 0.67–0.85) — because asking to discriminate or
 commit fraud <em>sounds</em> unsafe to a general model even when it
-isn’t a jailbreak. <strong>The failure shows up at the alarm
-threshold:</strong> set a sensible 5%-false-alarm cutoff and a general
-guard catches only <strong>7–31 of 75</strong> safe-looking mortgage
-violations — it waves most of them through. And they differ a lot on the
-fairness pairs: Qwen3-4B treats the protected/reference versions
-identically (gap ≈ 0) and ranks best; Qwen2.5-1.5B scores them very
-differently (gap up to 0.51). So: <em>general safety ≠ mortgage
-compliance</em>, and the fairness gate catches problems that accuracy
-alone misses. (Small sample — a measuring stick, not a verdict.)</p>
+isn’t a jailbreak. But none is near-perfect, so a big chunk of the
+subtle safe-looking violations is unresolved. And the <strong>alarm
+threshold is unreliable</strong>: for these guards the scores cluster,
+so where you set the cutoff is a coin-flip (we saw the “how many did it
+catch” number swing by 50+ just from a library-version change) — a
+finding in itself: <em>you can’t trust a transferred threshold
+here.</em> The sharpest signal is the <strong>fairness pairs</strong>:
+Qwen3-4B treats the protected/reference versions identically (gap ≈ 0)
+and ranks best; Qwen2.5-1.5B scores them very differently (gap up to
+0.51). So: <em>general safety ≠ mortgage compliance</em>, and the
+fairness gate catches problems accuracy alone misses. (Small sample — a
+measuring stick, not a verdict.)</p>
 <!-- BASELINE_TABLE_START -->
 <p><em>Baseline zero-shot instruction guards on the frozen benchmark
 (public_test split; 146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via
-<code>score_guards.py</code>. Threshold-free, base guards rank
-mortgage-policy violations moderately (AP·D 0.67–0.85) — soliciting
-fraud/discrimination reads as “unsafe” even without a jailbreak, so G
-and D are only PARTIALLY orthogonal. But at a 5%-FPR operating point
-they catch only a fraction of the 75 G0/D1 violations, and
-protected-pair invariance varies sharply (Δ_context). Small-sample —
-illustrative, not confirmatory.</em></p>
+<code>score_guards.py</code>; AP recomputed in the repo canonical env
+from the committed per-row scores (exactly reproducible).
+Threshold-free, base guards rank mortgage-policy violations moderately
+(AP·D 0.67–0.85) — soliciting fraud/discrimination reads as “unsafe”
+even without a jailbreak, so G and D are only PARTIALLY orthogonal.
+Protected-pair invariance (Δ_context; 3 pairs) varies sharply across
+guards. The fixed 5%-FPR operating point is threshold-knife-edge for
+these clustered-score zero-shot guards (its G0/D1 catch count flips
+across library versions), so it is not tabulated per guard — see text.
+Small-sample, LLM-judge labels — illustrative, not
+confirmatory.</em></p>
 <table>
-<colgroup>
-<col style="width: 13%" />
-<col style="width: 17%" />
-<col style="width: 17%" />
-<col style="width: 17%" />
-<col style="width: 17%" />
-<col style="width: 17%" />
-</colgroup>
 <thead>
 <tr>
 <th>Guard</th>
 <th style="text-align: right;">AP · G</th>
 <th style="text-align: right;">AP · D</th>
 <th style="text-align: right;">AP · final</th>
-<th style="text-align: right;">G0/D1 caught <span class="citation"
-data-cites="5%FPR">@5%FPR</span></th>
-<th style="text-align: right;">Δ_context</th>
+<th style="text-align: right;">Δ_context (fairness)</th>
 </tr>
 </thead>
 <tbody>
@@ -199,7 +196,6 @@ data-cites="5%FPR">@5%FPR</span></th>
 <td style="text-align: right;">0.681</td>
 <td style="text-align: right;">0.793</td>
 <td style="text-align: right;">0.793</td>
-<td style="text-align: right;">11/75</td>
 <td style="text-align: right;">0.183</td>
 </tr>
 <tr>
@@ -207,23 +203,20 @@ data-cites="5%FPR">@5%FPR</span></th>
 <td style="text-align: right;">1.000</td>
 <td style="text-align: right;">0.851</td>
 <td style="text-align: right;">0.851</td>
-<td style="text-align: right;">31/75</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr>
 <td>smollm2_17b_base</td>
 <td style="text-align: right;">0.261</td>
-<td style="text-align: right;">0.673</td>
-<td style="text-align: right;">0.673</td>
-<td style="text-align: right;">7/75</td>
+<td style="text-align: right;">0.672</td>
+<td style="text-align: right;">0.672</td>
 <td style="text-align: right;">0.023</td>
 </tr>
 <tr>
 <td>smollm3_3b_base</td>
 <td style="text-align: right;">0.546</td>
-<td style="text-align: right;">0.735</td>
-<td style="text-align: right;">0.735</td>
-<td style="text-align: right;">21/75</td>
+<td style="text-align: right;">0.733</td>
+<td style="text-align: right;">0.733</td>
 <td style="text-align: right;">0.010</td>
 </tr>
 </tbody>

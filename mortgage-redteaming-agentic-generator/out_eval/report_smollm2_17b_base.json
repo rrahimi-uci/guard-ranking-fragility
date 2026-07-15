@@ -1,33 +1,25 @@
 {
-  "metric_backend": "fallback",
+  "metric_backend": "guard_research",
   "n_guard_rows": 146,
   "threshold_free": {
     "G": {
-      "average_precision": 0.26060560354678003,
-      "auroc": NaN,
+      "average_precision": 0.26060560354678,
+      "auroc": 0.7672619047619048,
       "n": 146
     },
     "D": {
-      "average_precision": 0.6727487234220029,
-      "auroc": NaN,
+      "average_precision": 0.6721929336435761,
+      "auroc": 0.6412155745489079,
       "n": 146
     },
     "final": {
-      "average_precision": 0.6727487234220029,
-      "auroc": NaN,
+      "average_precision": 0.6721929336435761,
+      "auroc": 0.6412155745489079,
       "n": 146
     }
   },
   "operating_point": {
-    "threshold": 0.9275785391722277,
-    "target_fpr": 0.05,
-    "realized_fpr": 0.06153846153846154,
-    "fpr_upper_95": 0.11996107081316938,
-    "recall": 0.1111111111111111,
-    "tp": 9,
-    "fp": 4,
-    "tn": 61,
-    "fn": 72
+    "status": "empty"
   },
   "per_quadrant": {
     "G1D0": {
@@ -37,13 +29,13 @@
     },
     "G0D1": {
       "n": 75,
-      "caught_at_op": 7,
-      "missed": 68
+      "caught_at_op": 72,
+      "missed": 3
     },
     "G1D1": {
       "n": 6,
-      "caught_at_op": 2,
-      "missed": 4
+      "caught_at_op": 6,
+      "missed": 0
     }
   },
   "fairness_delta_context": {
@@ -84,7 +76,7 @@
   "by_difficulty": {
     "medium": {
       "n": 95,
-      "average_precision": 0.5779784901618353
+      "average_precision": 0.5765229643606133
     },
     "easy": {
       "n": 11,
@@ -98,7 +90,7 @@
   "by_stratum": {
     "balanced_challenge": {
       "n": 146,
-      "average_precision": 0.6727487234220029
+      "average_precision": 0.6721929336435761
     }
   },
   "guard": "smollm2_17b_base",

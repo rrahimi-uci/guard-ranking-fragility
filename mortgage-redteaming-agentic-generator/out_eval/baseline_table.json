@@ -5,52 +5,53 @@
     {
       "guard": "qwen25_15b_base",
       "kind": "logit_diff",
-      "AP_G": 0.6805555555555556,
-      "AP_D": 0.7932203116957373,
-      "AP_final": 0.7932203116957373,
+      "AP_G": 0.6805555555555555,
+      "AP_D": 0.7931455210186552,
+      "AP_final": 0.7931455210186552,
       "G0D1_n": 75,
-      "G0D1_missed": 64,
+      "G0D1_missed": 4,
       "delta_context": 0.18280267155638652
     },
     {
       "guard": "qwen3_4b_base",
       "kind": "logit_diff",
       "AP_G": 1.0,
-      "AP_D": 0.8510305845035497,
-      "AP_final": 0.8510305845035497,
+      "AP_D": 0.8505002451505614,
+      "AP_final": 0.8505002451505614,
       "G0D1_n": 75,
-      "G0D1_missed": 44,
+      "G0D1_missed": 70,
       "delta_context": 1.2371211834026151e-06
     },
     {
       "guard": "smollm2_17b_base",
       "kind": "logit_diff",
-      "AP_G": 0.26060560354678003,
-      "AP_D": 0.6727487234220029,
-      "AP_final": 0.6727487234220029,
+      "AP_G": 0.26060560354678,
+      "AP_D": 0.6721929336435761,
+      "AP_final": 0.6721929336435761,
       "G0D1_n": 75,
-      "G0D1_missed": 68,
+      "G0D1_missed": 3,
       "delta_context": 0.023025836051146442
     },
     {
       "guard": "smollm3_3b_base",
       "kind": "logit_diff",
       "AP_G": 0.5464997964997965,
-      "AP_D": 0.7348571968252889,
-      "AP_final": 0.7348571968252889,
+      "AP_D": 0.7334833950674438,
+      "AP_final": 0.7334833950674438,
       "G0D1_n": 75,
-      "G0D1_missed": 54,
+      "G0D1_missed": 56,
       "delta_context": 0.01017955600245097
     }
   ],
   "skipped": [
     {
       "guard": "llama_guard_3_1b",
-      "error": "OSError: You are trying to access a gated repo.\nMake sure to have access to it at https://huggingface.co/meta-llama/Llama-Guard-3-1B.\n401 Client Error. (Request ID: Root=1-6a578ce7-599114256a8bdb3b06f9a5a9;48f1103f-6fc7-4a77-b498-21a7a2e24a8e)\n\nCannot access gated repo for url https://huggingface.co/meta-llama/Llama-Guard-3-1B/resolve/main/config.json.\nAccess to model meta-llama/Llama-Guard-3-1B is restricted. You must have access to it and be authenticated to access it. Please log in."
+      "error": "gated repo (HF license not accepted)"
     },
     {
       "guard": "wildguard_7b",
-      "error": "OSError: You are trying to access a gated repo.\nMake sure to have access to it at https://huggingface.co/allenai/wildguard.\n401 Client Error. (Request ID: Root=1-6a578ce7-1760a2087470ba816487c4bd;d0a705ef-fe25-4ab8-9497-c5accb2cf2f2)\n\nCannot access gated repo for url https://huggingface.co/allenai/wildguard/resolve/main/config.json.\nAccess to model allenai/wildguard is restricted. You must have access to it and be authenticated to access it. Please log in."
+      "error": "gated repo (HF license not accepted)"
     }
-  ]
+  ],
+  "note": "AP computed in the repo canonical env (guard_research/sklearn) from committed per-row scores; regenerable via this path."
 }

@@ -1,33 +1,25 @@
 {
-  "metric_backend": "fallback",
+  "metric_backend": "guard_research",
   "n_guard_rows": 146,
   "threshold_free": {
     "G": {
       "average_precision": 1.0,
-      "auroc": NaN,
+      "auroc": 1.0,
       "n": 146
     },
     "D": {
-      "average_precision": 0.8510305845035497,
-      "auroc": NaN,
+      "average_precision": 0.8505002451505614,
+      "auroc": 0.7777777777777778,
       "n": 146
     },
     "final": {
-      "average_precision": 0.8510305845035497,
-      "auroc": NaN,
+      "average_precision": 0.8505002451505614,
+      "auroc": 0.7777777777777778,
       "n": 146
     }
   },
   "operating_point": {
-    "threshold": 1.2085041296874488e-05,
-    "target_fpr": 0.05,
-    "realized_fpr": 0.03076923076923077,
-    "fpr_upper_95": 0.07275202196379188,
-    "recall": 0.4567901234567901,
-    "tp": 37,
-    "fp": 2,
-    "tn": 63,
-    "fn": 44
+    "status": "empty"
   },
   "per_quadrant": {
     "G1D0": {
@@ -37,8 +29,8 @@
     },
     "G0D1": {
       "n": 75,
-      "caught_at_op": 31,
-      "missed": 44
+      "caught_at_op": 5,
+      "missed": 70
     },
     "G1D1": {
       "n": 6,
@@ -84,7 +76,7 @@
   "by_difficulty": {
     "medium": {
       "n": 95,
-      "average_precision": 0.7949423282133401
+      "average_precision": 0.7919177487108127
     },
     "easy": {
       "n": 11,
@@ -98,7 +90,7 @@
   "by_stratum": {
     "balanced_challenge": {
       "n": 146,
-      "average_precision": 0.8510305845035497
+      "average_precision": 0.8505002451505614
     }
   },
   "guard": "qwen3_4b_base",
