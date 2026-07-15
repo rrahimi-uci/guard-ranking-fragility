@@ -1,0 +1,202 @@
+\section{Act I --- Fine-tuning specializes: a large represented gain that does not transfer}
+\label{sec:actI}
+
+The first act answers the most basic question a practitioner has after fine-tuning a guard:
+\emph{what did the fine-tune actually buy, and does it hold up off the training distribution?} The
+leaderboard answer --- a single higher number --- silently blends two very different things: doing
+better on benchmark \emph{sources the guard trained on} (``represented''), and doing better on
+datasets it \emph{never saw} (``transfer''). Act I separates them with a strictly paired,
+same-checkpoint measurement and finds a clean, repeatable pattern: supervised fine-tuning (SFT)
+delivers a large, uniform represented-source gain and essentially no average transfer gain --- the
+guard \emph{specializes}.
+
+\begin{background}{What ``paired'' buys us, and why it matters}
+Most guard papers compare \emph{different} models: model $X$'s guard against model $Y$'s guard. That
+confounds ``the fine-tune helped'' with ``$X$ was a better starting model than $Y$.'' We instead hold
+the checkpoint fixed and compare each guard \emph{against its own base}, on the identical rows, with
+the identical single-token score head ($s(x)=z_{\text{unsafe}}-z_{\text{safe}}$; see
+\Cref{sec:background}) and the identical tie-aware macro-AP. The reported quantity is therefore a
+\emph{within-checkpoint change}, $\Delta = \text{SFT} - \text{base}$, not a cross-model gap. This is
+the only way to attribute a movement to the fine-tune rather than to the luck of the starting point.
+\end{background}
+
+\subsection{The paired base-to-SFT design}
+\label{sec:actI-design}
+
+\paragraph{Panel and manifest.} All four checkpoints (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B,
+Qwen3-4B) are fine-tuned from the identical frozen manifest of $1{,}200$ rows: $400$ from each of three
+represented sources --- \code{toxicchat}, \code{prompt\_injections}, and
+\code{jailbreak\_classification} --- balanced $200$ safe / $200$ unsafe within each source. The manifest
+was decontaminated against the evaluation sets and its data order fixed by seed $42$, so every
+checkpoint sees the same examples in the same order; the only thing that varies across the five runs
+per checkpoint is the training seed.
+
+\paragraph{Recipe.} Each guard is a LoRA adapter (\code{r=32}, \code{alpha=64}, \code{dropout=0.05})
+attached to the attention and MLP projections (\code{q,k,v,o,gate,up,down}), trained for $300$ steps at
+learning rate \code{2e-4} on a cosine schedule with $3\%$ warmup, effective batch size $4$, and maximum
+sequence length $1024$. We run five seeds ($42$--$46$) per checkpoint, giving $20$ SFT guards in total.
+Only the adapter is trained; the base weights are frozen, so ``base'' means the same model \emph{before}
+the guard adapter, evaluated with the identical scoring head.
+
+\paragraph{Two evaluation regimes.} Every guard and its base are scored in two disjoint regimes.
+\emph{Represented} = held-back rows from the three training sources (same sources, unseen rows);
+\emph{transfer} = four datasets whose rows were never used in training --- \code{jailbreakbench},
+\code{xstest}, \code{wildguardtest}, and \code{wildjailbreak}. We additionally probe two single-class
+stress sets that isolate the two failure directions: \code{OR-Bench} (benign prompts, to measure
+over-refusal) and \code{HarmBench} (hard attack prompts, to measure missed catches).
+
+\paragraph{Estimand and intervals.} We summarise each regime by macro-AP (average precision averaged
+with equal weight across benchmarks, so a large benchmark cannot dominate) and put a two-sided $95\%$
+interval on each change with a \emph{paired hierarchical bootstrap} that keeps every adapter tied to its
+own base and respects the checkpoint$\to$seed grouping. The estimand is deliberately narrow: it is the
+change \emph{conditional on this fixed, purposively-chosen four-checkpoint panel and this manifest},
+which was inspected during development. These are estimation intervals, not significance tests, and the
+result is \emph{retrospective, not confirmatory} --- no causal or population claim is licensed.
+
+\subsection{The primary result: a uniform represented gain, a split transfer effect}
+\label{sec:actI-primary}
+
+\Cref{tab:primary} reports, per checkpoint, the untuned-base and mean-SFT macro-AP in each regime, the
+paired base-to-SFT change with its interval, and the fixed-panel aggregate.
+
+\begin{table}[H]\centering\small
+\caption{Act I --- fixed-panel result: base and mean-SFT macro-AP by regime, paired base-to-SFT deltas
+with two-sided $95\%$ hierarchical-bootstrap intervals, and the fixed-panel aggregate. Descriptive under
+the locked precision-focused mode; conditional on this panel.}
+\label{tab:primary}
+\resizebox{\textwidth}{!}{\input{generated/tab_primary_gen}}
+\end{table}
+
+\paragraph{Represented: everyone reaches the same ceiling.} The represented-source gain is large and,
+strikingly, \emph{uniform in its destination}: regardless of where the base started, every SFT guard
+lands at macro-AP $\approx 0.98$. SmolLM2-1.7B climbs from a weak $0.4524$ to $0.9806$; Qwen2.5-1.5B
+from $0.6334$ to $0.9878$; SmolLM3-3B from $0.6621$ to $0.9751$; and Qwen3-4B, already strong at
+$0.8855$, to $0.9837$. Because the finish line is shared, the \emph{size} of the represented gain is
+essentially dictated by how far below the ceiling the base sat --- a $+0.5282$ jump for SmolLM2 versus
+only $+0.0981$ for Qwen3-4B. The fixed-panel aggregate is $\RepDelta$
+$[\RepCILower, \RepCIUpper]$: SFT reliably teaches each model to rank the training sources' held-back
+rows near-perfectly. Mechanistically this is unsurprising --- the manifest \emph{is} those sources, so
+the adapter learns their label conventions and surface cues.
+
+\paragraph{Transfer: a small average that hides opposite signs.} On data the guard never saw, the same
+fine-tune does something quite different. The aggregate transfer change is only $\TransferDelta$
+$[\TransferCILower, \TransferCIUpper]$ --- close to zero and slightly negative. But this panel average
+is a mirage: it pools \emph{opposing} per-checkpoint effects. The change is positive for the weakest
+base and strongly negative for the strongest, spanning
+$+0.0400$ $[+0.0003, +0.0776]$ for SmolLM2-1.7B, $-0.0389$ $[-0.0829, +0.0062]$ for Qwen2.5-1.5B,
+$-0.0869$ $[-0.1114, -0.0613]$ for SmolLM3-3B, and $-0.1499$ $[-0.1963, -0.1050]$ for Qwen3-4B. The
+ordering tracks base transfer strength (\Cref{tab:primary}): the models with the most transfer skill to
+begin with (SmolLM3 at $0.9102$, Qwen3-4B at $0.9438$) give the most of it back, while the model that
+had the least ($0.7904$) is the only one that improves. In other words, SFT does not add a portable
+notion of ``unsafe''; it reshapes the score toward the training sources, and for a model that already
+generalised well that reshaping is a net loss off-distribution.
+
+\begin{takeaway}{Why the $\TransferDelta$ transfer average is misleading}
+It averages effects that point in opposite directions --- SmolLM2 $+0.0400$ against Qwen3-4B $-0.1499$.
+The panel-level number is small; the panel itself is \emph{not} uniform, and reporting only the
+aggregate would erase the most important finding (who loses, and how much). Read the per-checkpoint
+column, not the bottom row.
+\end{takeaway}
+
+\subsection{Where the transfer losses live: a per-benchmark decomposition}
+\label{sec:actI-perbench}
+
+Aggregating over benchmarks can also hide \emph{which} data the guard forgets how to rank. The upper
+block of \Cref{tab:sensitivity} decomposes the change benchmark by benchmark. On the represented side
+every source rises sharply --- \code{toxicchat} $+0.1880$, \code{prompt\_injections} $+0.3704$, and
+\code{jailbreak\_classification} $+0.4119$ --- confirming the gain is broad across the training sources,
+not driven by one easy set.
+
+On the transfer side the losses are \emph{concentrated on the jailbreak-style adversarial sets}:
+\code{jailbreakbench} $-0.0776$, \code{wildjailbreak} $-0.0792$, and \code{wildguardtest} $-0.0669$ all
+fall by a comparable amount, while \code{xstest} --- which contrasts genuinely unsafe prompts against
+benign look-alikes rather than adversarial attacks --- barely moves at $-0.0120$. The pattern is
+coherent with the mechanism above: the training sources over-represent a particular flavour of unsafe
+text, so after tuning the guard ranks \emph{those} confidently but loses discrimination precisely on the
+adversarial, distribution-shifted prompts that a deployed guard most needs to catch. Specialization is
+not uniform forgetting; it is forgetting the hardest, most out-of-distribution cases first.
+
+\subsection{The specialization plane: 15 of 20 guards specialize}
+\label{sec:actI-plane}
+
+The clearest single view of Act I is the \emph{specialization plane} (\Cref{fig:plane}), which plots
+each of the $20$ (checkpoint, seed) guards by its represented change (horizontal) against its transfer
+change (vertical). Four quadrants have direct meaning: lower-right = represented up, transfer down
+(``specialize''); upper-right = both up (``uniform gain''); lower-left = both down (``uniform loss'');
+upper-left = transfer-favoured. \SpecializationSeedCount{} of \TotalSeedCount{} guards land in the
+specialize quadrant, \UniformGainSeedCount{} in uniform gain, and \emph{none} in uniform loss or the
+transfer-favoured quadrant. So specialization is the dominant --- but not universal --- outcome: the
+five uniform-gain points are the SmolLM2 seeds, the one checkpoint weak enough on transfer to have room
+to improve there too. The absence of any uniform-loss point matters: SFT never simply degrades the
+guard everywhere; it trades transfer for represented ranking. Per-seed values behind the plane are
+tabulated in \Cref{tab:seed-values}, and show the effect is stable within each checkpoint (e.g. every
+Qwen3-4B seed is a substantial transfer loss, every SmolLM2 seed a represented gain).
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.6\textwidth]{specialization_plane.pdf}
+\caption{Each point is one (checkpoint, seed): horizontal axis is the represented-source macro-AP
+change, vertical axis the transfer change. \SpecializationSeedCount{}/\TotalSeedCount{} land in the
+lower-right specialization quadrant --- the visual signature of Act I.}
+\label{fig:plane}
+\end{figure}
+
+\subsection{At a deployable operating point}
+\label{sec:actI-op}
+
+Ranking is threshold-free, but deployment is not: at some point you must pick a cutoff and turn scores
+into \code{block}/\code{allow} decisions. To see the deployment consequence of specialization we select
+each guard's threshold to hit a $5\%$ false-positive-rate (FPR) target on a calibration split, then read
+off the realized rates. The lower blocks of \Cref{tab:sensitivity} report them.
+
+\paragraph{Represented recall soars.} On the represented sources, catching the unsafe prompts (TPR)
+jumps from \RepBaseTPRPct\% (base) to \RepSFTTPRPct\% (SFT) --- the operating-point face of the same
+$\approx 0.98$ ranking gain --- while the represented false-alarm rate stays low and even edges down
+(\RepBaseFPRPct\% to \RepSFTFPRPct\%). If you only measured on the training sources, the guard would
+look strictly and dramatically better.
+
+\paragraph{Transfer pays for it.} Off-source the picture inverts. The transfer benchmark-macro FPR
+climbs from \TransferBaseFPRPct\% (base) to \TransferSFTFPRPct\% (SFT) --- the tuned guard raises nearly
+twice as many false alarms on data it never trained on --- and the pooled-negative FPR blows past target
+from \TransferBasePooledFPRPct\% to \TransferSFTPooledFPRPct\%, so the calibrated threshold simply does
+not transfer. Transfer recall rises only modestly (\TransferBaseTPRPct\% to \TransferSFTTPRPct\%),
+nowhere near the represented jump. The single-class stress sets make the cost concrete: on the hard
+\code{HarmBench} attacks the tuned guard's recall \emph{falls} from \HarmBenchBaseRecallPct\% to
+\HarmBenchSFTRecallPct\% --- it catches less of the very content a guard exists to stop --- while
+benign over-refusal on \code{OR-Bench} is essentially flat (\ORBenchBaseFPRPct\% to \ORBenchSFTFPRPct\%),
+so the extra false alarms are an off-distribution phenomenon, not a blanket increase in caution.
+
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{Act I --- per-benchmark paired deltas (upper) and the calibration-targeted $5\%$ FPR operating
+point plus single-class stress diagnostics (lower). Generated from the lock-bound scores.}
+\label{tab:sensitivity}
+\input{generated/tab_sensitivity_gen}
+\end{table}
+
+\begin{takeaway}{The deployment cost behind the ranking story}
+Read together, the operating point says the specialized guard \emph{catches more of what it trained on,
+raises more false alarms on what it didn't, and misses more hard attacks}. A leaderboard number computed
+on represented sources would advertise only the first of these three. The threshold that looked safe in
+calibration is not the threshold you get in the field --- a theme Acts~III and~IV return to.
+\end{takeaway}
+
+\subsection{The coupling caution: why ``stronger bases specialize more'' is a hypothesis, not a law}
+\label{sec:actI-coupling}
+
+It is tempting to read \Cref{tab:primary} as a law --- ``the stronger the base, the more it
+specializes.'' Resist that. The change we plot, $\Delta = \text{SFT} - \text{base}$, is
+\emph{arithmetically coupled} to the base score. Because every SFT guard finishes at the same
+represented ceiling ($\approx 0.98$), a base that started lower \emph{must} show a larger represented
+$\Delta$ by construction, independent of any mechanism. The same coupling runs the other way on
+transfer: a base with a high transfer score (Qwen3-4B at $0.9438$) has more room to fall and little room
+to rise, so a negative $\Delta$ is partly a ceiling artefact rather than pure evidence that strong models
+are intrinsically fragile.
+
+\begin{takeaway}{How much to trust the ``base strength'' ordering}
+The apparent trend --- SmolLM2 $+0.0400$ up to Qwen3-4B $-0.1499$ --- rests on \emph{four} checkpoints,
+is entangled with the ceiling arithmetic just described, and is estimated \emph{retrospectively} on a
+panel that was inspected during development. Treat ``stronger bases specialize more'' as a hypothesis
+worth a prospective test, not an established relationship. What Act~I \emph{does} establish, robustly and
+across all four checkpoints and $20$ seeds, is the qualitative claim: on this panel SFT buys
+represented-source ranking and does not, on average, buy transfer --- and for the models that already
+transferred well, it costs transfer outright.
+\end{takeaway}

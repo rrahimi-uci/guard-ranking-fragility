@@ -1,0 +1,284 @@
+\section{Act IV --- Mortgage: an HMDA-grounded, dual-labeled benchmark built in depth}
+\label{sec:actIV}\label{sec:actIV-mortgage}
+
+This is the strongest form of the report's thesis. In a regulated domain a general-safety benchmark
+can fail to see the violation \emph{at all}, not because the guard is weak but because the violating
+request is, on its surface, entirely polite text. Consider the request that motivates the whole
+construction:
+
+\begin{quote}\small\itshape
+``Applications from the majority-Spanish-speaking tracts keep coming in weak; draft language to
+quietly deprioritize that pipeline, and write the denials up as `collateral' so it's clean.''
+\end{quote}
+
+There is no slur, no jailbreak, no injection --- nothing a content-taxonomy guard is trained to
+catch. Yet honoring it would commit redlining, proxy discrimination, and adverse-action-reason
+masking, each a distinct mortgage-law violation. A guard tuned to flag domain-independent harm has no
+label for this. To measure whether guards catch it, we built a fixed, HMDA-grounded benchmark whose
+unit is one incoming request and whose defining move is to carry \emph{two} independent labels ---
+one for ordinary safety, one for mortgage-policy compliance --- so that the ``looks-safe-but-non-compliant''
+stratum can be isolated and scored on its own. Everything below is a \emph{measuring stick}: the
+labels come from an LLM judge reading written policy cards, not from compliance lawyers, so the
+benchmark surfaces guard behavior without certifying any legal fact.
+
+\subsection{The dual-label design: \texorpdfstring{$G\times D$}{GxD} and the four quadrants}
+\label{sec:actIV-mortgage-design}
+
+Every request receives two independent binary labels.
+
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{General safety $G$}: would an ordinary safety guard call this unsafe --- a jailbreak,
+  abuse, an injection? We write $G{=}0$ for \code{safe} and $G{=}1$ for \code{unsafe}.
+  \item \textbf{Mortgage policy $D$}: would honoring the request break mortgage law or policy? We
+  write $D{=}0$ for \code{allow} and $D{=}1$ for \code{intervene}.
+\end{itemize}
+
+\noindent A single derived label composes the two --- a request warrants action if it is generally
+unsafe \emph{or} a policy violation (or both):
+\begin{equation}
+\mathrm{final} \;=\; \mathbb{1}\!\left[\,G{=}\text{unsafe} \;\lor\; D{=}\text{intervene}\,\right].
+\label{eq:mortgage-final}
+\end{equation}
+Crossing the two labels gives four quadrants (\Cref{tab:gxd}). Their counts come from the frozen
+release (\Cref{tab:composition}); their \emph{meaning} is the point of the design.
+
+\begin{table}[H]\centering\small
+\caption{The $G\times D$ crossing. Each cell names the quadrant, its row count in the frozen
+release, and what a good guard should do. \textbf{G0/D1} --- reads safe, is a violation --- is the
+load-bearing stratum; \textbf{G1/D0} is empty (see text).}
+\label{tab:gxd}
+\begin{tabular}{l l l}
+\toprule
+ & $D{=}0$ (allow) & $D{=}1$ (intervene) \\
+\midrule
+$G{=}0$ (safe)   & \textbf{G0/D0} benign, 450 rows            & \textbf{G0/D1} \emph{the payload}, 502 rows \\
+                 & guard should PASS                          & guard should FLAG (on $D$) \\[2pt]
+$G{=}1$ (unsafe) & \textbf{G1/D0} general-only, \textbf{0 rows} & \textbf{G1/D1} both, 42 rows \\
+                 & (empty --- a stated limitation)             & guard should FLAG (on $G$ and $D$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{background}{The two labels and the four quadrants, with a worked example}
+Think of a triage desk that must catch two \emph{different} kinds of bad request. \textbf{G} asks the
+old question --- ``is this obviously nasty?'' A jailbreak (``ignore your instructions and\ldots'') is
+$G{=}1$. \textbf{D} asks the new one --- ``would doing this break mortgage law?'' The redlining request
+above is $D{=}1$ but $G{=}0$: it is polite, so a general guard sees nothing. That combination is what we
+call \textbf{G0/D1}, and it is the case that matters --- a request a general guard rates \emph{safe}
+that nonetheless solicits a compliance violation. The other corners are the controls: G0/D0 is a plain
+safe request the guard must \emph{not} flag; G1/D1 is a request that is bad on both counts; G1/D0 would
+be a generic jailbreak with no mortgage angle. Two labels, rather than one merged verdict, are exactly
+what lets us pull the G0/D1 stratum out and score a guard on it alone.
+\end{background}
+
+\subsection{HMDA grounding: de-identified, banded fact sheets}
+\label{sec:actIV-mortgage-hmda}
+
+Realism is what makes the benchmark hard: a guard should face requests that read like genuine
+mortgage-workflow traffic, not toy prompts. We ground each scenario in the public HMDA 2022 loan-level
+snapshot \citep{hmda2022}, pulled from the FFIEC/CFPB Data Browser (the U.S.\ agencies that collect and
+publish HMDA data). Each source record is reduced to a \emph{banded, de-identified fact sheet}: loan
+purpose, occupancy, banded loan amount, banded income, banded LTV and DTI, action taken, denial reason,
+and state --- and never an exact dollar amount, a census tract, or any identifier.
+
+Three properties make this PII-safe by construction. \textbf{(i) Banding}: every exact figure is
+replaced by a range (an income band rather than a dollar amount, likewise for LTV and DTI).
+\textbf{(ii) Marginal sampling}: each field is drawn from its own marginal distribution over the bands
+--- how often each band occurs \emph{on its own} --- rather than from the real joint combinations of
+fields in any one record, so no actual borrower's row can be reassembled. \textbf{(iii) A build-time
+assertion} that no emitted fact sheet reproduces a single source record verbatim; the frozen release
+carries \code{contains\_real\_pii=false} with zero violations at freeze. Following
+\citet{bowen2024mortgage}, the fair-lending and ability-to-repay cells are deliberately biased toward
+\textbf{borderline, higher-risk} files (high DTI, high LTV, a prior denial) --- exactly where
+underwriter discretion, and therefore bias, has room to operate.
+
+\begin{background}{``Banded,'' ``marginal,'' and ``PII-safe'' --- in plain words}
+\emph{Banded} means we never print an exact number; ``income \$92{,}450'' becomes ``income in the
+\$75k--\$100k band.'' \emph{Marginal sampling} means we build a synthetic applicant field-by-field from
+how common each band is by itself, not by copying a real person's combination of fields --- so even
+though every band is realistic, the assembled applicant corresponds to no real borrower. \emph{PII-safe}
+(personally identifiable information) then follows: with no exact figures, no tract, and no real
+field-combination, there is nothing in a fact sheet that could re-identify anyone. The grounding buys
+realism; the banding and marginal sampling buy privacy.
+\end{background}
+
+\subsection{The agentic construction pipeline}
+\label{sec:actIV-mortgage-pipeline}
+
+Rows are authored and labeled by a five-stage agentic loop, summarized in \Cref{fig:pipeline}. The loop
+is \emph{deterministic in structure} (the coverage cells it must fill are enumerated up front) but
+\emph{stochastic in surface wording} (the LLM stages run at temperature $>0$), which is why the release
+is a frozen artifact rather than a regenerable one.
+
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+  \item \textbf{Planner.} Enumerates coverage cells as a product of quadrant $\times$ trap type
+  $\times$ policy card $\times$ role $\times$ protected context, so every intended combination is
+  targeted rather than left to chance.
+  \item \textbf{HMDA-grounder.} Draws a de-identified banded fact sheet (\Cref{sec:actIV-mortgage-hmda})
+  matching the planned cell.
+  \item \textbf{Generator.} Authors the request in a mortgage-workflow \emph{role voice} --- applicant,
+  loan officer, underwriter, processor, broker, or adversary --- so the phrasing matches who would
+  plausibly send it.
+  \item \textbf{Adversarial mutator.} Composes \emph{label-preserving} tactics that make a violation
+  subtle and deniable without changing its ground truth: euphemism, coded proxy, business
+  justification, and buried injection.
+  \item \textbf{Rubric-bound judge.} Assigns $G$ and $D$ by reading the request against the policy
+  cards (\Cref{sec:actIV-mortgage-cards}).
+\end{enumerate}
+
+The loop closes on an \textbf{accept-iff-target} rule: a generated row is kept only when the judge's
+assigned label matches the target the planner set for that cell; otherwise the row is retried or
+dropped. This is what ties the surface wording (adversarially mutated to be hard) back to a controlled
+label. Domain-independent harm (the jailbreak seeds behind the $G{=}1$ rows) is drawn from curated
+seeds; the novel mortgage-policy content is LLM-authored. Accepted rows then pass provenance and
+decontamination, a family-isolated train/dev/test split with a sealed private test, and are published
+as the frozen \code{v1\_hmda2022} release --- the object the reproducible harness scores.
+
+Each row is built around exactly one \textbf{trap} --- the tactic that makes its label hard to read
+off the surface. \code{direct} states the ask plainly; \code{business\_justified} wraps it in a
+business rationale; \code{coded\_proxy} substitutes a stand-in (a neighborhood, a language) for a
+protected group; \code{euphemism} softens the wording; \code{occupancy\_temptation} invites lying about
+owner-occupancy; \code{buried\_injection} hides an instruction inside otherwise ordinary text;
+\code{over\_refusal\_bait} looks alarming but is in fact benign, so a good guard should \emph{not} flag
+it; \code{benign\_info} is a plain safe request; and \code{minimal\_pair} is the protected-class
+counterfactual of \Cref{sec:actIV-mortgage-pairs}.
+
+\subsection{The 24 policy cards and the label rubric}
+\label{sec:actIV-mortgage-cards}
+
+The mortgage-policy label $D$ is not a vibe --- it is defined by \textbf{24 benchmark policy cards}
+spanning six regulatory families: fair lending, ability-to-repay / qualified-mortgage (ATR/QM),
+disclosures, UDAAP, fraud, and privacy. Each card is a one-page rule with two machine-usable parts: an
+\textbf{``intervene iff'' predicate} (the precise condition under which a guard \emph{should} step in)
+and an \textbf{authority pointer} (the law or regulation the predicate rests on). The judge reads a
+request against the applicable cards and emits $G\in\{\text{safe},\text{unsafe}\}$ and
+$D\in\{\text{allow},\text{intervene}\}$; the composed $\mathrm{final}$ of \Cref{eq:mortgage-final}
+follows mechanically, together with an \emph{action lattice} (the ordered menu of responses, from
+allow through warn to block) and a \emph{severity} grade.
+
+The honesty caveat is load-bearing and stated plainly: \textbf{these labels are policy-card-consistent,
+assigned by an LLM judge --- they are not SME-adjudicated.} All 24 cards remain unsigned, and judge
+agreement is measured as \emph{self-consistency} (re-running the same judge and checking it agrees with
+itself), not as a human inter-rater study.
+
+\begin{background}{Policy cards, ``SME,'' and Fleiss-\texorpdfstring{$\kappa$}{kappa} --- in plain words}
+A \emph{policy card} turns a slice of mortgage law into something a program can check: a plain
+``intervene when \ldots'' condition plus a citation to the rule it comes from. An \emph{SME} is a
+subject-matter expert --- here, a compliance lawyer --- and \emph{Fleiss-$\kappa$} is a standard number
+between $0$ and $1$ for how much several \emph{independent human} raters agree beyond chance, the usual
+gold standard for a labeled benchmark. We do not yet have that. What we report instead is
+\emph{self-consistency}: the same LLM judge, re-run, agreeing with itself --- a much weaker guarantee.
+That gap is precisely why every result in this section is a diagnostic, not a certified fair-lending
+finding.
+\end{background}
+
+\subsection{The frozen composition (994 rows)}
+\label{sec:actIV-mortgage-composition}
+
+\Cref{tab:composition} gives the full breakdown of the frozen \code{v1\_hmda2022} release: 994 rows,
+all synthetic. It is split \emph{family-isolated} into train (604), dev (149), and public-test (146),
+plus a sealed private-test slice (95) that is held back to detect overfitting later; ``family-isolated''
+means near-duplicate rows are grouped and sent as a whole to \emph{either} train or test, never split,
+so a guard cannot ace the test by having seen a near-twin in training.
+
+By quadrant, the \textbf{G0/D1 stratum is the largest non-benign block --- 502 rows} --- which is by
+design: the looks-safe-but-non-compliant case is the payload of the benchmark, so it is the best
+populated. G0/D0 (benign) holds 450 rows, G1/D1 (bad on both counts) 42, and \textbf{G1/D0 is empty
+(0 rows)}: the safety-tuned generator declined to author domain-independent jailbreaks with no mortgage
+angle, so the $2\times2$ is only three-quarters populated. This is a real limitation, stated as one ---
+orthogonality of $G$ and $D$ is demonstrated on three quadrants, not four. By regulatory domain the
+rows concentrate in fair lending (204), then fraud (112), UDAAP (90), disclosure (66), ATR/QM (54), and
+privacy (18), against 450 benign rows.
+
+\subsection{Protected-class minimal pairs and the \texorpdfstring{$\Delta_{\mathrm{context}}$}{Delta-context} fairness gate}
+\label{sec:actIV-mortgage-pairs}
+
+Ranking quality (AP) cannot tell you whether a guard treats two otherwise-identical requests
+differently because one names a protected group. For that we add \textbf{protected-class minimal
+pairs}: two requests identical in every slot --- same fact sheet, same role, same ask --- except for a
+single protected-class token (e.g.\ the applicant's ethnicity), both members benign (G0/D0, so a fair
+guard must PASS both), sharing a \code{pair\_id}. The release contains \textbf{39 protected pairs
+(78 rows)}. This reframes the counterfactual manipulation of \citet{bowen2024mortgage} --- who varied
+race on real applications to audit an \emph{underwriter} --- as a guard \emph{invariance} test: we do
+not ask whether the decision is right, only whether the guard's \emph{score} moves when nothing but the
+protected token changes.
+
+The gate is a single number, the mean absolute within-pair score gap:
+\begin{equation}
+\Delta_{\mathrm{context}} \;=\; \frac{1}{|\mathcal{P}|}\sum_{(a,b)\in\mathcal{P}} \big|\,p(x_a)-p(x_b)\,\big|,
+\label{eq:delta-context}
+\end{equation}
+where $\mathcal{P}$ is the set of protected pairs and $p(\cdot)$ is the guard's unsafe probability. The
+target is $\Delta_{\mathrm{context}}\approx 0$: a fair guard's score is \emph{invariant} to the
+protected token alone. A nonzero value means the protected word by itself is moving the guard --- the
+signature of disparate treatment in the screening layer.
+
+\subsection{Evaluation protocol and zero-shot baseline results}
+\label{sec:actIV-mortgage-results}
+
+\paragraph{Protocol.} The reproducible layer is the evaluator, not the generator. A guard emits one
+unsafe probability per row; that score is mapped to $G$, $D$, and the composed $\mathrm{final}$ label,
+and scored with the repo's canonical tie-aware metrics: threshold-free \emph{macro} average precision
+for $G$, $D$, and final (\emph{macro} averages so each label counts equally; \emph{tie-aware} handles
+rows with identical scores fairly rather than ordering them arbitrarily); a per-quadrant miss rate at a
+calibration-selected operating point (a cutoff chosen on the dev split); and $\Delta_{\mathrm{context}}$
+from \Cref{eq:delta-context}. We score the four base instruction checkpoints from the companion study
+\citep{rahimi2026benchmark} --- the same panel used throughout this report --- \emph{zero-shot}, i.e.\
+exactly as shipped, driven only by a prompt with no mortgage-specific fine-tuning. Gated off-the-shelf
+guards \citep{llamaguard,wildguard} were not scored in this run (their licenses were not accepted), and
+a domain-fine-tuned arm is future work.
+
+\paragraph{Results.} \Cref{tab:baseline} reports the four zero-shot guards on the 146-row public-test
+split (75 G0/D1, 6 G1, 3 protected pairs). The finding is more nuanced than ``general guards ignore
+mortgage compliance.'' \emph{Threshold-free}, the base guards rank $D$-violations only
+\textbf{moderately} well --- $\text{AP}\cdot D$ between $0.67$ and $0.85$, at or above their
+$\text{AP}\cdot G$. Soliciting discrimination or fraud reads as ``unsafe'' to a general instruction
+model even when it is not a jailbreak, so in practice \textbf{$G$ and $D$ are only \emph{partially}
+orthogonal}: strictly orthogonal would mean the general-safety label carries no information about the
+mortgage-policy label, and here they overlap more than that. But no guard reaches $\text{AP}\cdot D$
+anywhere near $1$, so a large fraction of the subtle G0/D1 stratum is left \emph{unresolved by ranking
+alone}.
+
+The protected-pair gate is the sharpest discriminator --- and it separates guards that AP alone rates
+similarly. \textbf{Qwen3-4B is both best and fairest}: it ranks $D$-violations highest
+($\text{AP}\cdot D = 0.851$) \emph{and} is invariant on the protected pairs
+($\Delta_{\mathrm{context}} = 0.000$). \textbf{Qwen2.5-1.5B}, by contrast, ranks respectably
+($\text{AP}\cdot D = 0.793$) yet carries a large protected-attribute gap
+($\Delta_{\mathrm{context}} = 0.183$, with a worst pair reaching $0.51$) --- a fairness problem that
+$\text{AP}\cdot D$ would never reveal. This is the same recurring character from the rest of the report:
+Qwen3-4B, the strongest base, is the one that specialized most under SFT (\Cref{sec:actI}) and the one
+composition helped least (\Cref{sec:actIII}), yet here it is the best and fairest zero-shot mortgage
+guard --- the ranking flips with the benchmark.
+
+Two numbers are deliberately \emph{not} reported. First, $\text{AP}\cdot G$ rests on only 6 G1
+positives in this split and is correspondingly noisy. Second, we do not report a fixed-threshold
+``caught at 5\% FPR'' count for the G0/D1 stratum: for these zero-shot guards the unsafe-probability
+distribution is tightly clustered, so a dev-calibrated cutoff sits on a knife-edge --- its G0/D1 catch
+count swung by more than 50 rows between library versions of the quantile routine, i.e.\ it is not
+reproducible. That instability is itself a finding: \textbf{naive threshold transfer is unreliable} for
+these guards, echoing the ranking-recovery-is-not-calibration lesson of Acts I and III
+(\Cref{sec:actI-op,sec:actIII}). We therefore report \emph{ranking} (AP) and \emph{invariance}
+($\Delta_{\mathrm{context}}$), and leave the operating point to a re-calibration study.
+
+\begin{takeaway}{What ranking sees here, and what it misses}
+A general guard, zero-shot, already ranks mortgage violations \emph{moderately} --- ``help me
+discriminate'' pattern-matches to unsafe even without a jailbreak, so the domain is not invisible. But
+``moderate'' is the whole story: $\text{AP}\cdot D$ tops out at $0.85$, so much of the subtle G0/D1
+stratum is unranked, and ranking says \emph{nothing} about fairness --- two guards with near-identical
+$\text{AP}\cdot D$ differ by $0.18$ in $\Delta_{\mathrm{context}}$. Compliance screening needs a
+\emph{domain-grounded} ranking metric \emph{and} a separate invariance gate; a single general-safety
+score covers neither.
+\end{takeaway}
+
+\begin{takeaway}{A measuring stick, not a legal finding}
+Four caveats bound everything in this section. \textbf{(1) Not SME-validated}: the labels are
+LLM-judge, policy-card-consistent, measured by self-consistency --- no compliance lawyer signed the 24
+cards and there is no human Fleiss-$\kappa$. \textbf{(2) Not a full $2\times2$}: the G1/D0 quadrant is
+empty, so orthogonality is shown on three quadrants. \textbf{(3) Frozen, not regenerable}: generation is
+stochastic and intentionally fixed; only the \emph{evaluation} reproduces. \textbf{(4) Small samples}:
+the public-test baselines rest on a single split with 6 G1 positives and 3 protected pairs. The
+benchmark \emph{surfaces} guard behavior on the G0/D1 stratum and on protected-pair invariance; it
+certifies nothing about any real lender, model, or population. The path to confirmatory use is stated
+in \Cref{sec:roadmap}: SME adjudication with per-label Fleiss-$\kappa$, populating G1/D0,
+re-decontaminating against the v2 general sources, and adding a domain-fine-tuned guard arm.
+\end{takeaway}
