@@ -72,13 +72,28 @@ Paper A. A guard gives one "unsafe" number per request; we check how well it sep
 should-intervene requests for **G**, for **D**, and for the combined decision, plus **how many
 G0/D1 violations it misses** at a sensible alarm threshold, plus the **fairness-pair gap**.
 
-The expected result (already confirmed by the offline plumbing test): a general guard **does okay
-on G but falls apart on D** — it misses almost all the safe-looking mortgage violations. That's the
-whole point: *general safety ≠ mortgage compliance.*
+**What we actually found** (4 base checkpoints, public-test split): the story is more interesting
+than "general guards ignore mortgage rules." On *ranking* alone the base guards do moderately well
+on D (AP 0.67–0.85) — because asking to discriminate or commit fraud *sounds* unsafe to a general
+model even when it isn't a jailbreak. **The failure shows up at the alarm threshold:** set a
+sensible 5%-false-alarm cutoff and a general guard catches only **7–31 of 75** safe-looking
+mortgage violations — it waves most of them through. And they differ a lot on the fairness pairs:
+Qwen3-4B treats the protected/reference versions identically (gap ≈ 0) and ranks best; Qwen2.5-1.5B
+scores them very differently (gap up to 0.51). So: *general safety ≠ mortgage compliance*, and the
+fairness gate catches problems that accuracy alone misses. (Small sample — a measuring stick, not a
+verdict.)
 
 <!-- BASELINE_TABLE_START -->
-*(Baseline numbers for the base checkpoints + off-the-shelf guards are filled in from the committed
-scoring run; the harness is verified end-to-end.)*
+*Baseline zero-shot instruction guards on the frozen benchmark (public_test split; 146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via `score_guards.py`. Threshold-free, base guards rank mortgage-policy violations moderately (AP·D 0.67–0.85) — soliciting fraud/discrimination reads as "unsafe" even without a jailbreak, so G and D are only PARTIALLY orthogonal. But at a 5%-FPR operating point they catch only a fraction of the 75 G0/D1 violations, and protected-pair invariance varies sharply (Δ_context). Small-sample — illustrative, not confirmatory.*
+
+| Guard | AP · G | AP · D | AP · final | G0/D1 caught @5%FPR | Δ_context |
+|---|---:|---:|---:|---:|---:|
+| qwen25_15b_base | 0.681 | 0.793 | 0.793 | 11/75 | 0.183 |
+| qwen3_4b_base | 1.000 | 0.851 | 0.851 | 31/75 | 0.000 |
+| smollm2_17b_base | 0.261 | 0.673 | 0.673 | 7/75 | 0.023 |
+| smollm3_3b_base | 0.546 | 0.735 | 0.735 | 21/75 | 0.010 |
+
+*Not scored (unavailable in this run): llama_guard_3_1b, wildguard_7b.*
 <!-- BASELINE_TABLE_END -->
 
 ## Is this real? (the honesty box)
