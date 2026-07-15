@@ -1,0 +1,437 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{parskip}
+\usepackage[nameinlink,capitalize]{cleveref}
+\setlength{\emergencystretch}{3em}
+\graphicspath{{figures/}}
+
+% ---- teaching / takeaway callout boxes (reused from the simplified editions) ----
+\definecolor{bgblue}{HTML}{EAF2FF}
+\definecolor{bgblueedge}{HTML}{2563EB}
+\definecolor{tkgreen}{HTML}{EAF7EE}
+\definecolor{tkgreenedge}{HTML}{15803D}
+\newtcolorbox{background}[1]{colback=bgblue,colframe=bgblueedge,title={#1},fonttitle=\bfseries\small,
+  fontupper=\small,boxrule=0.5pt,left=4pt,right=4pt,top=3pt,bottom=3pt,breakable}
+\newtcolorbox{takeaway}[1]{colback=tkgreen,colframe=tkgreenedge,title={#1},fonttitle=\bfseries\small,
+  fontupper=\small,boxrule=0.5pt,left=4pt,right=4pt,top=3pt,bottom=3pt,breakable}
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+% ---- study-status banner (reused from Paper B) ----
+\definecolor{statusred}{HTML}{9F1239}
+\definecolor{statusfill}{HTML}{FFF1F2}
+\newcommand{\draftwarning}[1]{%
+  \begin{center}
+  \fcolorbox{statusred}{statusfill}{%
+    \begin{minipage}{0.95\linewidth}\small\textbf{Study status.} #1\end{minipage}}
+  \end{center}}
+
+% ---- pending-result marker (for the objective axis + ExpGuard, until their locked runs land) ----
+\newtcolorbox{pending}[1]{colback=black!4,colframe=black!45,title={#1},fonttitle=\bfseries\small,
+  fontupper=\small,boxrule=0.5pt,left=4pt,right=4pt,top=3pt,bottom=3pt,breakable}
+
+% ---- generated macros bound to the locked results (numbers are never hand-typed) ----
+\input{generated/results_macros_gen} % Paper A: \Rep*, \Transfer*, \HarmBench*, \SpecializationSeedCount, ...
+\input{generated/pilot_macros}       % Paper B: \Pilot*
+
+\title{\textbf{The Benchmark Chooses the Winner}\\[3pt]
+\large Honestly Measuring, Tuning, and Composing Small Safety Guards\\
+Across Objectives and Four High-Compliance Domains (Law $\cdot$ Finance $\cdot$ Health $\cdot$ Mortgage)}
+\author{Reza Rahimi\\\small JazzX AI, Los Altos, CA, USA \\ \small\texttt{reza.rahimi@jazzx.ai}}
+\date{Working draft --- \today}
+
+\begin{document}
+\maketitle
+
+\draftwarning{This report unifies three studies and two new experiment tracks, and it is written to
+be read honestly. \textbf{Two evidence flavors, never pooled:} (1) the fine-tuning / composition /
+objective-axis results are \emph{retrospective, estimation-only} on a fixed 4-checkpoint panel and a
+manifest inspected during development --- \emph{not} confirmatory; (2) the mortgage benchmark's labels
+are \emph{LLM-judge, policy-card-consistent --- not SME-adjudicated}, while the finance/health/law
+numbers come from the external, \emph{expert-annotated} ExpGuard set. No causal, universal, or
+fair-lending claim is licensed. Sections marked \textsc{pending} await their locked run and contain no
+invented numbers.}
+
+\tableofcontents
+
+\begin{abstract}
+Teams routinely turn a small chat model into a binary safety \emph{guard} with a short fine-tune and
+report its score on a public benchmark. We argue that score is not a property of the guard: \emph{the
+benchmark co-produces the verdict.} We show this at three scales on one fixed panel of four compact
+checkpoints (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B). \textbf{(I)} Supervised fine-tuning
+(SFT) raises represented-source ranking by $\RepDelta$ macro-AP [$\RepCILower,\RepCIUpper$] but changes
+dataset-held-out transfer by only $\TransferDelta$ [$\TransferCILower,\TransferCIUpper$]: the guard
+\emph{specializes}. \textbf{(II, \textsc{pending})} We ask whether the fine-tuning \emph{objective}
+(SFT vs DPO vs GRPO) changes that trade-off, pre-registering GRPO's likely single-token null.
+\textbf{(III)} A retraining-free \emph{composition} --- averaging the base and fine-tuned calibrated
+scores --- recovers transfer relative to SFT ($\PilotTransferDeltaSFT$
+[$\PilotTransferDeltaSFTLow,\PilotTransferDeltaSFTHigh$]) at a small represented cost
+($\PilotRepDeltaSFT$). \textbf{(IV)} Across four high-compliance domains, a general-safety score does
+not cover domain compliance: our HMDA-grounded, dual-labeled \emph{mortgage} benchmark isolates
+requests that read as safe yet violate policy (the G0/D1 stratum), and an external replication on
+\emph{finance/health/law} (ExpGuard) tests whether the specialization pattern recurs. We ship a single
+\code{reproduce} entry point that regenerates every number here from committed per-row scores.
+\end{abstract}
+
+\section{Introduction: why ``is this guard good?'' is the wrong question}
+\label{sec:intro}
+
+\begin{background}{In one paragraph}
+A ``guard'' is a small model that reads an incoming request and labels it \code{safe} or \code{unsafe}
+before an assistant acts on it. The common recipe is: take a general chat model, fine-tune it into a
+guard, and report its benchmark score --- usually compared against \emph{other} models. That hides the
+quantity a practitioner actually needs: what did the fine-tune change relative to the \emph{same model
+before tuning}, and does that change survive on data the guard never trained on? This report answers
+that at three scales (does tuning transfer? does the \emph{objective} matter? can we compose to
+recover?) and then asks whether any of it holds where it matters most --- \emph{regulated domains}
+where a violation can read as perfectly polite text.
+\end{background}
+
+Converting a general instruction model into a safety guard with a short parameter-efficient fine-tune
+\citep{elesedy2024loraguard} and reporting its score on a public suite \citep{bassani2024guardbench}
+is now standard. A post-tuning leaderboard number, however, conflates two different things: raising the
+score on benchmark \emph{sources represented in training} versus improving \emph{transfer} to datasets
+the guard never saw. This report is organized around one thesis --- \emph{the benchmark co-produces the
+verdict} --- and four questions on a single shared panel of checkpoints:
+\begin{enumerate}[leftmargin=1.6em,itemsep=1pt]
+  \item \textbf{Does fine-tuning transfer?} (\Cref{sec:actI}) --- or does the guard specialize to its training sources?
+  \item \textbf{Does the objective matter?} (\Cref{sec:actII}) --- SFT vs DPO vs GRPO. \textsc{pending} the locked run.
+  \item \textbf{Can we recover transfer without retraining?} (\Cref{sec:actIII}) --- by composing base $+$ adapter.
+  \item \textbf{Does any of it survive a change of domain?} (\Cref{sec:actIV}) --- across law, finance, health, and mortgage.
+\end{enumerate}
+
+\paragraph{What is new here (and what is not).} Prior work shows fine-tuning can weaken safety behavior
+\citep{hsiung2025guardrails}, that guards overfit their training policy
+\citep{liu2026domaingeneralizable}, and that a plain instruction model can rival a purpose-built guard
+\citep{bassani2024guardbench}; those compare \emph{different} models. Our through-line is a
+\emph{paired, same-checkpoint} measurement --- each guard against its own base, on identical rows and
+scoring --- extended across \emph{objectives}, a \emph{composition} remedy, and \emph{four domains}.
+We introduce no new model, metric, or training algorithm, and make no causal or universal claim; the
+output is a reproducible, estimation-only characterization of this fixed panel plus one external
+domain replication.
+
+\paragraph{Scope.} English input-prompt classification; binary \code{safe}/\code{unsafe}; four compact
+checkpoints (1.5--4B); one LoRA recipe; objectives SFT/DPO/GRPO; four regulated domains. Not a
+leaderboard, not a fair-lending audit, not a deployment recommendation.
+
+\section{Background you'll need}
+\label{sec:background}
+
+\begin{background}{Terms, once, with a worked example}
+\textbf{Guard \& score.} The guard reads a prompt and we look at the single next word it would emit,
+comparing its score for \code{unsafe} vs \code{safe}: $s(x)=z_{\text{unsafe}}-z_{\text{safe}}$ (a
+``logit'' is the model's raw pre-probability score). Positive $\Rightarrow$ leans unsafe. A two-way
+softmax turns $s$ into a probability (e.g.\ $z_{\text{unsafe}}{=}2.0, z_{\text{safe}}{=}1.0 \Rightarrow
+s{=}1.0 \Rightarrow$ unsafe-prob $\approx 0.73$). The score is \emph{not} a calibrated probability
+until we calibrate it. \\
+\textbf{Base vs.\ SFT / LoRA.} The \emph{base} is the instruction model before guard fine-tuning; SFT
+(supervised fine-tuning) trains it on labeled safe/unsafe prompts; LoRA adds a small trainable adapter
+instead of changing all weights. \emph{Base} means ``before the guard fine-tune,'' not ``untrained.''\\
+\textbf{Average precision (AP), macro-AP.} A single number in $[0,1]$ for how well the score
+\emph{ranks} truly-unsafe prompts above safe ones, across all cutoffs (area under the precision--recall
+curve; no threshold needed). \emph{Macro}-AP averages AP across benchmarks with equal weight, so a big
+benchmark can't dominate. (Why not accuracy? A 95\%-safe set scores 95\% by always saying ``safe.'')\\
+\textbf{Represented-source vs.\ dataset-held-out (transfer).} \emph{Represented} = held-back rows from a
+source the guard trained on; \emph{transfer} = datasets whose rows were never used in training. ``Held
+out'' here means dataset-held-out, \emph{not} sealed-from-the-researcher.\\
+\textbf{Operating point, FPR/TPR.} Picking one cutoff turns scores into decisions; TPR = fraction of
+unsafe prompts caught, FPR = fraction of safe prompts wrongly flagged. \emph{Macro} averages each
+benchmark's rate; \emph{pooled} lumps all rows first.\\
+\textbf{Paired hierarchical bootstrap, interval, estimand.} To put a 95\% range on a change, we
+re-draw the data many times (keeping each adapter paired with its own base, respecting the
+checkpoint$\to$seed grouping) and re-compute. Intervals are conditional on this \emph{fixed panel}
+(the exact quantity we estimate) --- they are not population claims or significance tests.\\
+\textbf{Objectives.} SFT (cross-entropy on the correct verdict); \emph{DPO} (learn from a
+correct-vs-wrong \emph{pair}); \emph{GRPO} (reinforcement learning with the label as a verifiable
+reward --- no learned reward model). \\
+\textbf{Composition.} Combining two guards by averaging their \emph{output} scores (not their internal
+weights) --- portable but runs both models.
+\end{background}
+
+\begin{background}{Mortgage terms (Act IV), in plain words}
+\textbf{HMDA:} the U.S.\ Home Mortgage Disclosure Act; lenders publicly report loan-level records
+(purpose, amount band, action, denial reason). \textbf{Fair lending:} bars credit discrimination on
+protected traits. \textbf{Redlining:} refusing/worsening credit for a whole neighborhood as a proxy for
+race. \textbf{Disparate treatment} (intentional) vs.\ \textbf{disparate impact} (a neutral rule that
+falls harder on a protected group). \textbf{Proxy/coded discrimination:} a stand-in (ZIP, language) for
+a protected group. \textbf{ATR/QM:} ability-to-repay rule. \textbf{Adverse-action notice:} the required
+true reason for a denial. \textbf{UDAAP:} unfair/deceptive/abusive practices. \textbf{Dual labels G,D:}
+\textbf{G} = would an ordinary guard call this unsafe? \textbf{D} = would honoring it break mortgage
+policy? \textbf{G0/D1} = looks safe, yet a violation --- the case that matters.
+\end{background}
+
+\section{The shared experimental setup}
+\label{sec:setup}
+
+Every study below reuses one fixed, purposively-chosen panel of four checkpoints and one frozen,
+decontaminated 1{,}200-row training manifest, scored by the identical single-token
+$z_{\text{unsafe}}-z_{\text{safe}}$ head and the same tie-aware macro-AP, with fail-closed provenance
+locks binding data, code, and software versions. The \emph{same} four checkpoints recur across all four
+acts; \textbf{Qwen3-4B is the recurring character} --- the strongest base, and (as we will see) the one
+that specializes most, the one composition helps least, and the best-and-fairest zero-shot mortgage
+guard. Reusing one panel and one manifest is what makes SFT, DPO, GRPO, composition, and the domain
+evaluations directly comparable rather than three stapled results.
+
+\section{Act I --- Fine-tuning specializes: large represented gain, no transfer}
+\label{sec:actI}
+
+\Cref{tab:primary} gives, per checkpoint, the untuned-base and mean-SFT macro-AP in each regime, the
+paired base-to-SFT change, and the fixed-panel aggregate. Represented-source ranking rises sharply and
+uniformly --- every SFT guard reaches $\approx 0.98$ regardless of where its base started --- for an
+aggregate change of $\RepDelta$ [$\RepCILower,\RepCIUpper$]. Transfer barely moves on average
+($\TransferDelta$ [$\TransferCILower,\TransferCIUpper$]) but the average \emph{hides a split}: the
+change is negative for three checkpoints and positive for one, ranging from SmolLM2 ($+0.0400$) to
+Qwen3-4B ($-0.1499$). \Cref{fig:plane} shows the signature directly: \SpecializationSeedCount{} of
+\TotalSeedCount{} (checkpoint, seed) points fall in the lower-right ``specialize'' quadrant (represented
+up, transfer down), \UniformGainSeedCount{} in uniform gain, none in uniform loss.
+
+\begin{table}[H]\centering\small
+\caption{Act I --- clean-v2 fixed-panel result: base and mean-SFT macro-AP by regime, paired
+base-to-SFT deltas with two-sided 95\% hierarchical-bootstrap intervals, and the fixed-panel aggregate.
+Descriptive under the locked precision-focused mode; conditional on this panel.}
+\label{tab:primary}
+\resizebox{\textwidth}{!}{\input{generated/tab_primary_gen}}
+\end{table}
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.6\textwidth]{specialization_plane.pdf}
+\caption{Each point is one (checkpoint, seed): horizontal axis is the represented-source macro-AP
+change, vertical axis the transfer change. \SpecializationSeedCount{}/\TotalSeedCount{} land in the
+lower-right specialization quadrant --- the visual signature of Act I.}
+\label{fig:plane}
+\end{figure}
+
+\begin{takeaway}{Why the $\approx\!-0.06$ transfer average is misleading}
+It pools opposing per-checkpoint effects (SmolLM2 $+0.04$ vs.\ Qwen3-4B $-0.15$). The panel average is
+small; the panel is \emph{not} uniform. And $\Delta = \text{SFT}-\text{base}$ is mathematically coupled
+to base AP, so ``stronger bases specialize more'' is a hypothesis from four points, not a law.
+Retrospective, estimation-only.
+\end{takeaway}
+
+\subsection{At a deployable threshold}
+\label{sec:actI-op}
+Ranking is threshold-free; deployment is not. At a calibration-selected operating point,
+represented-source recall (TPR) rises from \RepBaseTPRPct\% to \RepSFTTPRPct\%, but on transfer the
+false-alarm rate rises from \TransferBaseFPRPct\% (base) to \TransferSFTFPRPct\% (SFT), and single-class
+stress shows HarmBench recall \emph{falling} from \HarmBenchBaseRecallPct\% to \HarmBenchSFTRecallPct\%
+(\Cref{tab:sensitivity}). So the specialized guard raises more false alarms off-source and catches less
+of a hard attack set --- the deployment cost behind the ranking story.
+
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{Act I --- per-benchmark paired deltas (upper) and the calibration-targeted 5\% FPR operating
+point plus single-class stress diagnostics (lower). Generated from the lock-bound scores.}
+\label{tab:sensitivity}
+\input{generated/tab_sensitivity_gen}
+\end{table}
+
+\section{Act II --- Does the objective matter? SFT vs DPO vs GRPO}
+\label{sec:actII}
+
+\begin{pending}{\textsc{pending} the locked Paper C run --- pre-registered, no numbers invented}
+Act I used SFT. Does the \emph{choice of fine-tuning objective} change how much a guard specializes?
+We run \textbf{DPO} and \textbf{GRPO} on the identical panel, manifest, seeds, and scorer (so the only
+difference is the objective), and compare against the Act I SFT arm. The reward is the \emph{verifiable
+label} --- no learned reward model. The hypotheses, metrics, and decision rules are \textbf{pre-registered}
+(\code{docs/paper-c-prereg.md}, bound into the Paper C lock \emph{before} the run):
+\textbf{H1} objectives differ mainly on transfer, ordered by how far each moves the model from base;
+\textbf{the GRPO single-token null} --- because our action space is one token/two outcomes, the
+exploration that lets RL generalize in the literature is absent, so we predict GRPO's transfer edge
+over SFT is small or null (a bounded negative result is the expected, reportable outcome);
+\textbf{H2} composition recovers transfer in proportion to how far the objective moved from base.
+Results table and prose will replace this box once the locked run completes and its per-row scores are
+committed; the analysis reuses the Act I macro-AP + bootstrap machinery unchanged.
+\end{pending}
+
+\section{Act III --- Compose, don't (re)tune: recovering transfer without retraining}
+\label{sec:actIII}
+
+Act I raises a question: rather than tuning harder, can we \emph{keep the base's judgment} in the
+decision? The candidate rule is deliberately simple. For one input, run the base and one SFT adapter,
+convert each raw score to a probability with a calibrator fit only on a development split, and report
+the fixed equal-weight average:
+\begin{equation}
+s_{\mathrm{comp}}(x) = \tfrac12\, C_b\!\big(s_b(x)\big) + \tfrac12\, C_{a}\!\big(s_{a}(x)\big).
+\label{eq:comp}
+\end{equation}
+Nothing is retrained; the $\tfrac12$ weights are fixed in advance (no tuning on test rows); it needs two
+inference passes. This is \emph{output-space} composition --- unlike weight-space WiSE-FT / model soups
+\citep{wortsman2022wiseft,wortsman2022modelsoups}, it needs only comparable scores, not interpolable
+weights, but it runs both models. \Cref{tab:pilot-summary,tab:pilot-models} give the result: relative to
+SFT, composition changes represented-source macro-AP by \PilotRepDeltaSFT{}
+[\PilotRepDeltaSFTLow, \PilotRepDeltaSFTHigh] and transfer by \PilotTransferDeltaSFT{}
+[\PilotTransferDeltaSFTLow, \PilotTransferDeltaSFTHigh] --- landing \emph{above the base} on transfer
+(\PilotCompositionTransfer{} vs.\ \PilotBaseTransfer{}). Recovery relative to SFT is positive for all
+four checkpoints, but the comparison with base is heterogeneous (it slightly \emph{hurts} the strongest
+base, Qwen3-4B) --- so this is transfer \emph{recovery}, not Pareto dominance.
+
+\input{generated/pilot_summary_table}
+\input{generated/pilot_per_model_table}
+
+\begin{takeaway}{Ranking $\neq$ calibration}
+At a 5\%-FPR target, the composition's realized transfer false-alarm rate is
+\PilotCompositionTransferFPRPct\% --- better than SFT (\PilotSFTTransferFPRPct\%) but still above target
+(\Cref{tab:pilot-operating}). Recovering \emph{rank} does not deliver a transferable \emph{threshold};
+a deployment claim from AP alone would miss this.
+\end{takeaway}
+
+\input{generated/pilot_operating_point_table}
+
+\paragraph{What Act III does not establish.} Not Pareto dominance; not a proven mechanism; the pilot
+lacks the equal-cost SFT+SFT control and actual WiSE-FT rescoring; the logit-average and convex-weight
+variants were visible during development and are reported only as ablations, non-promotable. Whether
+composition also recovers DPO/GRPO transfer (H2) is answered in \Cref{sec:actII} once that run lands.
+
+\section{Act IV --- When the domain changes everything: four high-compliance domains}
+\label{sec:actIV}
+
+The strongest form of the thesis: in a regulated domain a general-safety benchmark can \emph{fail to see
+the violation at all}, because the violating request reads as polite text. We study four
+high-compliance domains with two complementary instruments.
+
+\subsection{Mortgage --- a benchmark built in depth (dual-label G$\times$D)}
+We built a fixed, HMDA-grounded benchmark whose unit is one incoming request carrying \emph{two}
+independent labels: general-safety $G$ and mortgage-policy $D$. The load-bearing quadrant is
+\textbf{G0/D1} --- reads safe, is a compliance violation. Requests are grounded in de-identified, banded
+HMDA fact sheets (never verbatim records) via an agentic pipeline (\Cref{fig:pipeline}), and we add
+protected-class \emph{minimal pairs} (identical except one protected token) as a fairness-invariance
+gate. \Cref{tab:composition} gives the 994-row composition.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.52\textwidth]{pipeline.png}
+\caption{The agentic mortgage-benchmark construction pipeline: real HMDA records $\to$ de-identified
+banded fact sheets $\to$ plan/ground/generate/adversarially-mutate/rubric-bound-judge $\to$ accept-iff
+label matches target $\to$ provenance + family-isolated split $\to$ the frozen release.}
+\label{fig:pipeline}
+\end{figure}
+
+\input{generated/mortgage_composition_table}
+
+Scored zero-shot (as shipped, prompt-only) the four base checkpoints rank mortgage-policy violations
+only \emph{moderately} (\Cref{tab:baseline}, AP$\cdot$D $0.67$--$0.85$, at or above AP$\cdot$G): asking
+for discrimination or fraud reads as ``unsafe'' to a general model even without a jailbreak, so $G$ and
+$D$ are only \emph{partially} orthogonal, and none reaches AP$\cdot$D near $1$ --- much of the subtle
+G0/D1 stratum is unresolved by ranking. The protected-pair gap $\Delta_{\mathrm{context}}$ is the
+sharpest discriminator: Qwen3-4B is invariant ($\Delta_{\mathrm{context}}\!=\!0.000$, best and fairest)
+while Qwen2.5-1.5B shows a large gap ($0.183$) --- a fairness signal AP alone misses. The fixed-threshold
+operating point is deliberately \emph{not} tabulated: for these clustered-score guards it is knife-edge
+(its G0/D1 catch count swung $>\!50$ rows across library versions), itself a finding that naive
+threshold transfer is unreliable --- echoing Acts I and III.
+
+\input{generated/mortgage_baseline_table}
+
+\begin{takeaway}{Measuring stick, not a legal finding}
+Mortgage labels are assigned by an LLM judge against written policy cards --- \emph{not}
+SME-adjudicated (self-consistency, no human Fleiss-$\kappa$). The G1/D0 quadrant is empty and samples
+are small. This benchmark \emph{surfaces} guard behavior; it certifies nothing about any real lender or
+model.
+\end{takeaway}
+
+\subsection{Finance, health, law --- an external expert-annotated replication (ExpGuard)}
+\begin{pending}{\textsc{pending} the ExpGuard base eval --- running; no numbers invented}
+To test whether the specialization/transfer pattern recurs across regulated verticals \emph{with
+expert labels} (a strictly stronger labeling tier than the mortgage LLM-judge), we score the same four
+checkpoints on ExpGuard --- an expert-annotated moderation set spanning \textbf{finance}, \textbf{health},
+and \textbf{law} (input-prompt classification, matching our task). We report aggregate and per-domain
+AP/AUROC, base vs.\ tuned. This is single-label (not the mortgage dual G$\times$D construct) --- one
+domain built in depth plus three external verticals for breadth. The per-domain table replaces this box
+once the eval completes and its text-free per-row scores are committed.
+\end{pending}
+
+\section{Synthesis --- one lesson at four scales}
+\label{sec:synthesis}
+The four acts are one lesson. A guard's benchmark score is co-produced by the benchmark: SFT buys
+represented-source ranking, not transfer (Act I); the specialization is a property to measure across
+\emph{objectives}, not assume (Act II); keeping the base in an output-space average \emph{recovers} some
+transfer for free of retraining, though not a threshold (Act III); and a change of domain can hide the
+violation entirely, so regulated domains need domain-grounded evaluation and a fairness gate (Act IV).
+The recurring cast makes it concrete: Qwen3-4B, the strongest base, specializes the most on transfer,
+is the one composition hurts, yet is the best and fairest zero-shot mortgage guard --- the ranking
+flips with the benchmark.
+
+\section{The practitioner's decision guide}
+\label{sec:practitioner}
+\begin{enumerate}[leftmargin=1.6em,itemsep=1pt]
+  \item \textbf{Always compare to your own base}, on represented \emph{and} held-out sets, plus a
+  benign over-refusal and a hard-attack stress set --- a leaderboard delta vs.\ other models hides
+  specialization.
+  \item \textbf{Expect an objective to specialize} unless measured otherwise (Act II); don't assume RL
+  ``generalizes'' on a single-token guard.
+  \item \textbf{If transfer matters, try composition before tuning harder} --- but re-calibrate the
+  threshold on the target regime (ranking recovery $\neq$ calibration transfer).
+  \item \textbf{In a regulated domain, build domain-grounded, dual-labeled evaluation} and a
+  protected-pair invariance check; a general-safety score does not cover compliance.
+\end{enumerate}
+Each step carries its caveat: these are estimates on a fixed panel, and the domain labels are a
+measuring stick, not a verdict.
+
+\section{How honest is this? Evidence ledger and what it does NOT establish}
+\label{sec:honesty}
+\begin{center}\small
+\begin{tabular}{@{}p{0.20\textwidth}p{0.40\textwidth}p{0.34\textwidth}@{}}
+\toprule
+Result & Establishes & Key limits / would-upgrade \\
+\midrule
+Act I (SFT), III (composition), II (objective axis) & paired base-to-tuned change on a fixed panel &
+retrospective, estimation-only, manifest inspected in dev; not confirmatory. Upgrade: prospective
+uninspected cohort; SFT+SFT / WiSE-FT controls. \\
+Mortgage benchmark & a dual-labeled, HMDA-grounded measuring stick for the G0/D1 stratum + fairness gate
+& LLM-judge (not SME) labels; empty G1/D0; small single split. Upgrade: SME adjudication (Fleiss-$\kappa$). \\
+ExpGuard (finance/health/law) & external, expert-annotated per-domain replication & single-label; a
+transfer probe, not a dual-label construct. \\
+\bottomrule
+\end{tabular}
+\end{center}
+Two hard rules held throughout: retrospective and prospective numbers are never pooled, and no number is
+upgraded to a causal, universal, or fair-lending claim.
+
+\section{Validation roadmap}
+\label{sec:roadmap}
+(i) SME-adjudicate a stratified mortgage subset (report Fleiss-$\kappa$); (ii) lock a genuinely
+uninspected prospective cohort for the objective axis; (iii) add the equal-cost SFT+SFT and WiSE-FT
+composition controls; (iv) build dual-labeled finance/health benchmarks with expert sign-off; (v) score
+gated open guards (Llama Guard 3, WildGuard) once licenses are accepted.
+
+\section{Reproducibility}
+\label{sec:repro}
+Every number above is \code{\textbackslash input} from a committed generated table bound to a lock ---
+none is hand-typed. A single entry point, \code{make reproduce} (\code{papers/unified-report/reproduce.py}),
+regenerates all tables/figures from committed per-row scores by calling each study's analysis (Paper A in
+its lock-pinned env; Paper B, mortgage, ExpGuard, and Paper C from committed scores), and asserts
+byte-identity with the committed report tables. It needs no GPU and no network; only re-training the
+guards or re-scoring the gated ExpGuard set requires a GPU / dataset access. Raw third-party rows are
+referenced by pinned identifier + revision + content hash, not redistributed.
+
+\section{Conclusion}
+\label{sec:conclusion}
+A small guard's benchmark score is not a fixed property of the guard --- the benchmark co-produces it.
+Measured honestly, fine-tuning specializes rather than uniformly improves; the effect is worth measuring
+across objectives; a retraining-free composition recovers some of the lost transfer; and in regulated
+domains a general-safety score does not cover compliance. The disciplined next step is not a more
+confident headline but a prospectively locked evaluation on genuinely uninspected data.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\section{Per-seed data and provenance}
+\label{app:seeds}
+\begin{table}[H]\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
+\caption{Observed represented-source and transfer macro-AP change for every SFT seed (Act I),
+generated from the same validated score matrix as \Cref{tab:primary}.}
+\label{tab:seed-values}
+\input{generated/tab_seed_values_gen}
+\end{table}
+
+\end{document}
