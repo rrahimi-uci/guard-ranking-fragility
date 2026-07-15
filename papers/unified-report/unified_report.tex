@@ -18,8 +18,8 @@
 \usepackage[nameinlink,capitalize]{cleveref}
 \usepackage[section]{placeins}
 \usepackage{titlesec}
-\titlespacing*{\section}{0pt}{1.6ex plus .4ex minus .2ex}{0.9ex plus .2ex}
-\titlespacing*{\subsection}{0pt}{1.2ex plus .3ex minus .2ex}{0.5ex plus .2ex}
+\titlespacing*{\section}{0pt}{3.4ex plus .8ex minus .3ex}{1.7ex plus .3ex}
+\titlespacing*{\subsection}{0pt}{2.6ex plus .6ex minus .2ex}{1.1ex plus .3ex}
 \titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.6em}{}
 \setlength{\emergencystretch}{3em}
 \graphicspath{{figures/}}
@@ -149,8 +149,20 @@ leaderboard, not a fair-lending audit, not a deployment recommendation.
 \input{sections/background-setup}   % Background (full) + The shared experimental setup (full methods)
 \input{sections/related-work}       % comprehensive related work
 \input{sections/act1}               % Act I detail (defines tab:primary, fig:plane, tab:sensitivity)
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.8\linewidth]{fig_act1_percheckpoint.pdf}
+\caption{Per-checkpoint view of Act I: SFT lifts represented-source macro-AP for every checkpoint (blue), but the transfer change (orange) ranges from $+0.04$ (SmolLM2) to $-0.15$ (Qwen3-4B) --- the fixed-panel average hides opposite signs.}
+\label{fig:act1-bars}
+\end{figure}
+
 \input{sections/act2-method}        % Act II full methodology (results pending -> generated/tab_paper_c_gen stub)
 \input{sections/act3}               % Act III detail (inputs pilot tables, defines eq:comp)
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.8\linewidth]{fig_act3_composition.pdf}
+\caption{Per-checkpoint transfer macro-AP for base, SFT, and the base+SFT composition. Composition (green) exceeds SFT (orange) for every checkpoint, and lands at or above base except for the strongest base (Qwen3-4B) --- transfer \emph{recovery}, not Pareto dominance.}
+\label{fig:act3-bars}
+\end{figure}
+
 \input{sections/act4-mortgage}      % Act IV mortgage detail
 
 % ---- Act IV floats referenced by sections/act4-mortgage ----
@@ -163,7 +175,19 @@ the frozen \texttt{v1\_hmda2022} release scored by the evaluator.}
 \label{fig:pipeline}
 \end{figure}
 \input{generated/mortgage_composition_table}   % tab:composition
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.72\linewidth]{fig_mortgage_quadrant.pdf}
+\caption{The mortgage benchmark's two independent labels $G$ (general safety) $\times$ $D$ (mortgage policy) and the 994-row quadrant counts. The load-bearing \textbf{G0/D1} cell (reads safe, is a violation) is the largest non-benign block; \textbf{G1/D0} is empty (a stated limitation).}
+\label{fig:quadrant}
+\end{figure}
+
 \input{generated/mortgage_baseline_table}       % tab:baseline
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.92\linewidth]{fig_mortgage_baseline.pdf}
+\caption{Zero-shot base guards on the mortgage benchmark: ranking (AP$\cdot$G, AP$\cdot$D; left) and the protected-pair fairness gap $\Delta_{\mathrm{context}}$ (right). AP$\cdot$D is only moderate, and $\Delta_{\mathrm{context}}$ separates guards that AP alone rates similarly (Qwen2.5-1.5B's $0.183$ gap vs.\ Qwen3-4B's $0$).}
+\label{fig:mortgage-bars}
+\end{figure}
+
 \input{generated/expguard_table}                % tab:expguard (stub until the base eval lands)
 
 \section{Synthesis --- one lesson at four scales}
