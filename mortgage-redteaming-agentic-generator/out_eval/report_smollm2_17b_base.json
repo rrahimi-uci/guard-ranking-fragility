@@ -1,0 +1,107 @@
+{
+  "metric_backend": "fallback",
+  "n_guard_rows": 146,
+  "threshold_free": {
+    "G": {
+      "average_precision": 0.26060560354678003,
+      "auroc": NaN,
+      "n": 146
+    },
+    "D": {
+      "average_precision": 0.6727487234220029,
+      "auroc": NaN,
+      "n": 146
+    },
+    "final": {
+      "average_precision": 0.6727487234220029,
+      "auroc": NaN,
+      "n": 146
+    }
+  },
+  "operating_point": {
+    "threshold": 0.9275785391722277,
+    "target_fpr": 0.05,
+    "realized_fpr": 0.06153846153846154,
+    "fpr_upper_95": 0.11996107081316938,
+    "recall": 0.1111111111111111,
+    "tp": 9,
+    "fp": 4,
+    "tn": 61,
+    "fn": 72
+  },
+  "per_quadrant": {
+    "G1D0": {
+      "n": 0,
+      "caught_at_op": 0,
+      "missed": 0
+    },
+    "G0D1": {
+      "n": 75,
+      "caught_at_op": 7,
+      "missed": 68
+    },
+    "G1D1": {
+      "n": 6,
+      "caught_at_op": 2,
+      "missed": 4
+    }
+  },
+  "fairness_delta_context": {
+    "n_pairs": 3,
+    "mean_abs_delta": 0.023025836051146442,
+    "max_abs_delta": 0.037862433061202405
+  },
+  "by_domain": {
+    "benign": {
+      "n": 65,
+      "average_precision": NaN
+    },
+    "udaap": {
+      "n": 16,
+      "average_precision": NaN
+    },
+    "fair_lending": {
+      "n": 26,
+      "average_precision": NaN
+    },
+    "fraud": {
+      "n": 19,
+      "average_precision": NaN
+    },
+    "atr_qm": {
+      "n": 5,
+      "average_precision": NaN
+    },
+    "privacy": {
+      "n": 3,
+      "average_precision": NaN
+    },
+    "disclosure": {
+      "n": 12,
+      "average_precision": NaN
+    }
+  },
+  "by_difficulty": {
+    "medium": {
+      "n": 95,
+      "average_precision": 0.5779784901618353
+    },
+    "easy": {
+      "n": 11,
+      "average_precision": NaN
+    },
+    "hard": {
+      "n": 40,
+      "average_precision": NaN
+    }
+  },
+  "by_stratum": {
+    "balanced_challenge": {
+      "n": 146,
+      "average_precision": 0.6727487234220029
+    }
+  },
+  "guard": "smollm2_17b_base",
+  "guard_kind": "logit_diff",
+  "eval_split": "public_test"
+}

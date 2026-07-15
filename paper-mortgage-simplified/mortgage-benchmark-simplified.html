@@ -149,14 +149,87 @@ requests for <strong>G</strong>, for <strong>D</strong>, and for the
 combined decision, plus <strong>how many G0/D1 violations it
 misses</strong> at a sensible alarm threshold, plus the
 <strong>fairness-pair gap</strong>.</p>
-<p>The expected result (already confirmed by the offline plumbing test):
-a general guard <strong>does okay on G but falls apart on D</strong> —
-it misses almost all the safe-looking mortgage violations. That’s the
-whole point: <em>general safety ≠ mortgage compliance.</em></p>
+<p><strong>What we actually found</strong> (4 base checkpoints,
+public-test split): the story is more interesting than “general guards
+ignore mortgage rules.” On <em>ranking</em> alone the base guards do
+moderately well on D (AP 0.67–0.85) — because asking to discriminate or
+commit fraud <em>sounds</em> unsafe to a general model even when it
+isn’t a jailbreak. <strong>The failure shows up at the alarm
+threshold:</strong> set a sensible 5%-false-alarm cutoff and a general
+guard catches only <strong>7–31 of 75</strong> safe-looking mortgage
+violations — it waves most of them through. And they differ a lot on the
+fairness pairs: Qwen3-4B treats the protected/reference versions
+identically (gap ≈ 0) and ranks best; Qwen2.5-1.5B scores them very
+differently (gap up to 0.51). So: <em>general safety ≠ mortgage
+compliance</em>, and the fairness gate catches problems that accuracy
+alone misses. (Small sample — a measuring stick, not a verdict.)</p>
 <!-- BASELINE_TABLE_START -->
-<p><em>(Baseline numbers for the base checkpoints + off-the-shelf guards
-are filled in from the committed scoring run; the harness is verified
-end-to-end.)</em> <!-- BASELINE_TABLE_END --></p>
+<p><em>Baseline zero-shot instruction guards on the frozen benchmark
+(public_test split; 146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via
+<code>score_guards.py</code>. Threshold-free, base guards rank
+mortgage-policy violations moderately (AP·D 0.67–0.85) — soliciting
+fraud/discrimination reads as “unsafe” even without a jailbreak, so G
+and D are only PARTIALLY orthogonal. But at a 5%-FPR operating point
+they catch only a fraction of the 75 G0/D1 violations, and
+protected-pair invariance varies sharply (Δ_context). Small-sample —
+illustrative, not confirmatory.</em></p>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr>
+<th>Guard</th>
+<th style="text-align: right;">AP · G</th>
+<th style="text-align: right;">AP · D</th>
+<th style="text-align: right;">AP · final</th>
+<th style="text-align: right;">G0/D1 caught <span class="citation"
+data-cites="5%FPR">@5%FPR</span></th>
+<th style="text-align: right;">Δ_context</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qwen25_15b_base</td>
+<td style="text-align: right;">0.681</td>
+<td style="text-align: right;">0.793</td>
+<td style="text-align: right;">0.793</td>
+<td style="text-align: right;">11/75</td>
+<td style="text-align: right;">0.183</td>
+</tr>
+<tr>
+<td>qwen3_4b_base</td>
+<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">0.851</td>
+<td style="text-align: right;">0.851</td>
+<td style="text-align: right;">31/75</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr>
+<td>smollm2_17b_base</td>
+<td style="text-align: right;">0.261</td>
+<td style="text-align: right;">0.673</td>
+<td style="text-align: right;">0.673</td>
+<td style="text-align: right;">7/75</td>
+<td style="text-align: right;">0.023</td>
+</tr>
+<tr>
+<td>smollm3_3b_base</td>
+<td style="text-align: right;">0.546</td>
+<td style="text-align: right;">0.735</td>
+<td style="text-align: right;">0.735</td>
+<td style="text-align: right;">21/75</td>
+<td style="text-align: right;">0.010</td>
+</tr>
+</tbody>
+</table>
+<p><em>Not scored (unavailable in this run): llama_guard_3_1b,
+wildguard_7b.</em> <!-- BASELINE_TABLE_END --></p>
 <h2 id="is-this-real-the-honesty-box">Is this real? (the honesty
 box)</h2>
 <ul>

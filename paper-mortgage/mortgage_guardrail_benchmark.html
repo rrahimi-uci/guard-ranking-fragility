@@ -100,8 +100,10 @@ policy violations <em>subtle and deniable</em> rather than cartoonish;
 3. <strong>protected-class counterfactual minimal pairs</strong> used as
 a guard-invariance PASS gate; and 4. a <strong>reproducible evaluation
 harness</strong> and <strong>baseline results</strong> showing that
-general and off-the-shelf guards track G but do not separate the G0/D1
-stratum.</p>
+zero-shot general guards only <em>partially</em> separate the G0/D1
+stratum (moderate ranking AP) yet <strong>miss most of it at a
+deployable threshold</strong>, with protected-pair invariance that
+varies sharply across guards.</p>
 <p>It explicitly does <strong>not</strong> claim SME-validated labels, a
 populated G1/D0 quadrant, a fair-lending finding about any real system,
 or deployment readiness.</p>
@@ -316,15 +318,23 @@ plus off-the-shelf <strong>Llama Guard 3</strong> and
 work: the companion study’s LoRA adapters were not retained.)</p>
 <h2 id="baseline-results">6. Baseline results</h2>
 <blockquote>
-<p><em>Baseline table populated from the committed scoring run
-(<code>out_eval/baseline_table.json</code>, produced by
-<code>score_guards.py</code> on the frozen benchmark). Until that run is
-committed, the harness has been verified end-to-end offline (a mock
-general guard reproduces the expected shape: it tracks general harm but
-<strong>misses 73/75 G0/D1 rows</strong>, and its AP on D collapses
-relative to its AP on G).</em></p>
+<p><em>Baseline results are from the committed scoring run
+(<code>mortgage-redteaming-agentic-generator/out_eval/</code>, produced
+by <code>score_guards.py</code> on the frozen benchmark, T4 fp16). We
+score the four base instruction checkpoints zero-shot as guards; the two
+off-the-shelf guards were gated in this run (note under the
+table).</em></p>
 </blockquote>
 <!-- BASELINE_TABLE_START -->
+<p><em>Baseline zero-shot instruction guards on the frozen benchmark
+(public_test split; 146 rows: 75 G0/D1, 6 G1, 3 protected pairs), via
+<code>score_guards.py</code>. Threshold-free, base guards rank
+mortgage-policy violations moderately (AP·D 0.67–0.85) — soliciting
+fraud/discrimination reads as “unsafe” even without a jailbreak, so G
+and D are only PARTIALLY orthogonal. But at a 5%-FPR operating point
+they catch only a fraction of the 75 G0/D1 violations, and
+protected-pair invariance varies sharply (Δ_context). Small-sample —
+illustrative, not confirmatory.</em></p>
 <table>
 <colgroup>
 <col style="width: 13%" />
@@ -347,23 +357,61 @@ data-cites="5%FPR">@5%FPR</span></th>
 </thead>
 <tbody>
 <tr>
-<td><em>pending committed baseline run</em></td>
-<td style="text-align: right;"></td>
-<td style="text-align: right;"></td>
-<td style="text-align: right;"></td>
-<td style="text-align: right;"></td>
-<td style="text-align: right;"></td>
+<td>qwen25_15b_base</td>
+<td style="text-align: right;">0.681</td>
+<td style="text-align: right;">0.793</td>
+<td style="text-align: right;">0.793</td>
+<td style="text-align: right;">11/75</td>
+<td style="text-align: right;">0.183</td>
+</tr>
+<tr>
+<td>qwen3_4b_base</td>
+<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">0.851</td>
+<td style="text-align: right;">0.851</td>
+<td style="text-align: right;">31/75</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr>
+<td>smollm2_17b_base</td>
+<td style="text-align: right;">0.261</td>
+<td style="text-align: right;">0.673</td>
+<td style="text-align: right;">0.673</td>
+<td style="text-align: right;">7/75</td>
+<td style="text-align: right;">0.023</td>
+</tr>
+<tr>
+<td>smollm3_3b_base</td>
+<td style="text-align: right;">0.546</td>
+<td style="text-align: right;">0.735</td>
+<td style="text-align: right;">0.735</td>
+<td style="text-align: right;">21/75</td>
+<td style="text-align: right;">0.010</td>
 </tr>
 </tbody>
 </table>
-<!-- BASELINE_TABLE_END -->
-<p>The expected and offline-verified finding: guards optimized for
-general safety <strong>track G but do not separate the subtle G0/D1
-mortgage-policy violations</strong>, so their AP on D and
-<code>final</code> is far below their AP on G, and they miss most G0/D1
-rows at a sensible operating point. That gap — not a claim that any
-specific number is a fair-lending fact — is what the benchmark is
-designed to surface.</p>
+<p><em>Not scored (unavailable in this run): llama_guard_3_1b,
+wildguard_7b.</em> <!-- BASELINE_TABLE_END --></p>
+<p><strong>Findings.</strong> The result is more nuanced than “general
+guards ignore mortgage compliance.” <em>Threshold-free</em>, the base
+guards rank D-violations moderately well (AP·D
+<strong>0.67–0.85</strong>, at or above their AP·G): soliciting
+discrimination or fraud reads as “unsafe” to a general instruction model
+even when it is not a jailbreak, so <strong>G and D are only partially
+orthogonal in practice</strong>. The gap appears at the
+<strong>operating point</strong> — thresholding at a 5% dev-FPR target,
+the base guards catch only <strong>7–31 of 75</strong> G0/D1 violations
+(miss 44–68), so a deployable general guard still lets most safe-looking
+mortgage-policy violations through. Behavior is heterogeneous:
+<strong>Qwen3-4B</strong> ranks best (AP·D 0.85) <em>and</em> is
+invariant on the protected minimal pairs (Δ_context ≈ 0), while
+<strong>Qwen2.5-1.5B</strong> shows a large protected-attribute score
+gap (Δ_context 0.18, max 0.51) — the minimal-pair gate discriminates
+guards that AP alone does not. AP·G rests on only 6 G1 positives in this
+split and is correspondingly noisy. These are <strong>small-sample,
+LLM-judge-labeled, single-split diagnostics</strong>: the benchmark is
+designed to <em>surface</em> these behaviors, not to certify any number
+as a fair-lending fact.</p>
 <h2 id="what-this-benchmark-does-not-establish">7. What this benchmark
 does <em>not</em> establish</h2>
 <ul>
