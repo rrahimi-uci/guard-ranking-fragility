@@ -61,14 +61,18 @@ def _row_id(prompt: str) -> str:
     return hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]
 
 
-def load_expguard(limit: int | None = None) -> list[dict]:
-    """Load the ExpGuard test split -> [{id, prompt, label(int), domain}]. Requires HF access."""
-    from huggingface_hub import hf_hub_download
+def load_expguard(limit: int | None = None, parquet_path: str | None = None) -> list[dict]:
+    """Load the ExpGuard test split -> [{id, prompt, label(int), domain}].
+    Reads a local parquet if parquet_path is given (tokenless, e.g. on a GPU VM); otherwise
+    fetches from HF (gated dataset -> needs HF_TOKEN)."""
     import pandas as pd
 
-    tok = _load_hf_token()
-    path = hf_hub_download(DATASET, TEST_FILE, repo_type="dataset", token=tok)
-    df = pd.read_parquet(path)
+    if parquet_path:
+        df = pd.read_parquet(parquet_path)
+    else:
+        from huggingface_hub import hf_hub_download
+        path = hf_hub_download(DATASET, TEST_FILE, repo_type="dataset", token=_load_hf_token())
+        df = pd.read_parquet(path)
     rows = []
     for _, r in df.iterrows():
         prompt = str(r["prompt"])
@@ -156,6 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--from-scores", action="store_true", help="recompute metrics from committed scores (no GPU/dataset)")
     ap.add_argument("--mock", action="store_true", help="deterministic pseudo-scores (offline smoke)")
     ap.add_argument("--limit", type=int, default=None, help="cap rows (smoke)")
+    ap.add_argument("--parquet-path", default=None, help="local ExpGuard test parquet (tokenless; e.g. on a GPU VM)")
     ap.add_argument("--dtype", default="auto")
     ap.add_argument("--device", default=None)
     args = ap.parse_args(argv)
@@ -168,7 +173,7 @@ def main(argv: list[str] | None = None) -> int:
         labels = json.loads(labels_path.read_text())
         rows = None
     else:
-        rows = load_expguard(limit=args.limit)
+        rows = load_expguard(limit=args.limit, parquet_path=args.parquet_path)
         labels = {r["id"]: {"label": r["label"], "domain": r["domain"]} for r in rows}
         labels_path.write_text(json.dumps(labels, indent=0))
         print(f"[expguard] loaded {len(rows)} rows; domains={sorted({r['domain'] for r in rows})}; "
