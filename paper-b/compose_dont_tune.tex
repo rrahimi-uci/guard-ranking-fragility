@@ -1,0 +1,455 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=0.82in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[capitalize]{cleveref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tabularx}
+
+\setlength{\emergencystretch}{3em}
+\setlength{\bibsep}{1pt}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\floatsep}{9pt plus 2pt minus 2pt}
+\setlength{\intextsep}{9pt plus 2pt minus 2pt}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.75}
+\pagestyle{plain}
+
+\definecolor{statusred}{HTML}{9F1239}
+\definecolor{statusfill}{HTML}{FFF1F2}
+\newcommand{\draftwarning}[1]{%
+  \begin{center}
+  \fcolorbox{statusred}{statusfill}{%
+    \begin{minipage}{0.93\linewidth}\small\textbf{Study status.} #1\end{minipage}}
+  \end{center}}
+
+\input{generated/pilot_macros}
+
+\title{Compose, Don't Tune?\\
+\large A Retrospective Fixed-Panel Study of Base--Adapter Score Composition for Safety Guards}
+\author{Reza Rahimi\\
+  \small JazzX AI, Los Altos, CA, USA\\
+  \small\texttt{reza.rahimi@jazzx.ai}}
+\date{Working draft --- July 2026}
+
+\begin{document}
+\maketitle
+
+\draftwarning{This manuscript is a research draft built from \emph{retrospective} clean-v2
+evidence.  The transfer benchmarks were withheld from SFT but inspected during method
+development.  No separately locked prospective Paper B study has run.  Sections describing
+future validation are protocol, not results.}
+
+\begin{abstract}
+Fine-tuning a compact language model into a binary safety guard can improve discrimination on
+benchmark sources represented during adaptation while weakening transfer to other datasets.  We
+ask whether keeping the same checkpoint's pre-adaptation decision in an output-space composition
+can recover transfer relative to its SFT adapter.  Using the lock-verified per-row scores from a
+companion study, we retrospectively compare \PilotNModels{} unadapted instruction checkpoints,
+\PilotNSeeds{} LoRA-SFT adapters per checkpoint, and a fixed average of separately calibrated
+unsafe probabilities.  Relative to SFT, the observed composition contrast is
+\PilotRepDeltaSFT{} in represented-source macro average precision (AP), with a descriptive
+paired-bootstrap 95\% interval [\PilotRepDeltaSFTLow, \PilotRepDeltaSFTHigh], and
+\PilotTransferDeltaSFT{} on dataset-held-out transfer
+([\PilotTransferDeltaSFTLow, \PilotTransferDeltaSFTHigh]).  The transfer contrast relative to the
+base is heterogeneous: positive for \PilotNTransferPositiveVsBase{} checkpoints, near zero for one, and negative for
+Qwen3-4B.  Thresholds chosen for a \PilotTargetFPRPct\% calibration false-positive-rate (FPR)
+target yield \PilotCompositionTransferFPRPct\% transfer macro-FPR for the composition, so rank
+recovery does not imply calibration transfer.  The method also requires two inference passes.
+Because the operator and transfer results informed this analysis, these are conditional
+fixed-panel retrospective estimates, not confirmatory evidence.  They motivate a separately
+locked prospective comparison against WiSE-FT, an equal-inference-cost SFT+SFT ensemble, and
+matched-compute preservation tuning.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
+Parameter-efficient adaptation makes it inexpensive to specialize an instruction model into a
+prompt-safety guard.  LoRA, for example, updates a low-rank parameterization rather than all model
+weights \citep{hu2021lora}.  Yet specialization creates a practical tension: a guard can become
+better at the policies and benchmark sources represented during SFT while losing useful ranking
+information on dataset-held-out sources.  The companion Paper A study measures this tension under
+a controlled base-to-adapter design \citep{rahimi2026benchmark}.  This draft asks the next, narrower
+question: can a fixed composition recover some transfer relative to SFT without another training
+run?
+
+The candidate rule is deliberately simple.  For one input, run the unadapted checkpoint and one
+of its SFT adapters, calibrate their unsafe scores using development calibration rows, and average
+the two calibrated probabilities with fixed equal weights.  Here \emph{base} means unadapted to
+the guard SFT recipe; it does not mean pretrained from scratch, unaligned, or generally untuned.
+The rule is output-space and therefore does not require the two systems to expose interpolable
+weights, but it does require aligned labels, compatible unsafe-score semantics, separate
+calibration, and two inference passes.
+
+The current evidence is a feasibility result, not the final Paper B study.  Paper A's score table
+and lock establish what inputs were analyzed, but they do not prospectively bind a composition
+operator invented later.  Moreover, some transfer benchmarks and earlier results were seen during
+development.  We therefore use the current panel to estimate a retrospective retention--recovery
+trade-off, expose failure modes, and write a protocol that can later be frozen before a genuinely
+uninspected cohort is evaluated.
+
+This draft makes three bounded contributions:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item a generated, provenance-gated summary of the clean-v2 retrospective composition pilot;
+  \item an explicit claim boundary separating score composition from prior weight-space and
+        calibrated-ensemble methods; and
+  \item an executable prospective-protocol contract that fails claim-bearing validation until
+        the cohort, margin, controls, statistics, systems measurements, and software lock are fixed.
+\end{enumerate}
+
+It does \emph{not} claim Pareto dominance, universal improvement, a causal mechanism, a validated
+base-competence rule, or deployment readiness.
+
+\section{Related work and novelty boundary}
+\label{sec:related}
+
+The underlying ensemble idea is not new.  Calibrated ensembling has been shown to mitigate
+in-distribution and distribution-shift trade-offs in image classification when component models
+are calibrated using in-distribution data \citep{kumar2022calibrated}.  WiSE-FT interpolates the
+weights of a zero-shot model and its fine-tuned descendant to improve robustness under shift
+\citep{wortsman2022wiseft}.  Model soups average compatible fine-tuned weights and can avoid the
+runtime cost of a conventional multi-pass ensemble \citep{wortsman2022modelsoups}.
+
+This study does not present score averaging as a novel primitive.  Its narrower target is a safety-
+guard setting in which a single guard SFT may improve represented-source ranking while degrading
+dataset-held-out ranking.  Output-space composition is architecture-agnostic in the limited sense
+that it needs comparable decision scores rather than interpolable parameters.  That portability
+comes with a systems cost: both components must run.  A submission-grade study must therefore
+compare against actual WiSE-FT rescoring, not merely discuss it, and must measure whether an
+SFT+SFT two-pass ensemble obtains the same benefit.  Without the latter control, any gain could be
+generic variance reduction from a second model pass rather than information uniquely retained by
+the base.
+
+\section{Evidence status and research questions}
+\label{sec:status}
+
+\Cref{tab:evidence-tiers} separates the evidence tiers used in this draft.  The distinction is
+substantive: clean execution provenance does not erase prior exposure to evaluation sources, and a
+Paper A lock cannot bind Paper B code written after it.
+
+\begin{table}[H]
+\centering
+\caption{Evidence tiers.  Only the first two rows exist; the prospective row is planned.}
+\label{tab:evidence-tiers}
+\small
+\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\toprule
+Tier & What it establishes & Current status \\
+\midrule
+Paper A clean-v2 scores & Row-keyed base and SFT scores bound to the Paper A execution contract & Complete \\
+Retrospective composition & Reproducible post-lock analysis of fixed, previously exposed transfer benchmarks & \PilotEvidenceStatus \\
+Prospective Paper B & Frozen operator, margins, controls, model panel, uninspected cohort, and analysis & Not executed \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The pilot addresses three research questions, all conditional on the fixed \PilotNModels{}-checkpoint panel:
+
+\begin{description}[leftmargin=3.5em,style=nextline]
+  \item[RQ1: represented retention.] What is the composition-minus-SFT change on sources
+  represented during SFT?  The pilot estimates the loss; it does not label that loss
+  noninferior because no margin was prospectively justified.
+
+  \item[RQ2: transfer recovery.] What is the composition-minus-SFT change on dataset-held-out
+  transfer benchmarks, and how does the composition compare descriptively with the base?
+
+  \item[RQ3: heterogeneity hypothesis.] Can base competence measured on a locked development
+  cohort predict composition-minus-SFT recovery on a disjoint prospective cohort?  The current
+  \PilotNModels{} points motivate this question but cannot validate a decision rule.
+\end{description}
+
+\section{Retrospective pilot methods}
+\label{sec:methods}
+
+\subsection{Panel, data roles, and score artifact}
+
+The pilot reuses Paper A's fixed panel: Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, and Qwen3-4B,
+with \PilotNSeeds{} LoRA-SFT seeds per checkpoint.  Evaluation sources are grouped into represented-source
+tests and dataset-held-out transfer tests.  Dataset-held-out means those rows were not used for
+SFT; it does not mean the benchmark identities or earlier outcomes were unseen by the researcher.
+All absolute and contrast values consumed by this manuscript are generated from the canonical
+composition JSON rather than copied into the TeX source.
+
+The publication adapter refuses legacy evidence, a nonfinal run, a changed operator, an altered
+seed panel, or a prospective flag.  It binds the exact retrospective result with composition hash
+\texttt{\PilotCompositionHashShort\ldots}, Paper A lock
+\texttt{\PilotLockHashShort\ldots}, and score artifact
+\texttt{\PilotScoreHashShort\ldots}.  These hashes make the draft stable; they do not constitute a
+prospective Paper B lock.
+
+\subsection{Fixed primary operator}
+
+Let $s_b(x)$ and $s_{a,j}(x)$ denote the unsafe scores for base $b$ and SFT seed $j$.  Let
+$C_b$ and $C_{a,j}$ be calibrators fit only on the development calibration split.  The fixed
+primary composition is
+\begin{equation}
+  s_{\mathrm{comp},j}(x)
+  = \tfrac{1}{2} C_b(s_b(x)) + \tfrac{1}{2} C_{a,j}(s_{a,j}(x)).
+  \label{eq:composition}
+\end{equation}
+The analyzer fixes equal weights without fitting reported test rows.  Because the rule was formalized
+after earlier transfer exposure, this implementation fact is not human test blindness.  The remaining
+score combiners are exposed ablations and cannot become primary after observing transfer.
+
+\subsection{Estimands and uncertainty}
+
+For regime $r\in\{\mathrm{represented},\mathrm{transfer}\}$, the primary descriptive estimand is
+\begin{equation}
+  \Delta_r = \operatorname{macroAP}_r(\mathrm{composition})
+             - \operatorname{macroAP}_r(\mathrm{SFT}).
+\end{equation}
+AP is computed per benchmark with tie-aware ranking, macro-averaged over benchmarks, averaged
+over SFT seeds, and then averaged equally across the \PilotNModels{} fixed checkpoints.  The composition-
+minus-base contrast is a secondary anchor.  It is not the main success criterion because the goal
+is to recover transfer relative to SFT while retaining a bounded amount of represented-source
+performance.
+
+Descriptive intervals use a paired family-by-seed hierarchical bootstrap.  Family resampling is
+shared across both sides of a contrast; SFT seeds are resampled within checkpoint.  The base has
+one scoring pass, so seed resampling captures adapter-side variation but not uncertainty over base
+training seeds.  The reported point beside each percentile interval is the observed contrast.  A
+separate generated macro retains the bootstrap mean so the two quantities cannot be silently
+mixed.
+
+The \PilotNModels{} checkpoints and \PilotNAPDatasets{} AP datasets are treated as a fixed panel, not random samples from
+model or benchmark populations.  Intervals summarize row-family and adapter-seed variation
+conditional on this panel and protocol; they do not license universal model-family claims or
+formal population-level significance language.
+
+\subsection{Operating-point diagnostic}
+
+Macro-AP is threshold-free.  A threshold is selected from development calibration negatives for a
+target FPR of \PilotTargetFPRPct\%.  The artifact retains both regimes; \Cref{tab:pilot-operating}
+reports transfer macro and pooled FPR/TPR.  This secondary diagnostic is not a production guarantee.
+
+\section{Retrospective results}
+\label{sec:results}
+
+\input{generated/pilot_summary_table}
+
+The calibrated composition changes represented-source macro-AP from
+\PilotSFTRepresented{} for SFT to \PilotCompositionRepresented{}, an observed difference of
+\PilotRepDeltaSFT{} with a paired-bootstrap percentile interval
+[\PilotRepDeltaSFTLow, \PilotRepDeltaSFTHigh].  On transfer it changes macro-AP from
+\PilotSFTTransfer{} to \PilotCompositionTransfer{}, an observed difference of
+\PilotTransferDeltaSFT{} [\PilotTransferDeltaSFTLow, \PilotTransferDeltaSFTHigh].  These estimates
+describe a measured exchange: lower represented-source AP than SFT and higher transfer AP than
+SFT.  Whether the represented loss is acceptable is a decision question requiring a prospectively
+supported noninferiority margin.
+
+The panel-average composition-minus-base transfer contrast is \PilotTransferDeltaBase{}
+[\PilotTransferDeltaBaseLow, \PilotTransferDeltaBaseHigh], but the panel mean hides important
+heterogeneity.  \Cref{tab:pilot-models} shows \PilotNTransferPositiveVsBase{} positive observed composition-minus-base contrasts
+for SmolLM2 and Qwen2.5, an interval spanning zero for SmolLM3, and a negative contrast for
+Qwen3-4B.  Thus the pilot supports transfer recovery relative to SFT on these checkpoints; it does
+not support a claim that composition beats both components per checkpoint.
+
+\input{generated/pilot_per_model_table}
+
+Logit averaging reaches transfer macro-AP \PilotLogitTransfer{}, above the fixed primary in this
+exposed pilot.  It remains an ablation.  Selecting it after observing transfer would convert a
+descriptive comparison into an unacknowledged tuning step.  Likewise, the calibration-only convex
+search selects SFT weight \PilotConvexWeight{}; its development selection does not make it the
+precommitted primary operator.
+
+\input{generated/pilot_operating_point_table}
+
+The operating-point result is less favorable than the ranking result.  Against a
+\PilotTargetFPRPct\% calibration target, realized transfer macro-FPR is
+\PilotBaseTransferFPRPct\% for the base, \PilotSFTTransferFPRPct\% for SFT, and
+\PilotCompositionTransferFPRPct\% for the composition.  Composition improves macro-TPR relative
+to both components in this diagnostic, but it still misses the FPR target.  Any deployment claim
+based only on AP would omit this calibration-transfer failure.
+
+\section{What the pilot does not establish}
+\label{sec:not-establish}
+
+Several tempting interpretations are not supported.
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Not Pareto dominance.} Composition is lower than SFT on represented-source AP,
+  and it is lower than base on transfer for Qwen3-4B.  A supported noninferiority margin can define
+  bounded retention; it cannot retroactively create literal Pareto improvement.
+
+  \item \textbf{Not a base-competence law.} Regressing same-cohort base AP against
+  composition-minus-base embeds the predictor in the outcome with a negative sign.  That
+  mathematical coupling can manufacture an association.  The prospective protocol instead uses
+  development-cohort competence to predict a composition-minus-SFT outcome on a disjoint cohort.
+
+  \item \textbf{Not a mechanism.} Signal-destroying and within-class shuffle diagnostics can
+  eliminate some explanations but cannot identify why composition changes ranking.
+
+  \item \textbf{Not evidence that keeping the base is uniquely helpful.} The current pilot lacks
+  the independently seeded SFT+SFT two-pass control.  The effect may be generic ensembling.
+
+  \item \textbf{Not free.} Output composition requires two inference passes and associated
+  latency, throughput, memory, energy, and serving complexity.  The pilot does not yet contain
+  standardized systems measurements.
+\end{itemize}
+
+\section{Prospective validation protocol --- not yet executed}
+\label{sec:prospective}
+
+The repository contains a machine-validated draft contract, not a completed preregistration.  A
+claim-bearing run must use a separate Paper B lock that binds the imported Paper A evidence,
+prospective cohort, source tree, analysis configuration, environment, RNGs, operator hierarchy,
+model panel, estimands, multiplicity policy, and systems protocol.  The validator's locked mode is
+designed to fail until every item below is concrete.
+
+\subsection{Cohort and blindness}
+
+The primary outcome cohort must be selected and content-hashed before inspection of its labels or
+model scores.  It must be genuinely disjoint from the cohort used to estimate base competence.
+Calling a known public benchmark ``held out'' is insufficient if its earlier scores influenced
+operator development.  Retrospective and prospective estimates will be reported separately rather
+than pooled.
+
+\subsection{Joint success rule}
+
+Before evaluation, the protocol must justify and freeze a represented-source noninferiority
+margin $m$.  A prospective success rule should require both
+\begin{align}
+  \operatorname{LCB}(\Delta_{\mathrm{represented}}) &> -m, \\
+  \operatorname{LCB}(\Delta_{\mathrm{transfer}}) &> 0,
+\end{align}
+under pre-specified one-sided intervals and a multiplicity policy.  The value of $m$ cannot be
+chosen from the observed pilot loss.  Even if both criteria pass, the claim should be bounded
+retention plus transfer recovery relative to SFT, not Pareto dominance.
+
+\subsection{Required controls}
+
+\begin{table}[H]
+\centering
+\caption{Minimum prospective comparison set.  ``Missing'' means no claim-bearing Paper B result
+exists yet, not that an implementation can never be built.}
+\label{tab:controls}
+\small
+\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\toprule
+Arm & Purpose & Status \\
+\midrule
+Base & Single-pass pre-guard-SFT anchor & Retrospective scores ready \\
+SFT & Specialized single-pass reference & Retrospective scores ready \\
+Base+SFT output & Fixed primary candidate in \Cref{eq:composition} & Retrospective only \\
+SFT+SFT output & Equal-inference-cost generic ensemble control; aggregate shared seed pairs at checkpoint level & Missing \\
+WiSE-FT & Weight-space base/adapted interpolation control & Missing GPU rescoring \\
+KL/replay tuning & Matched-compute preservation baseline & Missing training \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Seed pairs in the SFT+SFT arm share adapters.  \PilotNSeedPairs{} unordered pairs from \PilotNSeeds{} seeds therefore
+cannot be treated as \PilotNSeedPairs{} independent checkpoint replicates.  The locked analysis must aggregate
+at checkpoint level and preserve the dependency induced by adapter reuse.  WiSE-FT and the
+preservation-tuning arm need compatible retained weights or new training and rescoring.
+
+\subsection{Heterogeneity and systems analysis}
+
+The heterogeneity hypothesis requires a larger, lineage-diverse checkpoint panel.  Base
+competence will be measured on a locked development cohort; the outcome will be prospective
+composition-minus-SFT transfer macro-AP on a disjoint cohort.  Model identity and lineage must
+remain visible rather than being hidden behind one correlation coefficient.
+
+Every arm will report end-to-end latency, throughput, peak accelerator memory, training
+accelerator-hours, and an inference-compute proxy on fixed hardware with a hashed measurement
+protocol.  This separates matched training compute from matched inference compute.  Weight-space
+composition may have a one-pass serving advantage; output composition and SFT+SFT are two-pass
+systems and must not be described as cost-free.
+
+\section{Implementation and reproducibility}
+\label{sec:implementation}
+
+The current workspace has two executable boundaries.  First,
+\texttt{code/build\_pilot\_artifacts.py} validates the exact reviewed retrospective JSON and its
+metadata, then generates all TeX macros and result tables plus a SHA-256 manifest.  Its check mode
+fails when a generated file is missing or stale.  Second,
+\texttt{code/validate\_protocol.py} validates the prospective contract.  Draft mode surfaces the
+known missing fields; locked mode rejects them.
+
+The current full cloud archive was checksum-verified during the Paper A audit but is not
+distributed in this repository.  The public score cache can reverify the score and public-manifest
+bindings, but it cannot independently rehash omitted adapter bytes and complete run metadata.
+Third-party end-to-end re-verification therefore remains incomplete until those artifacts are
+published at a durable immutable location.  This limitation is separate from, and does not excuse,
+the need for an uninspected prospective Paper B cohort.
+
+\section{Limitations and broader scope}
+\label{sec:limitations}
+
+The pilot includes \PilotNModels{} compact checkpoints from only two broad model lineages, one guard SFT
+recipe, English input-prompt classification, benchmark-macro AP, and \PilotNAPDatasets{} AP datasets.  It does
+not cover response moderation, tool calls, multi-turn dialogue, multilingual policies, arbitrary
+new taxonomies, frontier hosted APIs, adversarial production traffic, or human escalation
+workflows.  Benchmark label policies differ, and macro-averaging does not make them interchangeable.
+
+The base is single-pass and lacks base-training-seed replication.  The bootstrap is conditional on
+the selected panel.  Transfer rows were not used for SFT, but prior benchmark exposure prevents a
+prospective interpretation.  The current operator was analyzed after Paper A's lock, and the
+apparently strongest ablation was visible before this draft.  Threshold-free ranking improves
+while the common-threshold diagnostic misses its calibration FPR target.  No standardized latency,
+throughput, memory, or compute results exist yet.  These are study-design constraints, not caveats
+that can be repaired with stronger prose.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this retrospective fixed panel, a fixed average of separately calibrated base and SFT unsafe
+scores exchanges lower represented-source AP for higher dataset-held-out transfer AP relative to
+SFT.  The comparison with the base is heterogeneous, and the composition misses the transferred
+FPR target.  The result is strong enough to justify a focused prospective study, but not strong
+enough to establish dominance, a mechanism, a universal remedy, or a deployment recommendation.
+The next scientific step is not a more confident headline.  It is a separately locked evaluation
+on a genuinely uninspected cohort with an equal-cost SFT+SFT control, actual WiSE-FT rescoring,
+matched-compute preservation tuning, independent competence measurement, and complete systems
+costs.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\section{Retrospective publication contract}
+\label{app:contract}
+
+The manuscript-consumed evidence has status \PilotEvidenceStatus.  Its generated manifest records
+the full composition, Paper A lock, score, and composition-analyzer hashes.  The TeX source contains
+no manually entered pilot AP result.  The observed point contrasts are computed from the absolute
+panel estimates, while bootstrap means are retained under separately named macros.  This prevents
+the common reporting bug of presenting a bootstrap-resample mean as though it were the original
+observed statistic.
+
+The renderer is intentionally pinned to the reviewed retrospective object.  A changed analyzer or
+new result must be reviewed and explicitly re-anchored; it cannot silently alter the draft.  The
+future prospective pipeline should write into a separate Paper B artifact namespace rather than
+overwriting this preview.
+
+\section{Prospective completion checklist}
+\label{app:checklist}
+
+Before the draft can become a claim-bearing paper, the following items must all be complete:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item select, document, and hash a genuinely uninspected prospective cohort;
+  \item justify the represented-source noninferiority margin without using prospective outcomes;
+  \item freeze the operator hierarchy, model panel, estimands, multiplicity policy, RNGs, and
+        family/seed resampling design;
+  \item implement and verify SFT+SFT, WiSE-FT, and matched-compute KL/replay controls;
+  \item measure base competence on a disjoint development cohort and expand the checkpoint panel;
+  \item bind source, configuration, environment, container/runtime, and hardware measurement
+        records in a separate Paper B lock;
+  \item execute the locked analysis once, preserve failures, and report latency, throughput, peak
+        memory, training compute, and inference compute for every arm; and
+  \item publish sufficient immutable artifacts for independent verification under applicable data
+        and model licenses.
+\end{enumerate}
+
+\end{document}
