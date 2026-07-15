@@ -33,8 +33,8 @@ PY = REPO / ".venv" / "bin" / "python"
 PYS = str(PY) if PY.exists() else sys.executable
 
 
-def _run(cmd, cwd=REPO):
-    return subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True)
+def _run(cmd, cwd=REPO, env=None):
+    return subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, env=env)
 
 
 def _copy_into_generated(src: Path, dst_name: str, results: dict, check: bool):
@@ -82,10 +82,19 @@ def paper_b(results, check):
 
 
 def mortgage(results, check):
+    import os as _os
     mb = REPO / "mortgage-benchmark"
-    _run([PYS, "tools/reeval_from_scores.py"], cwd=mb)
-    _run([PYS, "tools/emit_baseline_tex.py", "out_eval/baseline_table.json", "generated/baseline_table.tex"], cwd=mb)
-    _copy_into_generated(mb / "generated" / "baseline_table.tex", "mortgage_baseline_table.tex", results, check)
+    (mb / "generated").mkdir(exist_ok=True)
+    env = {**_os.environ, "PYTHONPATH": str(mb)}  # reeval imports `magen`; scripts assume repo-root cwd
+    r1 = _run([PYS, "mortgage-benchmark/tools/reeval_from_scores.py"], env=env)  # per-row scores -> baseline_table.json
+    r2 = _run([PYS, "mortgage-benchmark/tools/emit_baseline_tex.py",
+               "mortgage-benchmark/out_eval/baseline_table.json",
+               "mortgage-benchmark/generated/baseline_table.tex"], env=env)
+    src = mb / "generated" / "baseline_table.tex"
+    if not src.exists():
+        results["mortgage_baseline_table.tex"] = "FAIL: " + ((r1.stderr or r2.stderr or "no output").strip().splitlines() or [""])[-1][:90]
+        return
+    _copy_into_generated(src, "mortgage_baseline_table.tex", results, check)
 
 
 def expguard(results, check):
