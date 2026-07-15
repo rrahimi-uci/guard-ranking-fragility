@@ -139,6 +139,11 @@ def paper_c(results, check):
     results["paper_c_table.tex"] = "regenerated" if r.returncode == 0 else "FAIL"
 
 
+
+def figures(results, check):
+    r = _run([PYS, 'figures/make_figures.py'], cwd=HERE)
+    results['figures'] = 'regenerated' if r.returncode == 0 else 'FAIL: ' + (r.stderr or '')[-80:]
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true", help="fail on drift vs committed generated/")
@@ -147,7 +152,7 @@ def main(argv=None) -> int:
 
     GEN.mkdir(exist_ok=True)
     results: dict[str, str] = {}
-    for fn in (paper_a, paper_b, mortgage, expguard, paper_c):
+    for fn in (paper_a, paper_b, mortgage, expguard, paper_c, figures):
         try:
             fn(results, args.check)
         except Exception as e:  # keep going; report per-study
