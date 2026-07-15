@@ -1,0 +1,52 @@
+[
+  {
+    "kind": "logit_diff",
+    "name": "qwen25_15b_base",
+    "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+    "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+    "dtype": "bfloat16",
+    "batch_size": 8
+  },
+  {
+    "kind": "logit_diff",
+    "name": "qwen3_4b_base",
+    "model_id": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "dtype": "bfloat16",
+    "batch_size": 4
+  },
+  {
+    "kind": "logit_diff",
+    "name": "smollm2_17b_base",
+    "model_id": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "revision": "31b70e2e869a7173562077fd711b654946d38674",
+    "dtype": "bfloat16",
+    "batch_size": 8
+  },
+  {
+    "kind": "logit_diff",
+    "name": "smollm3_3b_base",
+    "model_id": "HuggingFaceTB/SmolLM3-3B",
+    "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "dtype": "bfloat16",
+    "batch_size": 4
+  },
+  {
+    "kind": "llama_guard",
+    "name": "llama_guard_3_1b",
+    "model_id": "meta-llama/Llama-Guard-3-1B",
+    "template": "llama_guard",
+    "unsafe_token": "unsafe",
+    "safe_token": "safe",
+    "dtype": "bfloat16"
+  },
+  {
+    "kind": "wildguard",
+    "name": "wildguard_7b",
+    "model_id": "allenai/wildguard",
+    "template": "wildguard",
+    "unsafe_token": "yes",
+    "safe_token": "no",
+    "dtype": "bfloat16"
+  }
+]
