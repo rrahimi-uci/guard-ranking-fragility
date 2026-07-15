@@ -89,7 +89,7 @@ Version 1 of the paper may claim only input-prompt screening. The repository cur
 | [`mortgage_redteam_benchmark.jsonl`](../notebooks/data/benchmarks/full/mortgage_redteam_benchmark.jsonl) | 1,000 rows: 938 violations, 62 benign controls; 764 rows have nonempty regulatory references | recover policy provenance and annotation criteria |
 | [`guard_benchmark.jsonl`](../notebooks/data/benchmarks/full/guard_benchmark.jsonl)                       | 1,563 rows: 938 flag, 625 allow                                                              | current mortgage train/dev/test source            |
 | [`mortgage_split.json`](../notebooks/data/benchmarks/full/mortgage_split.json)                           | family-clustered train 1,094, dev 236, test 233                                              | training and pilot calibration                    |
-| [`guard_benchmark_hard.jsonl`](../notebooks/data/benchmarks/full/guard_benchmark_hard.jsonl)             | 334 rows: 195 flag, 139 allow; 30 minimal-pair groups/60 paired rows; 15 multi-turn rows     | external hard pilot and re-adjudication seed      |
+| [`guard_benchmark_hard.jsonl`](../data/guard_benchmark_hard.jsonl)             | 334 rows: 195 flag, 139 allow; 30 minimal-pair groups/60 paired rows; 15 multi-turn rows     | external hard pilot and re-adjudication seed      |
 | hard-set caches                                                                                           | aligned base/general/mortgage score arrays, 334 each                                         | optimizer smoke test without inference            |
 
 The 1,563-row and 334-row mortgage files have zero normalized exact-text overlap, producing 1,897 unique current mortgage prompts.
@@ -836,7 +836,7 @@ source .venv/bin/activate
 python experiments/build_joint_manifest.py \
   --general notebooks/outputs/frozen_eval_rows.json \
   --mortgage-split notebooks/data/benchmarks/full/mortgage_split.json \
-  --mortgage-hard notebooks/data/benchmarks/full/guard_benchmark_hard.jsonl \
+  --mortgage-hard data/guard_benchmark_hard.jsonl \
   --regulatory-source notebooks/data/benchmarks/full/mortgage_redteam_benchmark.jsonl \
   --dual-dev data/paper_b/dual_policy_dev.jsonl \
   --dual-test data/paper_b/dual_policy_test.jsonl \

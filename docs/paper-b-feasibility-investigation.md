@@ -165,7 +165,7 @@ People conflate these; they have very different answers.
 - **A fair-lending fairness probe** (`legacy/experiments/name_fairness_probe.py`,
   ECOA/Reg-B framing) — a distinctive, defensible angle mostly ready to reuse.
 - **The 334-row hardened mortgage benchmark** (relocated to
-  `paper-a/paper-html/explorer/sources/guard_benchmark_hard.jsonl`), with rationales
+  `data/guard_benchmark_hard.jsonl`), with rationales
   and 30 minimal-pair groups.
 
 ### Gaps that must be built or collected from scratch

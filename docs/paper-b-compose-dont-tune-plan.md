@@ -325,14 +325,14 @@ genuinely uninspected cohort or dataset selected before the Paper B lock.
 ## 10. A plain-language edition is a first-class deliverable
 
 This paper must ship with a **plain-language, paper-format edition** for the same audience as
-[`../paper-a-simplified/`](../paper-a-simplified) — a reader with **basic statistics** and **one
+[`../papers/finetuning-specialization-simplified/`](../papers/finetuning-specialization-simplified) — a reader with **basic statistics** and **one
 LoRA fine-tune** of experience — in the same annotated style (teach-as-you-go "Background"
 boxes, worked mini-examples, honest takeaway boxes, full tables + figure). Crystal-clear for that
 reader is a requirement, not a nice-to-have.
 
 - **Already done (clean-v2 preview):** the annotated Paper A edition has been extended with a
   plain-language section, *"A fix: compose, don't tune"*
-  ([`../paper-a-simplified/the-benchmark-chooses-the-winner-annotated.pdf`](../paper-a-simplified/the-benchmark-chooses-the-winner-annotated.pdf),
+  ([`../papers/finetuning-specialization-simplified/the-benchmark-chooses-the-winner-annotated.pdf`](../papers/finetuning-specialization-simplified/the-benchmark-chooses-the-winner-annotated.pdf),
   §5), teaching what an ensemble is, the clean-v2 base/SFT/composed tables, and the honest
   *small represented loss / transfer recovery toward base / exploratory heterogeneity* framing
   (not "beats both" or "Pareto"). It is explicitly marked a **preliminary clean-v2 retrospective

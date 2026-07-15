@@ -1,7 +1,7 @@
 # Paper A — Improvement & Extension Recommendations
 
 Reviewer recommendations for *"The Benchmark Chooses the Winner"*
-([`../paper-a/benchmark_chooses_the_winner.tex`](../paper-a/benchmark_chooses_the_winner.tex)),
+([`../papers/finetuning-specialization/benchmark_chooses_the_winner.tex`](../papers/finetuning-specialization/benchmark_chooses_the_winner.tex)),
 grounded in the clean-v2 retrospective results under
 [`../artifacts/paper_a_sft_v2/analysis/`](../artifacts/paper_a_sft_v2/analysis).
 Written 2026-07-13; execution status and numbers updated 2026-07-14.

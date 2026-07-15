@@ -61,5 +61,3 @@ artifacts/paper_a_sft_v2/calibration/
 artifacts/paper_a_sft_v2/smoke/
 
 # Archived explorer prompt samples may contain NC-licensed or gated text.
-paper-a/paper-html/explorer/samples.local.js
-paper-a/paper-html/explorer/expguard_sample.local.json

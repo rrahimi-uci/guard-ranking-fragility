@@ -1,7 +1,7 @@
 # Design & planning notes
 
 Working notes behind the study. They are historical design documents, not the paper;
-the authoritative results live in [`../paper-a/`](../paper-a) and
+the authoritative results live in [`../papers/finetuning-specialization/`](../papers/finetuning-specialization) and
 [`../artifacts/paper_a_sft_v2/`](../artifacts/paper_a_sft_v2). The v1
 [`../artifacts/paper_a_sft/`](../artifacts/paper_a_sft) tree is archival.
 
