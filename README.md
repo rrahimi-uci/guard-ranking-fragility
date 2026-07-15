@@ -1,204 +1,291 @@
 # The Benchmark Chooses the Winner
 
-Reproduction code, data manifests, and an auditable evidence chain for the paper
+Auditable experiments, papers, and benchmark artifacts for understanding how compact
+prompt-safety guards specialize, transfer, compose, and behave in high-compliance domains.
 
-> **The Benchmark Chooses the Winner: Measuring Fine-Tuning Specialization Across Safety-Guard Benchmarks**
-> Reza Rahimi (JazzX AI)
+> A guard's score is not an intrinsic property of the model: it is co-produced by the
+> benchmark, training objective, decision rule, and domain on which the guard is read.
 
-This repository compares each prompt-safety guard with its own untuned base on a
-fixed panel of four instruction checkpoints, five SFT seeds each. It separates
-changes on sources represented during training from transfer to held-out datasets.
-The publication result is a **clean-v2 execution analyzed retrospectively**. It
-binds corrected provenance, family links, instruction-preserving truncation,
-adapters, scores, and analysis under the strict v2 contract. That clean execution
-does not make previously inspected benchmark cohorts prospective; confirmatory
-evidence still requires a separately locked study on a genuinely uninspected cohort.
+The repository began as the focused Paper A study of fine-tuning specialization. It now contains
+a four-act research program on one fixed panel of four instruction checkpoints:
 
-## Headline result
+1. **Specialize:** measure what LoRA-SFT changes relative to each checkpoint before guard SFT.
+2. **Objectives:** pre-register an SFT/DPO/GRPO comparison; the GPU run is still pending.
+3. **Compose:** test whether keeping the base in a fixed output-space average recovers transfer.
+4. **Domains:** evaluate a dual-labeled mortgage benchmark in depth and ExpGuard's
+   finance/health/law subsets for external breadth.
 
-Across the panel (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B; seeds 42–46),
-LoRA-SFT on the locked 1,200-row clean-v2 training manifest:
+The [unified research report](papers/unified-report/unified_report.pdf) is the working synthesis:
+*[The Benchmark Chooses the Winner: Honestly Measuring, Tuning, and Composing Small Safety
+Guards Across Objectives and Four High-Compliance Domains](papers/unified-report/unified_report.tex)*.
+It is **not release-ready**: Paper C has no result and the full ExpGuard panel is incomplete.
+See the working [unified-report status ledger](papers/unified-report/STATUS.md), which may lag an
+active evaluation run.
 
-| Effect | Observed Δ macro-AP (base → SFT) | Descriptive 95% two-sided bootstrap interval |
+## Current research status
+
+| Track | Main artifact | Honest status |
+|---|---|---|
+| **Act I — Fine-tuning specialization** | [Formal Paper A](papers/finetuning-specialization/benchmark_chooses_the_winner.pdf) | **Complete clean-v2 retrospective estimate.** Lock-bound 4-checkpoint × 5-seed execution; not prospective or universal. |
+| **Act II — Objective axis** | [Pre-registration](docs/paper-c-prereg.md), [preference recipe](experiments/paper_c_preference.py), [runner scaffold](experiments/run_paper_c_objective.py) | **Pre-registration and training scaffold only; no result or Paper C PDF.** GPU smoke validation, a Paper C lock, training, scoring, and an analyzer remain pending. |
+| **Act III — Base+adapter composition** | [Formal Paper B](papers/base-adapter-composition/compose_dont_tune.pdf) | **Retrospective pilot complete.** No separately locked prospective Paper B run exists; required controls and systems results remain pending. |
+| **Act IV — Mortgage depth** | [Mortgage paper](papers/mortgage-guardrail-benchmark/mortgage_guardrail_benchmark.pdf), [frozen benchmark](mortgage-benchmark/benchmark/v1_hmda2022/) | **994-row synthetic benchmark and four-base diagnostic baselines complete.** Labels are LLM-judge / policy-card-consistent, not SME-adjudicated legal findings. |
+| **Act IV — ExpGuard breadth** | [Evaluator](experiments/eval_expguard_external.py) | **In progress and unreleased.** Only a partial local base-checkpoint evaluation exists; no complete four-checkpoint ExpGuard claim is made. |
+| **Unified report** | [PDF](papers/unified-report/unified_report.pdf), [source](papers/unified-report/unified_report.tex) | **Working draft.** Acts I, III, and mortgage are populated; Paper C and full ExpGuard remain pending, and its reproduction harness is not yet a green release gate. |
+
+Acts I and III are reproducible but retrospective: their benchmark sources were inspected during
+development. The report keeps retrospective, external-expert, and LLM-judge evidence separate and
+does not make causal, universal, deployment, legal, or fair-lending claims.
+
+## Read the papers
+
+| Track | Formal edition | Plain-language edition |
+|---|---|---|
+| Unified four-act working report | [PDF](papers/unified-report/unified_report.pdf) · [LaTeX](papers/unified-report/unified_report.tex) | Teaching boxes and practitioner guidance are integrated into the report |
+| Fine-tuning specialization (Paper A) | [PDF](papers/finetuning-specialization/benchmark_chooses_the_winner.pdf) · [source](papers/finetuning-specialization/benchmark_chooses_the_winner.tex) | [Annotated PDF](papers/finetuning-specialization-simplified/the-benchmark-chooses-the-winner-annotated.pdf) |
+| Base+adapter composition (Paper B) | [PDF](papers/base-adapter-composition/compose_dont_tune.pdf) · [source](papers/base-adapter-composition/compose_dont_tune.tex) | [Simplified PDF](papers/base-adapter-composition-simplified/compose-dont-tune-simplified.pdf) |
+| Mortgage guardrail benchmark | [PDF](papers/mortgage-guardrail-benchmark/mortgage_guardrail_benchmark.pdf) · [source](papers/mortgage-guardrail-benchmark/mortgage_guardrail_benchmark.tex) | [Simplified PDF](papers/mortgage-guardrail-benchmark-simplified/mortgage-benchmark-simplified.pdf) |
+
+## Verified results currently in the repository
+
+### Act I — LoRA-SFT specializes on this fixed panel
+
+Across Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, and Qwen3-4B (seeds 42–46), SFT on
+the locked 1,200-row clean-v2 training manifest produces:
+
+| Effect | Observed Δ macro-AP (base → SFT) | Descriptive 95% paired-bootstrap interval |
 |---|---:|---:|
-| **Represented** sources | **+0.323** | **[+0.265, +0.369]** |
-| **Transfer** to held-out datasets | **−0.059** | **[−0.084, −0.032]** |
+| **Represented sources** | **+0.323** | **[+0.265, +0.369]** |
+| **Dataset-held-out transfer** | **−0.059** | **[−0.084, −0.032]** |
 
-SFT lifts every checkpoint to about 0.98 macro-AP on represented sources. Transfer
-is heterogeneous by checkpoint—SmolLM2 +0.040, Qwen2.5 −0.039, SmolLM3 −0.087,
-Qwen3-4B −0.150—while every leave-one-checkpoint-out and
-leave-one-transfer-benchmark-out aggregate remains negative. Benchmark-macro
-transfer FPR rises from **8.1% to 15.5%** (pooled-negative: **4.3% to 17.0%**),
-and HarmBench recall falls from **78.0% to 60.0%**. Fifteen of the twenty
-seed-level points improve represented-source AP while losing transfer AP.
-These are clean-v2, retrospective, estimation-only results—not formal claim gates
-or a universal "fine-tuning hurts" conclusion.
+SFT raises every checkpoint to about 0.98 represented-source macro-AP, but transfer is
+heterogeneous: SmolLM2 **+0.040**, Qwen2.5 **−0.039**, SmolLM3 **−0.087**, and
+Qwen3-4B **−0.150**. Every leave-one-checkpoint-out and leave-one-transfer-benchmark-out
+aggregate remains negative. At thresholds selected for a 5% calibration FPR target,
+benchmark-macro transfer FPR rises from **8.1% to 15.5%** (pooled-negative:
+**4.3% to 17.0%**), while HarmBench recall falls from **78.0% to 60.0%**.
+Fifteen of twenty seed-level points improve represented-source AP while losing transfer AP.
 
-The v2 numbers regenerate from the released score cache through the strict
-[`make repro`](#reproduce-a-released-v2-cache-fresh-clone-no-gpu) path. The older
-v1 numbers remain available only through the explicit compatibility target.
+These are clean-v2, conditional fixed-panel estimates—not a universal “fine-tuning hurts”
+conclusion and not a confirmatory finding.
+
+### Act III — Composition recovers transfer relative to SFT
+
+The fixed primary operator averages the base and SFT guard's separately calibrated unsafe
+probabilities:
+
+| Guard | Represented macro-AP | Transfer macro-AP |
+|---|---:|---:|
+| Unadapted instruction checkpoint | 0.658 | 0.866 |
+| SFT adapter | **0.982** | 0.807 |
+| Base+SFT calibrated average | 0.962 | **0.883** |
+
+Relative to SFT, the observed composition contrast is **−0.019**
+([−0.031, −0.010]) on represented sources and **+0.076**
+([+0.058, +0.093]) on transfer. The comparison with the base is heterogeneous:
+composition is above base for two checkpoints, near zero for one, and below base for Qwen3-4B.
+At the same 5% calibration target, composition's realized transfer macro-FPR is **11.4%**.
+This is transfer recovery relative to SFT—not Pareto dominance, calibration transfer, or proof that
+keeping the base is uniquely better than generic two-pass ensembling.
+
+### Act IV — Mortgage depth; ExpGuard breadth is incomplete
+
+The frozen [v1_hmda2022](mortgage-benchmark/benchmark/v1_hmda2022/) mortgage release contains
+**994 synthetic, HMDA-grounded request-screening rows** with two labels:
+general safety (G) and mortgage-policy consistency (D). It includes a large G0/D1
+stratum—requests that read as generally safe but violate a benchmark policy card—and a
+protected-context invariance diagnostic. Four zero-shot base checkpoints obtain mortgage-policy
+AP between **0.672 and 0.851** on the committed public-test scores; the observed protected-context
+gap ranges from approximately **0.000 to 0.183**.
+
+This benchmark is a measuring instrument, not a legal finding. Its prompts are synthetic, its
+policy labels are produced by an LLM judge against written cards, it has no SME adjudication or
+reported human agreement, and its G1/D0 quadrant is empty.
+
+The external ExpGuard path targets **2,275 expert-annotated prompts** across finance,
+healthcare, and law. The scorer and text-free artifact format are implemented, but the current
+four-checkpoint base evaluation is incomplete and local artifacts are not released. The unified
+report therefore keeps the full ExpGuard result pending.
 
 ## Repository layout
 
-```text
-guard_research/      canonical, auditable library: tie-aware metrics, provenance
-                     (hashing + MinHash), the frozen prompt, calibration thresholds
-experiments/         the six-step Paper A pipeline (prepare → audit → lock →
-                     train → eval → analyze); see experiments/README.md
-configs/             paper_a_sft.yaml — the single study config
-tests/               unit tests for the canonical metrics, thresholds, manifests
-artifacts/paper_a_sft/   the evidence chain: LOCK.json, audit/, analysis/,
-                     scores/scores.parquet (row-keyed hashes + logits, no raw text),
-                     runmeta/; this namespace is immutable legacy evidence
-artifacts/paper_a_sft_v2/   primary clean-v2 artifact root for manifests, lock,
-                     runs, scores, and analysis
-mortgage-benchmark/  the mortgage guardrail benchmark: the frozen HMDA-grounded
-                     v1_hmda2022 release + the magen agentic generator/evaluator
-papers/              the three manuscripts (tectonic), each with a plain-language
-                     -simplified companion (same numbers) + glossary:
-  finetuning-specialization/    Paper A — how guard fine-tuning specializes to
-                     its trained-on benchmarks and does not transfer to held-out ones
-  base-adapter-composition/     Paper B — averaging a base checkpoint with its
-                     fine-tuned guard to recover held-out transfer
-  mortgage-guardrail-benchmark/ the HMDA-grounded, dual-labeled mortgage benchmark
-data/                shared data inputs (incl. guard_benchmark_hard.jsonl, the
-                     334-item hard pilot set)
-docs/                design/planning notes
-legacy/              the earlier broad study + planned Paper B code (quarantined,
-                     still runnable; not part of this reproduction)
-```
+    papers/
+      unified-report/                     in-progress four-act synthesis
+      finetuning-specialization/          formal Paper A
+      finetuning-specialization-simplified/
+      base-adapter-composition/           formal Paper B + protocol validator
+      base-adapter-composition-simplified/
+      mortgage-guardrail-benchmark/       formal benchmark-construction paper
+      mortgage-guardrail-benchmark-simplified/
+
+    guard_research/                        canonical metrics, thresholds, prompts, provenance
+    experiments/                           Paper A pipeline; composition; Paper C/ExpGuard scaffolds
+    configs/                               Paper A config and v2 release anchor
+    artifacts/paper_a_sft_v2/              primary clean-v2 lock, release, scores, analysis, provenance
+    artifacts/paper_a_sft/                 immutable archived-v1 evidence
+    mortgage-benchmark/                    generator, frozen release, scorer, baselines, tests
+    docs/                                  reproducibility contracts, preregistration, planning notes
+    tests/                                 canonical unit and artifact-contract tests
+    legacy/                                quarantined earlier broad-study code
+
+Raw third-party text and large training artifacts remain local or gitignored. Public release
+artifacts retain identifiers, hashes, source revisions, and text-free per-row scores where
+redistribution permits.
 
 ## Install
 
-Python 3.12 (see `.python-version`).
+Python **3.12** is the supported environment (see [.python-version](.python-version)).
 
-```bash
-python3.12 -m venv .venv && source .venv/bin/activate
-make install-all                  # pinned training/scoring + analysis + dev
-# or, for pinned CPU analysis + tests only:
-make install
-```
+    python3.12 -m venv .venv
+    source .venv/bin/activate
 
-Both Make targets constrain the editable package with `requirements.txt`; do not
-use an unconstrained extras install for a final v2 run.
-The exact executed clean-v2 GPU environment and the older partially recorded v1
-environment are intentionally separated in
+    make install       # constrained CPU analysis + tests
+    # or:
+    make install-all   # training/scoring stack + analysis + tests
+
+The direct dependency stack is pinned in [requirements.txt](requirements.txt).
+Paper A's executed environments and archived-v1 limitations are documented in
 [docs/reproducibility-environments.md](docs/reproducibility-environments.md).
+Tectonic is required only to compile LaTeX; Graphviz is additionally required to regenerate
+the mortgage pipeline figure.
 
-## Reproduce a released v2 cache (fresh clone, no GPU)
+## Quick verification
 
-The primary no-GPU path uses the strict final v2 `LOCK.json`, its text-free
-`public_manifests/`, `scores/scores.parquet` with sibling `scores/metadata.json`,
-the self-hashed `RELEASE.json`, and the separately tracked
-`configs/paper_a_sft_v2_release_anchor.json`. The last two bind the mutable score
-metadata and current verifier/analyzer sources. From a fresh clone:
+    make test
+    make paper-verify
 
-```bash
-python3.12 -m venv .venv && source .venv/bin/activate
-make install
-make repro       # verify evidence, analyze, and compare checked-in paper inputs
-make paper       # re-verify v2 generated inputs, then compile (needs tectonic)
-```
+These root targets cover the canonical library and Paper A only. They do not verify Paper B,
+the mortgage workspace, Paper C, ExpGuard, or the unified report.
 
-`make repro` fails closed when any required release file, binding, score row, or
-runtime requirement is missing or mismatched. Its explicit `--release-cache` mode
-verifies the text-free public evidence and the score/metadata bindings without
-pretending that a fresh clone contains licensed raw prompts, training run metadata,
-or adapter bytes. It records those local omissions and the current analysis-source
-hashes in `analysis/analysis_metadata.json`; byte verification of the original GPU
-execution sources remains the job of the separately archived immutable source
-snapshot in [`artifacts/paper_a_sft_v2/provenance/`](artifacts/paper_a_sft_v2/provenance/).
-See [docs/reproducibility.md](docs/reproducibility.md) for the exact contract.
-If any required score-cache component is absent or changed, this command stops.
+## Build the unified working report
 
-Maintainers stage a distributable overlay with `make release-package`. That
-target uses an explicit allowlist and rejects raw manifests, adapters, run
-directories, base-score caches, audit inputs, smoke outputs, and symlinks. The
-full internal execution archive is verified separately and is not the public
-score-only package.
+    make -C papers/unified-report pdf
 
-## Reproduce the archived v1 scores (no GPU)
+The current reproduce script is a **development harness**, not a complete release verifier:
 
-The historical score bundle regenerates its tables and figures on CPU (about
-10–15 minutes for 10,000 bootstrap replicates on the reviewed laptop), but it is
-rejected by the strict v2 contract unless legacy mode is explicit:
+    make -C papers/unified-report reproduce
 
-```bash
-make repro-legacy  # explicit compatibility mode → archival v1 analysis only
-make test          # unit and release-contract tests
-make selftest       # synthetic end-to-end check of the analysis
-```
+It dispatches to the Paper A, Paper B, mortgage, ExpGuard, and Paper C analysis paths, but
+unfinished studies remain pending, and its check path still needs stricter fail-closed and
+non-mutating guarantees before it can certify a release. Do not infer Paper C or complete ExpGuard
+results from a successful PDF build or a partial reproduction run.
 
-This v1 path is archival only and never updates the v2 manuscript. `make repro`,
-`make paper-verify`, and `make paper` all point to v2 and never silently fall
-back to these files. `make paper-sync` is a separate, explicit maintainer action;
-ordinary reproduction verifies before changing any paper input. `make help` lists
-every target.
+## Reproduce Paper A from the released v2 cache (no GPU)
 
-## Generate v2 from scratch (GPU)
+The primary no-GPU path consumes the strict final v2
+[LOCK.json](artifacts/paper_a_sft_v2/LOCK.json), text-free
+[public manifests](artifacts/paper_a_sft_v2/public_manifests/), bound
+[scores.parquet](artifacts/paper_a_sft_v2/scores/scores.parquet) with sibling metadata,
+the self-hashed [RELEASE.json](artifacts/paper_a_sft_v2/RELEASE.json), and the tracked
+[release anchor](configs/paper_a_sft_v2_release_anchor.json).
 
-The full pipeline runs in order; steps 1–3 and 6 are CPU, steps 4–5 need a GPU and
-Hugging Face access (`HF_TOKEN`; copy [.env.example](.env.example) → `.env`):
+    make repro       # verify release evidence, analyze, and compare checked-in Paper A inputs
+    make paper       # re-verify the inputs, then compile Paper A only
+    make test        # root unit and release-integrity tests
+    make selftest    # synthetic end-to-end analysis check
 
-```bash
-make manifests   # 1. build pinned, hash-ranked manifests
-make audit       # 2. independently recompute and hard-assert split integrity
-make lock        # 3. write artifacts/paper_a_sft_v2/LOCK.json
-make train       # 4. train the 4 × 5 LoRA-SFT panel
-make eval        # 5. score bases + adapters → scores.parquet
-make analyze     # 6. strict validated analysis → tables/figures
-```
+The released score table contains **79,392 rows** and is bound by score SHA-256
+b941ddbaea7057ab1f224c510687ec5748916f5eca6a78e1d1f429e0ede5a1c3
+to Paper A lock
+cabc8dee9b158773ce0be86f799ec3833c33c18787a2aa74d05ed1a261682c25.
 
-`make analyze` is the same-source in-pipeline path. Full-archive verification
-must run from the immutable execution-source snapshot/bundle whose bytes match
-the lock; the later hardened checkout cannot honestly impersonate that snapshot.
-See [docs/reproducibility.md](docs/reproducibility.md).
+The public score-only cache binds recorded adapter and run identities but does not include adapter
+bytes, raw licensed prompts, complete run directories, or the full cloud archive. Independent
+verification of those omitted bytes requires the separately verified execution archive/source
+snapshot. See [docs/reproducibility.md](docs/reproducibility.md) for the exact guarantee.
 
-See [experiments/README.md](experiments/README.md) for what each step does.
+The archived v1 compatibility path is explicit and cannot update publication files:
+
+    make repro-legacy
+
+## Generate a new Paper A clean-v2 run (GPU)
+
+Do not overwrite the released artifacts/paper_a_sft_v2 namespace. Choose a new artifact root:
+
+    export V2_ROOT=artifacts/paper_a_sft_v2_rerun
+
+    make manifests      # 1. source/network access; pinned, hash-ranked manifests
+    make audit          # 2. independently recompute split-integrity checks
+    make lock           # 3. create the new strict v2 lock
+    make train          # 4. GPU: train the 4 × 5 LoRA-SFT panel
+    make validate-runs  #    rehash and validate all 20 adapters
+    make eval           # 5. GPU: score bases and adapters
+    make analyze        # 6. validate the matrix and emit tables/figures
+
+Manifest creation and tokenizer probing need network/Hugging Face access; training and scoring
+need a GPU. Use the immutable execution-source snapshot whose bytes match the new lock for
+full-archive verification. See [experiments/README.md](experiments/README.md) and
+[docs/reproducibility.md](docs/reproducibility.md).
+
+## Build or verify the other workspaces
+
+### Paper B — retrospective composition
+
+    make -C papers/base-adapter-composition verify
+    make -C papers/base-adapter-composition pdf
+
+The composition result is anchored to SHA-256
+92c2cbc3ea71d5e6c72bf0e6f7eb0d3ef15f0e61f9fffaada885dade460e3ccc.
+The checked-in protocol template is intentionally draft_not_executed. The protocol-locked target
+is expected to fail until a real prospective contract supplies the cohort, margin, controls,
+statistics, software lock, and systems measurements.
+
+### Mortgage benchmark and paper
+
+    make -C mortgage-benchmark smoke PY=../.venv/bin/python
+    make -C mortgage-benchmark test  PY=../.venv/bin/python
+    make -C papers/mortgage-guardrail-benchmark pdf
+
+Generation is frozen because its LLM-backed construction is stochastic; evaluation reproduces
+from the committed release and guard scores. Human/SME sign-off gates are documented in
+[mortgage-benchmark/README.md](mortgage-benchmark/README.md).
+
+### Paper C and ExpGuard
+
+- [docs/paper-c-prereg.md](docs/paper-c-prereg.md) fixes the objective-axis hypotheses,
+  estimands, GRPO single-token null, and decision rules before execution.
+- [experiments/paper_c_preference.py](experiments/paper_c_preference.py) contains the
+  deterministic preference/reward recipe and offline self-test.
+- [experiments/run_paper_c_objective.py](experiments/run_paper_c_objective.py) is a trainer
+  scaffold awaiting GPU smoke validation. No Paper C lock, objective scores, analyzer, result,
+  or paper currently exists.
+- [experiments/eval_expguard_external.py](experiments/eval_expguard_external.py) supports
+  gated Hugging Face loading, a local Parquet input, mock smoke runs, and regeneration from
+  text-free scores. The full four-checkpoint artifact is not complete or released.
+
+Code presence is not evidence of a result.
 
 ## Auditable evidence chain
 
-The study is designed to be checkable without rerunning the GPU work:
+- **Locks and releases:** Paper A v2 binds the config, manifests, audit, prompt rendering,
+  source state, score identity, and release anchor. Legacy evidence requires an explicit flag.
+- **Independent split audit:** audit outputs fail closed on overlap, label conflicts, balance,
+  upstream-family disjointness, revisions, and deterministic near-duplicate dispositions.
+- **Text-free scores:** scores.parquet stores row identities/content hashes and logits rather
+  than redistributing third-party prompt text.
+- **Canonical metrics:** [guard_research/metrics.py](guard_research/metrics.py) provides
+  sklearn-backed, tie-aware, permutation-invariant average precision; thresholds and provenance
+  live beside it.
+- **Generated manuscripts:** completed claim-bearing values enter LaTeX through generated macros
+  and tables, with byte or hash checks on the mature paths.
 
-- **V2 locks** are self-hashed and bind the config, every manifest, the audit,
-  prompt rendering, source state, and expected score identity. The historical
-  `LOCK.json` remains immutable and is accepted only with `--allow-legacy-lock`.
-- **`audit/`** independently recomputes and fail-closes on exact/conflicting
-  overlap, label balance, upstream family disjointness, selection provenance,
-  pinned revisions, and deterministic near-duplicate dispositions.
-- **`scores/scores.parquet`** stores per-row **content hashes and model logits
-  only — never raw prompt text** — so the third-party benchmark text is not
-  redistributed, yet every metric is recomputable.
-- **`analysis/`** holds `results.json`, descriptive `claim_checks.json`, per-seed
-  and per-benchmark outputs, and figures. Analysis validates the complete score
-  matrix and sibling metadata before computing anything.
+## Known boundaries
 
-All metrics come from [guard_research/metrics.py](guard_research/metrics.py)
-(sklearn-backed, tie-aware, permutation-invariant) — there is no ad-hoc
-average-precision loop anywhere in the pipeline.
+- Four compact checkpoints from two broad lineages are a fixed panel, not a model population.
+- Acts I and III use dataset-held-out but previously inspected sources.
+- Paper C's objective-axis result does not exist yet.
+- ExpGuard currently has only a partial, unreleased base-checkpoint evaluation.
+- The mortgage benchmark is synthetic and policy-card-consistent, not SME-adjudicated or legally
+  authoritative; its current G1/D0 quadrant is empty.
+- Ranking recovery does not imply threshold or calibration transfer.
+- The public Paper A cache cannot independently rehash omitted adapter bytes and full run metadata.
 
-## Data & provenance
+## Citation and licenses
 
-The corrected builder writes to the separate `artifacts/paper_a_sft_v2/` namespace,
-pulls every source at a pinned revision, and uses deterministic hash-ranked cohorts.
-The old `data/frozen_eval_rows.json` seed-7 cohorts are available only through an
-explicit legacy option. Raw third-party rows are gitignored. The released v2
-public-manifest tree under
-[`artifacts/paper_a_sft_v2/public_manifests/`](artifacts/paper_a_sft_v2/public_manifests/)
-is recursively text-free and retains identifiers, revisions, hashes, licenses,
-selection provenance, and family links. The historical v1 public index remains
-archival evidence only. Provenance uses one pinned NumPy MinHash implementation
-so the installed environment cannot change family assignments.
+[CITATION.cff](CITATION.cff) currently cites Paper A only.
 
-## Earlier broad study & Paper B
-
-The broad measurement study this paper was distilled from — protocol-dependent
-ranking, the SFT/DPO/GRPO objective comparison, a mortgage-compliance case study,
-guardrail baselines, an ensemble mitigation, and a fairness probe — is preserved
-under [legacy/](legacy) as the basis for a planned follow-up. It is **not** needed to
-reproduce this paper. Note the metric caveat in [legacy/README.md](legacy/README.md).
-
-## Citation & license
-
-If you use this work, please cite it via [CITATION.cff](CITATION.cff).
-Licensed under [Apache 2.0](LICENSE).
+Repository code and original content are licensed under [Apache 2.0](LICENSE).
+Third-party datasets and models retain their own licenses and access conditions. The mortgage
+benchmark data card currently records that a separate redistribution license has **not yet been
+selected**; review its [DATA_CARD.md](mortgage-benchmark/benchmark/v1_hmda2022/DATA_CARD.md)
+before redistributing generated prompts.
