@@ -1,0 +1,8 @@
+[
+  {
+    "name": "HMDA 2022 Snapshot National Loan-Level Dataset",
+    "publisher": "FFIEC / CFPB",
+    "url": "https://ffiec.cfpb.gov/data-publication/snapshot-national-loan-level-dataset/",
+    "use": "aggregate/de-identified grounding only; no verbatim rows; no PII"
+  }
+]
