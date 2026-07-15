@@ -1,9 +1,9 @@
 import json, os, sys
-sys.path.insert(0, "mortgage-redteaming-agentic-generator")
+sys.path.insert(0, "mortgage-benchmark")
 from magen import evaluate as EV, score_guards as SG
 from magen.store import write_json
-BASE = "mortgage-redteaming-agentic-generator/benchmark/v1_hmda2022"
-OUT = "mortgage-redteaming-agentic-generator/out_eval"
+BASE = "mortgage-benchmark/benchmark/v1_hmda2022"
+OUT = "mortgage-benchmark/out_eval"
 sp = SG.load_benchmark(BASE)
 guards = ["qwen25_15b_base", "qwen3_4b_base", "smollm2_17b_base", "smollm3_3b_base"]
 table = []

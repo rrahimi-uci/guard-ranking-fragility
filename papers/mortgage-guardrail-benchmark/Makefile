@@ -2,7 +2,7 @@ PAPER      := mortgage_guardrail_benchmark
 TECTONIC   ?= tectonic
 DOT        ?= dot
 BUILD_DIR  ?= build
-GEN        := ../../mortgage-redteaming-agentic-generator
+GEN        := ../../mortgage-benchmark
 PYTHON     ?= $(if $(wildcard ../../.venv/bin/python),../../.venv/bin/python,python3)
 
 .DEFAULT_GOAL := pdf

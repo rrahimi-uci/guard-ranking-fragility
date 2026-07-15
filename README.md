@@ -52,6 +52,8 @@ artifacts/paper_a_sft/   the evidence chain: LOCK.json, audit/, analysis/,
                      runmeta/; this namespace is immutable legacy evidence
 artifacts/paper_a_sft_v2/   primary clean-v2 artifact root for manifests, lock,
                      runs, scores, and analysis
+mortgage-benchmark/  the mortgage guardrail benchmark: the frozen HMDA-grounded
+                     v1_hmda2022 release + the magen agentic generator/evaluator
 papers/              the three manuscripts (tectonic), each with a plain-language
                      -simplified companion (same numbers) + glossary:
   finetuning-specialization/    Paper A — how guard fine-tuning specializes to

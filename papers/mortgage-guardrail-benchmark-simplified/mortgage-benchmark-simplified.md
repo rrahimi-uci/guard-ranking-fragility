@@ -127,5 +127,5 @@ adjudication, fill the empty quadrant, decontaminate, and add a fine-tuned mortg
 
 ---
 
-*Frozen benchmark: `mortgage-redteaming-agentic-generator/benchmark/v1_hmda2022/` (994 rows,
+*Frozen benchmark: `mortgage-benchmark/benchmark/v1_hmda2022/` (994 rows,
 checksummed, verified PII-free). Reproduce baselines with `magen/score_guards.py`.*
