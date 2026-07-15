@@ -21,14 +21,13 @@ COMPOSITION_FULL_ANALYSIS   ?= $(ANALYSIS)/composition-full
 LEGACY_COMPOSITION_ANALYSIS ?= $(LEGACY_ANALYSIS)/composition
 RELEASE_DIR      ?= dist/paper-a-sft-v2-release
 PAPER_ANALYSIS   ?= $(ANALYSIS)
-PAPER_DIR        = paper-a
+PAPER_DIR        = papers/finetuning-specialization
 
 .DEFAULT_GOAL := help
 .PHONY: help install install-all manifests manifests-legacy audit lock relock \
         verify-lock verify-legacy-lock train validate-runs eval analyze analyze-release \
         analyze-legacy repro repro-release repro-legacy release-package paper-sync paper-verify \
-        composition composition-full composition-legacy selftest test paper paper-html \
-        legacy-explorer clean
+        composition composition-full composition-legacy selftest test paper clean
 
 help:  ## show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -106,10 +105,6 @@ test:       ## run unit and release-integrity tests
 	$(PY) -m pytest
 paper: paper-verify  ## verify generated inputs and build the PDF
 	$(MAKE) -C $(PAPER_DIR)
-paper-html: paper  ## build the nested HTML edition
-	$(PY) $(PAPER_DIR)/paper-html/build.py
-legacy-explorer:   ## regenerate archived broad-study explorer samples
-	$(PY) $(PAPER_DIR)/paper-html/explorer/build_content_samples.py
 
 clean:      ## remove Python and paper build caches
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +

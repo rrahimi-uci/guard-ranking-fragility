@@ -52,11 +52,15 @@ artifacts/paper_a_sft/   the evidence chain: LOCK.json, audit/, analysis/,
                      runmeta/; this namespace is immutable legacy evidence
 artifacts/paper_a_sft_v2/   primary clean-v2 artifact root for manifests, lock,
                      runs, scores, and analysis
-paper-a/             the manuscript (tectonic) + generated tables/figures
-paper-a/paper-html/  the focused HTML edition (self-contained, offline math);
-                     explorer/ is an unlinked archive of the earlier broad study
-paper-a-simplified/  plain-language edition of the paper for readers with basic
-                     stats + fine-tuning knowledge (same numbers) + a glossary
+papers/              the three manuscripts (tectonic), each with a plain-language
+                     -simplified companion (same numbers) + glossary:
+  finetuning-specialization/    Paper A — how guard fine-tuning specializes to
+                     its trained-on benchmarks and does not transfer to held-out ones
+  base-adapter-composition/     Paper B — averaging a base checkpoint with its
+                     fine-tuned guard to recover held-out transfer
+  mortgage-guardrail-benchmark/ the HMDA-grounded, dual-labeled mortgage benchmark
+data/                shared data inputs (incl. guard_benchmark_hard.jsonl, the
+                     334-item hard pilot set)
 docs/                design/planning notes
 legacy/              the earlier broad study + planned Paper B code (quarantined,
                      still runnable; not part of this reproduction)
