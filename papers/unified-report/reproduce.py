@@ -45,7 +45,8 @@ def _copy_into_generated(src: Path, dst_name: str, results: dict, check: bool):
     if check and dst.exists():
         results[dst_name] = "OK (byte-identical)" if filecmp.cmp(src, dst, shallow=False) else "DRIFT!"
     else:
-        shutil.copy2(src, dst)
+        content = src.read_text().replace("[H]", "[htbp]")  # keep the report float style on regen
+        dst.write_text(content)
         results[dst_name] = "regenerated"
 
 

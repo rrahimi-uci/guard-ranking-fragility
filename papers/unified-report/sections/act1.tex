@@ -59,7 +59,7 @@ result is \emph{retrospective, not confirmatory} --- no causal or population cla
 \Cref{tab:primary} reports, per checkpoint, the untuned-base and mean-SFT macro-AP in each regime, the
 paired base-to-SFT change with its interval, and the fixed-panel aggregate.
 
-\begin{table}[H]\centering\small
+\begin{table}[htbp]\centering\small
 \caption{Act I --- fixed-panel result: base and mean-SFT macro-AP by regime, paired base-to-SFT deltas
 with two-sided $95\%$ hierarchical-bootstrap intervals, and the fixed-panel aggregate. Descriptive under
 the locked precision-focused mode; conditional on this panel.}
@@ -132,7 +132,7 @@ guard everywhere; it trades transfer for represented ranking. Per-seed values be
 tabulated in \Cref{tab:seed-values}, and show the effect is stable within each checkpoint (e.g. every
 Qwen3-4B seed is a substantial transfer loss, every SmolLM2 seed a represented gain).
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \includegraphics[width=0.6\textwidth]{specialization_plane.pdf}
 \caption{Each point is one (checkpoint, seed): horizontal axis is the represented-source macro-AP
 change, vertical axis the transfer change. \SpecializationSeedCount{}/\TotalSeedCount{} land in the
@@ -165,7 +165,7 @@ nowhere near the represented jump. The single-class stress sets make the cost co
 benign over-refusal on \code{OR-Bench} is essentially flat (\ORBenchBaseFPRPct\% to \ORBenchSFTFPRPct\%),
 so the extra false alarms are an off-distribution phenomenon, not a blanket increase in caution.
 
-\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{6pt}
 \caption{Act I --- per-benchmark paired deltas (upper) and the calibration-targeted $5\%$ FPR operating
 point plus single-class stress diagnostics (lower). Generated from the lock-bound scores.}
 \label{tab:sensitivity}
