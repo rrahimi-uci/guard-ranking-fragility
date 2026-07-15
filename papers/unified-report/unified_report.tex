@@ -16,6 +16,11 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{parskip}
 \usepackage[nameinlink,capitalize]{cleveref}
+\usepackage[section]{placeins}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{1.6ex plus .4ex minus .2ex}{0.9ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{1.2ex plus .3ex minus .2ex}{0.5ex plus .2ex}
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.6em}{}
 \setlength{\emergencystretch}{3em}
 \graphicspath{{figures/}}
 
@@ -65,26 +70,46 @@ numbers come from the external, \emph{expert-annotated} ExpGuard set. No causal,
 fair-lending claim is licensed. Sections marked \textsc{pending} await their locked run and contain no
 invented numbers.}
 
-\tableofcontents
 
 \begin{abstract}
-Teams routinely turn a small chat model into a binary safety \emph{guard} with a short fine-tune and
-report its score on a public benchmark. We argue that score is not a property of the guard: \emph{the
-benchmark co-produces the verdict.} We show this at three scales on one fixed panel of four compact
-checkpoints (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B). \textbf{(I)} Supervised fine-tuning
-(SFT) raises represented-source ranking by $\RepDelta$ macro-AP [$\RepCILower,\RepCIUpper$] but changes
-dataset-held-out transfer by only $\TransferDelta$ [$\TransferCILower,\TransferCIUpper$]: the guard
-\emph{specializes}. \textbf{(II, \textsc{pending})} We ask whether the fine-tuning \emph{objective}
-(SFT vs DPO vs GRPO) changes that trade-off, pre-registering GRPO's likely single-token null.
-\textbf{(III)} A retraining-free \emph{composition} --- averaging the base and fine-tuned calibrated
-scores --- recovers transfer relative to SFT ($\PilotTransferDeltaSFT$
-[$\PilotTransferDeltaSFTLow,\PilotTransferDeltaSFTHigh$]) at a small represented cost
-($\PilotRepDeltaSFT$). \textbf{(IV)} Across four high-compliance domains, a general-safety score does
-not cover domain compliance: our HMDA-grounded, dual-labeled \emph{mortgage} benchmark isolates
-requests that read as safe yet violate policy (the G0/D1 stratum), and an external replication on
-\emph{finance/health/law} (ExpGuard) tests whether the specialization pattern recurs. We ship a single
-\code{reproduce} entry point that regenerates every number here from committed per-row scores.
+\noindent A practitioner who fine-tunes a small language model into a binary safety \emph{guard} and
+reports its score on a public benchmark is measuring something more slippery than it appears: that
+score is not an intrinsic property of the guard but is \emph{co-produced by the benchmark it is read
+on}. This report makes that thesis precise and actionable at four scales, on one fixed panel of four
+compact instruction checkpoints (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B), each compared only
+against its \emph{own} pre-fine-tuning base on identical rows, instructions, and scoring.
+
+\smallskip
+\noindent\textbf{(I)~Specialization.} A common LoRA supervised fine-tune (SFT) lifts represented-source
+ranking uniformly to a macro-AP ceiling ($\RepDelta$~[$\RepCILower,\RepCIUpper$]) yet leaves
+dataset-held-out \emph{transfer} essentially unchanged on average
+($\TransferDelta$~[$\TransferCILower,\TransferCIUpper$]) --- an average that conceals opposite
+per-checkpoint signs (from $+0.04$ to $-0.15$); $\SpecializationSeedCount$ of $\TotalSeedCount$ guards
+land in the ``specialize'' quadrant, and at a deployable threshold the specialized guard raises transfer
+false alarms ($\TransferBaseFPRPct\%\!\to\!\TransferSFTFPRPct\%$) while \emph{losing} hard-attack recall
+($\HarmBenchBaseRecallPct\%\!\to\!\HarmBenchSFTRecallPct\%$).
+\textbf{(II)~Objective axis.} Under a locked pre-registration we ask whether the training
+\emph{objective} (SFT vs.\ DPO vs.\ GRPO) changes this trade-off, forecasting a bounded GRPO null on a
+one-token verdict; those results await the locked run.
+\textbf{(III)~Composition.} A retraining-free average of the base and fine-tuned \emph{calibrated} scores
+recovers transfer relative to SFT ($\PilotTransferDeltaSFT$~[$\PilotTransferDeltaSFTLow,\PilotTransferDeltaSFTHigh$])
+at a small represented cost ($\PilotRepDeltaSFT$) --- recovery, not dominance, and it does not restore a
+transferable decision threshold.
+\textbf{(IV)~Domains.} A general-safety score does not cover regulated-domain compliance: an
+HMDA-grounded, \emph{dual-labeled} mortgage benchmark isolates requests that read as safe yet violate
+policy (the load-bearing \textbf{G0/D1} stratum), adds a protected-class fairness-invariance gate, and is
+complemented by an external, \emph{expert-annotated} replication across \textbf{finance, health, and law}.
+
+\smallskip
+\noindent The recurring character throughout is Qwen3-4B --- the strongest base, the one that specializes
+\emph{most}, the one composition helps \emph{least}, and yet the best and fairest zero-shot mortgage guard:
+the ranking flips with the benchmark. All evidence is \emph{retrospective and estimation-only} on a fixed
+panel (mortgage labels are LLM-judge, not expert-adjudicated); no causal, universal, or fair-lending claim
+is licensed. Every number regenerates from committed per-row scores through one \code{reproduce} entry
+point --- nothing is hand-typed.
 \end{abstract}
+
+\tableofcontents
 
 \section{Introduction: why ``is this guard good?'' is the wrong question}
 \label{sec:intro}
@@ -136,8 +161,8 @@ leaderboard, not a fair-lending audit, not a deployment recommendation.
 \input{sections/act4-mortgage}      % Act IV mortgage detail
 
 % ---- Act IV floats referenced by sections/act4-mortgage ----
-\begin{figure}[H]\centering
-\includegraphics[width=0.52\textwidth]{pipeline.png}
+\begin{figure}[htbp]\centering
+\includegraphics[height=0.82\textheight,keepaspectratio]{pipeline.png}
 \caption{The agentic mortgage-benchmark construction pipeline: real HMDA records $\to$ de-identified
 banded fact sheets $\to$ plan / ground / generate / adversarially-mutate / rubric-bound-judge $\to$
 accept-iff the judged label matches the planned target $\to$ provenance + family-isolated split $\to$
@@ -202,7 +227,7 @@ confident headline but a prospectively locked evaluation on genuinely uninspecte
 \appendix
 \section{Per-seed data and provenance}
 \label{app:seeds}
-\begin{table}[H]\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
+\begin{table}[htbp]\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
 \caption{Observed represented-source and transfer macro-AP change for every SFT seed (Act I),
 generated from the same validated score matrix as \Cref{tab:primary}.}
 \label{tab:seed-values}
