@@ -116,44 +116,49 @@ def attractor():
 
 
 def prevalence():
-    """AP as a function of deployment prevalence (B.5), deterministic binormal illustration:
-    ranking quality (AUC) fixed, AP collapses and re-orders as positives get rarer."""
-    import numpy as np
-    from math import erf
-    def Phi(z):  # standard normal CDF (deterministic; no scipy/RNG)
-        return 0.5 * (1 + erf(z / np.sqrt(2)))
-    def Phinv(p):
-        # bisection inverse-CDF (deterministic)
-        lo, hi = -8.0, 8.0
-        for _ in range(80):
-            mid = 0.5 * (lo + hi)
-            if Phi(mid) < p: lo = mid
-            else: hi = mid
-        return 0.5 * (lo + hi)
-    def ap_at(auc, prev):
-        d = np.sqrt(2) * Phinv(auc)                       # AUC = Phi(d/sqrt2)
-        t = np.linspace(6, -6, 4000)                       # threshold high->low so recall 0->1
-        tpr = 1 - np.array([Phi(tt - d / 2) for tt in t])  # P(pos > t)
-        fpr = 1 - np.array([Phi(tt + d / 2) for tt in t])  # P(neg > t)
-        prec = (prev * tpr) / (prev * tpr + (1 - prev) * fpr + 1e-12)
-        return float(np.sum((prec[:-1] + prec[1:]) / 2 * np.diff(tpr)))  # AP = int prec d(recall)
-    prevs = np.geomspace(0.003, 0.5, 40)
-    fig, ax = plt.subplots(figsize=(6.4, 3.7))
-    styles = [(0.98, BLUE, "strong guard (AUC 0.98)"),
-              (0.90, GREEN, "good guard (AUC 0.90)"),
-              (0.81, ORANGE, "weak guard (AUC 0.81)")]
-    for auc, col, lab in styles:
-        ax.plot(prevs * 100, [ap_at(auc, p) for p in prevs], color=col, lw=2, label=lab)
+    """MEASURED AP as a function of deployment prevalence, from the committed Paper A transfer scores:
+    the four base guards' held-out ROC, reweighted to prevalence pi. Shows AP collapsing at low prevalence
+    and the ranking re-spacing (Qwen2.5-1.5B leads SmolLM2-1.7B at balance but they cross at ~1%)."""
+    import numpy as np, pandas as pd
+    sp = REPO / "artifacts/paper_a_sft_v2/scores/scores.parquet"
+    if not sp.exists():
+        return
+    df = pd.read_parquet(sp, columns=["sample_id", "split", "source", "gold", "model_key",
+                                       "condition", "probability_calibrated"])
+    tr = df[(df.split == "transfer_test") & (df.condition == "base")].drop_duplicates(["model_key", "sample_id"])
+    order = ["qwen25_15b", "smollm2_17b", "smollm3_3b", "qwen3_4b"]
+    pretty = {"qwen25_15b": "Qwen2.5-1.5B", "smollm2_17b": "SmolLM2-1.7B",
+              "smollm3_3b": "SmolLM3-3B", "qwen3_4b": "Qwen3-4B"}
+    cols = {"qwen25_15b": BLUE, "smollm2_17b": ORANGE, "smollm3_3b": GREEN, "qwen3_4b": RED}
+
+    def ap_prev(frame, prev):  # macro-AP over the transfer sources at prevalence `prev`, from the empirical ROC
+        aps = []
+        for s in frame.source.unique():
+            sub = frame[frame.source == s]; y = sub.gold.values.astype(int)
+            o = np.argsort(-sub.probability_calibrated.values); y = y[o]
+            P = y.sum(); N = len(y) - P
+            if P == 0 or N == 0:
+                continue
+            tpr = np.cumsum(y) / P; fpr = np.cumsum(1 - y) / N
+            prec = (prev * tpr) / (prev * tpr + (1 - prev) * fpr + 1e-12)
+            aps.append(float(np.sum(prec * np.diff(np.concatenate([[0], tpr])))))
+        return float(np.mean(aps)) if aps else float("nan")
+
+    prevs = np.geomspace(0.005, 0.5, 40)
+    fig, ax = plt.subplots(figsize=(6.6, 3.8))
+    for mk in order:
+        f = tr[tr.model_key == mk]
+        ax.plot(prevs * 100, [ap_prev(f, p) for p in prevs], color=cols[mk], lw=2, label=pretty[mk])
     for p in (1, 5, 50):
         ax.axvline(p, color=GREY, lw=0.7, ls=":")
     ax.set_xscale("log")
     ax.set_xticks([0.5, 1, 5, 10, 50]); ax.set_xticklabels(["0.5%", "1%", "5%", "10%", "50%"])
     ax.set_xlabel("deployment prevalence of unsafe prompts (log scale)")
-    ax.set_ylabel("average precision (AP)")
-    ax.set_ylim(0, 1.02)
-    ax.set_title("The prevalence chooses the winner:\nAP collapses — and re-spaces guards — as positives get rare")
-    ax.legend(frameon=False, fontsize=8.5, loc="lower right")
-    fig.subplots_adjust(bottom=0.16, top=0.86, left=0.1, right=0.97)
+    ax.set_ylabel("transfer macro-AP")
+    ax.set_ylim(0, 1.0)
+    ax.set_title("The prevalence also chooses the winner (measured):\ntransfer AP collapses — and the ranking re-spaces — as positives get rare")
+    ax.legend(frameon=False, fontsize=8.5, loc="upper left", ncol=2)
+    fig.subplots_adjust(bottom=0.16, top=0.84, left=0.1, right=0.97)
     fig.savefig(HERE / "fig_prevalence.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
@@ -275,7 +280,7 @@ def expguard_domains():
     ax.set_ylim(0.8, 1.0)
     ax.set_ylabel("average precision (AP)")
     ax.set_title("Act III breadth: zero-shot base guards on ExpGuard\n"
-                 "(finance / health / law --- best guard is not the largest)")
+                 "(finance / health / law --- ranking is not monotone in model size)")
     for xs, vals in (([i - w for i in x], fin), (list(x), hea), ([i + w for i in x], law)):
         for xi, v in zip(xs, vals):
             ax.text(xi, v + 0.003, f"{v:.2f}", ha="center", va="bottom", fontsize=6.5)

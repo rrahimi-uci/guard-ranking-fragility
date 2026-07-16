@@ -183,6 +183,23 @@ Qwen3-4B story --- strongest base, most base-correlated adapter, composition lan
 II are then one mechanism seen twice: the strongest base specializes \emph{most} (Act~I) and is helped
 \emph{least} by composition (Act~II), both because its fine-tune moves the least far from it.
 
+\subsubsection{The equal-cost control: it is the base that helps, not a second scorer}
+\label{sec:actIII-sftsft}
+
+The diversity account makes a falsifiable prediction: if the recovery came from generic two-model
+ensembling, then averaging \emph{two SFT adapters} --- same two-pass inference cost, but no base --- should
+recover about as much; if instead it is the base's less-specialized view that matters, the SFT$+$SFT
+average should recover far less. This control needs \emph{no new training}: we already hold five scored SFT
+seeds per checkpoint, so composing two of them is a pure recompute of the committed calibrated per-row
+scores. \Cref{tab:sftsft} runs it. base$+$SFT beats SFT$+$SFT on \emph{every} checkpoint, and the gap is
+largest exactly where the base is strongest ($+0.066$ for SmolLM3-3B, $+0.102$ for Qwen3-4B, vs.\ $+0.013$
+for the already-friendly SmolLM2-1.7B). Two independently seeded adapters are near-copies of one another, so
+their average barely improves on a single SFT guard ($0.79$--$0.84$, close to SFT's own transfer); the base
+contributes a genuinely different ranking of the hard off-source cases, and that is what the composition is
+cashing in. The recovery is therefore attributable to \emph{keeping the base}, not to running a second model.
+
+\input{generated/tab_sftsft_gen}
+
 \subsection{Ranking is not calibration: the operating-point gap}
 \label{sec:actIII-operating}
 
@@ -223,18 +240,12 @@ only primary operator; the alternatives are reported for transparency, as ablati
 attached.
 
 \paragraph{Stated gaps.}
-This is a pilot, and two controls that would sharpen the mechanism are missing.
-\emph{(i) An equal-cost SFT$+$SFT control.} Composition runs two models; some of its gain could be
-generic two-model ensembling rather than the base's specific complementary view. Composing two
-independent SFT adapters (same 2$\times$ inference cost, no base) would separate ``the base helps''
-from ``any second scorer helps.'' We have not run it, but note it needs \emph{no} new training: we
-already hold five scored SFT seeds per checkpoint, so composing two of them is a pure analysis-time
-recompute of the same calibrated per-row scores. The diversity argument above predicts it recovers
-\emph{little} --- two seeds of the same fine-tune are highly correlated, so their average gains almost
-nothing over one --- which would sharpen ``keeping the base matters'' rather than dilute it. \emph{(ii) A real WiSE-FT rescoring
-control.} We contrast against weight-space merging conceptually (\Cref{sec:actIII-weightspace}) but
-do not actually rescore a WiSE-FT / soup checkpoint on this panel, so we cannot say which family
-recovers more transfer here.
+This is a pilot, and one control that would sharpen the mechanism is still missing.
+\emph{A real WiSE-FT rescoring control.} We contrast against weight-space merging conceptually
+(\Cref{sec:actIII-weightspace}) but do not actually rescore a WiSE-FT / soup checkpoint on this panel, so
+we cannot say which family recovers more transfer here. (The other control we flagged in earlier drafts ---
+an equal-cost SFT$+$SFT average --- is now \emph{run} rather than pending, in \Cref{sec:actIII-sftsft}: it
+confirms the recovery is the base's doing, not generic ensembling.)
 
 \paragraph{And what it does not license.}
 No Pareto-dominance claim (composition can leave the strongest base worse off); no causal or

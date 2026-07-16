@@ -116,9 +116,11 @@ not interpolable weights, so it is portable across checkpoints that could never 
 it pays for two inference passes. We position composition as a \emph{transfer-recovery remedy for guard
 specialization} specifically (represented cost small, transfer recovered relative to SFT and landing
 above base; \Cref{tab:pilot-summary,tab:pilot-models}), and we are explicit about what the pilot does
-\emph{not} include --- the equal-cost SFT+SFT control and an actual WiSE-FT weight-space rescoring are
-left as controls in the roadmap, and the logit-average variant is reported only as a non-promotable
-ablation. To our knowledge this calibrated output-space average has not been evaluated as a targeted fix
+\emph{not} include --- an actual WiSE-FT weight-space rescoring is
+left as a control in the roadmap, and the logit-average variant is reported only as a non-promotable
+ablation. The equal-cost SFT+SFT control \emph{is} run (\Cref{tab:sftsft}): base+SFT beats SFT+SFT on every
+checkpoint, so the transfer recovery is attributable to keeping the base rather than to generic two-model
+ensembling. To our knowledge this calibrated output-space average has not been evaluated as a targeted fix
 for the represented/transfer split in small safety guards.
 
 \subsection{Domain-specialized guarding and regulated verticals}
