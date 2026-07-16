@@ -63,43 +63,49 @@ Across Objectives and Four High-Compliance Domains (Law $\cdot$ Finance $\cdot$ 
 
 
 \begin{abstract}
-\noindent A practitioner who fine-tunes a small language model into a binary safety \emph{guard} and
-reports its score on a public benchmark is measuring something more slippery than it appears: that
-score is not an intrinsic property of the guard but is \emph{co-produced by the benchmark it is read
-on}. This report makes that thesis precise and actionable at four scales, on one fixed panel of four
-compact instruction checkpoints (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B), each compared only
-against its \emph{own} pre-fine-tuning base on identical rows, instructions, and scoring.
+\noindent\textbf{The goal.} When a practitioner fine-tunes a small language model into a binary safety
+\emph{guard} and reports its benchmark score, that number reads like a property of the guard. It is not.
+This report shows --- precisely, and at four scales --- that a guard's score is \emph{co-produced}: by the
+benchmark it is read on, the training objective, the decision threshold, and the domain. Establishing this
+requires a fair yardstick, so we measure on one fixed panel of four compact instruction checkpoints
+(Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B) and compare each guard only against its \emph{own}
+pre-fine-tuning base, on identical rows, prompts, and scoring --- attributing every change to the
+fine-tune, not to a difference between models.
 
 \smallskip
-\noindent\textbf{(I)~Specialization.} A common LoRA supervised fine-tune (SFT) lifts represented-source
-ranking uniformly to a macro-AP ceiling ($\RepDelta$~[$\RepCILower,\RepCIUpper$]) yet leaves
-dataset-held-out \emph{transfer} essentially unchanged on average
-($\TransferDelta$~[$\TransferCILower,\TransferCIUpper$]) --- an average that conceals opposite
-per-checkpoint signs (from $+0.04$ to $-0.15$); $\SpecializationSeedCount$ of $\TotalSeedCount$ guards
-land in the ``specialize'' quadrant, and at a deployable threshold the specialized guard raises transfer
-false alarms ($\TransferBaseFPRPct\%\!\to\!\TransferSFTFPRPct\%$) while \emph{losing} hard-attack recall
-($\HarmBenchBaseRecallPct\%\!\to\!\HarmBenchSFTRecallPct\%$).
-\textbf{(II)~Objective axis.} Under a locked pre-registration we ask whether the training
-\emph{objective} (SFT vs.\ DPO vs.\ GRPO) changes this trade-off, forecasting a bounded GRPO null on a
-one-token verdict; those results await the locked run.
-\textbf{(III)~Composition.} A retraining-free average of the base and fine-tuned \emph{calibrated} scores
-recovers transfer relative to SFT ($\PilotTransferDeltaSFT$~[$\PilotTransferDeltaSFTLow,\PilotTransferDeltaSFTHigh$])
-at a small represented cost ($\PilotRepDeltaSFT$) --- recovery, not dominance, and it does not restore a
-transferable decision threshold.
-\textbf{(IV)~Domains.} A general-safety score does not cover regulated-domain compliance: an
-HMDA-grounded, \emph{dual-labeled} mortgage benchmark isolates requests that read as safe yet violate
-policy (the load-bearing \textbf{G0/D1} stratum), adds a protected-class fairness-invariance gate, and is
-complemented by an external, \emph{expert-annotated} replication across \textbf{finance, health, and law}
-(all four guards rank domain violations well zero-shot, AP $0.88$--$0.96$, but the leader is SmolLM3-3B ---
-\emph{not} the largest model, and a different winner than the mortgage benchmark picks).
+\noindent\textbf{(I) Fine-tuning specializes; it does not transfer.} A standard LoRA supervised fine-tune
+(SFT) lifts ranking on training-\emph{represented} sources to a near-common ceiling ($\approx\!0.98$
+macro-AP; $\RepDelta$ on average) but on \emph{held-out} datasets changes transfer by only $\TransferDelta$
+on average --- an average that hides opposite per-checkpoint signs, from $+0.04$ to $-0.15$. We show this is
+an \emph{attractor}: SFT pulls every checkpoint to a benchmark-fixed endpoint (transfer $0.807\!\pm\!0.024$
+across the panel), so the tempting reading ``stronger bases specialize more'' is \emph{forced arithmetic}
+(the change slopes $-1$ in the base score, $R^2\!=\!0.91$), not a behavioral law. At a deployable threshold
+the specialized guard raises transfer false alarms ($\TransferBaseFPRPct\%\!\to\!\TransferSFTFPRPct\%$) and
+\emph{loses} hard-attack recall ($\HarmBenchBaseRecallPct\%\!\to\!\HarmBenchSFTRecallPct\%$).
+\textbf{(II) The objective is an axis, not a detail.} A locked pre-registration asks whether SFT vs.\ DPO
+vs.\ GRPO changes the trade-off; a single-token argument predicts a bounded GRPO null, and the result
+awaits the locked run.
+\textbf{(III) Composition recovers transfer without retraining.} Averaging the base's and the fine-tune's
+\emph{calibrated} scores lifts transfer over SFT for all four checkpoints ($\PilotTransferDeltaSFT$) as an
+ensemble diversity gain --- but it is recovery, not dominance (it can sit below the untuned base), and it
+restores no transferable threshold.
+\textbf{(IV) A change of domain hides the violation.} A general-safety score does not cover
+regulated-domain compliance. An HMDA-grounded, \emph{dual-labeled} mortgage benchmark isolates requests
+that read as safe yet violate policy (the load-bearing \textbf{G0/D1} stratum) and adds a protected-class
+fairness-invariance gate; an external, \emph{expert-annotated} set (ExpGuard, 2{,}275 rows) extends the
+test to \textbf{finance, health, and law}, where all four base guards rank violations well zero-shot
+(AP $0.88$--$0.96$) but the best is SmolLM3-3B --- not the largest model, and a different winner than the
+mortgage benchmark picks.
 
 \smallskip
-\noindent The recurring character throughout is Qwen3-4B --- the strongest base, the one that specializes
-\emph{most}, the one composition helps \emph{least}, and yet the best and fairest zero-shot mortgage guard:
-the ranking flips with the benchmark. All evidence is \emph{retrospective and estimation-only} on a fixed
-panel (mortgage labels are LLM-judge, not expert-adjudicated); no causal, universal, or fair-lending claim
-is licensed. Every number regenerates from committed per-row scores through one \code{reproduce} entry
-point --- nothing is hand-typed.
+\noindent The recurring character is \textbf{Qwen3-4B}: the strongest base, the one that specializes
+\emph{most}, the one composition helps \emph{least}, yet the best and fairest zero-shot \emph{mortgage}
+guard --- the ranking flips with the benchmark. All evidence is \emph{retrospective and estimation-only}
+on a fixed panel (mortgage labels are LLM-judge, not expert-adjudicated), so no causal, universal,
+deployment, or fair-lending claim is licensed. Every number, table, and figure regenerates from committed
+per-row scores through one \code{reproduce} entry point --- nothing is hand-typed --- and all code, data
+manifests, and the frozen benchmark are public
+(\Cref{sec:repro}; \url{https://github.com/rrahimi-uci/guard-ranking-fragility}).
 \end{abstract}
 
 \clearpage
@@ -133,15 +139,32 @@ verdict} --- and four questions on a single shared panel of checkpoints:
   \item \textbf{Does any of it survive a change of domain?} (\Cref{sec:actIV}) --- across law, finance, health, and mortgage.
 \end{enumerate}
 
-\paragraph{What is new here (and what is not).} Prior work shows fine-tuning can weaken safety behavior
+\paragraph{What is new here.} Prior work shows fine-tuning can weaken safety behavior
 \citep{hsiung2025guardrails}, that guards overfit their training policy
 \citep{liu2026domaingeneralizable}, and that a plain instruction model can rival a purpose-built guard
-\citep{bassani2024guardbench}; those compare \emph{different} models. Our through-line is a
-\emph{paired, same-checkpoint} measurement --- each guard against its own base, on identical rows and
-scoring --- extended across \emph{objectives}, a \emph{composition} remedy, and \emph{four domains}.
-We introduce no new model, metric, or training algorithm, and make no causal or universal claim; the
-output is a reproducible, estimation-only characterization of this fixed panel plus one external
-domain replication.
+\citep{bassani2024guardbench} --- but those compare \emph{different} models, which confounds ``the
+fine-tune changed the guard'' with ``the two models differ.'' Our through-line removes that confound with
+a \emph{paired, same-checkpoint} measurement and then pushes it across objectives, a composition remedy,
+and four domains. Concretely, the novel contributions are:
+\begin{enumerate}[leftmargin=1.7em,itemsep=1pt]
+  \item \textbf{A paired estimand} that cleanly separates represented-source gain from held-out transfer,
+  with a fixed-panel hierarchical bootstrap (\Cref{sec:actI}).
+  \item \textbf{The ``attractor'' finding:} SFT drives every checkpoint to a benchmark-fixed endpoint, so
+  the popular reading ``stronger bases specialize more'' is arithmetic; the sharper, falsifiable claim is
+  \emph{endpoint invariance} (\Cref{sec:actI-coupling}).
+  \item \textbf{A pre-registered objective axis} (SFT/DPO/GRPO) with a single-token argument for why GRPO
+  should end KL-close (\Cref{sec:actII}), committed before the run as an anti-HARKing timestamp.
+  \item \textbf{A retraining-free composition operator} that recovers transfer as an ensemble diversity
+  gain, with the mechanism (base-correlated adapter errors) made explicit (\Cref{sec:actIII}).
+  \item \textbf{A dual-labeled, HMDA-grounded mortgage benchmark} ($G\times D$) with a protected-class
+  fairness-invariance gate, plus an external, expert-annotated finance/health/law replication
+  (\Cref{sec:actIV}).
+  \item \textbf{A reproduce-from-committed-scores pipeline:} one entry point regenerates every table and
+  figure and asserts byte-identity against the paper (\Cref{sec:repro}).
+\end{enumerate}
+\emph{What is \textbf{not} new:} we introduce no new model, metric, or training algorithm, and make no
+causal, universal, or deployment claim --- the output is a reproducible, estimation-only characterization
+of this fixed panel plus one external domain replication.
 
 \paragraph{Scope.} English input-prompt classification; binary \code{safe}/\code{unsafe}; four compact
 checkpoints (1.5--4B); one LoRA recipe; objectives SFT/DPO/GRPO; four regulated domains. Not a
@@ -251,6 +274,17 @@ its lock-pinned env; Paper B, mortgage, ExpGuard, and Paper C from committed sco
 byte-identity with the committed report tables. It needs no GPU and no network; only re-training the
 guards or re-scoring the gated ExpGuard set requires a GPU / dataset access. Raw third-party rows are
 referenced by pinned identifier + revision + content hash, not redistributed.
+
+\paragraph{Code and data availability.} All code, data manifests, generated tables, and the frozen
+benchmark are public at \url{https://github.com/rrahimi-uci/guard-ranking-fragility}. The one-command
+pipeline is \code{papers/unified-report/reproduce.py} (\code{make reproduce}); the frozen, dual-labeled
+mortgage benchmark ships at \code{mortgage-benchmark/benchmark/v1\_hmda2022/} (994 rows,
+SHA-256-checksummed, with a text-free index); the committed per-row guard scores that regenerate every
+number live under \code{artifacts/} (Paper~A in \code{artifacts/paper\_a\_sft\_v2/}, the mortgage baseline
+in \code{mortgage-benchmark/out\_eval/}, and the finance/health/law scores in
+\code{artifacts/expguard\_external/}); the figures are built by \code{papers/unified-report/figures/make\_figures.py};
+and the Act~II objective-axis pre-registration and trainer are \code{docs/paper-c-prereg.md} and
+\code{experiments/run\_paper\_c\_objective.py}.
 
 \section{Conclusion}
 \label{sec:conclusion}
