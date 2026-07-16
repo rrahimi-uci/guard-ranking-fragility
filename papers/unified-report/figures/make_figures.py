@@ -176,7 +176,7 @@ def act3_composition():
     ax.set_xticks(list(x)); ax.set_xticklabels(labels)
     ax.set_ylim(min(base + sft + comp) - 0.05, 1.0)
     ax.set_ylabel("dataset-held-out transfer macro-AP")
-    ax.set_title("Act III: composition recovers transfer above SFT\n(recovery, not dominance — it can dip below base, e.g. Qwen3-4B)")
+    ax.set_title("Act II: composition recovers transfer above SFT\n(recovery, not dominance — it can dip below base, e.g. Qwen3-4B)")
     # legend BELOW the axis (clear of the 2-line x labels) so it never overlaps the bars
     ax.legend(frameon=False, fontsize=9, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3)
     fig.subplots_adjust(bottom=0.24)
@@ -244,7 +244,7 @@ def mortgage_baseline():
     ax2.set_ylim(0, max(dctx + [thr]) * 1.35)
     ax2.set_title("Protected-pair gap")
     for i, v in enumerate(dctx): ax2.text(i, v + 0.004, f"{v:.3f}", ha="center", va="bottom", fontsize=7)
-    fig.suptitle("Act IV: general guards rank mortgage violations only moderately, and fairness varies",
+    fig.suptitle("Act III: general guards rank mortgage violations only moderately, and fairness varies",
                  fontsize=10.5, y=1.00)
     fig.subplots_adjust(top=0.84, bottom=0.28, wspace=0.34, left=0.085, right=0.985)
     fig.savefig(HERE / "fig_mortgage_baseline.pdf", metadata={"CreationDate": None}); plt.close(fig)
@@ -274,7 +274,7 @@ def expguard_domains():
     ax.set_xticks(list(x)); ax.set_xticklabels(labels)
     ax.set_ylim(0.8, 1.0)
     ax.set_ylabel("average precision (AP)")
-    ax.set_title("Act IV breadth: zero-shot base guards on ExpGuard\n"
+    ax.set_title("Act III breadth: zero-shot base guards on ExpGuard\n"
                  "(finance / health / law --- best guard is not the largest)")
     for xs, vals in (([i - w for i in x], fin), (list(x), hea), ([i + w for i in x], law)):
         for xi, v in zip(xs, vals):

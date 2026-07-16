@@ -1,4 +1,4 @@
-\section{Act III --- Compose, don't (re)tune: recovering transfer without retraining}
+\section{Act II --- Compose, don't (re)tune: recovering transfer without retraining}
 \label{sec:actIII}
 
 Act I left us with an uncomfortable asymmetry. Supervised fine-tuning (SFT) buys a large,
@@ -6,7 +6,7 @@ uniform gain on the sources a guard trained on ($\RepDelta$ macro-AP,
 [$\RepCILower,\RepCIUpper$]) while, on average, giving back a little transfer to sources it
 never saw ($\TransferDelta$ [$\TransferCILower,\TransferCIUpper$]), and for the strongest
 base the transfer cost is steep. The instinct is to tune \emph{harder} --- more data, more
-steps, a different objective (that is Act~II). Act~III asks the opposite question:
+steps, a different training recipe. Act~II asks the opposite question:
 \emph{instead of overwriting the base's judgment, can we keep it in the decision?} The base
 checkpoint, before any guard fine-tune, is often a surprisingly good \emph{transfer} scorer
 (in \Cref{sec:actI} three of four bases transfer better than their own SFT guard). If SFT's
@@ -180,8 +180,8 @@ averaging shrinks as the two scorers' errors grow more \emph{correlated}. A LoRA
 \emph{anchored} to its base, so a strong base's fine-tune stays close to it: their errors correlate more,
 the diversity term shrinks, and the average can no longer clear the (already high) base. That is exactly the
 Qwen3-4B story --- strongest base, most base-correlated adapter, composition landing below base. Acts~I and
-III are then one mechanism seen twice: the strongest base specializes \emph{most} (Act~I) and is helped
-\emph{least} by composition (Act~III), both because its fine-tune moves the least far from it.
+II are then one mechanism seen twice: the strongest base specializes \emph{most} (Act~I) and is helped
+\emph{least} by composition (Act~II), both because its fine-tune moves the least far from it.
 
 \subsection{Ranking is not calibration: the operating-point gap}
 \label{sec:actIII-operating}
@@ -240,6 +240,6 @@ recovers more transfer here.
 No Pareto-dominance claim (composition can leave the strongest base worse off); no causal or
 mechanistic claim (the ensemble intuition is a motivation, not a proof); and no population or
 significance claim (all numbers are descriptive contrasts on a fixed four-checkpoint panel, with a
-manifest inspected during development). Finally, whether this same operator recovers transfer for
-guards tuned with \emph{other objectives} --- the DPO/GRPO arms --- is hypothesis~H2 of Act~II and
-is answered in \Cref{sec:actII} once that locked run lands, not here.
+manifest inspected during development). Finally, we compose only the SFT adapter here; whether the same
+operator recovers transfer for guards tuned with \emph{other objectives} (e.g.\ preference optimization)
+is left open.
