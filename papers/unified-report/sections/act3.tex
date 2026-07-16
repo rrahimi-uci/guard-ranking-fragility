@@ -227,7 +227,11 @@ This is a pilot, and two controls that would sharpen the mechanism are missing.
 \emph{(i) An equal-cost SFT$+$SFT control.} Composition runs two models; some of its gain could be
 generic two-model ensembling rather than the base's specific complementary view. Composing two
 independent SFT adapters (same 2$\times$ inference cost, no base) would separate ``the base helps''
-from ``any second scorer helps'' --- we have not run it. \emph{(ii) A real WiSE-FT rescoring
+from ``any second scorer helps.'' We have not run it, but note it needs \emph{no} new training: we
+already hold five scored SFT seeds per checkpoint, so composing two of them is a pure analysis-time
+recompute of the same calibrated per-row scores. The diversity argument above predicts it recovers
+\emph{little} --- two seeds of the same fine-tune are highly correlated, so their average gains almost
+nothing over one --- which would sharpen ``keeping the base matters'' rather than dilute it. \emph{(ii) A real WiSE-FT rescoring
 control.} We contrast against weight-space merging conceptually (\Cref{sec:actIII-weightspace}) but
 do not actually rescore a WiSE-FT / soup checkpoint on this panel, so we cannot say which family
 recovers more transfer here.
