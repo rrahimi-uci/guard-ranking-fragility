@@ -35,10 +35,14 @@ RLVR recipes (DeepSeek-R1, Tulu-3) deliberately avoid. Built deterministically f
 (`preference_recipe_sha256` recorded in the lock):
 
 - **DPO:** pair `chosen` = correct verdict token, `rejected` = wrong verdict token; reference = frozen base; knob β (default first).
-- **GRPO:** reward = **graded margin** on `z_unsafe − z_safe` toward the correct side (not raw 0/1), to
-  avoid single-token gradient starvation (once the guard is confident, all sampled 1-token verdicts agree
-  → group std → 0 → no gradient). Dr.GRPO/RLOO-style **unnormalized** advantage (two reward values make
-  std-normalization pure difficulty bias). Class/severity-weighted correctness if the manifest is skewed.
+- **GRPO:** reward = **verifiable correctness of the _sampled_ verdict** (`+1` correct / `0` wrong / `−0.5`
+  unparseable; optional confidence-margin bonus on `z_unsafe − z_safe`, **off by default**). The reward is a
+  function of the sampled token, so a group with disagreeing verdicts has non-zero advantage. Single-token
+  gradient starvation (once the guard is confident all sampled verdicts agree → group std → 0 → no gradient)
+  is handled by **raised temperature + dynamic sampling** (drop unanimous, zero-variance groups), *not* by
+  grading the reward — a prompt-only reward would give every rollout the same value and a zero advantage.
+  Dr.GRPO/RLOO-style **unnormalized** advantage. Class/severity-weighted correctness if the manifest is skewed.
+  (Matches `experiments/paper_c_preference.py::graded_reward`.)
 
 ## 4. Pre-registered hypotheses
 

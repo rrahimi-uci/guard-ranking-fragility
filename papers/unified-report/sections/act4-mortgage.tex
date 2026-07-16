@@ -211,7 +211,14 @@ The gate is a single number, the mean absolute within-pair score gap:
 where $\mathcal{P}$ is the set of protected pairs and $p(\cdot)$ is the guard's unsafe probability. The
 target is $\Delta_{\mathrm{context}}\approx 0$: a fair guard's score is \emph{invariant} to the
 protected token alone. A nonzero value means the protected word by itself is moving the guard --- the
-signature of disparate treatment in the screening layer.
+signature of disparate treatment in the screening layer. This gap also has a threshold-free reading:
+for one pair, $|p(x_a)-p(x_b)|$ is exactly the fraction of possible decision cutoffs at which the protected
+token \emph{alone} flips the verdict, so $\Delta_{\mathrm{context}}$ is the pair-averaged
+\emph{decision-flip rate} (the worst observed pair, $0.51$, flips on a majority of feasible operating
+points). One caveat runs the other way: if a guard's probabilities \emph{saturate} --- both members near
+$0$ --- a small $\Delta_{\mathrm{context}}$ can be trivial rather than fair, so a value of exactly $0.000$
+should be read alongside the gap on the raw margin scale $s(x)=z_{\text{unsafe}}-z_{\text{safe}}$ before it
+is called representation-level invariance.
 
 \subsection{Evaluation protocol and zero-shot baseline results}
 \label{sec:actIV-mortgage-results}
@@ -222,7 +229,10 @@ and scored with the repo's canonical tie-aware metrics: threshold-free \emph{mac
 for $G$, $D$, and final (\emph{macro} averages so each label counts equally; \emph{tie-aware} handles
 rows with identical scores fairly rather than ordering them arbitrarily); a per-quadrant miss rate at a
 calibration-selected operating point (a cutoff chosen on the dev split); and $\Delta_{\mathrm{context}}$
-from \Cref{eq:delta-context}. We score the four base instruction checkpoints from the companion study
+from \Cref{eq:delta-context}. Because the G1/D0 quadrant is empty, every $G{=}1$ row is also $D{=}1$, so the
+composed label $\text{final}=G\lor D$ equals $D$ row-for-row; consequently $\text{AP}\cdot\text{final}\equiv
+\text{AP}\cdot D$ --- the final column in \Cref{tab:baseline} duplicates $\text{AP}\cdot D$ by construction,
+not by coincidence. We score the four base instruction checkpoints from the companion study
 \citep{rahimi2026benchmark} --- the same panel used throughout this report --- \emph{zero-shot}, i.e.\
 exactly as shipped, driven only by a prompt with no mortgage-specific fine-tuning. Gated off-the-shelf
 guards \citep{llamaguard,wildguard} were not scored in this run (their licenses were not accepted), and
@@ -251,7 +261,10 @@ composition helped least (\Cref{sec:actIII}), yet here it is the best and faires
 guard --- the ranking flips with the benchmark.
 
 Two numbers are deliberately \emph{not} reported. First, $\text{AP}\cdot G$ rests on only 6 G1
-positives in this split and is correspondingly noisy. Second, we do not report a fixed-threshold
+positives in this split and is correspondingly noisy --- a random ranker already scores
+$\text{AP}\cdot G\approx 6/146\approx0.04$, so that column must be read against this chance floor, not
+against $0$, and the spread from SmolLM2's $0.261$ to Qwen3-4B's $1.000$ is a wide small-sample band, not
+four comparable point estimates. Second, we do not report a fixed-threshold
 ``caught at 5\% FPR'' count for the G0/D1 stratum: for these zero-shot guards the unsafe-probability
 distribution is tightly clustered, so a dev-calibrated cutoff sits on a knife-edge --- its G0/D1 catch
 count swung by more than 50 rows between library versions of the quantile routine, i.e.\ it is not
@@ -276,8 +289,13 @@ LLM-judge, policy-card-consistent, measured by self-consistency --- no complianc
 cards and there is no human Fleiss-$\kappa$. \textbf{(2) Not a full $2\times2$}: the G1/D0 quadrant is
 empty, so orthogonality is shown on three quadrants. \textbf{(3) Frozen, not regenerable}: generation is
 stochastic and intentionally fixed; only the \emph{evaluation} reproduces. \textbf{(4) Small samples}:
-the public-test baselines rest on a single split with 6 G1 positives and 3 protected pairs. The
-benchmark \emph{surfaces} guard behavior on the G0/D1 stratum and on protected-pair invariance; it
+the public-test baselines rest on a single split with 6 G1 positives and 3 protected pairs, so
+``fairest'' is a thin claim as stated. Because these guards are \emph{zero-shot} (never tuned on the
+benchmark), all \textbf{39} release protected pairs are legitimate evaluation data --- scoring them is a
+zero-training recompute that would firm up the invariance ranking, and is listed as a roadmap step
+(reported separately from the public-test pairs, so the number stays comparable with a future
+fine-tuned arm). The benchmark \emph{surfaces} guard behavior on the G0/D1 stratum and on protected-pair
+invariance; it
 certifies nothing about any real lender, model, or population. The path to confirmatory use is stated
 in \Cref{sec:roadmap}: SME adjudication with per-label Fleiss-$\kappa$, populating G1/D0,
 re-decontaminating against the v2 general sources, and adding a domain-fine-tuned guard arm.
