@@ -4,14 +4,13 @@
 One entry point (`make reproduce` calls this). For each study it re-derives the generated LaTeX
 tables the report `\\input`s, copies the canonical outputs into `generated/`, and (with --check)
 asserts byte-identity with the committed copies. It needs NO GPU and NO network; only committed
-scores + the pinned analysis environment. Studies whose results are not yet produced (e.g. the
-Paper C objective axis before its GPU run) are reported as PENDING, not failed.
+scores + the pinned analysis environment.
 
   Paper A (SFT specialization)   analyze_paper_a_sft.py --release-cache   [needs the LOCK-pinned env]
   Paper B (composition)          build_pilot_artifacts.py
   Mortgage (dual-label G x D)    tools/reeval_from_scores.py + emit_baseline_tex.py
   ExpGuard (finance/health/law)  eval_expguard_external.py --from-scores  -> emit table
-  Paper C (objective axis)       analyze_paper_c.py --from-scores         [PENDING until trained]
+  Latency (guard P50/P90/P99)    from committed scores.parquet latency_ms   -> emit table
 
 Usage:  python reproduce.py [--check] [--build]
         --check : fail if any regenerated table differs from the committed generated/ copy
@@ -187,16 +186,6 @@ def latency(results, check):
         results["latency_table.tex"] = "regenerated"
 
 
-def paper_c(results, check):
-    scores = REPO / "artifacts/paper_c_objective_v2"
-    if not scores.exists():
-        results["paper_c_table.tex"] = "PENDING (objective-axis GPU run not yet done)"
-        return
-    r = _run([PYS, "experiments/analyze_paper_c.py", "--from-scores", "--out", str(scores / "analysis")])
-    results["paper_c_table.tex"] = "regenerated" if r.returncode == 0 else "FAIL"
-
-
-
 def figures(results, check):
     r = _run([PYS, 'figures/make_figures.py'], cwd=HERE)
     results['figures'] = 'regenerated' if r.returncode == 0 else 'FAIL: ' + (r.stderr or '')[-80:]
@@ -209,7 +198,7 @@ def main(argv=None) -> int:
 
     GEN.mkdir(exist_ok=True)
     results: dict[str, str] = {}
-    for fn in (paper_a, paper_b, mortgage, expguard, latency, paper_c, figures):
+    for fn in (paper_a, paper_b, mortgage, expguard, latency, figures):
         try:
             fn(results, args.check)
         except Exception as e:  # keep going; report per-study

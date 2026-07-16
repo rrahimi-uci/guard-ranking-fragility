@@ -11,18 +11,17 @@ assistant acts. The usual recipe — fine-tune a chat model into a guard and rep
 hides the quantity a practitioner actually needs: *what did the fine-tune change relative to the same
 model before tuning, and does that change survive on data the guard never saw?* This repository answers
 that with a **paired, same-checkpoint** design on one fixed panel of four instruction checkpoints
-(Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B), organized as a four-act program:
+(Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B), organized as a three-act program:
 
 1. **Specialize** — measure what LoRA-SFT changes relative to each checkpoint (represented vs. transfer).
-2. **Objectives** — a *pre-registered* SFT/DPO/GRPO comparison (the GPU run is still pending).
-3. **Compose** — test whether averaging base + adapter recovers transfer without retraining.
-4. **Domains** — a dual-labeled mortgage benchmark in depth, plus finance/health/law breadth (ExpGuard).
+2. **Compose** — test whether averaging base + adapter recovers transfer without retraining.
+3. **Domains** — a dual-labeled mortgage benchmark in depth, plus finance/health/law breadth (ExpGuard).
 
 The **[unified research report](papers/unified-report/unified_report.pdf)** is the synthesis:
-*The Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards Across Objectives
-and High-Compliance Business Domains.* Everything in it regenerates from committed per-row scores
-through one entry point (below). It is comprehensive but **not release-ready**: the Act II objective-axis
-(Paper C) has no result yet. See the [status ledger](papers/unified-report/STATUS.md).
+*The Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards in
+High-Compliance Business Domains.* Everything in it regenerates from committed per-row scores through one
+entry point (below); all three acts have committed, reproducible results. See the
+[status ledger](papers/unified-report/STATUS.md).
 
 ---
 
@@ -31,10 +30,10 @@ through one entry point (below). It is comprehensive but **not release-ready**: 
 ```text
 guard-ranking-fragility/
 ├── papers/                              # all manuscripts (LaTeX + built PDFs)
-│   ├── unified-report/                  # ← the four-act synthesis (primary artifact)
+│   ├── unified-report/                  # ← the three-act synthesis (primary artifact)
 │   │   ├── unified_report.tex           #   main document
 │   │   ├── unified_report.pdf           #   built PDF (committed; refreshed by `make pdf`)
-│   │   ├── sections/                    #   background + related-work + the four acts + limitations
+│   │   ├── sections/                    #   background + related-work + the three acts + limitations
 │   │   ├── generated/                   #   auto-generated tables/macros (written by reproduce.py)
 │   │   ├── figures/                     #   matplotlib figures + Graphviz .dot flowcharts + make_figures.py
 │   │   ├── reproduce.py                 #   one-command "regenerate every result" harness
@@ -44,14 +43,14 @@ guard-ranking-fragility/
 │   └── mortgage-guardrail-benchmark[-simplified]/# formal mortgage paper (+ plain-language edition)
 │
 ├── guard_research/                      # canonical library: metrics, thresholds, prompts, provenance
-├── experiments/                         # Paper A pipeline; composition; Paper C + ExpGuard scorers
+├── experiments/                         # Paper A pipeline; composition; ExpGuard scorer
 ├── mortgage-benchmark/                  # generator (magen/), frozen release, scorer, baselines, tests
 ├── artifacts/
 │   ├── paper_a_sft_v2/                  # primary clean-v2 lock, release, text-free scores, analysis
 │   ├── paper_a_sft/                     # immutable archived-v1 evidence
-│   └── expguard_external/               # text-free finance/health/law per-row scores (Act IV breadth)
+│   └── expguard_external/               # text-free finance/health/law per-row scores (Act III breadth)
 ├── configs/                            # Paper A config + v2 release anchor
-├── docs/                               # reproducibility contracts, Paper C pre-registration, plans
+├── docs/                               # reproducibility contracts, pre-registration, plans
 ├── tests/                              # canonical unit + artifact-contract tests
 ├── legacy/                             # quarantined earlier broad-study code
 ├── Makefile  pyproject.toml  requirements.txt  .python-version  .env.example
@@ -98,10 +97,10 @@ make -C papers/unified-report reproduce-check    # + assert byte-identity with t
 | Study | Source of truth | Notes |
 |---|---|---|
 | Act I — specialization | `artifacts/paper_a_sft_v2/scores/scores.parquet` | needs the lock-pinned analysis env |
-| Act III — composition | `artifacts/paper_a_sft_v2/analysis/composition/` | from committed scores |
-| Act IV — mortgage | `mortgage-benchmark/out_eval/scores_*.json` | from committed scores |
-| Act IV — ExpGuard (finance/health/law) | `artifacts/expguard_external/scores_*.json` | `eval_expguard_external.py --from-scores` |
-| Act II — objective axis | *pending* | reported `PENDING` until the GPU run is committed |
+| Act II — composition | `artifacts/paper_a_sft_v2/analysis/composition/` | from committed scores |
+| Act III — mortgage | `mortgage-benchmark/out_eval/scores_*.json` | from committed scores |
+| Act III — ExpGuard (finance/health/law) | `artifacts/expguard_external/scores_*.json` | `eval_expguard_external.py --from-scores` |
+| Latency (P50/P90/P99) | `artifacts/paper_a_sft_v2/scores/scores.parquet` | per-row `latency_ms`, no GPU |
 
 **Reproduce Paper A on its own (no GPU)** from the released v2 cache — the strict
 [LOCK.json](artifacts/paper_a_sft_v2/LOCK.json), text-free
@@ -127,9 +126,6 @@ make eval        # 5. GPU: score bases + adapters
 make analyze     # 6. emit tables/figures
 ```
 
-The Act II objective-axis (Paper C) trainer is staged behind a GPU smoke test; see
-[docs/paper-c-prereg.md](docs/paper-c-prereg.md) and [papers/unified-report/STATUS.md](papers/unified-report/STATUS.md).
-
 ---
 
 ## Build the papers
@@ -149,7 +145,7 @@ make -C papers/mortgage-guardrail-benchmark pdf
 
 | Paper | Formal edition | Plain-language edition |
 |---|---|---|
-| **Unified four-act report** | [PDF](papers/unified-report/unified_report.pdf) · [LaTeX](papers/unified-report/unified_report.tex) | teaching boxes integrated into the report |
+| **Unified three-act report** | [PDF](papers/unified-report/unified_report.pdf) · [LaTeX](papers/unified-report/unified_report.tex) | teaching boxes integrated into the report |
 | Fine-tuning specialization (A) | [PDF](papers/finetuning-specialization/benchmark_chooses_the_winner.pdf) | [annotated](papers/finetuning-specialization-simplified/) |
 | Base+adapter composition (B) | [PDF](papers/base-adapter-composition/compose_dont_tune.pdf) | [simplified](papers/base-adapter-composition-simplified/) |
 | Mortgage guardrail benchmark | [PDF](papers/mortgage-guardrail-benchmark/mortgage_guardrail_benchmark.pdf) | [simplified](papers/mortgage-guardrail-benchmark-simplified/) |
@@ -166,12 +162,11 @@ processes — the [data-split construction](papers/unified-report/figures/data_s
 | Track | Main artifact | Honest status |
 |---|---|---|
 | **Act I — specialization** | [Paper A](papers/finetuning-specialization/benchmark_chooses_the_winner.pdf) | **Complete** clean-v2 retrospective estimate (4 checkpoints × 5 seeds); conditional on this fixed panel, not universal or confirmatory. |
-| **Act II — objective axis** | [pre-registration](docs/paper-c-prereg.md) + [trainer](experiments/run_paper_c_objective.py) | **Pre-registration + scaffold only — no result.** GPU smoke, a lock, training, scoring, and an analyzer remain pending. |
-| **Act III — composition** | [Paper B](papers/base-adapter-composition/compose_dont_tune.pdf) | **Retrospective pilot complete.** No separately locked prospective run; controls remain roadmap items. |
-| **Act IV — mortgage depth** | [frozen benchmark](mortgage-benchmark/benchmark/v1_hmda2022/) | **994-row synthetic benchmark + four-base baselines complete.** LLM-judge / policy-card labels, *not* SME-adjudicated. |
-| **Act IV — ExpGuard breadth** | [scores](artifacts/expguard_external/) + [evaluator](experiments/eval_expguard_external.py) | **Complete** four-checkpoint base eval on 2,275 finance/health/law prompts; text-free scores committed; tuned comparison is future work. |
+| **Act II — composition** | [Paper B](papers/base-adapter-composition/compose_dont_tune.pdf) | **Retrospective pilot complete.** No separately locked prospective run; controls remain roadmap items. |
+| **Act III — mortgage depth** | [frozen benchmark](mortgage-benchmark/benchmark/v1_hmda2022/) | **994-row synthetic benchmark + four-base baselines complete.** LLM-judge / policy-card labels, *not* SME-adjudicated. |
+| **Act III — ExpGuard breadth** | [scores](artifacts/expguard_external/) + [evaluator](experiments/eval_expguard_external.py) | **Complete** four-checkpoint base eval on 2,275 finance/health/law prompts; text-free scores committed; tuned comparison is future work. |
 
-Acts I and III are reproducible but **retrospective** (their sources were inspected during development).
+Acts I and II are reproducible but **retrospective** (their sources were inspected during development).
 The report keeps retrospective, external-expert, and LLM-judge evidence in separate tiers and never pools
 them, and makes no causal, universal, deployment, legal, or fair-lending claim.
 
@@ -186,11 +181,11 @@ collapse to a benchmark-fixed endpoint (transfer 0.807 ± 0.024), so "stronger b
 arithmetic (Δ slopes −1 in the base). At a 5% calibration-FPR target, transfer false alarms rise
 (pooled **4.3% → 17.0%**) and HarmBench recall falls (**78% → 60%**).
 
-**Act III — composition recovers transfer.** Averaging the base's and SFT guard's calibrated scores lifts
+**Act II — composition recovers transfer.** Averaging the base's and SFT guard's calibrated scores lifts
 transfer over SFT for all four checkpoints (**+0.076**) as an ensemble diversity gain — recovery, not
 dominance (it can dip below the untuned base), and it restores no transferable threshold.
 
-**Act IV — domains.** The frozen [v1_hmda2022](mortgage-benchmark/benchmark/v1_hmda2022/) mortgage
+**Act III — domains.** The frozen [v1_hmda2022](mortgage-benchmark/benchmark/v1_hmda2022/) mortgage
 benchmark (994 dual-labeled `G×D` rows; the load-bearing **G0/D1** stratum + a protected-context fairness
 gate) shows zero-shot mortgage-policy AP of **0.67–0.85** and a protected-pair gap of **0.000–0.183**. On
 external ExpGuard (2,275 expert-annotated prompts), all four base guards rank violations well zero-shot
@@ -216,8 +211,7 @@ benchmark.*
 ## Known boundaries
 
 - Four compact checkpoints from two lineages are a fixed panel, not a model population.
-- Acts I/III use dataset-held-out but previously-inspected sources; no confirmatory claim.
-- The Act II objective-axis result does not exist yet.
+- Acts I/II use dataset-held-out but previously-inspected sources; no confirmatory claim.
 - The mortgage benchmark is synthetic and policy-card-consistent, not SME-adjudicated; its G1/D0 quadrant
   is empty. Ranking recovery does not imply threshold/calibration transfer.
 - The public Paper A cache cannot independently rehash omitted adapter bytes / full run metadata.

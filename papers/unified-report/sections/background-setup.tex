@@ -20,11 +20,11 @@ kinds of test set: benchmarks whose data the guard \emph{trained on} (represente
 
 \begin{figure}[htbp]\centering
 \includegraphics[width=0.82\linewidth]{experiment_design.png}
-\caption{\textbf{The study at a glance (Acts~I--III).} From one fixed panel and one frozen training
-manifest, every guard we compare --- the untuned \textbf{base}, each \textbf{tuned} arm (SFT/DPO/GRPO),
-and the retraining-free \textbf{composition} --- is read by the \emph{same} single-token scorer on the
+\caption{\textbf{The study at a glance (Acts~I--II).} From one fixed panel and one frozen training
+manifest, every guard we compare --- the untuned \textbf{base}, the \textbf{SFT-tuned} guard, and the
+retraining-free \textbf{composition} --- is read by the \emph{same} single-token scorer on the
 \emph{same} represented and transfer test rows, and each is compared only against its \emph{own} base.
-That paired difference $\Delta$, aggregated by a family-aware bootstrap, is the estimand. Act~IV then adds
+That paired difference $\Delta$, aggregated by a family-aware bootstrap, is the estimand. Act~III then adds
 the mortgage and finance/health/law domain evaluations on top of this same machinery.}
 \label{fig:design}
 \end{figure}
@@ -167,34 +167,26 @@ these datasets, and this family graph; they are descriptive, not significance te
 about a wider population.
 
 \begin{takeaway}{Retrospective, estimation-only}
-The fine-tuning studies (Acts I--III) were analyzed \emph{after} the benchmarks had been inspected
+The fine-tuning studies (Acts I--II) were analyzed \emph{after} the benchmarks had been inspected
 during development, so we report point estimates, intervals, and leave-one-out sensitivity checks ---
 but no accept/reject hypothesis test and no ``pass/fail gate.'' Clean provenance does not make an
 inspected benchmark prospective. Confirmatory use would require a freshly locked protocol on a
 genuinely uninspected cohort.
 \end{takeaway}
 
-\subsection{Three fine-tuning objectives: SFT, DPO, GRPO}
+\subsection{Fine-tuning the guard: LoRA-SFT}
 \label{sec:bg-objectives}
 
-Act~II asks whether the \emph{objective} used to fine-tune changes how much a guard specializes. Three
-objectives are compared. \textbf{SFT} minimizes cross-entropy: it directly raises the model's log
-probability of the single correct verdict token. \textbf{DPO} (Direct Preference Optimization
-\citep{rafailov2023dpo}) learns from a \emph{pair} --- the correct verdict versus the wrong one --- and
-increases the correct verdict's relative log-probability margin under a reference-model regularizer, so
-it never needs a separately trained reward model. \textbf{GRPO} (Group Relative Policy Optimization,
-introduced with DeepSeekMath \citep{shao2024deepseekmath}) is reinforcement learning in which the
-\emph{label itself is a verifiable reward} (correct verdict earns reward, otherwise not) and advantages
-are computed relative to a group of sampled outputs --- again with no learned reward model. A structural
-caveat matters for guards and is pre-registered in Act~II: because our action space is a
-\emph{single token with two outcomes}, the exploration that lets RL generalize in richer generation
-tasks is largely absent, so RL's usual transfer edge may be small or null here
-\citep{vennemeyer2026objective}.
+We fine-tune each guard with \textbf{SFT} (supervised fine-tuning): a cross-entropy loss that directly
+raises the model's log-probability of the single correct verdict token, applied as a parameter-efficient
+LoRA adapter (the exact recipe is \Cref{tab:panel-recipe}). SFT is the one training recipe used throughout;
+Act~I measures what it changes, and Act~II asks whether we can recover what it gives up \emph{without}
+any further tuning.
 
 \subsection{Output-space composition}
 \label{sec:bg-composition}
 
-Act~III introduces a retraining-free remedy. \emph{Output-space composition} combines two guards by
+Act~II introduces a retraining-free remedy. \emph{Output-space composition} combines two guards by
 averaging their calibrated \emph{output scores} --- not their internal weights. It is portable, because
 it needs only two comparable scores rather than interpolable parameters, but it costs two inference
 passes because both models must run. This contrasts with \emph{weight-space} methods such as WiSE-FT and
@@ -205,7 +197,7 @@ require the models to be weight-compatible. The exact composition rule is given 
 \subsection{The mortgage/HMDA vocabulary and the dual-label idea}
 \label{sec:bg-mortgage}
 
-Act~IV moves to regulated domains, where a request can read as perfectly polite text yet, if honored,
+Act~III moves to regulated domains, where a request can read as perfectly polite text yet, if honored,
 break the law. The mortgage vocabulary below is what the benchmark encodes.
 
 \begin{background}{Mortgage terms, in plain words}
@@ -233,8 +225,8 @@ Every study in this report reuses one fixed, purposively chosen panel of four ch
 frozen, decontaminated $1{,}200$-row training manifest, scored by the identical single-token
 $z_{\text{unsafe}}-z_{\text{safe}}$ head (\Cref{eq:score}) and the same tie-aware macro-AP, under
 fail-closed provenance \emph{locks} that bind the data, code, and software versions and refuse to run
-if any fingerprint mismatches. This single-panel, single-manifest discipline is what makes SFT, DPO,
-GRPO, composition, and the domain evaluations \emph{directly comparable} rather than three stapled
+if any fingerprint mismatches. This single-panel, single-manifest discipline is what makes SFT,
+composition, and the domain evaluations \emph{directly comparable} rather than stapled
 results. The \emph{same} four checkpoints recur across all four acts, and \textbf{Qwen3-4B is the
 recurring character}: the strongest base, and --- as the acts will show --- the one that specializes
 most, the one composition helps least, and the best-and-fairest zero-shot mortgage guard.
@@ -252,7 +244,7 @@ not extrapolated to other scales, architectures, or vendors.
 
 \begin{table}[htbp]
 \centering\small
-\caption{The fixed model panel and the frozen clean-v2 LoRA-SFT recipe (shared by Acts~I--III).
+\caption{The fixed model panel and the frozen clean-v2 LoRA-SFT recipe (shared by Acts~I--II).
 Revisions are pinned; decision tokens are verified as distinct single tokens per checkpoint.}
 \label{tab:panel-recipe}
 \resizebox{\textwidth}{!}{%
@@ -318,7 +310,7 @@ revisions, and content hashes.
 
 \begin{table}[htbp]
 \centering\small
-\caption{The frozen $1{,}200$-row training manifest (Acts~I--III). All training rows come from three
+\caption{The frozen $1{,}200$-row training manifest (Acts~I--II). All training rows come from three
 represented sources; each contributes $400$ rows balanced $200{:}200$. BeaverTails and OR-Bench are
 excluded from training by design.}
 \label{tab:manifest}
@@ -376,7 +368,7 @@ calibration-targeted operating point of \Cref{sec:setup-stats}.
 \setlength{\tabcolsep}{4pt}
 \caption{Every dataset and benchmark used in this report, grouped by role. The three represented sources
 supply both the fine-tuning manifest (400 rows each, $200{:}200$ safe:unsafe) and, on held-back rows, the
-represented-source test; the transfer and stress sets are never seen in fine-tuning. Act~IV adds two
+represented-source test; the transfer and stress sets are never seen in fine-tuning. Act~III adds two
 regulated-domain benchmarks. All sources are consumed by pinned identifier, revision, and content hash;
 ``rows'' are the counts \emph{used here}, not necessarily the full upstream release.}
 \label{tab:datasets}
@@ -402,7 +394,7 @@ HarmBench & red-team attacks (recall) & attacks only & \cite{mazeika2024harmbenc
 \multicolumn{4}{@{}l}{\emph{Excluded from training by design}} \\
 BeaverTails (\code{PKU-Alignment/BeaverTails}) & prompt$+$response safety & --- & \cite{ji2023beavertails} \\
 \midrule
-\multicolumn{4}{@{}l}{\emph{Regulated-domain benchmarks} (Act~IV)} \\
+\multicolumn{4}{@{}l}{\emph{Regulated-domain benchmarks} (Act~III)} \\
 Mortgage \code{v1\_hmda2022} (ours) & dual $G{\times}D$ $+$ protected pairs & 994 & \cite{hmda2022} \\
 ExpGuard (\code{6rightjade/expguardmix}) & finance / health / law prompt safety & 2{,}275 & \cite{expguard2026} \\
 \bottomrule
@@ -467,29 +459,12 @@ rows --- never on transfer or stress data --- and the audit hard-asserts that ca
 family with any reported test or stress surface. The Clopper--Pearson bound assumes independent
 Bernoulli negatives, so it is a pooled diagnostic, not a family-aware production guarantee. The
 resulting operating-point rates appear in \Cref{tab:sensitivity} (Act~I) and \Cref{tab:pilot-operating}
-(Act~III).
-
-\subsection{The objective axis (SFT vs.\ DPO vs.\ GRPO): design}
-\label{sec:setup-objective}
-
-Act~II reuses \emph{everything} above --- the same four-checkpoint panel, the same $1{,}200$-row
-manifest, the same seeds, the same single-token scorer, and the same macro-AP plus bootstrap machinery
---- and varies \emph{only the fine-tuning objective}, so any difference is attributable to the objective
-rather than to data, capacity, or evaluation. SFT is the Act~I arm; DPO and GRPO are the two additional
-arms, both trained against the \emph{verifiable label} with no learned reward model
-(\Cref{sec:bg-objectives}). The hypotheses and decision rules are \textbf{pre-registered and bound into
-the run's lock before execution}: \textbf{H1}, objectives differ mainly on \emph{transfer}, ordered by
-how far each moves the model from its base; \textbf{the GRPO single-token null}, that with a
-one-token/two-outcome action space RL's transfer edge over SFT is small or null (a bounded negative
-result is the \emph{expected, reportable} outcome, not a failure); and \textbf{H2}, that composition
-(\Cref{sec:bg-composition}) recovers transfer in proportion to how far the objective moved from base.
-\textbf{Results are \textsc{pending} the locked GPU run and are reported in \Cref{sec:actII}; no
-objective-axis numbers appear until its per-row scores are committed.}
+(Act~II).
 
 \subsection{The composition protocol}
 \label{sec:setup-composition}
 
-Act~III's remedy needs no retraining. For a single input we run the base and one SFT adapter, convert
+Act~II's remedy needs no retraining. For a single input we run the base and one SFT adapter, convert
 each raw score to a probability with a calibrator fit only on a development split, and report the fixed
 equal-weight average defined later as \Cref{eq:comp}. The $\tfrac12$ weights are fixed in advance (never
 tuned on test rows), so the only cost is the second inference pass. This is the output-space composition
@@ -499,7 +474,7 @@ development and are reported only as non-promotable ablations.
 \subsection{Domain evaluation instruments: mortgage and ExpGuard}
 \label{sec:setup-domain}
 
-Act~IV evaluates the \emph{same four checkpoints} on two complementary regulated-domain instruments.
+Act~III evaluates the \emph{same four checkpoints} on two complementary regulated-domain instruments.
 
 \paragraph{Mortgage (built in depth, dual-label).} We constructed a fixed, HMDA-grounded benchmark whose
 unit is one incoming request carrying two independent labels, general-safety $G$ and mortgage-policy $D$
@@ -515,7 +490,7 @@ disclosure $66$, ATR/QM $54$, privacy $18$, and benign $450$) and is split into 
 \emph{minimal pairs} ($78$ rows) that are identical except for one protected token; the induced
 prediction gap is denoted $\Delta_{\text{context}}$. The row composition is in \Cref{tab:composition} and
 the zero-shot base results (AP$\cdot$G, AP$\cdot$D, $\Delta_{\text{context}}$) in \Cref{tab:baseline}
-(Act~IV).
+(Act~III).
 
 \begin{takeaway}{A measuring stick, not a legal finding}
 Mortgage labels are assigned by an \emph{LLM judge} against written policy cards --- \emph{not}
