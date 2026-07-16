@@ -57,6 +57,106 @@ def act1_percheckpoint():
     fig.savefig(HERE / "fig_act1_percheckpoint.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
+def _parse_primary():
+    """Parse tab_primary_gen -> [(name, rep_base, rep_sft, tr_base, tr_sft)] for the 4 checkpoints."""
+    rows = []
+    for ln in (GEN / "tab_primary_gen.tex").read_text().splitlines():
+        m = re.match(r"\s*([\w.\-]+)\s*&\s*([\d.]+)\s*&\s*([\d.]+)\s*&\s*[\-\d.]+\s*\[.*?\]\s*&"
+                     r"\s*([\d.]+)\s*&\s*([\d.]+)\s*&", ln)
+        if m and "aggregate" not in ln.lower():
+            rows.append((m.group(1), float(m.group(2)), float(m.group(3)), float(m.group(4)), float(m.group(5))))
+    return rows
+
+
+def attractor():
+    """The fine-tuning attractor (B.1): base scores spread wide; post-SFT scores collapse to a
+    benchmark-fixed endpoint, so Delta = SFT - base is forced onto a slope-(-1) line."""
+    import numpy as np
+    rows = _parse_primary()
+    if len(rows) < 3:
+        return
+    names = [_short(r[0]).replace("\n", "-") for r in rows]
+    tb = np.array([r[3] for r in rows]); ts = np.array([r[4] for r in rows])
+    AT = ts.mean()
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.8, 3.7))
+    # -- left: base -> SFT convergence to the endpoint band --
+    x = np.arange(len(rows))
+    ax1.axhspan(AT - ts.std(ddof=1), AT + ts.std(ddof=1), color=GREEN, alpha=0.13, zorder=0)
+    ax1.axhline(AT, color=GREEN, lw=1.2, ls="--", zorder=1, label=f"endpoint $A_T\\approx{AT:.2f}$")
+    for i in x:
+        ax1.annotate("", xy=(i, ts[i]), xytext=(i, tb[i]),
+                     arrowprops=dict(arrowstyle="-|>", color=GREY, lw=1.4, shrinkA=3, shrinkB=3))
+    ax1.scatter(x, tb, s=55, color=BLUE, zorder=3, label="base")
+    ax1.scatter(x, ts, s=55, color=ORANGE, zorder=3, label="after SFT")
+    ax1.set_xticks(x); ax1.set_xticklabels(names, fontsize=7.5)
+    ax1.set_ylabel("dataset-held-out transfer macro-AP")
+    ax1.set_ylim(0.72, 0.98)
+    ax1.set_title("Fine-tuning is an attractor:\nwide base spread $\\to$ one endpoint band")
+    ax1.legend(frameon=False, fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=3)
+    # -- right: Delta vs base is forced onto slope -1 --
+    dtr = ts - tb
+    slope, intc = np.polyfit(tb, dtr, 1)
+    yh = intc + slope * tb
+    r2 = 1 - ((dtr - yh) ** 2).sum() / ((dtr - dtr.mean()) ** 2).sum()
+    xs = np.linspace(tb.min() - 0.02, tb.max() + 0.02, 50)
+    ax2.plot(xs, AT - xs, color=GREEN, lw=1.4, ls="--", label="prediction: slope $-1$")
+    ax2.scatter(tb, dtr, s=55, color=BLUE, zorder=3)
+    for i in range(len(rows)):
+        ax2.annotate(names[i], (tb[i], dtr[i]), fontsize=6.5, xytext=(4, 3),
+                     textcoords="offset points")
+    ax2.axhline(0, color="black", lw=0.6)
+    ax2.set_xlabel("base transfer macro-AP")
+    ax2.set_ylabel("$\\Delta$ transfer (SFT $-$ base)")
+    ax2.set_title(f"So “stronger base specializes more”\nis arithmetic (fit slope ${slope:.2f}$, $R^2={r2:.2f}$)")
+    ax2.legend(frameon=False, fontsize=8, loc="upper right")
+    fig.suptitle("Act I, restated: after SFT the benchmark fixes the score; the checkpoint sets only the residual",
+                 fontsize=10, y=1.02)
+    fig.subplots_adjust(top=0.80, bottom=0.24, wspace=0.32, left=0.085, right=0.98)
+    fig.savefig(HERE / "fig_attractor.pdf", metadata={"CreationDate": None}); plt.close(fig)
+
+
+def prevalence():
+    """AP as a function of deployment prevalence (B.5), deterministic binormal illustration:
+    ranking quality (AUC) fixed, AP collapses and re-orders as positives get rarer."""
+    import numpy as np
+    from math import erf
+    def Phi(z):  # standard normal CDF (deterministic; no scipy/RNG)
+        return 0.5 * (1 + erf(z / np.sqrt(2)))
+    def Phinv(p):
+        # bisection inverse-CDF (deterministic)
+        lo, hi = -8.0, 8.0
+        for _ in range(80):
+            mid = 0.5 * (lo + hi)
+            if Phi(mid) < p: lo = mid
+            else: hi = mid
+        return 0.5 * (lo + hi)
+    def ap_at(auc, prev):
+        d = np.sqrt(2) * Phinv(auc)                       # AUC = Phi(d/sqrt2)
+        t = np.linspace(6, -6, 4000)                       # threshold high->low so recall 0->1
+        tpr = 1 - np.array([Phi(tt - d / 2) for tt in t])  # P(pos > t)
+        fpr = 1 - np.array([Phi(tt + d / 2) for tt in t])  # P(neg > t)
+        prec = (prev * tpr) / (prev * tpr + (1 - prev) * fpr + 1e-12)
+        return float(np.sum((prec[:-1] + prec[1:]) / 2 * np.diff(tpr)))  # AP = int prec d(recall)
+    prevs = np.geomspace(0.003, 0.5, 40)
+    fig, ax = plt.subplots(figsize=(6.4, 3.7))
+    styles = [(0.98, BLUE, "strong guard (AUC 0.98)"),
+              (0.90, GREEN, "good guard (AUC 0.90)"),
+              (0.81, ORANGE, "weak guard (AUC 0.81)")]
+    for auc, col, lab in styles:
+        ax.plot(prevs * 100, [ap_at(auc, p) for p in prevs], color=col, lw=2, label=lab)
+    for p in (1, 5, 50):
+        ax.axvline(p, color=GREY, lw=0.7, ls=":")
+    ax.set_xscale("log")
+    ax.set_xticks([0.5, 1, 5, 10, 50]); ax.set_xticklabels(["0.5%", "1%", "5%", "10%", "50%"])
+    ax.set_xlabel("deployment prevalence of unsafe prompts (log scale)")
+    ax.set_ylabel("average precision (AP)")
+    ax.set_ylim(0, 1.02)
+    ax.set_title("The prevalence chooses the winner:\nAP collapses — and re-spaces guards — as positives get rare")
+    ax.legend(frameon=False, fontsize=8.5, loc="lower right")
+    fig.subplots_adjust(bottom=0.16, top=0.86, left=0.1, right=0.97)
+    fig.savefig(HERE / "fig_prevalence.pdf", metadata={"CreationDate": None}); plt.close(fig)
+
+
 def act3_composition():
     """Grouped bars: transfer macro-AP for base / SFT / composition, per checkpoint (parse pilot_per_model_table)."""
     rows = []
@@ -186,7 +286,8 @@ def expguard_domains():
 
 def main():
     made = []
-    for fn in (act1_percheckpoint, act3_composition, mortgage_quadrant, mortgage_baseline, expguard_domains):
+    for fn in (act1_percheckpoint, attractor, act3_composition, mortgage_quadrant, mortgage_baseline,
+               expguard_domains, prevalence):
         try:
             fn(); made.append(fn.__name__)
         except Exception as e:

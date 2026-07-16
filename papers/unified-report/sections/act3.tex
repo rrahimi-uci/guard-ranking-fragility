@@ -163,6 +163,26 @@ gave up,'' not ``composition is free improvement over doing nothing.'' If transf
 care about and you have not yet tuned, the base alone can still be the better scorer.
 \end{takeaway}
 
+\subsubsection{Why composition helps at all --- and least where the base is strongest}
+\label{sec:actIII-why}
+
+There is a simple statistical reason composition works, and the same reason explains the one place it
+fails. Averaging two scorers is an \emph{ensemble}, and an ensemble beats its members when they are each
+individually good and make \emph{different} mistakes. A clean diagnostic is the \emph{midpoint}: if
+composition merely interpolated between the base and the SFT guard, it would land at their average AP. It
+does not --- it lands \emph{above} that midpoint by a strikingly uniform margin on every checkpoint
+($+0.047,+0.055,+0.040,+0.045$; read off \Cref{tab:pilot-models}). That uniform bonus is the
+\emph{diversity} term: the base and its own fine-tune rank the hard transfer cases differently, and
+averaging cancels part of each one's error --- which is why composition is not mere interpolation.
+
+The same lens explains why composition helps \emph{least} where the base is strongest. The gain from
+averaging shrinks as the two scorers' errors grow more \emph{correlated}. A LoRA adapter is a low-rank edit
+\emph{anchored} to its base, so a strong base's fine-tune stays close to it: their errors correlate more,
+the diversity term shrinks, and the average can no longer clear the (already high) base. That is exactly the
+Qwen3-4B story --- strongest base, most base-correlated adapter, composition landing below base. Acts~I and
+III are then one mechanism seen twice: the strongest base specializes \emph{most} (Act~I) and is helped
+\emph{least} by composition (Act~III), both because its fine-tune moves the least far from it.
+
 \subsection{Ranking is not calibration: the operating-point gap}
 \label{sec:actIII-operating}
 

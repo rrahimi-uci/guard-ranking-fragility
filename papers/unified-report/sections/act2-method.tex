@@ -135,25 +135,32 @@ Each objective's training signal is constructed deterministically from the same 
 is seeded and its \code{preference\_recipe\_sha256} is bound into the lock, so the preference/reward data is
 reproducible): SFT uses the correct verdict token as the cross-entropy target; DPO/ORPO/IPO use the
 (correct, wrong) verdict-token pair; KTO uses the pointwise $\{$completion, desirable/undesirable$\}$
-record; GRPO uses the graded margin below.
+record; GRPO uses the sampled verdict's verifiable correctness reward below.
 
 \paragraph{The one genuine reward-design problem: GRPO on a single token.} A one-token, two-outcome action
 space breaks GRPO's group-relative advantage. Once the guard is confident, all $G$ sampled verdicts agree,
 the within-group standard deviation collapses to zero, the advantage vanishes, and that prompt contributes
 \emph{no gradient} --- ``gradient starvation.'' Our design fixes this in three pre-registered ways.
 
-\emph{(1) Graded margin instead of raw $0/1$ --- the single most important GRPO choice.} Rather than a
-binary correctness reward, we reward the \emph{margin toward the correct side}, i.e.\ the calibrated
-probability mass the guard places on the correct verdict:
+\emph{(1) The reward is the verifiable correctness of the \textbf{sampled} verdict.} Each rollout draws a
+verdict token $v_i$, and its reward compares \emph{that sampled token} to the gold label $y$ --- no learned
+reward model is involved:
 \begin{equation}
-r(x) \;=\; \sigma\!\big(s_y \cdot s(x)\big) \;=\; P_\theta(\text{correct verdict}\mid x),
-\qquad
-s_y=\begin{cases}+1 & y=\text{unsafe}\\[-1pt] -1 & y=\text{safe}\end{cases}
+r(v_i) \;=\;
+\begin{cases}
+\;1 + \lambda\, m(x) & v_i = y \quad(\text{correct verdict}),\\[1pt]
+\;0 & v_i \neq y \quad(\text{wrong verdict}),\\[1pt]
+\;-\tfrac{1}{2} & v_i=\varnothing \quad(\text{no parseable verdict}),
+\end{cases}
 \label{eq:grpo-reward}
 \end{equation}
-where $s(x)=z_{\text{unsafe}}-z_{\text{safe}}$ and $\sigma$ is the logistic function. Because $r(x)$ is
-continuous, it restores the within-group spread that a raw $0/1$ reward destroys, and it rewards the
-\emph{exact} quantity the guard is evaluated on.
+with an optional confidence bonus $m(x)\in[0,1]$ --- a normalized $z_{\text{unsafe}}-z_{\text{safe}}$ toward
+the correct side --- weighted by $\lambda$ (default $\lambda=0$, so the released recipe is the plain
+verifiable $0/1$; the bonus is a pre-registered lever, not a load-bearing choice). The essential point is
+that $r$ is a function of the \emph{sampled} verdict, not of the prompt alone: a group whose rollouts
+\emph{disagree} then has non-zero reward variance, hence a non-zero advantage in \Cref{eq:grpo-adv} --- the
+signal RL needs. (A reward that depended on the prompt only would give every rollout the same value and a
+\emph{zero} advantage; that is precisely the trap we avoid.)
 
 \emph{(2) Unnormalized (Dr.GRPO/RLOO-style) advantage.} With only two underlying reward values,
 group-standard-deviation normalization is pure difficulty bias, so we drop it: for a group of $G$
@@ -164,17 +171,26 @@ A_i \;=\; r_i - \tfrac{1}{G}\textstyle\sum_{j=1}^{G} r_j
 \label{eq:grpo-adv}
 \end{equation}
 
-\emph{(3) Dynamic sampling and class weighting.} Zero-variance (agreed-verdict) groups are filtered so
-they add no noise; sampling temperature can be raised for diversity ($G>1$ is cheap since rollouts are one
-token). The only live reward-hacking mode --- length hacking being impossible at one token --- is
-majority-class collapse, guarded by a class/severity-weighted correctness reward if the frozen manifest is
-skewed (the v2 audit asserts label balance, so any skew is small).
+\emph{(3) Temperature and dynamic sampling are what actually cure gradient starvation.} The within-group
+spread GRPO needs comes from rollouts \emph{disagreeing}, not from the shape of the reward: on a confident
+prompt every sampled verdict agrees, so the reward variance is zero \emph{whatever} the reward looks like.
+We therefore (i) raise the sampling temperature so borderline prompts produce mixed verdicts ($G>1$ is
+nearly free at one token), and (ii) \emph{dynamically sample} --- drop the zero-variance (unanimous) groups
+so they neither inject noise nor dilute the batch. The only remaining reward-hacking mode --- length hacking
+is impossible at one token --- is majority-class collapse, guarded by a class/severity-weighted correctness
+reward if the frozen manifest is skewed (the v2 audit asserts label balance, so any skew is small).
 
-\begin{takeaway}{Why we predict this fix mostly recovers the \emph{same} signal}
-The graded reward is honest, but it is telling: on a single verdict token there is no reasoning trace to
-diversify, so \Cref{eq:grpo-reward} largely hands GRPO the same margin information SFT and KTO already
-optimize. That is precisely why we \emph{pre-register} GRPO's transfer edge as likely small or null
-(\Cref{sec:actII-hyp}) --- a bounded negative result, not a bug.
+\begin{takeaway}{Why the single-token setting \emph{structurally} predicts the GRPO null}
+On a one-token, two-outcome action space every objective moves the guard in the \emph{same} direction ---
+``put more probability on the correct verdict'' --- and can differ only in \emph{how hard it pushes each
+example and where it stops}. SFT keeps pushing even already-correct, confident examples; GRPO's push is
+proportional to the model's own uncertainty (largest when the verdict is a coin-flip, vanishing once the
+model is confident), so it settles \emph{closer to the base}. That makes our headline pre-registration ---
+GRPO ends KL-close, with a small or null transfer edge over SFT (\Cref{sec:actII-hyp}) --- a consequence of
+the action space, not an empirical bet. The locked run then tests only the \emph{residual} effects
+(sampling noise, the KL term, group filtering) that this single-token argument leaves open. This is the
+same one-token collapse that makes SimPO a length-1 margin DPO (\Cref{sec:actII-menu}); here it collapses
+``RL'' toward a confidence-weighted reweighting of the same supervised signal.
 \end{takeaway}
 
 \subsection{Held fixed for comparability}
