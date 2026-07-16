@@ -249,16 +249,20 @@ mortgage-policy label, and here they overlap more than that. But no guard reache
 anywhere near $1$, so a large fraction of the subtle G0/D1 stratum is left \emph{unresolved by ranking
 alone}.
 
-The protected-pair gate is the sharpest discriminator --- and it separates guards that AP alone rates
-similarly. \textbf{Qwen3-4B is both best and fairest}: it ranks $D$-violations highest
-($\text{AP}\cdot D = 0.851$) \emph{and} is invariant on the protected pairs
-($\Delta_{\mathrm{context}} = 0.000$). \textbf{Qwen2.5-1.5B}, by contrast, ranks respectably
-($\text{AP}\cdot D = 0.793$) yet carries a large protected-attribute gap
-($\Delta_{\mathrm{context}} = 0.183$, with a worst pair reaching $0.51$) --- a fairness problem that
-$\text{AP}\cdot D$ would never reveal. This is the same recurring character from the rest of the report:
+The protected-pair gate is the sharpest \emph{available} discriminator here --- and it separates guards
+that AP alone rates similarly. On point estimates \textbf{Qwen3-4B is both the highest-ranking and the most
+invariant}: it ranks $D$-violations highest ($\text{AP}\cdot D = 0.851$) \emph{and} shows no protected-pair
+gap ($\Delta_{\mathrm{context}} = 0.000$). Both readings are uncertain at this sample size --- the
+$\text{AP}\cdot D$ bootstrap CIs overlap across all four guards (\Cref{tab:baseline}), and
+$\Delta_{\mathrm{context}}$ rests on only three pairs --- so we read this as a \emph{direction} (the
+strongest base also happens to be the most invariant on the pairs we have) rather than a resolved ranking.
+\textbf{Qwen2.5-1.5B}, by contrast, ranks respectably ($\text{AP}\cdot D = 0.793$) yet carries a large
+protected-attribute gap ($\Delta_{\mathrm{context}} = 0.183$, with a worst pair reaching $0.51$) --- a
+fairness signal that $\text{AP}\cdot D$ would never reveal, and large enough to stand out even against the
+three-pair noise. This is the same recurring character from the rest of the report:
 Qwen3-4B, the strongest base, is the one that specialized most under SFT (\Cref{sec:actI}) and the one
-composition helped least (\Cref{sec:actIII}), yet here it is the best and fairest zero-shot mortgage
-guard --- the ranking flips with the benchmark.
+composition helped least (\Cref{sec:actIII}), yet here it is \emph{numerically} the best and most invariant
+zero-shot mortgage guard --- the ranking flips with the benchmark.
 
 Two numbers are deliberately \emph{not} reported. First, $\text{AP}\cdot G$ rests on only 6 G1
 positives in this split and is correspondingly noisy --- a random ranker already scores
@@ -278,9 +282,12 @@ A general guard, zero-shot, already ranks mortgage violations \emph{moderately} 
 discriminate'' pattern-matches to unsafe even without a jailbreak, so the domain is not invisible. But
 ``moderate'' is the whole story: $\text{AP}\cdot D$ tops out at $0.85$, so much of the subtle G0/D1
 stratum is unranked, and ranking says \emph{nothing} about fairness --- two guards with near-identical
-$\text{AP}\cdot D$ differ by $0.18$ in $\Delta_{\mathrm{context}}$. Compliance screening needs a
-\emph{domain-grounded} ranking metric \emph{and} a separate invariance gate; a single general-safety
-score covers neither.
+$\text{AP}\cdot D$ differ by $0.18$ in $\Delta_{\mathrm{context}}$. We call $0.85$ ``moderate'' relative to
+the $1.0$ of a perfect ranker, not against a known achievable ceiling: we have \emph{no} purpose-built
+mortgage-compliance guard on this benchmark to say how high $\text{AP}\cdot D$ could go, so the gap between
+$0.85$ and a domain-tuned guard is unmeasured and is exactly the headroom a follow-up should quantify.
+Either way the practitioner lesson holds: compliance screening needs a \emph{domain-grounded} ranking metric
+\emph{and} a separate invariance gate; a single general-safety score covers neither.
 \end{takeaway}
 
 \begin{takeaway}{A measuring stick, not a legal finding}
