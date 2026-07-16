@@ -354,7 +354,8 @@ interaction, not the prompt).}
 
 Evaluation is partitioned into three regimes, forming a spectrum of how ``new'' each test is to the
 guard (\Cref{fig:splits} shows the full construction, from sources through the family-isolation gate to
-these regimes).
+these regimes; \Cref{tab:datasets} is the complete roster of every dataset used in this report, with its
+role, size, and reference).
 \begin{itemize}[leftmargin=1.4em,itemsep=1pt]
   \item \textbf{Represented-source} $=$ \{ToxicChat, Prompt-Injections, Jailbreak-Classification\} rows
   \emph{held back} from training. These measure discrimination on sources the guard trained on.
@@ -369,6 +370,44 @@ these regimes).
 \end{itemize}
 The primary metric within each regime is benchmark-macro AP; the secondary metric is the
 calibration-targeted operating point of \Cref{sec:setup-stats}.
+
+\begin{table}[htbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Every dataset and benchmark used in this report, grouped by role. The three represented sources
+supply both the fine-tuning manifest (400 rows each, $200{:}200$ safe:unsafe) and, on held-back rows, the
+represented-source test; the transfer and stress sets are never seen in fine-tuning. Act~IV adds two
+regulated-domain benchmarks. All sources are consumed by pinned identifier, revision, and content hash;
+``rows'' are the counts \emph{used here}, not necessarily the full upstream release.}
+\label{tab:datasets}
+\begin{tabular}{@{}p{0.40\linewidth} p{0.30\linewidth} p{0.12\linewidth} c@{}}
+\toprule
+Dataset (source) & Native task / label & Rows used & Ref. \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Represented sources} --- fine-tuning manifest $+$ held-back represented test} \\
+ToxicChat (\code{lmsys/toxic-chat}) & prompt toxicity & 400 train & \cite{lin2023toxicchat} \\
+Prompt-Injections (\code{deepset/prompt-injections}) & prompt injection & 400 train & --- \\
+Jailbreak-Classification (\code{jackhhao/\ldots}) & prompt jailbreak & 400 train & --- \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Dataset-held-out transfer test} --- never fine-tuned on; benchmark-macro AP} \\
+JailbreakBench & jailbreak robustness & held-out & \cite{chao2024jailbreakbench} \\
+XSTest & exaggerated-safety / refusal & held-out & \cite{rottger2024xstest} \\
+WildGuardTest & prompt harm / refusal & held-out & \cite{han2024wildguard} \\
+WildJailbreak & in-the-wild jailbreak & held-out & \cite{jiang2024wildteaming} \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Stress probes} --- single-class; no AP/AUROC} \\
+OR-Bench-Hard (benign) & over-refusal (benign FPR) & benign only & \cite{cui2024orbench} \\
+HarmBench & red-team attacks (recall) & attacks only & \cite{mazeika2024harmbench} \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Excluded from training by design}} \\
+BeaverTails (\code{PKU-Alignment/BeaverTails}) & prompt$+$response safety & --- & \cite{ji2023beavertails} \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Regulated-domain benchmarks} (Act~IV)} \\
+Mortgage \code{v1\_hmda2022} (ours) & dual $G{\times}D$ $+$ protected pairs & 994 & \cite{hmda2022} \\
+ExpGuard (\code{6rightjade/expguardmix}) & finance / health / law prompt safety & 2{,}275 & \cite{expguard2026} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Decontamination (family-isolated splits, MinHash).} To keep near-duplicate rows from
 straddling the train/evaluation and calibration/test boundaries, the builder first preserves the
