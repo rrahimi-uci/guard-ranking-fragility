@@ -3,7 +3,7 @@
 
 This report is written to be read by someone with a first course in statistics, a working idea of
 what fine-tuning a small language model means, and a lay familiarity with mortgage lending. Everything
-technical the four acts rely on is defined once here, from the ground up, with the exact equations and
+technical the three acts rely on is defined once here, from the ground up, with the exact equations and
 a worked example wherever a number would otherwise be mysterious. Nothing in this section reports a
 result; it is the vocabulary.
 
@@ -45,7 +45,8 @@ s(x) \;=\; z_{\text{unsafe}}(x,t) \;-\; z_{\text{safe}}(x,t),
 \end{equation}
 which is positive when the model leans \code{unsafe}, negative when it leans \code{safe}, and near zero
 when it is undecided. To read $s(x)$ as a probability we pass the same two logits through a two-way
-softmax,
+softmax --- giving, strictly, the probability of \code{unsafe} \emph{conditional on the verdict being one
+of the two tokens} $\{$\code{safe}$,$\code{unsafe}$\}$, not the model's full next-token distribution:
 \begin{equation}
 \label{eq:prob}
 p(\text{unsafe}\mid x) \;=\; \frac{\exp\!\big(z_{\text{unsafe}}\big)}{\exp\!\big(z_{\text{safe}}\big)+\exp\!\big(z_{\text{unsafe}}\big)}.
@@ -227,7 +228,7 @@ $z_{\text{unsafe}}-z_{\text{safe}}$ head (\Cref{eq:score}) and the same tie-awar
 fail-closed provenance \emph{locks} that bind the data, code, and software versions and refuse to run
 if any fingerprint mismatches. This single-panel, single-manifest discipline is what makes SFT,
 composition, and the domain evaluations \emph{directly comparable} rather than stapled
-results. The \emph{same} four checkpoints recur across all four acts, and \textbf{Qwen3-4B is the
+results. The \emph{same} four checkpoints recur across all three acts, and \textbf{Qwen3-4B is the
 recurring character}: the strongest base, and --- as the acts will show --- the one that specializes
 most, the one composition helps least, and the best-and-fairest zero-shot mortgage guard.
 
@@ -411,7 +412,13 @@ stress surface. The build \emph{fails closed} if any family crosses a forbidden 
 graph also supplies the Poisson(1) re-count weights used by the bootstrap (\Cref{sec:bg-estimand}). An
 independent audit of $24$ hard assertions covers the source exclusions, schema and row identity,
 exact and conflicting-label overlap, pinned revisions and content hashes, selection provenance, family
-disjointness, licenses, and near-duplicate dispositions.
+disjointness, licenses, and near-duplicate dispositions. This is a \emph{build-time} gate (family isolation
+plus the $24$ assertions), and it is distinct from the \emph{formal retrospective overlap audit} of the
+manifest against the current v2 transfer suite, which remains \emph{pending} (\Cref{sec:not-establish}): the
+gate guarantees no near-duplicate family straddles a split within the constructed graph, but a from-scratch
+n-gram / near-duplicate check of the $1{,}200$-row manifest against the v2 transfer benchmarks has not yet
+been run --- and any residual overlap it found would make specialization look \emph{milder}, so this is a
+caveat in the direction of caution.
 
 \subsection{Estimands and the statistical protocol}
 \label{sec:setup-stats}

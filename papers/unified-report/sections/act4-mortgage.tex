@@ -157,9 +157,14 @@ follows mechanically, together with an \emph{action lattice} (the ordered menu o
 allow through warn to block) and a \emph{severity} grade.
 
 The honesty caveat is load-bearing and stated plainly: \textbf{these labels are policy-card-consistent,
-assigned by an LLM judge --- they are not SME-adjudicated.} All 24 cards remain unsigned, and judge
-agreement is measured as \emph{self-consistency} (re-running the same judge and checking it agrees with
-itself), not as a human inter-rater study.
+assigned by an LLM judge --- they are not SME-adjudicated.} The judge is run rubric-bound against the
+applicable cards at temperature~$0$ with a three-sample majority vote; all 24 cards remain unsigned, and
+judge agreement is measured as \emph{self-consistency} (re-running the same judge and checking it agrees
+with itself), not as a human inter-rater study. Two transparency gaps we flag rather than resolve here: the
+frozen artifact does not record the exact judge \emph{model and version}, so its
+possible model-family overlap with an evaluated checkpoint cannot be ruled out as a source of correlated
+blind spots; and per-label self-consistency \emph{counts} were not exported, so self-consistency is asserted,
+not tabulated.
 
 \begin{background}{Policy cards, ``SME,'' and Fleiss-\texorpdfstring{$\kappa$}{kappa} --- in plain words}
 A \emph{policy card} turns a slice of mortgage law into something a program can check: a plain
@@ -209,9 +214,10 @@ The gate is a single number, the mean absolute within-pair score gap:
 \label{eq:delta-context}
 \end{equation}
 where $\mathcal{P}$ is the set of protected pairs and $p(\cdot)$ is the guard's unsafe probability. The
-target is $\Delta_{\mathrm{context}}\approx 0$: a fair guard's score is \emph{invariant} to the
-protected token alone. A nonzero value means the protected word by itself is moving the guard --- the
-signature of disparate treatment in the screening layer. This gap also has a threshold-free reading:
+target is $\Delta_{\mathrm{context}}\approx 0$: an invariant guard's score does not move with the
+protected token alone. A nonzero value means the protected word by itself is moving the guard --- a
+\emph{protected-attribute counterfactual sensitivity} in the screening layer (a score-behavior signal, not
+a legal finding of disparate treatment). This gap also has a threshold-free reading:
 for one pair, $|p(x_a)-p(x_b)|$ is exactly the fraction of possible decision cutoffs at which the protected
 token \emph{alone} flips the verdict, so $\Delta_{\mathrm{context}}$ is the pair-averaged
 \emph{decision-flip rate} (the worst observed pair, $0.51$, flips on a majority of feasible operating
@@ -242,7 +248,8 @@ a domain-fine-tuned arm is future work.
 split (75 G0/D1, 6 G1, 3 protected pairs). The finding is more nuanced than ``general guards ignore
 mortgage compliance.'' \emph{Threshold-free}, the base guards rank $D$-violations only
 \textbf{moderately} well --- $\text{AP}\cdot D$ between $0.67$ and $0.85$, at or above their
-$\text{AP}\cdot G$. Soliciting discrimination or fraud reads as ``unsafe'' to a general instruction
+$\text{AP}\cdot G$ for three of the four checkpoints (Qwen3-4B is the exception, with $\text{AP}\cdot
+G=1.000$ off only $6$ $G$-positives --- a noisy small-sample value, see below). Soliciting discrimination or fraud reads as ``unsafe'' to a general instruction
 model even when it is not a jailbreak, so in practice \textbf{$G$ and $D$ are only \emph{partially}
 orthogonal}: strictly orthogonal would mean the general-safety label carries no information about the
 mortgage-policy label, and here they overlap more than that. But no guard reaches $\text{AP}\cdot D$

@@ -40,7 +40,9 @@ def main() -> int:
         "as unsafe even without a jailbreak, so G and D are only partially orthogonal. "
         f"$\\Delta_{{\\mathrm{{context}}}}$ is the mean absolute protected-pair score gap (lower is more "
         f"invariant) over only $n={dc_n}$ pairs, so its magnitude is uncertain and it is read as a "
-        "direction, not a calibrated fairness estimate. The fixed 5\\%-FPR operating point is "
+        "direction, not a calibrated fairness estimate. AP$\\cdot$final equals AP$\\cdot$D on this frozen "
+        "set because the G1/D0 cell is empty (every $G$-positive row is also $D$-positive), so the composed "
+        "label reduces to $D$. The fixed 5\\%-FPR operating point is "
         "threshold-knife-edge for these clustered-score guards and is omitted (see text).}",
         "\\label{tab:baseline}",
         "\\begin{tabular}{lrrrr}", "\\toprule",

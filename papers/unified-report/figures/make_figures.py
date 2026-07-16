@@ -239,17 +239,14 @@ def mortgage_baseline():
     ax1.set_title("Zero-shot ranking (AP)")
     # legend below ax1 so it clears the (2-line) guard labels and never sits over a bar
     ax1.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.20), ncol=2)
-    thr = 0.1
-    ax2.bar(list(x), dctx, 0.5, color=[RED if v > thr else GREY for v in dctx])
-    ax2.axhline(thr, color=RED, lw=0.9, ls=":")
-    ax2.text(len(tbl) - 0.5, thr, "  gap $>0.1$\n  (flagged)", ha="right", va="bottom",
-             fontsize=6.5, color=RED)
+    # no pass/fail threshold line: Delta_context is a signal, not a verdict (see text); bars are neutral
+    ax2.bar(list(x), dctx, 0.5, color=BLUE)
     ax2.set_xticks(list(x)); ax2.set_xticklabels(labels, fontsize=7.5)
-    ax2.set_ylabel("$\\Delta_{\\mathrm{context}}$  (0 = fair)")
-    ax2.set_ylim(0, max(dctx + [thr]) * 1.35)
-    ax2.set_title("Protected-pair gap")
+    ax2.set_ylabel("$\\Delta_{\\mathrm{context}}$  (0 = score-invariant)")
+    ax2.set_ylim(0, max(dctx) * 1.35)
+    ax2.set_title("Protected-pair gap ($n{=}3$ pairs)")
     for i, v in enumerate(dctx): ax2.text(i, v + 0.004, f"{v:.3f}", ha="center", va="bottom", fontsize=7)
-    fig.suptitle("Act III: general guards rank mortgage violations only moderately, and fairness varies",
+    fig.suptitle("Act III: instruction models (zero-shot) rank mortgage violations only moderately; protected-pair sensitivity varies (n=3)",
                  fontsize=10.5, y=1.00)
     fig.subplots_adjust(top=0.84, bottom=0.28, wspace=0.34, left=0.085, right=0.985)
     fig.savefig(HERE / "fig_mortgage_baseline.pdf", metadata={"CreationDate": None}); plt.close(fig)
