@@ -82,7 +82,7 @@ decays under sub-standard-deviation drift; and at realistic ($\sim\!1\%$) preval
 and the very \emph{ranking} of guards reorders.
 
 \smallskip
-\noindent\textbf{What we propose.} A disciplined, fully reproducible way to measure what a guard's
+\noindent\textbf{What we propose.} A disciplined, reproducible way to measure what a guard's
 fine-tune actually bought --- and to choose guards for regulated products. On one fixed panel of four
 compact checkpoints (Qwen2.5-1.5B, SmolLM2-1.7B, SmolLM3-3B, Qwen3-4B) we compare each guard only against
 its \emph{own} pre-tuning base on identical data (so a change is attributable to the fine-tune, not to a
@@ -95,10 +95,12 @@ expert-labeled finance/health/law set (ExpGuard, 2{,}275 rows).
 \smallskip
 \noindent\textbf{What we find.} Fine-tuning \emph{specializes} but does not transfer: it lifts
 familiar-data ranking to a near-common ceiling ($\approx\!0.98$; $\RepDelta$ on average) yet changes
-held-out transfer by only $\TransferDelta$ on average --- an \emph{attractor} that pulls every model to a
-benchmark-fixed endpoint, so ``stronger bases specialize more'' is arithmetic, not skill. Composition
-recovers much of the lost transfer for free ($\PilotTransferDeltaSFT$ over the fine-tune). And a
-general-safety score does not cover domain compliance: general guards rank mortgage violations only
+held-out transfer by only $\TransferDelta$ on average --- on this four-checkpoint panel an \emph{attractor}
+pulls each model toward a benchmark-fixed endpoint, so ``stronger bases specialize more'' is largely
+arithmetic, not skill. Composition recovers much of the lost transfer without retraining
+($\PilotTransferDeltaSFT$ over the fine-tune, at the cost of a second inference pass). And a
+general-safety score does not cover domain compliance: general-purpose instruction models, used zero-shot as
+guards, rank mortgage violations only
 moderately and their fairness varies widely, and the top-ranked finance/health/law guard (SmolLM3-3B at
 AP $0.956$, statistically tied with the larger Qwen3-4B) is \emph{not} the largest model and \emph{not} the
 guard the mortgage benchmark prefers --- the winner flips with the benchmark.
@@ -160,7 +162,7 @@ verdict} --- and three questions on a single shared panel of checkpoints:
 \begin{enumerate}[leftmargin=1.6em,itemsep=1pt]
   \item \textbf{Does fine-tuning transfer?} (\Cref{sec:actI}) --- or does the guard specialize to its training sources?
   \item \textbf{Can we recover transfer without retraining?} (\Cref{sec:actIII}) --- by composing base $+$ adapter.
-  \item \textbf{Does any of it survive a change of domain?} (\Cref{sec:actIV}) --- across law, finance, health, and mortgage.
+  \item \textbf{Does a general-safety score cover a regulated domain?} (\Cref{sec:actIV}) --- evaluated \emph{zero-shot} across law, finance, health, and mortgage.
 \end{enumerate}
 
 \paragraph{What is new here.} Prior work shows fine-tuning can weaken safety behavior
@@ -173,11 +175,12 @@ domains. Concretely, the novel contributions are:
 \begin{enumerate}[leftmargin=1.7em,itemsep=1pt]
   \item \textbf{A paired estimand} that cleanly separates represented-source gain from held-out transfer,
   with a fixed-panel hierarchical bootstrap (\Cref{sec:actI}).
-  \item \textbf{The ``attractor'' finding:} SFT drives every checkpoint to a benchmark-fixed endpoint, so
-  the popular reading ``stronger bases specialize more'' is arithmetic; the sharper, falsifiable claim is
-  \emph{endpoint invariance} (\Cref{sec:actI-coupling}).
-  \item \textbf{A retraining-free composition operator} that recovers transfer as an ensemble diversity
-  gain, with the mechanism (base-correlated adapter errors) made explicit (\Cref{sec:actIII}).
+  \item \textbf{The ``attractor'' finding:} on this panel SFT drives each checkpoint toward a benchmark-fixed
+  endpoint, so the popular reading ``stronger bases specialize more'' is largely arithmetic; the sharper,
+  falsifiable claim is \emph{endpoint invariance} (\Cref{sec:actI-coupling}).
+  \item \textbf{A retraining-free composition operator} that recovers transfer, with an equal-cost SFT+SFT
+  control isolating the base's contribution (\Cref{tab:sftsft}) and a candidate diversity mechanism
+  (base-correlated adapter errors) --- reported as motivation, not proof (\Cref{sec:actIII}).
   \item \textbf{A dual-labeled, HMDA-grounded mortgage benchmark} ($G\times D$) with a protected-class
   fairness-invariance gate, plus an external, expert-annotated finance/health/law replication
   (\Cref{sec:actIV}).
@@ -265,7 +268,7 @@ and benchmark rank are distinct axes. AP is shown on a zoomed $[0.80,1.00]$ scal
 \label{sec:synthesis}
 The three acts are one lesson. A guard's benchmark score is co-produced by the benchmark: SFT buys
 represented-source ranking, not transfer (Act~I); keeping the base in an output-space average
-\emph{recovers} some transfer for free of retraining, though not a threshold (Act~II); and a change of
+\emph{recovers} some transfer without retraining (at a second inference pass), though not a threshold (Act~II); and a change of
 domain can hide the violation entirely, so regulated domains need domain-grounded evaluation and a
 fairness gate (Act~III).
 The recurring cast makes it concrete: Qwen3-4B, the strongest base, specializes the most on transfer,
@@ -342,22 +345,32 @@ Operational coupling & self-contained; pinned, versioned, auditable in-house & e
 \section{Reproducibility}
 \label{sec:repro}
 Every number above is \code{\textbackslash input} from a committed generated table bound to a lock ---
-none is hand-typed. A single entry point, \code{make reproduce} (\code{papers/unified-report/reproduce.py}),
-regenerates all tables/figures from committed per-row scores by calling each study's analysis (Paper A in
-its lock-pinned env; Paper B, mortgage, and ExpGuard from committed scores), and asserts
-byte-identity with the committed report tables. It needs no GPU and no network; only re-training the
-guards or re-scoring the gated ExpGuard set requires a GPU / dataset access. Raw third-party rows are
-referenced by pinned identifier + revision + content hash, not redistributed.
+none is hand-typed. A single entry point, \code{make reproduce} (run in \code{papers/unified-report/}, which
+calls \code{reproduce.py}; distinct from the repo-root \code{make repro} that re-verifies the release cache),
+regenerates all tables/figures from committed per-row scores by calling each study's analysis (the Act~I
+specialization tables in a lock-pinned environment; the Act~II composition, mortgage, and ExpGuard tables
+from committed scores in any environment), and asserts byte-identity with the committed report tables.
 
-\paragraph{Code and data availability.} All code, data manifests, generated tables, and the frozen
-benchmark are public at \url{https://github.com/rrahimi-uci/guard-ranking-fragility}. The one-command
-pipeline is \code{papers/unified-report/reproduce.py} (\code{make reproduce}); the frozen, dual-labeled
-mortgage benchmark ships at \code{mortgage-benchmark/benchmark/v1\_hmda2022/} (994 rows,
+\paragraph{Three reproducibility tiers, kept distinct.} \textbf{(i) Analysis reproducibility} --- regenerating
+every table and figure from the committed per-row scores --- is what \code{make reproduce} verifies
+byte-for-byte, with no GPU and no network, and is the tier every number in this report meets.
+\textbf{(ii) Training/scoring reproducibility} --- re-deriving those per-row scores by training the $4\times5$
+adapters and rescoring --- requires a GPU and pinned model/data access (only re-scoring the gated ExpGuard
+set additionally needs dataset access). \textbf{(iii) Artifact-generation reproducibility} --- regenerating
+the mortgage benchmark itself --- is \emph{not} claimed: its LLM construction stages run at nonzero
+temperature and the set is intentionally frozen, so only its \emph{evaluation} reproduces, not its
+generation. Raw third-party rows are referenced by pinned identifier + revision + content hash, not
+redistributed.
+
+\paragraph{Code and data availability.} \begin{sloppypar}All code, data manifests, generated tables, and
+the frozen benchmark are public at \url{https://github.com/rrahimi-uci/guard-ranking-fragility}. The
+one-command pipeline is \code{papers/unified-report/reproduce.py} (\code{make reproduce}); the frozen,
+dual-labeled mortgage benchmark ships at \code{mortgage-benchmark/benchmark/v1\_hmda2022/} (994 rows,
 SHA-256-checksummed, with a text-free index); the committed per-row guard scores that regenerate every
-number live under \code{artifacts/} (Paper~A in \code{artifacts/paper\_a\_sft\_v2/}, the mortgage baseline
-in \code{mortgage-benchmark/out\_eval/}, and the finance/health/law scores in
+number live under \code{artifacts/} (the Act~I/II scores in \code{artifacts/paper\_a\_sft\_v2/}, the
+mortgage baseline in \code{mortgage-benchmark/out\_eval/}, and the finance/health/law scores in
 \code{artifacts/expguard\_external/}); and the figures are built by
-\code{papers/unified-report/figures/make\_figures.py}.
+\code{papers/unified-report/figures/make\_figures.py}.\end{sloppypar}
 
 \section{Conclusion}
 \label{sec:conclusion}

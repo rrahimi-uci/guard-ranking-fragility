@@ -23,7 +23,7 @@ digraph data_splits {
          shape=diamond, style=filled, fillcolor="#fef9c3", color="#a16207", margin="0.05,0.03"];
 
   // ---- the carved sets (stacked on the right) ----
-  train   [label="TRAIN — 1,200 rows\n400 × 3 represented sources,\n200 safe : 200 unsafe each;\nfrozen row order (data seed)\n→ fine-tune the guard (SFT/DPO/GRPO)",
+  train   [label="TRAIN — 1,200 rows\n400 × 3 represented sources,\n200 safe : 200 unsafe each;\nfrozen row order (data seed)\n→ fine-tune the guard (LoRA-SFT)",
            fillcolor="#dbeafe", color="#1d4ed8", penwidth=1.5];
   calib   [label="VALIDATION (calibration / dev)\nheld-back rows, disjoint families\n→ fit ONE temperature + operating point",
            fillcolor="#ede9fe", color="#6d28d9", penwidth=1.5];
