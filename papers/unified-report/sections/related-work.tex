@@ -24,12 +24,12 @@ regime-split delta, not disagreements about which model is ``best.''
 \subsection{Small LLM guard classifiers}
 \label{sec:related-guards}
 The dominant deployment pattern is a compact decoder LLM turned into a binary or taxonomy-tagged
-moderation head. Llama Guard \citep{inan2023llamaguard,llamaguard} introduced the input--output
+moderation head. Llama Guard \citep{inan2023llamaguard} introduced the input--output
 safeguard framing and a safety taxonomy, and later iterations pushed toward smaller, cheaper, and
 multimodal variants \citep{meta2024llamaguard2,meta2024llamaguard3_8b,meta2024llamaguard3_1b,%
 fedorov2024llamaguard3_1b,meta2025llamaguard4}. ShieldGemma \citep{zeng2024shieldgemma} and Granite
 Guardian \citep{padhi2024graniteguardian} extend the recipe to other base families with broad harm
-taxonomies; WildGuard \citep{han2024wildguard,wildguard} adds one-stop coverage of prompt harm,
+taxonomies; WildGuard \citep{han2024wildguard} adds one-stop coverage of prompt harm,
 response harm, and refusal detection; and Qwen3Guard \citep{qwen3guard2025} is a recent open guard on
 the same Qwen family two of our checkpoints come from. Beyond the general-purpose guards, several works
 target narrower slices or richer inference: dedicated prompt-injection detectors
