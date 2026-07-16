@@ -19,8 +19,8 @@ that with a **paired, same-checkpoint** design on one fixed panel of four instru
 4. **Domains** — a dual-labeled mortgage benchmark in depth, plus finance/health/law breadth (ExpGuard).
 
 The **[unified research report](papers/unified-report/unified_report.pdf)** is the synthesis:
-*The Benchmark Chooses the Winner: Honestly Measuring, Tuning, and Composing Small Safety Guards Across
-Objectives and Four High-Compliance Domains.* Everything in it regenerates from committed per-row scores
+*The Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards Across Objectives
+and High-Compliance Business Domains.* Everything in it regenerates from committed per-row scores
 through one entry point (below). It is comprehensive but **not release-ready**: the Act II objective-axis
 (Paper C) has no result yet. See the [status ledger](papers/unified-report/STATUS.md).
 
