@@ -284,10 +284,24 @@ def expguard_domains():
     fig.savefig(HERE / "fig_expguard_domains.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
+def diagrams():
+    """Render the Graphviz flowcharts (.dot -> .png) if graphviz 'dot' is available; otherwise keep the
+    committed PNGs (data-split construction + the paired experimental design)."""
+    import shutil, subprocess
+    dot = shutil.which("dot")
+    if not dot:
+        print("  [skip] diagrams: graphviz 'dot' not found; keeping committed PNGs")
+        return
+    for name in ("data_splits", "experiment_design"):
+        src = HERE / f"{name}.dot"
+        if src.exists():
+            subprocess.run([dot, "-Tpng", "-Gdpi=150", str(src), "-o", str(HERE / f"{name}.png")], check=True)
+
+
 def main():
     made = []
     for fn in (act1_percheckpoint, attractor, act3_composition, mortgage_quadrant, mortgage_baseline,
-               expguard_domains, prevalence):
+               expguard_domains, prevalence, diagrams):
         try:
             fn(); made.append(fn.__name__)
         except Exception as e:

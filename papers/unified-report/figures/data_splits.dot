@@ -1,0 +1,47 @@
+// Unified report — how the training, validation (calibration), and test sets are built.
+// Render: dot -Tpng -Gdpi=150 data_splits.dot -o data_splits.png
+digraph data_splits {
+  rankdir=LR;
+  graph [fontname="Helvetica", fontsize=11, nodesep=0.28, ranksep=0.9, bgcolor="white"];
+  node  [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled",
+         fillcolor="#eef2ff", color="#334155", penwidth=1.1, margin="0.14,0.09"];
+  edge  [fontname="Helvetica", fontsize=9, color="#475569"];
+
+  // ---- public source datasets (cylinders), pinned by id+revision+hash ----
+  subgraph cluster_src {
+    label="Public sources\n(pinned id + revision + hash)";
+    labeljust=l; labelloc=t; fontname="Helvetica-Bold"; fontsize=10;
+    color="#94a3b8"; style="rounded,filled"; fillcolor="#f8fafc";
+    rep [label="3 represented sources\nToxicChat · Prompt-Injections\n· Jailbreak-Classification", shape=cylinder, fillcolor="#e2e8f0"];
+    tr  [label="4 transfer sources\nJailbreakBench · XSTest\n· WildGuardTest · WildJailbreak", shape=cylinder, fillcolor="#e2e8f0"];
+    st  [label="2 stress sources\nOR-Bench-Hard · HarmBench", shape=cylinder, fillcolor="#e2e8f0"];
+    ex  [label="Excluded by design\nBeaverTails", shape=cylinder, fillcolor="#fee2e2", color="#b91c1c"];
+  }
+
+  // ---- decontamination / family-isolation gate ----
+  decon [label="Decontaminate\n+ family-isolate\n\nMinHash char-5-gram\nnear-duplicate families;\neach WHOLE family → one split\n(FAILS CLOSED if a\nfamily would cross)",
+         shape=diamond, style=filled, fillcolor="#fef9c3", color="#a16207", margin="0.05,0.03"];
+
+  // ---- the carved sets (stacked on the right) ----
+  train   [label="TRAIN — 1,200 rows\n400 × 3 represented sources,\n200 safe : 200 unsafe each;\nfrozen row order (data seed)\n→ fine-tune the guard (SFT/DPO/GRPO)",
+           fillcolor="#dbeafe", color="#1d4ed8", penwidth=1.5];
+  calib   [label="VALIDATION (calibration / dev)\nheld-back rows, disjoint families\n→ fit ONE temperature + operating point",
+           fillcolor="#ede9fe", color="#6d28d9", penwidth=1.5];
+  reptest [label="TEST · represented-source\nheld-back rows from the 3 TRAIN sources\n→ gain on sources seen in training",
+           fillcolor="#dcfce7", color="#15803d", penwidth=1.5];
+  trtest  [label="TEST · dataset-held-out transfer\nthe 4 transfer sources (never fine-tuned on)\n→ transfer to unseen datasets",
+           fillcolor="#dcfce7", color="#15803d", penwidth=1.5];
+  sttest  [label="STRESS probes (single-class; no AP)\nbenign false-alarm rate (OR-Bench)\nattack recall (HarmBench)",
+           fillcolor="#f1f5f9", color="#475569"];
+
+  rep -> decon;
+  tr  -> decon;
+  st  -> decon;
+  ex  -> decon [style=dashed, color="#b91c1c", label="dropped"];
+
+  decon -> train;
+  decon -> calib;
+  decon -> reptest;
+  decon -> trtest;
+  decon -> sttest;
+}
