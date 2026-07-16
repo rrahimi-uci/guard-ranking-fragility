@@ -14,8 +14,20 @@ labels it \code{safe} or \code{unsafe} before anything acts on it. We build each
 truly-unsafe requests above safe ones. The central move of this report is to always compare a
 fine-tuned guard against the \emph{same model before tuning}, on identical inputs, and to separate two
 kinds of test set: benchmarks whose data the guard \emph{trained on} (represented) and benchmarks it
-\emph{never saw} (transfer). Almost every subtlety below is a way of making that comparison honest.
+\emph{never saw} (transfer). Almost every subtlety below is a way of making that comparison honest;
+\Cref{fig:design} previews the whole design on one page.
 \end{background}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.82\linewidth]{experiment_design.png}
+\caption{\textbf{The study at a glance (Acts~I--III).} From one fixed panel and one frozen training
+manifest, every guard we compare --- the untuned \textbf{base}, each \textbf{tuned} arm (SFT/DPO/GRPO),
+and the retraining-free \textbf{composition} --- is read by the \emph{same} single-token scorer on the
+\emph{same} represented and transfer test rows, and each is compared only against its \emph{own} base.
+That paired difference $\Delta$, aggregated by a family-aware bootstrap, is the estimand. Act~IV then adds
+the mortgage and finance/health/law domain evaluations on top of this same machinery.}
+\label{fig:design}
+\end{figure}
 
 \subsection{The guard: a single-token logit-difference head}
 \label{sec:bg-guard}
@@ -323,11 +335,26 @@ Jailbreak-Classification (\code{jackhhao/\ldots}) & prompt jailbreak & $400$ ($2
 \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]\centering
+\includegraphics[width=\linewidth]{data_splits.png}
+\caption{\textbf{How the training, validation, and test sets are built.} Public source datasets (left),
+each pinned by identifier, revision, and content hash, pass through a decontamination and
+family-isolation gate --- MinHash char-5-gram near-duplicate \emph{families} are each assigned
+\emph{whole} to a single split --- yielding five disjoint sets: the $1{,}200$-row \textbf{train} manifest
+(fine-tuning), a held-back \textbf{validation}/calibration split (temperature + operating point only), the
+\textbf{represented-source} and \textbf{dataset-held-out transfer} test sets, and single-class
+\textbf{stress} probes. No family crosses the train/test or validation/test boundary, and the build
+\emph{fails closed} if one would. BeaverTails is excluded entirely (it labels the prompt--response
+interaction, not the prompt).}
+\label{fig:splits}
+\end{figure}
+
 \subsection{Three evaluation regimes and decontamination}
 \label{sec:setup-decon}
 
 Evaluation is partitioned into three regimes, forming a spectrum of how ``new'' each test is to the
-guard.
+guard (\Cref{fig:splits} shows the full construction, from sources through the family-isolation gate to
+these regimes).
 \begin{itemize}[leftmargin=1.4em,itemsep=1pt]
   \item \textbf{Represented-source} $=$ \{ToxicChat, Prompt-Injections, Jailbreak-Classification\} rows
   \emph{held back} from training. These measure discrimination on sources the guard trained on.

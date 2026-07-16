@@ -1,0 +1,48 @@
+// Unified report — the paired experimental design (Acts I-III): what is trained, composed, and scored.
+// Render: dot -Tpng -Gdpi=150 experiment_design.dot -o experiment_design.png
+digraph experiment_design {
+  rankdir=TB;
+  graph [fontname="Helvetica", fontsize=11, nodesep=0.35, ranksep=0.5, bgcolor="white"];
+  node  [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled",
+         fillcolor="#eef2ff", color="#334155", penwidth=1.1, margin="0.14,0.09"];
+  edge  [fontname="Helvetica", fontsize=9, color="#475569"];
+
+  panel    [label="Fixed panel — 4 base instruction checkpoints (pinned revisions)\nQwen2.5-1.5B  ·  SmolLM2-1.7B  ·  SmolLM3-3B  ·  Qwen3-4B",
+            shape=cylinder, fillcolor="#e2e8f0"];
+  manifest [label="Frozen 1,200-row TRAIN manifest\n(identical rows by hash for every arm)",
+            shape=cylinder, fillcolor="#e2e8f0"];
+
+  base [label="BASE guard\nuntuned checkpoint\n(same prompt + single-token head)", fillcolor="#f1f5f9", color="#475569"];
+
+  subgraph cluster_obj {
+    label="Acts I & II — tune the guard head  (LoRA, 5 seeds per arm)";
+    labeljust=l; labelloc=t; fontname="Helvetica-Bold"; fontsize=10;
+    color="#94a3b8"; style="rounded,filled"; fillcolor="#f8fafc";
+    obj   [label="ONE objective per arm\nSFT  ·  DPO  ·  GRPO", fillcolor="#fef3c7", color="#a16207"];
+    tuned [label="TUNED guard\n(adapter on the base)"];
+    obj -> tuned;
+  }
+
+  compose [label="Act III — COMPOSITION  (no retraining)\ncalibrated output-space average of\nbase  ⊕  its SFT adapter",
+           fillcolor="#ede9fe", color="#6d28d9", penwidth=1.4];
+
+  score [label="Identical scorer: single-token logit-difference head\nevaluate on  TEST·represented  +  TEST·transfer\n(same rows · same prompt · same calibrator)",
+         fillcolor="#dbeafe", color="#1d4ed8", penwidth=1.5];
+
+  delta [label="PAIRED contrast, per checkpoint\nΔ = guard − its OWN base  (represented & transfer)\nso a change is attributable to the fine-tune, not to a model swap",
+         shape=diamond, style=filled, fillcolor="#fef9c3", color="#a16207", margin="0.12,0.06"];
+
+  boot [label="Paired hierarchical bootstrap\nPoisson(1) family re-count weights\n→ descriptive 95% intervals (this fixed panel)",
+        fillcolor="#dcfce7", color="#15803d", penwidth=1.5];
+
+  panel    -> base;
+  panel    -> obj;
+  manifest -> obj;
+  base     -> compose;
+  tuned    -> compose [label="  SFT arm"];
+
+  base    -> score;
+  tuned   -> score;
+  compose -> score;
+  score   -> delta -> boot;
+}
