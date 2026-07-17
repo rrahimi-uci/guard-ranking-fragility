@@ -108,15 +108,18 @@ general-safety score does not cover domain compliance: general-purpose instructi
 guards, rank mortgage violations only
 moderately and their fairness varies widely, and the top-ranked finance/health/law guard (SmolLM3-3B at
 AP $0.956$, statistically tied with the larger Qwen3-4B) is \emph{not} the largest model and \emph{not} the
-guard the mortgage benchmark prefers --- the winner flips with the benchmark.
+guard the mortgage benchmark prefers (directionally, on a small split) --- the numerically top-ranked
+guard differs across benchmarks.
 
 \smallskip
 \noindent\textbf{What is new.} Prior work either compares \emph{different} models on a leaderboard or shows
 generically that fine-tuning can erode safety; both conflate the fine-tune's effect with differences
 between models. Our paired same-checkpoint estimand isolates it, and we contribute the
-attractor/endpoint-invariance reframing, a retraining-free transfer-recovery operator, and a dual-labeled
-domain benchmark with a fairness-invariance gate --- kept honest by never pooling weaker and stronger
-evidence tiers and by regenerating every number from committed per-row scores.
+attractor/endpoint-invariance reframing, a retraining-free transfer-recovery operator, a dual-labeled
+domain benchmark with a fairness-invariance gate, and a \emph{preregistered, confirmatory} starting-type
+adaptation study across ten released checkpoints (\Cref{sec:adaptation}) --- kept honest by never
+pooling weaker and stronger evidence tiers and by regenerating every number from committed per-row
+scores.
 
 \smallskip
 \noindent\textbf{Impact for high-compliance, regulated domains.} Do not choose a guard by a single leaderboard
@@ -308,15 +311,17 @@ over-refusal, and domain sets. \\
 \rowcolor{guidealt}
 \textbf{\textcolor{tkgreenedge}{2.}~Ordinary SFT buys represented-source ranking, not transfer.} &
 Represented AP $\RepDelta$ (LCB $\RepLCB$) vs.\ transfer $\TransferDelta$ (UCB $\TransferUCB$);
-specialization in \SpecializationSeedCount/\SpecializationSeedCount{} seeds (\Cref{tab:primary}). &
+specialization in \SpecializationSeedCount/\TotalSeedCount{} seeds (\Cref{tab:primary}). &
 Always compare a tune to its \emph{own} base on represented \emph{and} held-out sets --- a delta vs.\
 other models hides the transfer cost. \\
 \rowcolor{white}
-\textbf{\textcolor{tkgreenedge}{3.}~A base-anchored KL penalty recovers most of the transfer SFT gives up --- free at inference.} &
-KL-SFT ($\beta{=}0.5$): transfer \KLBetaHalfTransferDelta{} vs.\ SFT for a small
-represented cost \KLBetaHalfRepDelta{} (\Cref{sec:actI-klsft}). &
+\textbf{\textcolor{tkgreenedge}{3.}~A base-anchored KL penalty buys back most of the transfer SFT gives up --- at a represented-source cost, no extra inference.} &
+KL-SFT ($\beta{=}0.5$): transfer \KLBetaHalfTransferDelta{} vs.\ SFT at a represented cost
+\KLBetaHalfRepDelta{} (general checkpoints, retrospective, $n{=}4$). The \emph{confirmatory} study
+(Row~7) finds this trade fails non-inferiority (\Cref{sec:adaptation}). &
 If you must SFT and care about OOD, add $\beta\,\mathrm{KL}(\pi_\theta\Vert\pi_{\text{base}})$
-($\beta{\approx}0.5$); it keeps specialization and costs no extra forward pass. \\
+($\beta{\approx}0.5$); it recovers transfer at no extra forward pass but a real represented-source
+cost --- a tradeoff dial, not a free upgrade. \\
 \rowcolor{guidealt}
 \textbf{\textcolor{tkgreenedge}{4.}~Output-space composition repairs a tuned guard's lost transfer --- at inference, not retraining.} &
 Base$+$adapter average recovers transfer and beats an equal-cost SFT$+$SFT ensemble
