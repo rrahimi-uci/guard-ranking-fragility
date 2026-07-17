@@ -167,8 +167,22 @@ def score_condition(*, ckpt: dict, contract, adapter_dir, condition: str, seed, 
     safe_id, unsafe_id = int(dtoks["safe_id"]), int(dtoks["unsafe_id"])
     ctr_hash = _contract_hash(contract_name, tok, dtoks)
     # Reserve the verdict budget so a scored prompt also leaves room to generate its verdict.
-    reserved = max(len(contract_obj.completion_ids(tok, 0)),
-                   len(contract_obj.completion_ids(tok, 1)))
+    comp0 = list(contract_obj.completion_ids(tok, 0))
+    comp1 = list(contract_obj.completion_ids(tok, 1))
+    reserved = max(len(comp0), len(comp1))
+    # Decision-position scoring (proposal Sec 5.2/8.2): read the verdict margin where the model
+    # predicts the top-level verdict VALUE, i.e. after teacher-forcing the SHARED completion prefix
+    # ("Safety: " for Qwen3Guard, "\n\n" for Llama-Guard, "\nHarmful request: " for WildGuard).
+    # Empty prefix for single-token contracts (paper_a / shieldgemma / granite) -> reads at prompt
+    # end exactly as before. Realign safe/unsafe ids to the completion's actual divergence token so
+    # the scored logit is the one the native verdict would place there.
+    kdec = 0
+    while kdec < len(comp0) and kdec < len(comp1) and comp0[kdec] == comp1[kdec]:
+        kdec += 1
+    decision_prefix = comp0[:kdec]
+    if kdec < len(comp0) and kdec < len(comp1):
+        safe_id, unsafe_id = int(comp0[kdec]), int(comp1[kdec])
+    pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
 
     model = AutoModelForCausalLM.from_pretrained(
         ckpt["model_id"], revision=model_rev,
@@ -188,25 +202,33 @@ def score_condition(*, ckpt: dict, contract, adapter_dir, condition: str, seed, 
     with torch.no_grad():
         for i in range(0, len(rows), batch_size):
             chunk = rows[i:i + batch_size]
-            rendered, trunc = [], []
+            seqs, trunc = [], []
             for r in chunk:
                 p, t = contract_obj.render(tok, r["text"], max_len, reserved)
                 if not t.get("wrapper_preserved", True):
                     raise C.ArtifactContractError("scoring prompt lost the verdict-contract wrapper")
-                rendered.append(p)
+                ids = list(tok(p, add_special_tokens=False)["input_ids"]) + decision_prefix
+                seqs.append(ids)
                 trunc.append(t)
-            enc = tok(rendered, return_tensors="pt", padding=True, truncation=False,
-                      add_special_tokens=False).to(device)
-            if int(enc["attention_mask"].sum(1).max()) > max_len:
+            width = max(len(s) for s in seqs)
+            if width > max_len:
                 raise C.ArtifactContractError("budgeted scoring prompt exceeds max_length")
+            # right-pad manually so each row's teacher-forced decision prefix sits flush after its
+            # prompt; the margin is read at each row's own last real token (predicts the verdict).
+            input_ids = torch.full((len(seqs), width), int(pad_id), dtype=torch.long)
+            attn = torch.zeros((len(seqs), width), dtype=torch.long)
+            for j, s in enumerate(seqs):
+                input_ids[j, :len(s)] = torch.tensor(s, dtype=torch.long)
+                attn[j, :len(s)] = 1
+            input_ids = input_ids.to(device); attn = attn.to(device)
             t0 = time.time()
-            logits = model(**enc).logits
+            logits = model(input_ids=input_ids, attention_mask=attn).logits
             if device == "mps":
                 torch.mps.synchronize()
             elif device == "cuda":
                 torch.cuda.synchronize()
             dt_ms = (time.time() - t0) * 1000.0 / max(1, len(chunk))
-            last = enc["attention_mask"].sum(1) - 1
+            last = attn.sum(1) - 1  # last teacher-forced token -> its logits predict the verdict value
             picked = logits[torch.arange(len(chunk)), last]
             argmax_ids = picked.argmax(dim=-1)
             for j, r in enumerate(chunk):
