@@ -113,6 +113,15 @@ realism; the banding and marginal sampling buy privacy.
 \end{background}
 
 \subsection{The agentic construction pipeline}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.92\linewidth,keepaspectratio]{pipeline.png}
+\caption{The agentic mortgage-benchmark construction pipeline: real HMDA records $\to$ de-identified
+banded fact sheets $\to$ plan / ground / generate / adversarially-mutate / rubric-bound-judge $\to$
+accept-iff the judged label matches the planned target $\to$ provenance + family-isolated split $\to$
+the frozen \texttt{v1\_hmda2022} release scored by the evaluator.}
+\label{fig:pipeline}
+\end{figure}
 \label{sec:actIV-mortgage-pipeline}
 
 Rows are authored and labeled by a five-stage agentic loop, summarized in \Cref{fig:pipeline}. The loop

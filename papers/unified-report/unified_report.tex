@@ -151,7 +151,6 @@ fair-lending claim is licensed; code, data manifests, and the frozen benchmark a
 \clearpage
 \input{sections/executive-spread}   % the five-minute route (cards + selector + study map)
 
-\clearpage
 \tableofcontents
 
 \clearpage
@@ -241,15 +240,7 @@ audit, not a deployment recommendation.
 
 \input{sections/act4-mortgage}      % Act III (Domains) mortgage detail
 
-% ---- Act III (Domains) floats referenced by sections/act4-mortgage ----
-\begin{figure}[htbp]\centering
-\includegraphics[height=0.82\textheight,keepaspectratio]{pipeline.png}
-\caption{The agentic mortgage-benchmark construction pipeline: real HMDA records $\to$ de-identified
-banded fact sheets $\to$ plan / ground / generate / adversarially-mutate / rubric-bound-judge $\to$
-accept-iff the judged label matches the planned target $\to$ provenance + family-isolated split $\to$
-the frozen \texttt{v1\_hmda2022} release scored by the evaluator.}
-\label{fig:pipeline}
-\end{figure}
+% ---- Act III (Domains) floats ---- (the full-page pipeline figure moved to Appendix C, near its subsection)
 \input{generated/mortgage_composition_table}   % tab:composition
 \begin{figure}[htbp]\centering
 \includegraphics[width=0.72\linewidth]{fig_mortgage_quadrant.pdf}
@@ -499,6 +490,7 @@ recovers some of the lost transfer; and in regulated domains a general-safety sc
 compliance. The disciplined next step is not a more
 confident headline but a prospectively locked evaluation on genuinely uninspected data.
 
+\clearpage
 \appendix
 \input{sections/related-work}       % Appendix A: related work (moved out of the main narrative)
 \input{sections/appendix-methods}   % Appendix B: shared experimental setup, frozen objects, statistical protocol
