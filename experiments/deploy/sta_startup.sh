@@ -1,0 +1,45 @@
+#!/bin/bash
+# Starting-type adaptation study: one checkpoint per VM. preflight -> train (11 cells) -> eval
+# (per-checkpoint parquet) -> upload -> self-stop (billing-safe). Mirrors the proven klsft runner.
+exec > /var/log/sta.log 2>&1
+set -x
+hdr="Metadata-Flavor: Google"
+MK=$(curl -s -H "$hdr" http://metadata/computeMetadata/v1/instance/attributes/model-key)
+BUCKET=$(curl -s -H "$hdr" http://metadata/computeMetadata/v1/instance/attributes/bucket)
+HFTOKEN=$(curl -s -H "$hdr" http://metadata/computeMetadata/v1/instance/attributes/hf-token)
+PY=/usr/bin/python3
+echo "=== STA MK=$MK ==="
+$PY -c "import torch;print('torch',torch.__version__,torch.cuda.get_device_name(0))" || true
+cd /root
+gsutil cp "$BUCKET/bundle.tar.gz" /root/bundle.tar.gz
+rm -rf /root/repo && mkdir -p /root/repo && tar xzf /root/bundle.tar.gz -C /root/repo
+cd /root/repo
+mkdir -p /root/staout/runs /root/staout/scores
+export TOKENIZERS_PARALLELISM=false PYTHONUNBUFFERED=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+export HF_TOKEN="$HFTOKEN" HF_HUB_OFFLINE=0
+$PY -m pip uninstall -y torchaudio torchvision 2>&1 | tail -1
+$PY -m pip install -q --no-input transformers==5.12.1 peft==0.19.1 "jinja2>=3.1.0" "pyarrow>=14" \
+    pandas scikit-learn scipy accelerate safetensors sentencepiece protobuf tiktoken PyYAML 2>&1 | tail -3
+$PY -c "import transformers,peft,jinja2,sentencepiece,tiktoken; from peft import PeftModel; print('IMPORTS OK')"
+
+# Phase-0 structural eligibility preflight (records report; non-fatal to the run)
+$PY experiments/preflight_starting_type_adaptation.py --key "$MK" --device cuda --dtype float32 \
+    --skip-training --out /root/staout/preflight_${MK}.json || echo "preflight rc=$?"
+
+# Train all 11 cells (1 unmodified + 5 sft + 5 kl_sft primary beta) -- FINAL
+$PY experiments/run_starting_type_adaptation.py --checkpoints "$MK" --final --device cuda \
+    --out-root /root/staout/runs
+TRC=$?
+# Score the whole tree against the frozen Paper A scoring manifests -> per-checkpoint parquet -- FINAL
+$PY experiments/run_eval_starting_type_adaptation.py --checkpoints "$MK" --final --device cuda \
+    --manifests-dir artifacts/paper_a_sft_v2/manifests --scores-dir /root/staout/scores --batch-size 32
+ERC=$?
+echo "=== $MK train_rc=$TRC eval_rc=$ERC ==="
+gsutil cp /root/staout/scores/sta_scores_${MK}.parquet "$BUCKET/results/" 2>/dev/null
+gsutil cp /root/staout/scores/sta_scores_${MK}.metadata.json "$BUCKET/results/" 2>/dev/null
+gsutil cp /root/staout/preflight_${MK}.json "$BUCKET/results/" 2>/dev/null
+gsutil -m cp -r /root/staout/runs/${MK} "$BUCKET/results/adapters_${MK}" 2>/dev/null
+gsutil cp /var/log/sta.log "$BUCKET/logs/sta_${MK}.log"
+[ "$TRC" = "0" ] && [ "$ERC" = "0" ] && echo "train=$TRC eval=$ERC" | gsutil cp - "$BUCKET/results/DONE_${MK}"
+echo "=== $MK done train=$TRC eval=$ERC -- self-stopping ==="
+sudo shutdown -h +2
