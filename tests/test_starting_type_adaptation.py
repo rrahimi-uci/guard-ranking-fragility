@@ -53,18 +53,18 @@ def test_condition_ids_distinct():
 
 
 def test_contracts_registry():
-    # guard contracts registered but raise until implemented; unknown raises KeyError
+    # guard-native contracts are now IMPLEMENTED + wired via experiments/guard_contracts.py
+    # (each still needs a Phase-0 real-model fidelity gate); unknown names still raise KeyError.
+    import guard_contracts
     for name in ("shieldgemma_yes_no", "qwen3guard_toplevel", "granite_yes_no",
                  "llama_guard_toplevel", "wildguard_prompt_harm"):
-        try:
-            A.get_contract(name, tok=None); assert False, name
-        except NotImplementedError:
-            pass
+        assert name in guard_contracts.GUARD_CONTRACTS, name
+        assert callable(guard_contracts.GUARD_CONTRACTS[name]), name
     try:
         A.get_contract("nope", tok=None); assert False
     except KeyError:
         pass
-    print("  [ok] guard contracts raise NotImplementedError; unknown -> KeyError")
+    print("  [ok] 5 guard-native contracts wired into GUARD_CONTRACTS; unknown -> KeyError")
 
 
 def test_adapt_sft_and_klsft(tmp="/tmp/sta_test"):
