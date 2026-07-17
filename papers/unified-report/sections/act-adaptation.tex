@@ -21,8 +21,10 @@ against the real tokenizer at a decision-position fidelity check before scoring;
 frozen Paper~A binary manifest, LoRA recipe, and optimizer. We report macro-AP (mean over benchmark
 sources) on the RAW logit margin, on represented (\texttt{id\_test}) and held-out (\texttt{transfer})
 splits, as a within-checkpoint change vs.\ the \emph{same} unmodified checkpoint (the KL reference is
-that checkpoint). Equal-family means (H) carry one-sided $97.5\%$ family-aware bootstrap lower bounds
-(10{,}000 resamples), Bonferroni-split across the two RQ families (familywise $\alpha=0.05$).
+that checkpoint). Each statistic H is an equal-weight mean over the six \emph{model} families; its
+one-sided $97.5\%$ lower bound comes from a 10{,}000-resample bootstrap that resamples \emph{evaluation}
+(benchmark-source) groups and training seeds while holding model identities fixed, Bonferroni-split
+across the two research questions (familywise $\alpha=0.05$).
 
 \input{generated/tab_adaptation_gen}
 
@@ -56,7 +58,10 @@ fixed, so with few families a single dominant family can move the equal-family m
 fixed-panel summary, not a population estimate. One checkpoint, Llama-Guard-3-1B, shows essentially zero
 movement under both SFT and KL-SFT (\Cref{tab:adaptation}): its $20$-token-pruned, embedding-tied output
 head leaves the decision-token margins effectively unmoved by LoRA, so it contributes no adaptation
-signal and should be read as a null/degenerate cell, not evidence of robustness.
+signal and should be read as a null/degenerate cell, not evidence of robustness. It is retained in the
+equal-family means as a zero contribution; because a null family only pulls those means toward zero,
+dropping it does not weaken either verdict (it would only raise the RQ1 gain/concentration bounds and
+push the RQ2 cost bound further past the margin).
 
 \begin{takeaway}{Adapting a released guard}
 Fine-tuning a purpose-built guard on your data specializes it just like a general model (RQ1,
