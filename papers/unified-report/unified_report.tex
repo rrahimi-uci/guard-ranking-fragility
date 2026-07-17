@@ -10,6 +10,7 @@
 \usepackage{float}
 \usepackage{graphicx}
 \usepackage{xcolor}
+\usepackage{colortbl}
 \usepackage[most]{tcolorbox}
 \usepackage{enumitem}
 \usepackage{caption}
@@ -29,6 +30,8 @@
 \definecolor{bgblueedge}{HTML}{2563EB}
 \definecolor{tkgreen}{HTML}{EAF7EE}
 \definecolor{tkgreenedge}{HTML}{15803D}
+\definecolor{guidealt}{HTML}{F2FBF5}   % zebra tint for the guidelines table
+\definecolor{guiderule}{HTML}{BFE3CB}  % soft green rule
 \newtcolorbox{background}[1]{colback=bgblue,colframe=bgblueedge,title={#1},fonttitle=\bfseries\small,
   fontupper=\small,boxrule=0.5pt,left=4pt,right=4pt,top=3pt,bottom=3pt,breakable}
 \newtcolorbox{takeaway}[1]{colback=tkgreen,colframe=tkgreenedge,title={#1},fonttitle=\bfseries\small,
@@ -287,47 +290,48 @@ macro-AP deltas from the fixed panel (represented $=$ in-distribution sources, t
 sources); CIs/LCBs are the preregistered one-sided bounds. Read directional rows (marked) as a
 direction, not a verdict.}
 \label{tab:guidelines}
-\renewcommand{\arraystretch}{1.25}
-\begin{tabular}{@{}p{0.235\linewidth} p{0.34\linewidth} p{0.35\linewidth}@{}}
-\toprule
-\textbf{What we learned} & \textbf{Evidence (this study)} & \textbf{Guideline: what to do} \\
-\midrule
-1.\ A guard's ranking is co-produced by the benchmark --- it flips across benchmarks. &
+\renewcommand{\arraystretch}{1.4}
+\setlength{\extrarowheight}{2.5pt}
+\arrayrulecolor{guiderule}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.235\linewidth} >{\raggedright\arraybackslash}p{0.335\linewidth} >{\raggedright\arraybackslash}p{0.35\linewidth}@{}}
+\rowcolor{tkgreenedge}
+{\color{white}\bfseries What we learned} & {\color{white}\bfseries Evidence (this study)} & {\color{white}\bfseries Guideline: what to do} \\
+\rowcolor{white}
+\textbf{\textcolor{tkgreenedge}{1.}~A guard's ranking is co-produced by the benchmark --- it flips across benchmarks.} &
 Qwen3-4B is the worst transfer specializer yet the numerically best zero-shot mortgage guard
 (\Cref{sec:synthesis}; Act~III, directional/small split). &
 Never rank guards on a single leaderboard; score \emph{your} candidates on represented, held-out,
 over-refusal, and domain sets. \\
-\midrule
-2.\ Ordinary SFT buys represented-source ranking, not transfer. &
+\rowcolor{guidealt}
+\textbf{\textcolor{tkgreenedge}{2.}~Ordinary SFT buys represented-source ranking, not transfer.} &
 Represented AP $\RepDelta$ (LCB $\RepLCB$) vs.\ transfer $\TransferDelta$ (UCB $\TransferUCB$);
-specialization in \SpecializationSeedCount/\SpecializationSeedCount seeds (\Cref{tab:primary}). &
+specialization in \SpecializationSeedCount/\SpecializationSeedCount{} seeds (\Cref{tab:primary}). &
 Always compare a tune to its \emph{own} base on represented \emph{and} held-out sets --- a delta vs.\
 other models hides the transfer cost. \\
-\midrule
-3.\ A base-anchored KL penalty recovers most of the transfer SFT gives up --- at training time, free
-at inference. &
+\rowcolor{white}
+\textbf{\textcolor{tkgreenedge}{3.}~A base-anchored KL penalty recovers most of the transfer SFT gives up --- free at inference.} &
 KL-SFT ($\beta{=}0.5$): transfer \KLBetaHalfTransferDelta{} vs.\ SFT for a small
 represented cost \KLBetaHalfRepDelta{} (\Cref{sec:actI-klsft}). &
 If you must SFT and care about OOD, add $\beta\,\mathrm{KL}(\pi_\theta\Vert\pi_{\text{base}})$
 ($\beta{\approx}0.5$); it keeps specialization and costs no extra forward pass. \\
-\midrule
-4.\ Output-space composition repairs a tuned guard's lost transfer --- at inference, not retraining. &
+\rowcolor{guidealt}
+\textbf{\textcolor{tkgreenedge}{4.}~Output-space composition repairs a tuned guard's lost transfer --- at inference, not retraining.} &
 Base$+$adapter average recovers transfer and beats an equal-cost SFT$+$SFT ensemble
 (\Cref{tab:sftsft}), so the gain is the base's, not generic ensembling. &
 Compose to \emph{repair} a guard you already tuned; then recalibrate the threshold on the target
 regime (ranking recovery $\neq$ calibration transfer). \\
-\midrule
-5.\ A domain change can hide the violation entirely; general-safety score $\neq$ compliance. &
+\rowcolor{white}
+\textbf{\textcolor{tkgreenedge}{5.}~A domain change can hide the violation entirely; general-safety score $\neq$ compliance.} &
 Rankings and margins shift on the mortgage domain split (Act~III, \Cref{tab:composition};
 directional). &
 In a regulated domain, build domain-grounded, dual-labeled evaluation and a protected-pair
 invariance check before trusting any guard. \\
-\midrule
-6.\ A small, single-token guard is fast, cheap, and keeps data in-house. &
+\rowcolor{guidealt}
+\textbf{\textcolor{tkgreenedge}{6.}~A small, single-token guard is fast, cheap, and keeps data in-house.} &
 One forward pass $\approx$10--50\,ms on one A100 (\Cref{tab:latency}); no third-party egress. &
 Prefer a small self-hosted guard for inline, high-volume, or regulated traffic over a hosted-API
 round-trip. \\
-\bottomrule
+\arrayrulecolor{black}\bottomrule
 \end{tabular}
 \end{table}
 
