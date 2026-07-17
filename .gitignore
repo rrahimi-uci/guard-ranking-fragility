@@ -55,9 +55,16 @@ artifacts/paper_a_sft_v2/smoke/
 # Archived explorer prompt samples may contain NC-licensed or gated text.
 # reproduce.py build intermediate (canonical copy is committed under papers/unified-report/generated/)
 mortgage-benchmark/generated/
+# adaptation study: large binaries (LoRA adapters, model caches) stay in GCS only; text-free
+# score parquets + analysis + preflight reports ARE committed for future reference (Paper A pattern).
 artifacts/starting_type_adaptation_v1/runs/
-artifacts/starting_type_adaptation_v1/scores/
 artifacts/starting_type_adaptation_v1/starting_scores/
 artifacts/starting_type_adaptation_v1/smoke/
 artifacts/starting_type_adaptation_v1/downloads/
 artifacts/starting_type_adaptation_v1/manifests/
+/artifacts/starting_type_adaptation_v1/scores/*
+!/artifacts/starting_type_adaptation_v1/scores/*.parquet
+!/artifacts/starting_type_adaptation_v1/scores/*.metadata.json
+# KL-SFT (Act I control): keep text-free score parquets committed; adapters stay in GCS.
+artifacts/klsft_v1/runs/
+artifacts/klsft_v1/adapters/
