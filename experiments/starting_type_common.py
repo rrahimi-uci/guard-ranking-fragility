@@ -131,10 +131,19 @@ _GUARD_CONTRACTS = {
 def get_contract(name: str, tok) -> VerdictContract:
     if name == "paper_a_safe_unsafe":
         return PaperASafeUnsafe(tok)
+    # Guard-native contracts (experiments/guard_contracts.py) are implemented per each model's
+    # documented schema; they still require a Phase-0 generation-vs-likelihood fidelity gate against
+    # the real (revision-pinned) model before their AP is claim-bearing.
+    try:
+        from guard_contracts import GUARD_CONTRACTS
+    except Exception:
+        GUARD_CONTRACTS = {}
+    if name in GUARD_CONTRACTS:
+        return GUARD_CONTRACTS[name](tok)
     if name in _GUARD_CONTRACTS:
         raise NotImplementedError(
-            f"native verdict contract '{name}' is registered but not yet implemented; it is added "
-            f"after the Phase-0 preflight pins the model revision and locks its native renderer.")
+            f"native verdict contract '{name}' is registered but its guard_contracts builder is "
+            f"unavailable; it also needs the Phase-0 real-model fidelity gate before claim-bearing use.")
     raise KeyError(f"unknown verdict contract: {name}")
 
 
