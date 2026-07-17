@@ -222,8 +222,8 @@ checkpoints (1.5--4B); one LoRA-SFT recipe; four regulated domains. Not a leader
 audit, not a deployment recommendation.
 
 
-\input{sections/background-setup}   % Background (full) + The shared experimental setup (full methods)
-\input{sections/related-work}       % comprehensive related work
+\input{sections/background-setup}   % Background concepts only (methods moved to Appendix B)
+% related work + the detailed experimental setup are now Appendices A/B (see end of document)
 \input{sections/act1}               % Act I detail (defines tab:primary, fig:plane, tab:sensitivity)
 \input{sections/act-adaptation}     % Confirmatory starting-type adaptation study (10 checkpoints; sec:adaptation, tab:adaptation)
 \begin{figure}[htbp]\centering
@@ -499,6 +499,10 @@ Measured honestly, fine-tuning specializes rather than uniformly improves; a ret
 recovers some of the lost transfer; and in regulated domains a general-safety score does not cover
 compliance. The disciplined next step is not a more
 confident headline but a prospectively locked evaluation on genuinely uninspected data.
+
+\appendix
+\input{sections/related-work}       % Appendix A: related work (moved out of the main narrative)
+\input{sections/appendix-methods}   % Appendix B: shared experimental setup, frozen objects, statistical protocol
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
