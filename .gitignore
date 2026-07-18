@@ -69,3 +69,7 @@ artifacts/starting_type_adaptation_v1/manifests/
 artifacts/klsft_v1/runs/
 artifacts/klsft_v1/adapters/
 artifacts/starting_type_adaptation_v1/scores/combined.parquet
+
+# benchmark-explorer: the full local index.html embeds the gated ExpGuard dataset's
+# prompt text — never commit it. Commit index.public.html (public + synthetic only).
+benchmark-explorer/index.html
