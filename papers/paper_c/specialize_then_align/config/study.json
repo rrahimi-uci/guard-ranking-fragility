@@ -43,8 +43,15 @@
     "temporal_evaluation_eligibility_field": "temporal_evaluation_eligible",
     "mortgage_target_families": 400,
     "rows_per_mortgage_family": 3,
-    "calibration_allow_min_per_core_category": 2000,
-    "sealed_allow_min_per_core_category": 2000,
+    "calibration_allow_min_per_core_category": null,
+    "sealed_allow_min_per_core_category": null,
+    "allow_minimum_rule": "frozen_by_disjoint_pilot_from_fpr_precision_target_not_asserted",
+    "allow_minimum_target_fpr_halfwidth": 0.01,
+    "reuse_first_corpora": [
+      "data/mortgage_guard_bench_2k_v0_1_0",
+      "mortgage-benchmark/benchmark/v1_hmda2022",
+      "data/benchmarks/full"
+    ],
     "capacity_evaluation_mixture": {"allow": 0.94, "review": 0.05, "intervene": 0.01},
     "mortgage_reviewers": 2,
     "separate_adjudicator": true,

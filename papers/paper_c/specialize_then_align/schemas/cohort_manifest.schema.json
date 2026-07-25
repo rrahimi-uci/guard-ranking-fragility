@@ -40,7 +40,23 @@
         "mortgage_closed_end_advertising": {"$ref": "#/$defs/counts"}
       }
     },
-    "minimum_allow_per_core_category": {"const": 2000},
+    "minimum_allow_per_core_category": {
+      "description": "Frozen by the disjoint pilot from the FPR precision target, not asserted a priori. Before the pilot lock this is null and no cohort may claim primary status.",
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "allow_minimum_provenance": {
+      "description": "How minimum_allow_per_core_category was obtained. 'pilot_frozen' requires the pilot lock that derived it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis", "pilot_lock_id"],
+      "properties": {
+        "basis": {"enum": ["pilot_frozen", "pending_pilot"]},
+        "pilot_lock_id": {"type": ["string", "null"], "minLength": 1},
+        "target_fpr_halfwidth": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "derivation": {"type": ["string", "null"], "minLength": 1}
+      }
+    },
     "operational_prevalence": {
       "description": "Prespecified capacity-evaluation mixture; not an estimate of deployment prevalence.",
       "type": "object",
@@ -77,7 +93,7 @@
       "additionalProperties": false,
       "required": ["allow", "review", "intervene"],
       "properties": {
-        "allow": {"type": "integer", "minimum": 2000},
+        "allow": {"type": "integer", "minimum": 0},
         "review": {"type": "integer", "minimum": 0},
         "intervene": {"type": "integer", "minimum": 0}
       }

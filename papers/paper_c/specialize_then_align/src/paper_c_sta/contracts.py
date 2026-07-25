@@ -7,6 +7,7 @@ from datetime import date, datetime
 import hashlib
 import json
 import math
+from numbers import Real
 import os
 from pathlib import Path
 import re
@@ -558,6 +559,25 @@ def load_policy_vintage_inventory(
     return inventory
 
 
+def require_frozen_allow_minimum(config: Mapping, *, stream: str) -> int:
+    """Return the pilot-frozen ALLOW minimum, or refuse.
+
+    The pre-pilot value is ``null``.  Any step that builds, validates, or scores a
+    *primary* specificity cohort must call this first, so that an unfrozen cohort
+    size can never be silently treated as "no minimum".
+    """
+    if stream not in {"calibration", "sealed"}:
+        raise ContractError("allow-minimum stream must be calibration or sealed")
+    validate_config(config)
+    value = config["data"].get(f"{stream}_allow_min_per_core_category")
+    if value is None:
+        raise ContractError(
+            f"{stream} ALLOW minimum is not frozen; the disjoint pilot must derive it "
+            "from the FPR precision target before any primary cohort is built"
+        )
+    return _positive_int(value, f"data.{stream}_allow_min_per_core_category")
+
+
 def validate_config(config: Mapping) -> None:
     if config.get("schema_version") != 2:
         raise ContractError("config schema_version must be 2")
@@ -696,14 +716,31 @@ def validate_config(config: Mapping) -> None:
         raise ContractError("primary temporal cutoff must precede the 2026-07-21 rule change")
     _positive_int(data.get("mortgage_target_families"), "data.mortgage_target_families")
     _positive_int(data.get("rows_per_mortgage_family"), "data.rows_per_mortgage_family")
-    _positive_int(
-        data.get("calibration_allow_min_per_core_category"),
-        "data.calibration_allow_min_per_core_category",
-    )
-    _positive_int(
-        data.get("sealed_allow_min_per_core_category"),
-        "data.sealed_allow_min_per_core_category",
-    )
+    # The specificity-cohort size is a measured quantity, not an assertion: it is
+    # frozen by the disjoint pilot from the FPR precision target, exactly as the
+    # mortgage family count already is.  `null` is the honest pre-pilot state and
+    # fails closed downstream -- `require_frozen_allow_minimum` refuses to build or
+    # score a primary cohort until the pilot has supplied a number.
+    for field in (
+        "calibration_allow_min_per_core_category",
+        "sealed_allow_min_per_core_category",
+    ):
+        value = data.get(field)
+        if value is None:
+            continue
+        _positive_int(value, f"data.{field}")
+    rule = data.get("allow_minimum_rule")
+    if not isinstance(rule, str) or not rule.strip():
+        raise ContractError("data.allow_minimum_rule must be a nonempty string")
+    if profile == "primary" and rule != (
+        "frozen_by_disjoint_pilot_from_fpr_precision_target_not_asserted"
+    ):
+        raise ContractError("primary allow-minimum rule must defer to the pilot")
+    halfwidth = data.get("allow_minimum_target_fpr_halfwidth")
+    if not isinstance(halfwidth, Real) or isinstance(halfwidth, bool):
+        raise ContractError("data.allow_minimum_target_fpr_halfwidth must be numeric")
+    if not 0 < float(halfwidth) < 1:
+        raise ContractError("allow-minimum FPR half-width must lie in (0,1)")
     mixture = data.get("capacity_evaluation_mixture")
     if not isinstance(mixture, Mapping) or tuple(mixture) != ACTIONS:
         raise ContractError(

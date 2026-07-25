@@ -220,16 +220,31 @@ def torch_pair_loss(
     arm: str,
     chosen_policy_logps,
     rejected_policy_logps,
-    chosen_reference_logps,
-    rejected_reference_logps,
+    chosen_reference_logps=None,
+    rejected_reference_logps=None,
     beta: float,
     weights=None,
 ):
-    """Vectorized pair component; imports torch only when training calls it."""
+    """Vectorized pair component; imports torch only when training calls it.
+
+    The reference tensors are required for ``cm_dpo`` and must be absent for
+    ``cross_pairce``.  Making them optional-but-rejected rather than always
+    required stops the uncentered arm from being handed reference tensors that
+    it silently ignores, which would let a mismatched pair inventory reach the
+    optimizer unnoticed.
+    """
     import torch
     import torch.nn.functional as functional
 
     beta = _beta(beta)
+    if arm == "cross_pairce" and (
+        chosen_reference_logps is not None or rejected_reference_logps is not None
+    ):
+        raise ContractError("cross_pairce must not receive reference log-probabilities")
+    if arm == "cm_dpo" and (
+        chosen_reference_logps is None or rejected_reference_logps is None
+    ):
+        raise ContractError("cm_dpo requires both reference log-probability tensors")
     tensors = {
         "chosen_policy_logps": chosen_policy_logps,
         "rejected_policy_logps": rejected_policy_logps,

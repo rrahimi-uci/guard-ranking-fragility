@@ -39,6 +39,8 @@
     "rows_per_mortgage_family": 3,
     "calibration_allow_min_per_core_category": 1,
     "sealed_allow_min_per_core_category": 1,
+    "allow_minimum_rule": "smoke_fixed_infrastructure_only_not_pilot_derived",
+    "allow_minimum_target_fpr_halfwidth": 0.5,
     "capacity_evaluation_mixture": {"allow": 0.94, "review": 0.05, "intervene": 0.01},
     "mortgage_reviewers": 2,
     "separate_adjudicator": true,
