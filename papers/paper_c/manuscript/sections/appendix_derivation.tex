@@ -1,0 +1,19 @@
+\section{Detailed DPO reduction}
+
+For any two tokens $a,b$ under the same next-token distribution,
+\begin{equation}
+\log\pi_\theta(a\mid x)-\log\pi_\theta(b\mid x)
+=z_\theta(a\mid x)-z_\theta(b\mid x),
+\end{equation}
+because the log-partition function cancels. Taking $a=v^+$ and $b=v^-$ and
+using the gold-dependent sign gives $m_\theta$. Applying the same identity to the
+reference yields
+\begin{equation}
+\Delta_\theta-\Delta_{\mathrm{ref}}=m_\theta-m_{\mathrm{ref}},
+\end{equation}
+and substitution into the DPO logistic objective produces
+$\operatorname{softplus}[-\beta(m_\theta-m_{\mathrm{ref}})]$. This equality
+depends on both verdicts being distinct single tokens at the same prediction
+position. It does not hold unchanged for generated reasoning sequences or
+multi-token verdict strings.
+

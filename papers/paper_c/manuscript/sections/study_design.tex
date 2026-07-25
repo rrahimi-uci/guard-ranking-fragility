@@ -1,0 +1,87 @@
+\section{Matched study design}
+\label{sec:design}
+
+\subsection{Models, seeds, and Stage 1}
+
+The fixed panel contains Qwen2.5-1.5B-Instruct, SmolLM2-1.7B-Instruct,
+SmolLM3-3B, and Qwen3-4B at pinned model and tokenizer revisions. Five seeds
+(42--46) produce 20 completion-only LoRA adapters using the same Stage-1 recipe.
+Each model--seed adapter is immutable and initializes all six matched Stage-2
+arms. LoRA adapts the attention and MLP projection modules
+\citep{hu2021lora}.
+
+\subsection{Stage-2 data roles}
+
+The 1,200 Stage-1 training rows are assigned by global family identifier to an
+approximately 80\% Stage-2 update pool and 20\% development pool. Whole-family
+assignment prevents related rows from crossing roles. Stage 1 has seen both
+pools; ``development'' therefore means held out from Stage-2 updating, not from
+all training.
+
+Stage-1 two-verdict entropy defines the selection factor. Within each source and
+label stratum, the uncertain arm takes the top 25\%. The matched-random arm takes
+an equal-size, disjoint SHA-256-ranked sample from the remainder. Every objective
+within a selector receives the same ordered prompt tokens and minibatches.
+
+\begin{table}[t]
+\centering
+\caption{Primary factorial. Every cell is repeated for four models and five seeds.}
+\label{tab:factorial}
+\begin{tabular}{lll}
+\toprule
+Objective & Selection & Distinguishing factor\\
+\midrule
+VerdictCE & uncertain / matched random & full-vocabulary normalization\\
+PairCE    & uncertain / matched random & two-verdict pairwise normalization\\
+DPO       & uncertain / matched random & PairCE plus frozen-reference centering\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Stage 2 uses learning rate $5\times10^{-6}$, effective batch size four, cosine
+scheduling, zero adapter/model dropout, and at most 200 updates. Candidate
+adapters are saved at steps 25, 50, 100, and 200. PairCE and DPO share
+$\beta=0.1$.
+
+The saved ladder is load-bearing rather than convenient. It supplies the
+represented/transfer trajectory that the primary estimand of
+\Cref{eq:frontier} is computed on, and it is what separates the early regime --- in
+which centering acts as a near-uniform gradient rescale
+(\Cref{lem:rescale}) --- from the late regime in which rows that have moved past
+the reference are self-limited. A design saving one checkpoint per cell would
+discard the contrast this study exists to measure.
+
+\subsection{Pilot gate before the full panel}
+
+The full factorial is $120$ Stage-2 runs, $480$ candidate adapters, and $500$
+development score bundles. It is authorised only after a two-model pilot
+(Qwen2.5-1.5B and SmolLM2-1.7B, all five seeds, both selectors, all three
+objectives) has supplied two measurements the design currently assumes:
+
+\begin{enumerate}\itemsep2pt
+\item the \emph{realised} variance-reduction factor of the paired frontier
+  contrast, replacing the assumed value in the power calculation; and
+\item a first $F_{\mathrm{ref}}$ point estimate, to check it is inside the range
+  the design can resolve at all.
+\end{enumerate}
+
+The pilot cannot establish the result --- two models cannot support the
+equal-weight model marginal, and the pilot cells are re-used in the full panel
+rather than treated as an independent replication. Its only function is to decide
+whether the remaining compute can answer the question. If the measured variance
+reduction leaves the primary minimum detectable effect above the $0.02$ target,
+the protocol requires changing the target, the seed count, or the panel before
+proceeding, and records that decision in the design lock rather than discovering
+it in a discussion section.
+
+\subsection{Checkpoint selection and evaluation}
+
+For each model, seed, selector, and objective, we select the earliest candidate
+whose Stage-2-development source-macro AP is no worse than 0.02 below the
+corresponding Stage-1 AP. An arm that never reaches this target is infeasible;
+its final step is descriptive and cannot enter the complete primary panel.
+
+The selected 120 adapters are evaluated on represented-source, dataset-held-out
+transfer, and stress suites. Calibration rows set a 5\% FPR operating threshold
+without test-label access. All current evaluation rows are retrospective.
+

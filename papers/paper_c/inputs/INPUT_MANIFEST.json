@@ -1,0 +1,44 @@
+{
+  "config_sha256": "371175281e12b487c34af34fe55a85be5ff67c1b12cd95a57f99fda6f564d6da",
+  "credential_material_copied": false,
+  "input_manifest_sha256": "f466b3152237d0905f5c03bf1a5b7c090f76ad52baa108962d64f35c0cb0064b",
+  "kind": "paper_c_isolated_input_manifest",
+  "manifests": {
+    "calibration.jsonl": {
+      "path": "inputs/manifests/calibration.jsonl",
+      "rows": 451,
+      "sha256": "d3abb42277a775dd7767f940134fa95d29ce2a174f2b9198bc2435772f340ae5"
+    },
+    "harmbench_positive_stress.jsonl": {
+      "path": "inputs/manifests/harmbench_positive_stress.jsonl",
+      "rows": 200,
+      "sha256": "acaf272a45b267d81bb56bf769a7396abf38d9de83f0b3881eb348f3710df8ce"
+    },
+    "id_test.jsonl": {
+      "path": "inputs/manifests/id_test.jsonl",
+      "rows": 677,
+      "sha256": "adfce633bc354c946a22ebb11d1e6855176ec6ab977c810436c0c92566e10ef5"
+    },
+    "orbench_safe_stress.jsonl": {
+      "path": "inputs/manifests/orbench_safe_stress.jsonl",
+      "rows": 400,
+      "sha256": "06dc1117a5ad0501ff2dfcdd8d6a8592eb7acf8318ee04fa2ba42761dc6c953f"
+    },
+    "train.jsonl": {
+      "path": "inputs/manifests/train.jsonl",
+      "rows": 1200,
+      "sha256": "6efb1f6be30f6394e46efc1fbdce0709f295af9e3232184cb7e195ad3fbec378"
+    },
+    "transfer_test.jsonl": {
+      "path": "inputs/manifests/transfer_test.jsonl",
+      "rows": 1580,
+      "sha256": "4ee9bc95a6a4965e61289ec445934b46c9b1a05966bdc1c92901e191b46de81b"
+    }
+  },
+  "parent_lock": {
+    "parent_self_hash": "cabc8dee9b158773ce0be86f799ec3833c33c18787a2aa74d05ed1a261682c25",
+    "path": "inputs/parent/LOCK.json",
+    "sha256": "237f1e8760f1cd453e1170b0ec8a8f76da55fbea43cd1ab09dd1dedf475b521d"
+  },
+  "schema_version": 1
+}

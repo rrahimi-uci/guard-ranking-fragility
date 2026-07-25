@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "us_federal_mortgage_risk_triage_2026_07_25_candidate",
+  "jurisdiction": "US_federal",
+  "retrieved_on": "2026-07-25",
+  "legal_review_status": "candidate_not_sme_signed",
+  "claim_boundary": "risk_triage_not_legal_compliance_or_credit_decision",
+  "default_review_conditions": [
+    "live_file_decision",
+    "missing_transaction_scope_or_decisive_facts",
+    "state_law_or_licensing_or_usury",
+    "investor_or_GSE_or_FHA_or_VA_or_USDA_overlay",
+    "coverage_exception_or_deadline_requires_file_specific_calculation",
+    "statistical_disparity_or_Regulation_B_FHA_interaction"
+  ],
+  "authorities": [
+    {
+      "id": "REG_B_1002_4",
+      "category": "mortgage_fair_lending",
+      "title": "Regulation B, 12 CFR 1002.4",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1002/4/",
+      "effective_as_of": "2026-07-21",
+      "scope": "discrimination and discouragement"
+    },
+    {
+      "id": "REG_B_2026_FINAL",
+      "category": "mortgage_fair_lending",
+      "title": "Equal Credit Opportunity Act Regulation B final rule, 91 FR 21620",
+      "url": "https://www.federalregister.gov/documents/2026/04/22/2026-07804/equal-credit-opportunity-act-regulation-b",
+      "effective_as_of": "2026-07-21",
+      "scope": "effects test, discouragement, and special purpose credit programs"
+    },
+    {
+      "id": "FHA_24_CFR_100_500",
+      "category": "mortgage_fair_lending",
+      "title": "Fair Housing Act discriminatory-effects rule, 24 CFR 100.500",
+      "url": "https://www.ecfr.gov/current/title-24/subtitle-B/chapter-I/part-100/subpart-G/section-100.500",
+      "effective_as_of": "2026-07-25",
+      "scope": "discriminatory effect under the Fair Housing Act"
+    },
+    {
+      "id": "HUD_FHA_MORTGAGE_COVERAGE",
+      "category": "mortgage_fair_lending",
+      "title": "HUD Fair Housing Rights and Obligations for Mortgage Lending",
+      "url": "https://www.hud.gov/program_offices/fair_housing_equal_opp/fair_housing_rights_and_obligations",
+      "effective_as_of": "2026-07-25",
+      "scope": "Fair Housing Act coverage across mortgage approvals, terms, advertising, appraisal, servicing, and modification"
+    },
+    {
+      "id": "REG_Z_1026_19",
+      "category": "mortgage_origination_disclosures",
+      "title": "Regulation Z, 12 CFR 1026.19",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1026/19/",
+      "effective_as_of": "2026-07-25",
+      "scope": "mortgage disclosure and timing"
+    },
+    {
+      "id": "REG_Z_1026_24",
+      "category": "mortgage_closed_end_advertising",
+      "title": "Regulation Z, 12 CFR 1026.24",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1026/24/",
+      "effective_as_of": "2026-07-25",
+      "scope": "closed-end credit advertising"
+    },
+    {
+      "id": "REG_Z_1026_43",
+      "category": "mortgage_underwriting_adverse_action",
+      "title": "Regulation Z, 12 CFR 1026.43",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1026/43/",
+      "effective_as_of": "2026-07-25",
+      "scope": "ability to repay and qualified mortgage"
+    },
+    {
+      "id": "REG_B_1002_9",
+      "category": "mortgage_underwriting_adverse_action",
+      "title": "Regulation B, 12 CFR 1002.9",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1002/9/",
+      "effective_as_of": "2026-07-25",
+      "scope": "adverse-action notices and specific reasons"
+    },
+    {
+      "id": "REG_Z_1026_36",
+      "category": "mortgage_steering_referrals",
+      "title": "Regulation Z, 12 CFR 1026.36",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1026/36/",
+      "effective_as_of": "2026-07-25",
+      "scope": "loan-originator compensation and steering"
+    },
+    {
+      "id": "REG_X_1024_14",
+      "category": "mortgage_steering_referrals",
+      "title": "Regulation X, 12 CFR 1024.14",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1024/14/",
+      "effective_as_of": "2026-07-25",
+      "scope": "settlement-service kickbacks and unearned fees"
+    },
+    {
+      "id": "REG_X_1024_41",
+      "category": "mortgage_servicing_loss_mitigation",
+      "title": "Regulation X, 12 CFR 1024.41",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1024/41/",
+      "effective_as_of": "2026-07-25",
+      "scope": "loss-mitigation procedures and foreclosure protections"
+    },
+    {
+      "id": "REG_Z_1026_42",
+      "category": "mortgage_valuation_appraisal",
+      "title": "Regulation Z, 12 CFR 1026.42",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1026/42/",
+      "effective_as_of": "2026-07-25",
+      "scope": "valuation independence, prohibited influence, and permitted correction requests"
+    },
+    {
+      "id": "REG_P_1016",
+      "category": "mortgage_privacy_reporting",
+      "title": "Regulation P, 12 CFR Part 1016",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1016/",
+      "effective_as_of": "2026-07-25",
+      "scope": "privacy of consumer financial information"
+    },
+    {
+      "id": "REG_C_1003",
+      "category": "mortgage_privacy_reporting",
+      "title": "Regulation C, 12 CFR Part 1003",
+      "url": "https://www.consumerfinance.gov/rules-policy/regulations/1003/",
+      "effective_as_of": "2026-07-25",
+      "scope": "required home-mortgage data collection and reporting"
+    },
+    {
+      "id": "DOJ_SCRA_FINANCIAL_HOUSING",
+      "category": "mortgage_servicemember_protections",
+      "title": "Department of Justice Servicemember Financial and Housing Rights",
+      "url": "https://www.justice.gov/servicemembers/financial-and-housing-rights-0",
+      "effective_as_of": "2026-07-25",
+      "scope": "federal servicemember interest-rate and foreclosure protections"
+    }
+  ],
+  "temporal_conflicts": [
+    {
+      "id": "ECOA_FHA_EFFECTS_2026",
+      "description": "Regulation B now rejects ECOA effects-test liability while the current FHA rule retains discriminatory-effects liability.",
+      "required_action": "review"
+    }
+  ]
+}

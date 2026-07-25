@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "inventory_id": "paper_c_mortgage_policy_vintages_2026_07_25_candidate",
+  "jurisdiction": "US_federal",
+  "temporal_policy_cutoff": "2026-07-20",
+  "review_status": "candidate_not_sme_signed",
+  "complete": false,
+  "temporal_side_coverage": {
+    "pre_cutoff": "missing",
+    "post_cutoff": "candidate_not_sme_signed"
+  },
+  "vintages": [
+    {
+      "snapshot_id": "us_federal_mortgage_risk_triage_2026_07_25_candidate",
+      "snapshot_path": "config/mortgage_policy_snapshot.json",
+      "snapshot_object_sha256": "15a3bf0bc005e24c83325bae5eb13c990ea177ef3a63411611c31e1e40889550",
+      "policy_vintage_lock_id": "candidate_post_2026_07_21_vintage_unapproved",
+      "valid_from": "2026-07-21",
+      "valid_through": null,
+      "temporal_side": "post_cutoff",
+      "review_status": "candidate_not_sme_signed",
+      "authority_archive_manifest_path": null,
+      "authority_archive_manifest_sha256": null
+    }
+  ]
+}

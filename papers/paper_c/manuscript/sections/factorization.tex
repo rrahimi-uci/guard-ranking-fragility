@@ -1,0 +1,92 @@
+\section{Reference centering as a controlled factor}
+\label{sec:factorization}
+
+For prompt $x$, let $z_\theta(v\mid x)$ denote the next-token logit for verdict
+$v\in\{\mathrm{safe},\mathrm{unsafe}\}$. Define
+\begin{align}
+  s_\theta(x) &= z_\theta(\mathrm{unsafe}\mid x)
+                -z_\theta(\mathrm{safe}\mid x),\\
+  y(x) &= \begin{cases}+1,&\text{unsafe},\\-1,&\text{safe},\end{cases}\\
+  m_\theta(x) &= y(x)s_\theta(x).
+\end{align}
+Larger $m_\theta$ always favors the correct verdict.
+
+VerdictCE applies cross-entropy over the complete vocabulary:
+\begin{equation}
+  \mathcal{L}_{\mathrm{VCE}}
+  =-\log\operatorname{softmax}(z_\theta)_{v^+}.
+\end{equation}
+PairCE discards logits outside the two verdicts and applies a logistic margin
+loss,
+\begin{equation}
+  \mathcal{L}_{\mathrm{Pair}}
+  =\operatorname{softplus}(-\beta m_\theta).
+\end{equation}
+
+For DPO, chosen $v^+$ is the correct verdict and rejected $v^-$ is the other
+verdict. Because the normalization term cancels in the chosen--rejected log
+probability difference,
+\begin{equation}
+\begin{split}
+  \mathcal{L}_{\mathrm{DPO}}
+  &= -\log\sigma\left(\beta\left[
+    \log\frac{\pi_\theta(v^+\mid x)}{\pi_\theta(v^-\mid x)}
+   -\log\frac{\pi_{\mathrm{ref}}(v^+\mid x)}{\pi_{\mathrm{ref}}(v^-\mid x)}
+  \right]\right)\\
+  &=\operatorname{softplus}\left[-\beta
+    (m_\theta-m_{\mathrm{ref}})\right].
+\end{split}
+\end{equation}
+Thus PairCE versus DPO is a controlled uncentered-versus-reference-centered
+comparison when $\beta$ is shared. At initialization
+$m_\theta=m_{\mathrm{ref}}$, so every DPO example has loss $\log 2$. The
+reference is not new preference information, and $\beta$ is not itself evidence
+of an achieved KL constraint.
+
+\subsection{What centering does to the gradient, and why that is a threat}
+
+Both margin objectives share a gradient direction and differ only in a scalar
+per-example weight:
+\begin{equation}
+\nabla_\theta \mathcal{L}
+= -\beta\,w(x)\,\nabla_\theta m_\theta(x),
+\qquad
+w_{\mathrm{PairCE}}=\sigma(-\beta m_\theta),
+\quad
+w_{\mathrm{DPO}}=\sigma\!\left(-\beta\left[m_\theta-m_{\mathrm{ref}}\right]\right).
+\end{equation}
+Centering cannot change the direction of any per-example update. It can only
+change how much each example counts.
+
+\begin{lemma}[Centering is a near-uniform rescale at initialization]
+\label{lem:rescale}
+At $\theta=\theta_{\mathrm{ref}}$ we have $w_{\mathrm{DPO}}\equiv\tfrac12$ for
+every example, while $w_{\mathrm{PairCE}}=\sigma(-\beta m_{\mathrm{ref}})$. The
+per-example ratio is therefore
+$\tfrac12\,\sigma(-\beta m_{\mathrm{ref}})^{-1}$, which is constant in $x$ to the
+extent that the reference-margin distribution is narrow. On the Stage-1 margins of
+this panel with $\beta=0.1$: $93\%$ of rows have $m_{\mathrm{ref}}>0$, the PairCE
+weights have interquartile range $0.05$ about a mean of $0.385$
+(coefficient of variation $0.17$), and the mean ratio is $1.30$.
+\end{lemma}
+
+\begin{corollary}[The confound]
+At initialization, DPO is approximately PairCE at a $1.3\times$ larger effective
+learning rate rather than a differentially re-weighted objective. Any contrast at
+fixed step count therefore mixes ``better objective'' with ``faster training,''
+and cannot identify the first. Differential re-weighting appears only later, once
+$m_\theta$ has moved away from $m_{\mathrm{ref}}$ and rows that improved past the
+reference are down-weighted --- a self-limiting behaviour PairCE lacks.
+\end{corollary}
+
+Two design consequences follow, and they are the substance of
+\Cref{sec:estimands}. First, the primary estimand must be invariant to a
+monotone reparameterization of training speed, which the frontier form of
+\Cref{eq:frontier} is and a fixed-step AP difference is not. Second, the
+checkpoint ladder is not a convenience for selection but the instrument that
+separates the early rescale-like regime from the late self-limiting one; a
+single saved checkpoint per cell would discard exactly the contrast of interest.
+\verb|paper_c effective-lr| reports the quantities in \Cref{lem:rescale} from the
+locked reference margins, so the magnitude of the confound is measured on this
+panel rather than assumed.
+

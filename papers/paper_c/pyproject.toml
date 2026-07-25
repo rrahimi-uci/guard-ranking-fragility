@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paper-c-guard-reference-centering"
+version = "0.1.0"
+description = "Isolated implementation for the matched VerdictCE, PairCE, and DPO guard study"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+gpu = [
+  "accelerate>=1.10",
+  "numpy>=2.0",
+  "peft>=0.17",
+  "safetensors>=0.5",
+  "torch>=2.7",
+  "transformers>=4.55",
+]
+analysis = [
+  "numpy>=2.0",
+  "pandas>=2.2",
+  "pyarrow>=18",
+  "scikit-learn>=1.6",
+  "scipy>=1.15",
+]
+test = ["pytest>=8.3"]
+
+[project.scripts]
+paper-c = "paper_c.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+

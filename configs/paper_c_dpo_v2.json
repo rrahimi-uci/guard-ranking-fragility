@@ -1,0 +1,47 @@
+{
+  "schema_version": 2,
+  "study_id": "paper_c_dpo_factorization",
+  "artifact_root": "artifacts/paper_c_dpo_v2",
+  "parent_lock": "artifacts/paper_a_sft_v2/LOCK.json",
+  "models": ["qwen25_15b", "smollm2_17b", "smollm3_3b", "qwen3_4b"],
+  "seeds": [42, 43, 44, 45, 46],
+  "stage1": {
+    "objective": "completion_sft",
+    "recipe_source": "parent_lock",
+    "required_status": "completed"
+  },
+  "stage2": {
+    "objectives": ["verdict_ce", "pair_ce", "dpo"],
+    "samplers": ["uncertain", "matched_random"],
+    "development_fraction": 0.2,
+    "development_split_seed": 20260725,
+    "uncertain_fraction": 0.25,
+    "uncertainty_metric": "two_verdict_entropy",
+    "selection_seed": 20260725,
+    "learning_rate": 0.000005,
+    "max_steps": 200,
+    "checkpoint_steps": [25, 50, 100, 200],
+    "per_device_batch": 1,
+    "gradient_accumulation": 4,
+    "scheduler": "cosine",
+    "warmup_ratio": 0.03,
+    "pairwise_beta": 0.1,
+    "stage2_dropout": 0.0,
+    "reference_margin_atol": 0.001,
+    "represented_noninferiority_margin": 0.02,
+    "checkpoint_rule": "earliest_reaching_stage1_dev_macro_ap_minus_margin"
+  },
+  "sensitivity": {
+    "pairwise_beta": [0.03, 0.3],
+    "direct_base_to_dpo": false,
+    "run_after_primary_lock": true
+  },
+  "analysis": {
+    "primary_metric": "tie_aware_benchmark_macro_average_precision",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20260725,
+    "retrospective_interval": "two_sided_95_percent",
+    "confirmatory_interval": "simultaneous_one_sided_97_5_percent",
+    "target_fpr": 0.05
+  }
+}

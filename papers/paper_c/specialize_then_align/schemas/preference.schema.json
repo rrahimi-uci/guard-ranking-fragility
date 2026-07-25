@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-preference-v2",
+  "title": "Blinded adjudicated candidate preference with immutable lineage",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "preference_id",
+    "sample_id",
+    "family_id",
+    "category",
+    "domain",
+    "policy_context",
+    "policy_context_sha256",
+    "candidate_source",
+    "source_stratum",
+    "target_backbone_key",
+    "teacher_backbone_keys",
+    "teacher_seeds",
+    "teacher_cells",
+    "chosen",
+    "rejected",
+    "chosen_vote_id",
+    "rejected_vote_id",
+    "chosen_candidate_sha256",
+    "rejected_candidate_sha256",
+    "calibration_lock_id",
+    "aggregation_id",
+    "gold_action",
+    "adjudicated_gold",
+    "substantive_difference_fields",
+    "reviewer_ids",
+    "adjudicator_id",
+    "adjudication_rationale",
+    "adjudication_status",
+    "model_identities_hidden",
+    "candidate_order_randomized",
+    "policy_ids"
+  ],
+  "properties": {
+    "preference_id": {"type": "string", "minLength": 1},
+    "sample_id": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "category": {
+      "description": "The single adjudicated focal category.",
+      "$ref": "#/$defs/coreCategory"
+    },
+    "domain": {"enum": ["general_safety", "mortgage"]},
+    "policy_context": {
+      "oneOf": [
+        {"$ref": "#/$defs/policyContext"},
+        {"type": "null"}
+      ]
+    },
+    "policy_context_sha256": {
+      "oneOf": [
+        {"$ref": "#/$defs/sha256"},
+        {"type": "null"}
+      ]
+    },
+    "candidate_source": {"enum": ["category_specialist", "joint_generalist"]},
+    "source_stratum": {"enum": ["teacher_agreement", "teacher_disagreement"]},
+    "target_backbone_key": {"type": "string", "minLength": 1},
+    "teacher_backbone_keys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "teacher_seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "integer", "minimum": 1},
+      "uniqueItems": true
+    },
+    "teacher_cells": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/teacherCell"}
+    },
+    "chosen": {"$ref": "#/$defs/candidate"},
+    "rejected": {"$ref": "#/$defs/candidate"},
+    "chosen_vote_id": {"type": "string", "minLength": 1},
+    "rejected_vote_id": {"type": "string", "minLength": 1},
+    "chosen_candidate_sha256": {"$ref": "#/$defs/sha256"},
+    "rejected_candidate_sha256": {"$ref": "#/$defs/sha256"},
+    "calibration_lock_id": {"type": "string", "minLength": 1},
+    "aggregation_id": {"$ref": "#/$defs/sha256"},
+    "gold_action": {"enum": ["allow", "review", "intervene"]},
+    "adjudicated_gold": {"$ref": "#/$defs/adjudicatedGold"},
+    "substantive_difference_fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": ["action", "violation_tags", "policy_ids", "review_behavior"]
+      },
+      "uniqueItems": true
+    },
+    "reviewer_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "adjudicator_id": {"type": "string", "minLength": 1},
+    "adjudication_rationale": {"type": "string", "minLength": 1},
+    "adjudication_status": {"const": "resolved"},
+    "model_identities_hidden": {"const": true},
+    "candidate_order_randomized": {"const": true},
+    "policy_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "coreCategory": {
+      "enum": [
+        "toxicity_abuse",
+        "jailbreak_evasion",
+        "prompt_injection_exfiltration",
+        "mortgage_fair_lending",
+        "mortgage_closed_end_advertising"
+      ]
+    },
+    "policyContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "snapshot_object_sha256",
+        "policy_vintage_lock_id",
+        "policy_as_of",
+        "authority_ids",
+        "policy_text",
+        "content_sha256"
+      ],
+      "properties": {
+        "snapshot_id": {"type": "string", "minLength": 1},
+        "snapshot_object_sha256": {"$ref": "#/$defs/sha256"},
+        "policy_vintage_lock_id": {"type": "string", "minLength": 1},
+        "policy_as_of": {"type": "string", "format": "date"},
+        "authority_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "policy_text": {"type": "string", "minLength": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "category",
+        "violation_tags",
+        "policy_ids",
+        "confidence",
+        "confidence_source"
+      ],
+      "properties": {
+        "action": {"enum": ["allow", "review", "intervene"]},
+        "category": {"$ref": "#/$defs/coreCategory"},
+        "violation_tags": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "policy_ids": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "confidence_source": {"const": "calibrated_action_distribution"}
+      }
+    },
+    "teacherCell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backbone_key",
+        "seed",
+        "vote_id",
+        "calibration_id",
+        "candidate_sha256",
+        "candidate_source"
+      ],
+      "properties": {
+        "backbone_key": {"type": "string", "minLength": 1},
+        "seed": {"type": "integer", "minimum": 1},
+        "vote_id": {"type": "string", "minLength": 1},
+        "calibration_id": {"type": "string", "minLength": 1},
+        "candidate_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_source": {
+          "enum": ["category_specialist", "joint_generalist"]
+        }
+      }
+    },
+    "adjudicatedGold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "category",
+        "violation_tags",
+        "policy_ids",
+        "reference_label_id"
+      ],
+      "properties": {
+        "action": {"enum": ["allow", "review", "intervene"]},
+        "category": {"$ref": "#/$defs/coreCategory"},
+        "violation_tags": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "policy_ids": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "reference_label_id": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"domain": {"const": "mortgage"}},
+        "required": ["domain"]
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "enum": [
+              "mortgage_fair_lending",
+              "mortgage_closed_end_advertising"
+            ]
+          },
+          "reviewer_ids": {"minItems": 2},
+          "policy_ids": {"minItems": 1},
+          "policy_context": {"$ref": "#/$defs/policyContext"},
+          "policy_context_sha256": {"$ref": "#/$defs/sha256"}
+        }
+      },
+      "else": {
+        "properties": {
+          "category": {
+            "enum": [
+              "toxicity_abuse",
+              "jailbreak_evasion",
+              "prompt_injection_exfiltration"
+            ]
+          },
+          "policy_context": {"const": null},
+          "policy_context_sha256": {"const": null},
+          "policy_ids": {"maxItems": 0}
+        }
+      }
+    }
+  ]
+}

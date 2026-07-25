@@ -1,0 +1,27 @@
+\section{Implementation and reproducibility}
+
+The implementation lives with this manuscript and has no runtime import from the
+earlier Paper A pipeline. It vendors only the scientific contracts required for
+prompt rendering, verdict-token validation, objectives, family partitioning,
+selection, training, scoring, and analysis.
+
+Dynamic chat templates are rendered once per pinned tokenizer and manifest. The
+ordered token IDs are then frozen; all subsequent stages consume these caches.
+This avoids silent date-dependent prompt drift. The Stage-2 trainer has one data
+and model path, and its only objective branch computes the scalar loss. Before
+optimization, every arm verifies reference margins and the DPO $\log2$ identity.
+
+Artifacts follow a lock chain. A protocol lock binds code, configuration, and
+parent inputs before Stage-1 candidate generation. A Stage-2 design child then
+binds prompt caches, starting adapters, references, and selections. A selection
+child lock later binds 480 candidate adapters, 500 development score bundles,
+and the exact 120 selected adapters. Retrospective scoring refuses to run without
+that child. Prospective lock creation remains disabled until a sealed cohort and
+unsealing procedure exist.
+
+GCP runners use a dedicated service account, bucket prefix, and Secret Manager
+HF token. They never copy the repository environment file or expose the unused
+OpenAI key. The guest verifies the uploaded code checksum, installs the recorded
+dependency pins, and proves CUDA visibility before downloading a model. A
+two-hour delete action and a parent-side artifact verifier bound failure costs.
+The first compute gate is one matched three-objective smoke, not the full panel.

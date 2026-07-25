@@ -1,0 +1,92 @@
+\section{Estimands and decision rules}
+\label{sec:estimands}
+
+\subsection{Why the obvious estimand will not do}
+
+Let $M_R(o,s;b,r)$ be source-macro average precision in regime $R$ for objective
+$o$, selector $s$, model $b$, and seed $r$. The natural contrasts are
+\begin{align}
+C_{\mathrm{pair}}(R,s)&=M_R(\mathrm{PairCE},s)-M_R(\mathrm{VerdictCE},s),\\
+C_{\mathrm{ref}}(R,s)&=M_R(\mathrm{DPO},s)-M_R(\mathrm{PairCE},s),\\
+C_{\mathrm{total}}(R,s)&=M_R(\mathrm{DPO},s)-M_R(\mathrm{VerdictCE},s).
+\end{align}
+$C_{\mathrm{ref}}$ is the quantity this study is named after, and we
+\emph{demote it to secondary} for two measured reasons.
+
+\paragraph{It is confounded with effective learning rate.}
+By \Cref{lem:rescale}, reference centering multiplies each example's gradient
+weight by $\tfrac{1}{2}\,\sigma(-\beta m_{\mathrm{ref}})^{-1}$ at initialization.
+On this panel's Stage-1 margins that factor has mean $1.30$ with a weight
+coefficient of variation of only $0.17$, and $93\%$ of rows sit at positive
+margin. DPO therefore begins as PairCE at an approximately $1.3\times$ larger
+\emph{effective} learning rate. Because Stage 2 holds the nominal learning rate
+fixed across cells, a contrast evaluated at a \emph{fixed step count} cannot
+separate ``centering is a better objective'' from ``centering is the same
+objective trained faster.'' That is the confound class this design was rebuilt to
+remove, and a single-checkpoint $C_{\mathrm{ref}}$ does not remove it.
+
+\paragraph{It is underpowered.}
+The within-checkpoint seed standard deviation of transfer macro-AP on the parent
+runs is $\sigma=0.0355$. Seeds inside a checkpoint share the model, the frozen
+manifest, the recipe, and the data order, so the independent unit for a panel mean
+is the checkpoint, not the cell: four units, not twenty. A one-sided $97.5\%$
+bound then needs a true effect above $0.035$ before it clears zero --- larger than
+the $+0.061$ an \emph{explicit} KL anchor produced on the same suite, and far
+larger than a $1.3\times$ gradient rescale should be expected to buy. The original
+design could not have distinguished a null from a real small effect.
+
+\subsection{The frontier estimand}
+
+Both problems share one fix. A pure learning-rate rescale moves a run
+\emph{along} its own represented/transfer trade-off curve; it does not move the
+curve. So we compare curves at matched represented ranking instead of points at
+matched step count.
+
+For each cell $(b,r,s,o)$ the checkpoint ladder yields a trajectory
+$T_{b,r,s,o}=\{(M_{\mathrm{rep}},M_{\mathrm{tr}})\}$ over saved steps, ordered by
+step and reduced to its running maximum in represented AP, so each represented
+level is credited to the earliest checkpoint that reached it. For two objectives
+sharing $(b,r,s)$ we interpolate both trajectories onto a fixed grid
+$\mathcal{G}$ of $21$ represented-AP levels inside their overlapping range and
+average the vertical gap:
+\begin{equation}
+F_{\mathrm{ref}}(b,r,s)=
+\frac{1}{|\mathcal{G}|}\sum_{g\in\mathcal{G}}
+\Big[T^{\mathrm{tr}}_{\mathrm{DPO}}(g)-T^{\mathrm{tr}}_{\mathrm{PairCE}}(g)\Big],
+\label{eq:frontier}
+\end{equation}
+where $T^{\mathrm{tr}}(g)$ is transfer AP at represented level $g$. Cells
+overlapping by less than $0.01$ represented AP are reported as
+\texttt{insufficient\_overlap} rather than extrapolated. $F_{\mathrm{pair}}$ and
+$F_{\mathrm{total}}$ are defined identically on their own objective pairs.
+
+\Cref{eq:frontier} has the property the study needs: it is \emph{exactly zero}
+when two objectives trace the same frontier at different speeds, and nonzero only
+when one buys transfer at equal represented ranking. The confound becomes the null
+hypothesis. It also multiplies evidence per GPU-hour --- each cell contributes a
+curve rather than a point --- and the exact pairing (same model, seed, selector,
+initialization, and scored rows) cancels the checkpoint-level variance component
+that dominates $\sigma$ above.
+
+\subsection{Aggregation, intervals, and the power gate}
+
+$F$ is marginalized with equal weight across the two fixed selectors, then across
+models, so no selector can be chosen after seeing results and no checkpoint can
+dominate the panel. Intervals come from a bootstrap that resamples \emph{models},
+not cells; resampling cells would understate the interval by roughly $\sqrt{5}$.
+
+The design is powered only if pairing removes enough variance. With four
+clusters, $\sigma=0.0355$, and a target effect of $0.02$ transfer AP, pairing must
+remove at least $67\%$ of the raw variance. The pilot of \Cref{sec:design} exists
+to \emph{measure} that factor rather than assume it. Until it does, the assumed
+value gates the full panel: \verb|paper_c power --gate| exits nonzero whenever the
+primary minimum detectable effect exceeds the target, so an underpowered design
+cannot be discovered after the compute is spent.
+
+Retrospective results receive paired two-sided $95\%$ intervals. A later
+prospective success claim requires simultaneous one-sided $97.5\%$ bounds showing
+positive transfer $F_{\mathrm{ref}}$ and represented non-inferiority within
+$-0.02$, plus absolute harm margins of $0.02$ for safe false positives and
+harmful recall. An incomplete or infeasible primary panel cannot pass. An
+$F_{\mathrm{ref}}$ interval containing zero is reported as a \emph{bounded null}
+alongside its minimum detectable effect --- not as an absence of evidence.

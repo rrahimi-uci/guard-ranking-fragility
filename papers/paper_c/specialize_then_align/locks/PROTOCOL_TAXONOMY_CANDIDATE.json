@@ -1,0 +1,245 @@
+{
+  "claim_authorized": false,
+  "config": {
+    "byte_sha256": "378a2dc4aafbbe9a4bfed5db143c1ea8e5f836a500f22e392f1cf38a1a727eb9",
+    "object_sha256": "62a4bd0d268654db21fdcca4719550637c0a8a649da841db11386687f5212dbc",
+    "path": "config/study.json"
+  },
+  "created_utc": "2026-07-25T20:02:31.236673+00:00",
+  "data_build_authorized": false,
+  "execution_sources": {
+    "aggregate_sha256": "5887c9267d564d83186b0a7e7437f8f3b3841530fe68a907db81754bdd6aa502",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "b4d7e787f297cf2d87ca5779d5d4dd7bc7acc081938f3b48b7c21aac8a8aebd6"
+      },
+      {
+        "path": "STATUS.md",
+        "sha256": "009638ddef8b776c8ae8c492bcb9a2427eca1e25c225a0e2a43fb23f142d1229"
+      },
+      {
+        "path": "PROTOCOL.md",
+        "sha256": "ca870615ee24de7d07a6d763a1c88e5f8c76da128e328848586f82e3aa822ec9"
+      },
+      {
+        "path": "DEVELOPMENT_PLAN.md",
+        "sha256": "905fff3a7529bf627febec6308ae866df088518cfd58c414f332e1502ef414d9"
+      },
+      {
+        "path": "pyproject.toml",
+        "sha256": "926c9eea7a07dc712626e40713ed24315b5d135d1fe39361f45b8401bc532a3f"
+      },
+      {
+        "path": "Makefile",
+        "sha256": "42cc65c758e3711ecbc48bada5c5561471fc698cf822e655f7a9a635d916bb53"
+      },
+      {
+        "path": ".gitignore",
+        "sha256": "1c77a62a398f3d53ccabc0377b40e4cfe7168a30a7f7cdfd4b1a2518cb3031b6"
+      },
+      {
+        "path": "config/general_safety_policy.json",
+        "sha256": "a99682c22eaafa42a1d2a479d791170e74ddc7815c702d1d9a7b0fd1c16d7bbf"
+      },
+      {
+        "path": "config/mortgage_policy_snapshot.json",
+        "sha256": "2be9c3f59fce136fcb8a1dc260963ac21157eb2078cc114980828b6eaabacf72"
+      },
+      {
+        "path": "config/mortgage_policy_vintage_inventory.json",
+        "sha256": "0b97411fbd22e105b837d8c44a6b54e43a5220053da6f192c7be1ba94471b041"
+      },
+      {
+        "path": "config/smoke.json",
+        "sha256": "d84b46ed8162dd80da0508ed86fdc8d78f881feb280ea35e2151d955a6cbbf6a"
+      },
+      {
+        "path": "config/study.json",
+        "sha256": "378a2dc4aafbbe9a4bfed5db143c1ea8e5f836a500f22e392f1cf38a1a727eb9"
+      },
+      {
+        "path": "config/taxonomy.json",
+        "sha256": "26f9e3bc2d8d40cbad94b10c762e2e8ddad4bcca8f375efab67b652eaff02190"
+      },
+      {
+        "path": "schemas/authority_archive_manifest.schema.json",
+        "sha256": "acb673dc4cf2b0682207b212c1bdba53d091e92edc99a9c37fa737c6828ea15c"
+      },
+      {
+        "path": "schemas/cohort_manifest.schema.json",
+        "sha256": "95b215c818015be0aa08a55c46ac91502474c6df78441cf4e2e5e3bf5a16ab46"
+      },
+      {
+        "path": "schemas/comparison_manifest.schema.json",
+        "sha256": "1a10bfda666888ce7cbd2fe60c8f02f5cdbbfcd986cc836a40002aeee36f57ff"
+      },
+      {
+        "path": "schemas/consensus.schema.json",
+        "sha256": "dd597be2b27f40629b8de9a0eac9add394bcac41085407b53db78ba723befa7e"
+      },
+      {
+        "path": "schemas/policy_source.schema.json",
+        "sha256": "e280e1f59698e4b67d117c71d4eefb2a1d71e98b31a37aef67baf055f1d575a6"
+      },
+      {
+        "path": "schemas/policy_vintage_inventory.schema.json",
+        "sha256": "5100cf2beb3e76c350c6455f74cd843dac922973dec47e4d6986e64c3e3c816b"
+      },
+      {
+        "path": "schemas/preference.schema.json",
+        "sha256": "fd7777765b27c7c051eea2eee7d675a5500f0830d014ab4fdd85ffd24cecf1ef"
+      },
+      {
+        "path": "schemas/readiness_evidence.schema.json",
+        "sha256": "fd9dff0ccf4599290782fdd6b5ad7b7ab5deee25aa9156ef18c6cde41244f706"
+      },
+      {
+        "path": "schemas/sample.schema.json",
+        "sha256": "a19be86a720f8cbe420867c1bfa10854b5b32833d346eec60dd5e63778a93ddc"
+      },
+      {
+        "path": "schemas/specialist_output.schema.json",
+        "sha256": "174468586b680b7c5d387f642806e6d719269298bb6056cdba840eba581a9c5e"
+      },
+      {
+        "path": "schemas/split_manifest.schema.json",
+        "sha256": "96da2489e4efa943b19dbcc2bf648b55f11eeb5fab736228692f2d25d0c30e57"
+      },
+      {
+        "path": "src/paper_c_sta/__init__.py",
+        "sha256": "119a75144e48581e68e1668889fdc0a53f70ad26907b2bc9174f956d3aa7b5ec"
+      },
+      {
+        "path": "src/paper_c_sta/__main__.py",
+        "sha256": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d"
+      },
+      {
+        "path": "src/paper_c_sta/cli.py",
+        "sha256": "11b49a4730cd577cfa4539c462261f7d7a222f12cbee290c4f2dbedbef433f01"
+      },
+      {
+        "path": "src/paper_c_sta/comparisons.py",
+        "sha256": "b607e123b70397578ca7567de1e50eca1a601ec72e48151092684dda3e0bc3bd"
+      },
+      {
+        "path": "src/paper_c_sta/contracts.py",
+        "sha256": "e4fdfba6cf0e16277c11bd3d21d69db1950dc87946157634e40f7033c55e0cba"
+      },
+      {
+        "path": "src/paper_c_sta/locks.py",
+        "sha256": "209c59ab3d62ccc235d24cdb418b87e5721edb0e1d4e1c28c36bab3b5dabcfe7"
+      },
+      {
+        "path": "src/paper_c_sta/objectives.py",
+        "sha256": "63a25350109da048a66605a92a7c2731a6d04acad01b8a7ac1a6a4587ff73d0e"
+      },
+      {
+        "path": "src/paper_c_sta/preferences.py",
+        "sha256": "73e4b14785a90e6c478167a4f102acea6afb316c774469d65c1794e13e49833c"
+      },
+      {
+        "path": "src/paper_c_sta/specialists.py",
+        "sha256": "218b27c3cd107bff6a5f168a13fa5a42e5b1b2e329c96648668f8217a5ceb864"
+      },
+      {
+        "path": "src/paper_c_sta/splits.py",
+        "sha256": "e1a07f45cd282551263f15f1f74d1e7dd44d01dee40398b9078693571ef55b86"
+      },
+      {
+        "path": "tests/conftest.py",
+        "sha256": "b9d7d3cb22cb7c62071bea73ecb717fe58d32b77dbbd32446203138cd69de13c"
+      },
+      {
+        "path": "tests/test_candidate_lock.py",
+        "sha256": "9f5b9e1e22e09ce98c36eee7c03d165e81f8e71c141d7b9dc3f64d4d259ce59c"
+      },
+      {
+        "path": "tests/test_comparisons.py",
+        "sha256": "338275d9864595321576bd08e046f14a621e455cda84e3506194b0e383be9a8b"
+      },
+      {
+        "path": "tests/test_contract_hardening.py",
+        "sha256": "175c1cb56ae1974866db9b8113ec3cb533ba5386371900291cf12de691dd500e"
+      },
+      {
+        "path": "tests/test_contracts.py",
+        "sha256": "92fd831d99c0c4b192d3799e8595a5c24b291f994eada5a15563d59204ac2abd"
+      },
+      {
+        "path": "tests/test_objectives.py",
+        "sha256": "f1c3c67d57e0eff6cda28120bd11068954d358dcfbd4b025eeda758f3d5fdfc8"
+      },
+      {
+        "path": "tests/test_specialists_and_preferences.py",
+        "sha256": "4a1ad96eeafdcdc49379029caf7827152540f94573793e7d2db64298ff5be7bb"
+      },
+      {
+        "path": "tests/test_splits_and_locks.py",
+        "sha256": "569b47ce18c5118222e3989dfb817da2493f45f0d04b38bb6e8ca77977c8002c"
+      },
+      {
+        "path": "manuscript/build.sh",
+        "sha256": "df3b3452c598f939981f8588d52deea7e47cde52e6d0e94907d8801786039dca"
+      },
+      {
+        "path": "manuscript/main.tex",
+        "sha256": "a41695e11288cad92aaff6f9d7808eeb199628f9330a649a34a2dfcfecf1bd70"
+      },
+      {
+        "path": "manuscript/refs.bib",
+        "sha256": "9feeaa6861b3d1966d7ed2ce7e1941e6062c695782bdec3273e8fa0db296bef5"
+      },
+      {
+        "path": "provenance/LEGACY_REFERENCE_CENTERING.json",
+        "sha256": "4d9911a27fbff2ad2d4a637d5aac327c86c272d4d5ee3a69f9cc30c006e7e394"
+      },
+      {
+        "path": "provenance/MIGRATION_DECISION.md",
+        "sha256": "83078a9da259b5ee912aea9ec0e1c564e99458869272659830d7d080b65aeeb7"
+      }
+    ]
+  },
+  "general_safety_policy": {
+    "byte_sha256": "a99682c22eaafa42a1d2a479d791170e74ddc7815c702d1d9a7b0fd1c16d7bbf",
+    "path": "config/general_safety_policy.json",
+    "review_status": "candidate_not_human_signed"
+  },
+  "gpu_training_authorized": false,
+  "historical_predecessor": {
+    "byte_sha256": "4d9911a27fbff2ad2d4a637d5aac327c86c272d4d5ee3a69f9cc30c006e7e394",
+    "path": "provenance/LEGACY_REFERENCE_CENTERING.json",
+    "relationship": "historical_only_not_parent_not_superseded"
+  },
+  "lock_kind": "protocol_taxonomy_candidate",
+  "lock_schema_version": 1,
+  "lock_sha256": "97266f4900fc812a0f24baa40343ba358384e6cb8d51be0a4f40fd3bedf183b4",
+  "mortgage_policy": {
+    "byte_sha256": "2be9c3f59fce136fcb8a1dc260963ac21157eb2078cc114980828b6eaabacf72",
+    "legal_review_status": "candidate_not_sme_signed",
+    "path": "config/mortgage_policy_snapshot.json"
+  },
+  "mortgage_policy_vintage_inventory": {
+    "byte_sha256": "0b97411fbd22e105b837d8c44a6b54e43a5220053da6f192c7be1ba94471b041",
+    "complete": false,
+    "path": "config/mortgage_policy_vintage_inventory.json",
+    "review_status": "candidate_not_sme_signed"
+  },
+  "required_children": [
+    "pilot_data_policy_lock",
+    "pilot_specialist_calibration_lock",
+    "pilot_adjudicated_preference_lock",
+    "post_pilot_prospective_primary_protocol_lock",
+    "primary_data_policy_lock",
+    "primary_adjudicated_preference_lock",
+    "primary_aligned_candidate_lock",
+    "primary_checkpoint_selection_lock",
+    "sealed_confirmation_lock"
+  ],
+  "status": "candidate_only_no_data_or_training_authorized",
+  "study_id": "paper_c_specialize_align_mortgage_v1",
+  "taxonomy": {
+    "byte_sha256": "26f9e3bc2d8d40cbad94b10c762e2e8ddad4bcca8f375efab67b652eaff02190",
+    "path": "config/taxonomy.json"
+  }
+}

@@ -70,6 +70,25 @@ artifacts/klsft_v1/runs/
 artifacts/klsft_v1/adapters/
 artifacts/starting_type_adaptation_v1/scores/combined.parquet
 
+# Paper C v2: local model weights, reference logits, development scores, and
+# inventories are hash-bound by LOCK.json but are not committed as source.
+/artifacts/paper_c_dpo_v2/stage1/
+/artifacts/paper_c_dpo_v2/splits/
+/artifacts/paper_c_dpo_v2/reference/
+/artifacts/paper_c_dpo_v2/selections/
+/artifacts/paper_c_dpo_v2/runs/
+/artifacts/paper_c_dpo_v2/scores/*
+!/artifacts/paper_c_dpo_v2/scores/retrospective/
+!/artifacts/paper_c_dpo_v2/scores/prospective/
+/artifacts/paper_c_dpo_v2/scores/retrospective/*
+!/artifacts/paper_c_dpo_v2/scores/retrospective/scores.parquet
+!/artifacts/paper_c_dpo_v2/scores/retrospective/metadata.json
+/artifacts/paper_c_dpo_v2/scores/prospective/*
+!/artifacts/paper_c_dpo_v2/scores/prospective/scores.parquet
+!/artifacts/paper_c_dpo_v2/scores/prospective/metadata.json
+/artifacts/paper_c_dpo_v2/provenance/
+/artifacts/paper_c_dpo_v2/smoke/
+
 # benchmark-explorer: the full local index.html embeds the gated ExpGuard dataset's
 # prompt text — never commit it. Commit index.public.html (public + synthetic only).
 benchmark-explorer/index.html

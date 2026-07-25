@@ -14,7 +14,7 @@
 - **Replace the post-hoc verdict:** land a non-HARKing analyzer (predeclared β=0.5 primary; locked predicate-driven language; a β=0≡vanilla unit test) before any general KL result enters the paper. `analyze_klsft.py` currently auto-selects best-β and writes the verdict after seeing results, and §10 still branches wording on the ungated point-estimate sign — both must be fixed.
 - **Grandfather the running general KL-SFT sweep:** the new lock should CONSUME its adapters (bind their environment + step-zero/adapter hashes) and RE-SCORE under the new schema rather than retrain the general panel (first verify the launched betas were {0,0.5,1.0}). Also decide whether the general-panel KL cells stay as the Act I anti-forgetting control or move into this act — the same numbers must not appear under two narratives.
 - **Fixed β=0.5 does not equalize regularization strength** across checkpoints; report achieved train/held-out KL beside every preservation cell and add a matched-achieved-KL sensitivity. Justify the mode-seeking `KL(π_θ‖π_ref)` direction or run the mass-covering direction as a locked sensitivity.
-- **Keep the fresh SME cohort out of the MVP** (retrospective, estimation-only tier); it is the true calendar/dollar gate. Keep Paper C in its reserved Act II slot and record the governance decision before any renumbering.
+- **Keep the fresh SME cohort out of the MVP** (retrospective, estimation-only tier); it is the true calendar/dollar gate. Treat unrun Paper C v2 as a companion study with no reserved act, consistent with the governance decision below.
 
 **Development started (this review turn):** the generalized, registry-driven adaptation harness — explicit `{unmodified, sft, kl_sft}` conditions (fixing the `condition=sft`+beta conflation), pluggable native-verdict contracts, and KL reference = the same starting checkpoint — is built in a new namespace and CPU-validated: [`configs/starting_type_adaptation_v1.yaml`](../../configs/starting_type_adaptation_v1.yaml), [`experiments/starting_type_common.py`](../../experiments/starting_type_common.py), [`tests/test_starting_type_adaptation.py`](../../tests/test_starting_type_adaptation.py). Guard-native contracts are registered stubs pending Phase-0 revision pinning.
 
@@ -837,19 +837,19 @@ No result number may be typed manually into the TeX source. Tables and figures m
 
 Do not currently call this “Act II.”
 
-The repository has a real numbering conflict:
+The repository had a numbering conflict under the superseded Paper C v1 plan:
 
-- [`STATUS.md`](STATUS.md) and [the unified-report plan](../../docs/unified-report-plan.md) reserve Act II for the preregistered DPO/GRPO objective study;
-- [the Paper C preregistration](../../docs/paper-c-prereg.md) commits that still-unrun study;
+- [`STATUS.md`](STATUS.md) and [the unified-report plan](../../docs/unified-report-plan.md) historically reserved Act II for a DPO/GRPO objective study;
+- [Paper C v1](../../docs/paper-c-prereg.md) is superseded, while [Paper C v2](../../docs/paper-c-prereg-v2.md) is an unrun companion-study protocol candidate and does not reserve an act;
 - [`sections/act3.tex`](sections/act3.tex) displays composition as Act II while retaining `sec:actIII`; and
 - [`sections/act4-mortgage.tex`](sections/act4-mortgage.tex) displays mortgage as Act III while retaining `sec:actIV`.
 
-The default recommendation is:
+The current recommendation is:
 
-1. keep the preregistered objective-axis study in its reserved position;
-2. place this purpose-built starting-point study after it as a new act, or publish it as a companion if the unified report becomes too broad;
-3. retain composition and domains afterward; and
-4. record the decision in status, plan, and preregistration history before renumbering prose.
+1. do not reserve or renumber an act for Paper C until its v2 lock and evidence exist;
+2. treat the matched DPO study as a companion unless completed evidence later justifies integration;
+3. retain composition and domains in their current evidence-backed order; and
+4. record any future integration decision in status, plan, and preregistration history before renumbering prose.
 
 Once the evidence release passes:
 
@@ -875,7 +875,7 @@ That is a claim template, not a conclusion.
 
 ### Phase 0 — Freeze governance, scope, and access
 
-- Record manuscript placement without displacing the Paper C preregistration.
+- Record manuscript placement without treating the unrun Paper C v2 protocol as an existing report act.
 - Accept gated model terms manually where desired.
 - Pin model/tokenizer revisions and snapshot cards/terms.
 - Freeze the general panel, purpose-built panel, replacements, and minimum-family gate.

@@ -1,0 +1,10 @@
+artifacts/**
+!artifacts/.gitkeep
+inputs/**
+!inputs/.gitkeep
+build/**
+!build/.gitkeep
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/

@@ -25,11 +25,17 @@ results live in [`../papers/`](../papers) and [`../artifacts/paper_a_sft_v2/`](.
   the phase-by-phase build procedure (scaffold → freeze rubric → author families → generate →
   decontaminate → split/seal → validate → evaluate → package).
 
-## Paper C — objective axis (future work, not applied)
+## Paper C — matched DPO study (future work, not yet run)
 
+- [paper-c-prereg-v2.md](paper-c-prereg-v2.md) — **normative protocol candidate** for the matched
+  VerdictCE/PairCE/DPO × uncertain/matched-random design. It does not become frozen until a final
+  Paper C v2 lock exists.
+- [paper-c-development-plan.md](paper-c-development-plan.md) — implementation phases, execution
+  gates, artifact layout, and prospective-unsealing requirements.
+- [paper-c-code-design.md](paper-c-code-design.md) — exact losses, module boundaries, metadata,
+  artifact schemas, and required tests.
 - [paper-c-objective-axis-reward-and-design.md](paper-c-objective-axis-reward-and-design.md) —
-  grounded design for the objective axis (SFT · DPO · KTO · GRPO): what reward/preference signal
-  works (verifiable label, no learned RM), which objectives to keep vs. drop, and a literature
-  review grounding feasibility and novelty.
-- [paper-b-topic-proposal.md](paper-b-topic-proposal.md) — the deferred topic proposal (objective ×
-  independent-competence specialization) that motivates that Paper C.
+  nonnormative rationale and current prior-art boundary.
+- [paper-c-prereg.md](paper-c-prereg.md) and
+  [paper-b-topic-proposal.md](paper-b-topic-proposal.md) — superseded v1/pilot records retained for
+  provenance; they do not authorize a run.
