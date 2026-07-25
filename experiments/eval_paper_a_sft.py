@@ -187,7 +187,18 @@ def _synthetic_logits(content_sha, gold, model_key, condition, seed):
     key = f"{content_sha}|{model_key}|{condition}|{seed}"
     h = int(hashlib.sha256(key.encode("utf-8")).hexdigest(), 16) % (2**32)
     rng = np.random.default_rng(h)
-    sep = 1.6 if condition == "sft" else 1.0
+    if condition == "base":
+        sep = 1.0
+    elif condition in {"sft", "stage1_sft"}:
+        sep = 1.6
+    elif str(condition).startswith("verdict_ce"):
+        sep = 1.65
+    elif str(condition).startswith("pair_ce"):
+        sep = 1.70
+    elif str(condition).startswith("dpo"):
+        sep = 1.75
+    else:
+        sep = 1.5
     sign = (2 * int(gold) - 1)
     unsafe_logit = sep * 0.5 * sign + rng.normal(0, 0.6)
     safe_logit = -sep * 0.5 * sign + rng.normal(0, 0.6)
@@ -239,7 +250,20 @@ def score_bundle(lock, rows, model_key, condition, seed, adapter_dir_path,
     if m.get("attn_implementation"):
         model_kwargs["attn_implementation"] = m["attn_implementation"]
     base = AutoModelForCausalLM.from_pretrained(m["model_id"], **model_kwargs)
-    model = (PeftModel.from_pretrained(base, adapter_dir_path) if condition == "sft" else base)
+    # Paper A uses only {base, sft}, but the low-level scorer is also reused by
+    # separately locked companion studies.  Adapter loading is an artifact
+    # property, not a magic condition-name property: every non-base bundle must
+    # provide and load its adapter.  This keeps Paper A behavior unchanged while
+    # preventing a DPO/PairCE condition from accidentally scoring the base.
+    if condition == "base":
+        if adapter_dir_path:
+            raise C.ArtifactContractError("base bundle unexpectedly supplied an adapter path")
+        model = base
+    else:
+        if not adapter_dir_path:
+            raise C.ArtifactContractError(
+                f"non-base condition {condition!r} has no adapter path")
+        model = PeftModel.from_pretrained(base, adapter_dir_path)
     model = model.eval().to(device)
 
     out = []

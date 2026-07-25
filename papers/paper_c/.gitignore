@@ -1,0 +1,15 @@
+# Paper C is an isolated workspace. Keep generated and credential-bearing files local.
+.env
+.pytest_cache/
+__pycache__/
+*.py[cod]
+build/
+artifacts/
+inputs/private/
+inputs/manifests/
+inputs/parent/
+cloud/bundle/
+cloud/*.tar.gz
+cloud/*.tar.zst
+cloud/*.sha256
+

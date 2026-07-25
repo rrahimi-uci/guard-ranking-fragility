@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-split-manifest-v1",
+  "title": "Family, content-family, source, and policy-time split record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sample_id",
+    "family_id",
+    "content_family_id",
+    "source_id",
+    "split",
+    "temporal_evaluation_eligible",
+    "policy_as_of",
+    "temporal_policy_side"
+  ],
+  "properties": {
+    "sample_id": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "content_family_id": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "split": {
+      "enum": [
+        "specialist_train",
+        "alignment_pool",
+        "calibration",
+        "checkpoint_selection",
+        "public_test",
+        "sealed_test",
+        "temporal_test"
+      ]
+    },
+    "temporal_evaluation_eligible": {"type": "boolean"},
+    "policy_as_of": {"type": ["string", "null"], "format": "date"},
+    "temporal_policy_side": {
+      "type": ["string", "null"],
+      "enum": [null, "pre_cutoff", "post_cutoff"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"temporal_evaluation_eligible": {"const": true}},
+        "required": ["temporal_evaluation_eligible"]
+      },
+      "then": {
+        "properties": {
+          "split": {"const": "temporal_test"},
+          "policy_as_of": {"type": "string", "format": "date"},
+          "temporal_policy_side": {"enum": ["pre_cutoff", "post_cutoff"]}
+        }
+      },
+      "else": {
+        "properties": {
+          "split": {
+            "enum": [
+              "specialist_train",
+              "alignment_pool",
+              "calibration",
+              "checkpoint_selection",
+              "public_test",
+              "sealed_test"
+            ]
+          },
+          "temporal_policy_side": {"type": "null"}
+        }
+      }
+    }
+  ]
+}

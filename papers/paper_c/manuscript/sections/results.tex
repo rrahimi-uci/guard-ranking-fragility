@@ -1,0 +1,83 @@
+\section{Results}
+
+\begin{center}
+\fcolorbox{BrickRed}{BrickRed!6}{\parbox{0.92\linewidth}{
+\textbf{Pending execution.} No Paper C model has been trained or scored under the
+isolated protocol. This section records the reporting order and the design's
+resolving power, not a finding.}}
+\end{center}
+
+\subsection{What this design can resolve}
+
+The only quantities available before execution are properties of the design, and
+they come first because they determine how a null must be read.
+\Cref{tab:power} is computed by \verb|paper_c power| from the vendored parent seed
+variance; it is not a Paper C result.
+
+\begin{table}[h]
+\centering
+\caption{Design resolving power, from the measured parent within-checkpoint seed
+standard deviation of transfer macro-AP ($\sigma=0.0355$) against the
+preregistered target effect of $0.02$. The clustered rows treat the checkpoint as
+the independent unit, which is the defensible reading; the optimistic row assumes
+seeds are independent draws of the effect and is shown only to make the gap
+explicit.}
+\label{tab:power}
+\begin{tabular}{llccc}
+\toprule
+Estimand & Units & $n_{\mathrm{eff}}$ & MDE & Powered\\
+\midrule
+Point $C_{\mathrm{ref}}$    & clustered by checkpoint & 4  & 0.035 & no\\
+Point $C_{\mathrm{ref}}$    & optimistic (cells)      & 20 & 0.016 & yes\\
+Frontier $F_{\mathrm{ref}}$ & clustered by checkpoint & 4  & 0.017 & yes\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two consequences are fixed in advance. First, the single-checkpoint contrast this
+study is named after cannot detect its own target effect on this panel, which is
+why it is secondary. Second, the frontier estimand clears the target only if
+pairing removes at least $67\%$ of the raw variance; the pilot measures that
+factor, and the full panel is not authorised until it does.
+
+\subsection{Reporting order}
+
+The completed paper will report evidence in the following fail-closed order:
+(1) execution inventory and invalid/infeasible cells; (2) the measured
+effective-learning-rate ratio of \Cref{lem:rescale} on the locked reference
+margins, which calibrates how much of any fixed-step difference is speed rather
+than objective; (3) primary $F_{\mathrm{ref}}$ on represented and transfer, with
+$F_{\mathrm{pair}}$ and $F_{\mathrm{total}}$; (4) the secondary point contrasts
+$C_{\mathrm{pair}}$, $C_{\mathrm{ref}}$, $C_{\mathrm{total}}$, labelled
+confound-exposed; (5) the objective-by-selection interaction; (6) calibration and
+stress outcomes; (7) movement and compute diagnostics; and (8) leave-one-source
+and leave-one-model sensitivity. If the target-matched panel is incomplete, the
+primary aggregate is labelled unavailable rather than silently computed on
+survivors.
+
+\begin{table}[h]
+\centering
+\caption{Primary result shell. $F$ is the transfer gap at matched represented AP,
+equal-weight marginalized across selectors then models, with intervals from a
+bootstrap over checkpoints. Values remain pending until the selection lock and
+retrospective score bundle validate.}
+\begin{tabular}{lccc}
+\toprule
+Regime & $F_{\mathrm{pair}}$ & $F_{\mathrm{ref}}$ & $F_{\mathrm{total}}$\\
+\midrule
+Represented & PENDING & PENDING & PENDING\\
+Transfer    & PENDING & PENDING & PENDING\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{How a null will be reported}
+
+An $F_{\mathrm{ref}}$ interval containing zero is the outcome the mechanism
+predicts: centering cannot change the direction of any per-example update, only
+its weight. Such a result will be reported as a \emph{bounded null} --- point
+estimate, interval, and minimum detectable effect together --- and stated as
+``reference centering buys no transfer at equal represented ranking, to within
+$\pm\varepsilon$ on this panel,'' never as an absence of evidence. That claim is
+useful precisely because DPO is already deployed in guard pipelines on the
+assumption that it does something a margin loss does not.

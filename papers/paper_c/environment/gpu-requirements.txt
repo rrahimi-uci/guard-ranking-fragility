@@ -1,0 +1,8 @@
+# Exact Python 3.10-compatible Paper C training stack. PyTorch 2.9 plus CUDA
+# are supplied by the immutable DLVM image and asserted by startup.sh.
+transformers==5.12.1
+peft==0.19.1
+accelerate==1.14.0
+numpy==2.2.6
+safetensors==0.8.0
+jinja2==3.1.6

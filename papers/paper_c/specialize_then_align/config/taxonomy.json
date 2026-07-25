@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "actions": ["allow", "review", "intervene"],
+  "core_categories": {
+    "toxicity_abuse": {"domain": "general_safety", "input_mode": "request_screening"},
+    "jailbreak_evasion": {"domain": "general_safety", "input_mode": "request_screening"},
+    "prompt_injection_exfiltration": {"domain": "general_safety", "input_mode": "request_screening"},
+    "mortgage_fair_lending": {"domain": "mortgage", "input_mode": "request_response_context"},
+    "mortgage_closed_end_advertising": {"domain": "mortgage", "input_mode": "request_response_context"}
+  },
+  "heldout_transfer_categories": {
+    "mortgage_origination_disclosures": {"domain": "mortgage"},
+    "mortgage_underwriting_adverse_action": {"domain": "mortgage"},
+    "mortgage_steering_referrals": {"domain": "mortgage"},
+    "mortgage_servicing_loss_mitigation": {"domain": "mortgage"},
+    "mortgage_valuation_appraisal": {"domain": "mortgage"},
+    "mortgage_privacy_reporting": {"domain": "mortgage"},
+    "mortgage_servicemember_protections": {"domain": "mortgage"}
+  },
+  "horizontal_overlays": [
+    "udaap",
+    "coverage_and_exceptions",
+    "deadlines",
+    "recordkeeping_and_auditability",
+    "state_and_investor_overlays"
+  ]
+}

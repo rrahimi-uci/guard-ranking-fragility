@@ -1,0 +1,39 @@
+\section{Limitations}
+
+The four-model panel is intentionally compact and does not identify universal
+architecture or scale effects. The hard-label construction tests reference
+centering, not the value of human preferences, intent annotations, reasoning
+traces, or policy-conditioned judgments. Stage-2 development rows were seen in
+Stage 1 and are not fully unseen data. The current benchmark suite and earlier
+pilots have been inspected, so retrospective intervals are estimation rather
+than confirmation. A future sealed cohort introduces its own source and labeling
+validity requirements.
+
+The frontier estimand buys learning-rate invariance at a price that should be
+stated plainly. It compares curves only where they overlap in represented AP, so a
+cell whose objectives reach disjoint represented ranges contributes nothing rather
+than an extrapolated gap; with $21$ grid levels it also weights the overlapping
+range uniformly, which is a choice, not a fact about deployment. It is invariant
+to a monotone reparameterization of training speed, which is exactly what makes it
+the right primary estimand here --- but it therefore cannot answer ``which
+objective reaches a given represented level in fewer updates,'' a question a
+practitioner may legitimately care about. That question is answered by the
+secondary step-matched contrasts, which are confound-exposed by construction and
+are reported as such.
+
+Four models give four independent units for the equal-weight model marginal, so
+the design detects an effect of about $0.017$ transfer AP at best and cannot
+resolve anything smaller. If reference centering buys $0.005$, this study will
+report a bounded null and be right to. The pilot measures the variance reduction
+that number depends on; if the measurement comes in worse than assumed, the
+honest response is to change the target or the panel, not to reinterpret the
+bound.
+
+Reference-centering effects may depend on achieved movement, but movement is
+post-treatment. We report it as a mechanism diagnostic and do not call it a
+causal mediator. Two-verdict KL ignores changes elsewhere in the vocabulary;
+full-vocabulary next-token KL is reported only if a locked scorer stores enough
+information. Finally, a positive AP effect does not alone establish a deployment
+benefit: operating-point false positives, harmful recall, calibration, latency,
+and memory remain necessary.
+

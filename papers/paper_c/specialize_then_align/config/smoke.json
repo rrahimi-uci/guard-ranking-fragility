@@ -1,0 +1,114 @@
+{
+  "schema_version": 2,
+  "profile": "smoke",
+  "study_id": "paper_c_specialize_align_mortgage_smoke",
+  "project_root_marker": "README.md",
+  "taxonomy_path": "config/taxonomy.json",
+  "general_safety_policy_path": "config/general_safety_policy.json",
+  "mortgage_policy_path": "config/mortgage_policy_snapshot.json",
+  "mortgage_policy_vintage_inventory_path": "config/mortgage_policy_vintage_inventory.json",
+  "artifact_root": "artifacts/smoke",
+  "input_root": "inputs",
+  "actions": ["allow", "review", "intervene"],
+  "task": {
+    "unit": ["request", "proposed_response", "context", "jurisdiction", "policy_as_of", "policy_context"],
+    "output": ["action", "category", "violation_tags", "policy_ids", "confidence"],
+    "category_contract": "one_adjudicated_focal_category_per_primary_event",
+    "mortgage_required_context_fields": ["actor_role", "product", "transaction_stage", "applicable_regime", "coverage_facts"],
+    "mortgage_claim": "infrastructure_only",
+    "mortgage_exclusions": ["credit_decision", "legal_opinion", "compliance_certification"]
+  },
+  "backbones": {
+    "qwen25_15b": {
+      "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+      "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+    },
+    "smollm2_17b": {
+      "model_id": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "revision": "31b70e2e869a7173562077fd711b654946d38674"
+    }
+  },
+  "seeds": [42],
+  "core_categories": ["toxicity_abuse", "mortgage_fair_lending"],
+  "data": {
+    "family_split_seed": 20260725,
+    "family_split": {"specialist_train": 0.5, "alignment_pool": 0.2, "calibration": 0.15, "checkpoint_selection": 0.15},
+    "temporal_policy_cutoff": "2026-07-20",
+    "temporal_evaluation_eligibility_field": "temporal_evaluation_eligible",
+    "mortgage_target_families": 2,
+    "rows_per_mortgage_family": 3,
+    "calibration_allow_min_per_core_category": 1,
+    "sealed_allow_min_per_core_category": 1,
+    "capacity_evaluation_mixture": {"allow": 0.94, "review": 0.05, "intervene": 0.01},
+    "mortgage_reviewers": 2,
+    "separate_adjudicator": true,
+    "sealed_external_test_required": false,
+    "legacy_mortgage_role": "candidate_generation_only_not_gold"
+  },
+  "specialists": {
+    "grid": "all_core_categories_x_all_backbones_x_all_seeds",
+    "lora": {"r": 8, "alpha": 16, "dropout": 0.0},
+    "learning_rate": 0.0002,
+    "max_steps": 1,
+    "calibration": "temperature_scaling",
+    "out_of_expertise_behavior": "abstain"
+  },
+  "preferences": {
+    "teacher_mode": "leave_one_backbone_out",
+    "minimum_distinct_teacher_seeds": 1,
+    "minimum_calibrated_confidence": 0.0,
+    "require_adjudicated_gold_consistency": true,
+    "require_complete_structured_candidates": true,
+    "retain_agreement_and_disagreement_strata": true,
+    "review_blinded_to_model_identity_and_order": true,
+    "candidate_sources": ["category_specialist", "joint_generalist"],
+    "candidate_calibration": "categorywise_temperature_scaling_for_both_source_types_on_calibration_split",
+    "beta": 0.1
+  },
+  "alignment": {
+    "reference": "joint_multitask_sft",
+    "arms": ["gold_sft", "soft_distill", "specialist_pairce", "generalist_cm_dpo", "specialist_cm_dpo"],
+    "learning_rate": 0.000005,
+    "max_steps": 1,
+    "checkpoint_steps": [1],
+    "soft_distillation_target": "three_calibrated_action_probabilities_only",
+    "pair_logprob_reduction": "sum_response_token_logprob_with_prompt_masked",
+    "candidate_length_rule": "reject_pair_if_either_candidate_is_truncated",
+    "category_dro_temperature": 0.1,
+    "lambda_gold": 0.5,
+    "lambda_retain": 0.05,
+    "same_examples_tokens_optimizer": true
+  },
+  "evaluation": {
+    "benign_fpr_grid": [0.01],
+    "review_budget": {"maximum": 0.1, "scope": "capacity_evaluation_mixture"},
+    "decision_rule": "infrastructure_only",
+    "threshold_fit_split": "calibration",
+    "checkpoint_rule": "infrastructure_only",
+    "checkpoint_selection_split": "checkpoint_selection",
+    "sealed_scoring": "disabled",
+    "primary": ["infrastructure_only"],
+    "primary_contrast": "infrastructure_only",
+    "secondary_contrasts": [],
+    "cluster_unit": "none",
+    "inferential_scope": "infrastructure_only",
+    "mortgage_disaggregated": true,
+    "balanced_triplet_review_budget_applies": false,
+    "multiplicity": "none",
+    "heldout_transfer_categories": []
+  },
+  "readiness": {
+    "mortgage_policy_sme_signed": false,
+    "annotation_rubric_signed": false,
+    "licence_ledger_complete": false,
+    "power_pilot_complete": false,
+    "sealed_cohorts_created": false
+  },
+  "readiness_evidence": {
+    "mortgage_policy_sme_signed": null,
+    "annotation_rubric_signed": null,
+    "licence_ledger_complete": null,
+    "power_pilot_complete": null,
+    "sealed_cohorts_created": null
+  }
+}

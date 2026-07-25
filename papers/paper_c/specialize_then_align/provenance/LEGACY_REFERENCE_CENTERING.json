@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "relationship": "historical_predecessor_not_parent_not_superseded",
+  "study_id": "paper_c_reference_centering_v1",
+  "latest_lock": {
+    "relative_path": "../artifacts/locks/PROTOCOL_LOCK_SUPERSEDING_009.json",
+    "byte_sha256": "0f557ac0da0a348991d2841648bb25dc5040572d4b4cfa8a3a066d55c1c62ada",
+    "internal_self_hash": "07576b8f0ec81f1168b9a087777d8dade8b58658ecccc8aa02c5e45d8a5cf5f8",
+    "classification": "historical_only_nonoperative"
+  },
+  "current_legacy_config_byte_sha256": "457a514445b9b2b0e9e0b3630ba90f98356b39624a2c960ae209bdbafcc7e853",
+  "legacy_input_manifest_byte_sha256": "fd10aac5360d3626a9519e00469822776b9314e60f5df81d0491beba899cdfad",
+  "legacy_train_rows": 1200,
+  "mortgage_rows": 0,
+  "cloud_attempts": 7,
+  "cloud_attempt_exit_status": "all_failed",
+  "final_smoke": {
+    "run_id": "paper-c-smoke-qwen25-15b-42-20260725181303",
+    "result_archive_sha256": "b9069e5f5f675378be442ffaae15274ee8c36c0063c7488fba9f6a26dd8e480d",
+    "stage1": "two_qwen25_15b_steps_completed",
+    "stage2": "not_started",
+    "failure": "step-zero reference margin error 0.375 exceeds 0.001",
+    "classification": "failed_smoke_engineering_evidence_only"
+  },
+  "claim_use": "forbidden"
+}

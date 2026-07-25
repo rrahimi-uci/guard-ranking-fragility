@@ -1,0 +1,58 @@
+\section{Introduction}
+
+Safety guards are classifiers placed before or after a language model to detect
+harmful content, jailbreaks, and prompt injections. Their deployment objective is
+not merely high accuracy on one benchmark: a useful guard must preserve benign
+traffic, catch harmful behavior, and transfer across datasets whose annotation
+policies and lexical cues differ. This makes the training objective consequential,
+but also makes objective comparisons unusually easy to confound.
+
+Recent guard pipelines use DPO to emphasize hard examples or preference-unstable
+rollouts \citep{liu2025guardreasoner,ferrao2026aims,liu2026dtguard}. These results
+establish that preference optimization can participate in effective guard
+training. They do not isolate what DPO's frozen reference contributes when the
+``preference'' is mechanically derived from a binary class label. In that case,
+chosen is the correct verdict token and rejected is the incorrect token; no new
+human or policy preference has been added.
+
+We ask a narrower question: \emph{what does reference centering itself buy a
+binary safety guard?} We compare three objectives from the same Stage-1 adapter:
+full-vocabulary verdict cross-entropy (VerdictCE), a temperature-matched pairwise
+margin loss (PairCE), and DPO. PairCE and DPO see identical examples and share the
+same inverse temperature, so their difference is the subtraction of the frozen
+Stage-1 margin. A second factorial axis compares high-entropy examples with a
+disjoint source/label-matched random control.
+
+Asking that question carefully turns out to be harder than running it. Once the
+reduction is in hand, DPO and PairCE differ by a single per-example gradient
+weight, and we show that at initialization the ratio of those weights is
+near-constant on a real guard panel: mean $1.30$ with a coefficient of variation
+of $0.17$ (\Cref{lem:rescale}). Reference centering therefore \emph{begins} as a
+larger effective learning rate, not as a differential re-emphasis. Any comparison
+at a fixed step count silently mixes ``better objective'' with ``faster
+training.'' Worse, the natural estimand is underpowered: the measured
+within-checkpoint seed standard deviation on the parent suite is $0.036$, and with
+four checkpoints as the independent unit a one-sided bound needs an effect above
+$0.035$ --- larger than an explicit KL anchor achieves on the same data. A study
+built on that estimand could not tell a null from a real small effect.
+
+We make the confound the hypothesis. A pure learning-rate rescale moves a run
+along its own represented/transfer trade-off curve without moving the curve, so we
+compare curves at matched represented ranking instead of points at matched step
+count. Each cell contributes a trajectory over a saved checkpoint ladder, and the
+primary estimand is the transfer gap between objectives at equal represented AP.
+It is exactly zero under a rescale and nonzero only when one objective buys
+transfer at equal represented ranking.
+
+The planned contribution is fivefold. First, we derive the exact one-token DPO
+reduction and state its interpretation boundary. Second, we prove the
+near-uniform-rescale lemma and draw its two design consequences. Third, we specify
+a matched $3\times2$ objective-by-selection design over four models and five seeds
+whose primary estimand is learning-rate invariant and whose selector is fixed by
+equal-weight marginalization. Fourth, we make resolving power a preregistered,
+executable gate: the design states the effect it can detect, measures the seed
+variance it depends on, and refuses the full panel until a pilot confirms it.
+Fifth, we provide a layered artifact contract separating design freeze,
+development-based checkpoint selection, retrospective evaluation, and a later
+prospective confirmation.
+

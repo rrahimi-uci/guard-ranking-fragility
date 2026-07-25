@@ -1,4 +1,13 @@
-# Paper C — Deferred Topic Proposal (objective × independent competence specialization)
+# Paper C — Superseded Deferred Topic Proposal (historical pilot record)
+
+> **SUPERSEDED 2026-07-25.** GuardReasoner, AIMS, and DT-Guard close the broad "DPO/RL for
+> safety classifiers" novelty claim, and the legacy matrix below does not isolate objective from
+> loss normalization, reference centering, selection, or update magnitude. The live Paper C plan is
+> [`paper-c-prereg-v2.md`](paper-c-prereg-v2.md), with development details in
+> [`paper-c-development-plan.md`](paper-c-development-plan.md). This file remains only as provenance
+> for the pilot-informed v1 idea and must not authorize training or manuscript claims.
+
+**Archived original proposal begins below. Nothing below this line is an active instruction.**
 
 > **Repositioned 2026-07-14 → this is now Paper C (deferred).** A later prototype + adversarial
 > review found the *composition* idea (ensemble the untuned base with the tuned adapter) is a

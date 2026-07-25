@@ -1,0 +1,46 @@
+\section{Related work and contribution boundary}
+
+\paragraph{Direct preference optimization.}
+DPO converts a KL-regularized preference-learning problem into a logistic
+classification objective over policy and reference log ratios
+\citep{rafailov2023dpo}. Our work does not propose a new optimizer. It studies a
+special case in which both alternatives are single verdict tokens and the
+preference is determined by an existing binary label.
+
+\paragraph{Preference training for guards.}
+GuardReasoner combines reasoning SFT with hard-sample DPO
+\citep{liu2025guardreasoner}. AIMS studies intent-aware supervision across SFT,
+DPO, distillation, and reinforcement learning \citep{ferrao2026aims}. DT-Guard
+uses rollout-guided hard-case optimization in a reasoning-active,
+reasoning-free-inference guard \citep{liu2026dtguard}. These systems use richer
+reasoning, intent, or rollout signals and pursue absolute guard quality. Our
+question is orthogonal: with information held constant, is reference centering
+better than the corresponding uncentered pairwise objective?
+
+\paragraph{Where this sits: reference centering as an anti-forgetting dial.}
+The reduction of \Cref{lem:rescale} places this study in a family it is usually
+not discussed with. A frozen reference term penalises movement away from the
+starting policy, which is what an explicit KL penalty, elastic-weight-style
+regularisation, and an output-space average of base and adapter also do by
+different means. Read that way, the question is not ``is DPO a better guard
+objective'' but ``does an \emph{implicit} anchor purchase the same
+represented/transfer trade the \emph{explicit} anchors purchase, and at what
+price?'' This matters for interpretation in both directions. If
+$F_{\mathrm{ref}}$ is positive, reference centering is a zero-extra-inference
+anti-forgetting mechanism, cheaper at serving time than averaging two models. If
+it is a bounded null, then a pipeline that reaches for DPO on binary guard labels
+is paying preference-optimization complexity for a gradient reweighting, and an
+explicit anchor with a tunable strength is the better-instrumented choice. Either
+outcome is a usable finding, which is why the design fixes how a null is reported
+before running.
+
+\paragraph{Guard evaluation.}
+We retain a multi-source evaluation spanning real-world toxicity, jailbreak,
+over-refusal, and safety stress suites \citep{lin2023toxicchat,chao2024jailbreakbench,
+rottger2024xstest,han2024wildguard,cui2024orbench,mazeika2024harmbench}. The
+benchmark panel is used retrospectively; a future confirmatory claim requires a
+separately sealed cohort. Because the parent suite also supplies the seed variance
+that sets this design's resolving power (\Cref{tab:power}), the same reuse that
+makes the evaluation retrospective is what makes the power calculation possible
+before any Paper C run exists.
+

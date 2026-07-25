@@ -1,0 +1,81 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.82in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,allcolors=MidnightBlue]{hyperref}
+\theoremstyle{plain}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}[lemma]{Corollary}
+% Minimal capitalised cross-reference macro: this workspace builds with plain pdflatex,
+% which may not ship cleveref, so labels carry their own prefix word.
+\newcommand{\Cref}[1]{\autoref{#1}}
+\providecommand{\lemmaautorefname}{Lemma}
+\providecommand{\equationautorefname}{Equation}
+\providecommand{\sectionautorefname}{Section}
+\providecommand{\subsectionautorefname}{Section}
+
+\newcommand{\method}{\textsc{RefCenter}}
+\newcommand{\draftwarning}{%
+  \noindent\fcolorbox{BrickRed}{BrickRed!7}{%
+    \parbox{0.96\linewidth}{\textbf{Design-stage draft (25 July 2026).}
+    No Paper C GPU experiment or result has been completed. Numerical result
+    fields are intentionally marked pending; this document must not be cited as
+    empirical evidence.}}\par\medskip}
+
+\title{What Does Reference Centering Buy a Safety Guard?\\
+\large A Matched SFT, PairCE, and DPO Study}
+\author{Anonymous authors}
+\date{}
+
+\begin{document}
+\maketitle
+\draftwarning
+
+\begin{abstract}
+Direct Preference Optimization (DPO) is increasingly used to train language-model
+safety guards, but a hard-label binary guard contains no preference information
+beyond its class label. In the one-token setting DPO reduces exactly to a
+reference-centered signed-margin loss, so the two objectives differ only by a
+per-example gradient weight. We show that at initialization this weight ratio is
+near-constant on a real guard panel --- mean $1.30$ with coefficient of variation
+$0.17$ --- which means reference centering starts life as a larger effective
+learning rate rather than as a differential re-emphasis. Any comparison at fixed
+step count is therefore confounded, and a single-checkpoint contrast on a
+four-checkpoint panel is additionally underpowered: the measured seed standard
+deviation of $0.036$ puts its smallest detectable effect at $0.035$, above the
+effect an explicit KL anchor achieves on the same suite.
+
+We turn that confound into the hypothesis. Each factorial cell contributes a
+represented/transfer trajectory over a saved checkpoint ladder, and the primary
+estimand is the transfer gap between objectives \emph{at matched represented
+average precision}. A pure learning-rate rescale slides a run along its own
+frontier and scores exactly zero; only a genuine anti-forgetting mechanism buys
+transfer at equal represented ranking. The design compares VerdictCE, PairCE, and
+DPO under uncertain and source/label-matched random selection across four compact
+instruction models and five seeds, marginalizing equally across selectors,
+bootstrapping over checkpoints rather than cells, and gating the full panel on a
+pilot that \emph{measures} the variance reduction the estimand needs. This
+design-stage paper contributes the algebra, the rescale lemma and its two design
+consequences, preregistered frontier estimands with an executable power gate,
+layered artifact locks, and a self-contained execution scaffold. It reports no
+performance result yet.
+\end{abstract}
+
+\input{manuscript/sections/introduction}
+\input{manuscript/sections/related_work}
+\input{manuscript/sections/factorization}
+\input{manuscript/sections/study_design}
+\input{manuscript/sections/estimands}
+\input{manuscript/sections/implementation}
+\input{manuscript/sections/results}
+\input{manuscript/sections/limitations}
+\input{manuscript/sections/conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{manuscript/refs}
+
+\appendix
+\input{manuscript/sections/appendix_derivation}
+\input{manuscript/sections/appendix_contract}
+\end{document}

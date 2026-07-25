@@ -1,4 +1,12 @@
-# Paper C — Pre-registration (objective axis: SFT vs DPO vs GRPO)
+# Paper C — Pre-registration v1 (superseded objective-axis design)
+
+> **SUPERSEDED 2026-07-25; retained as an amendment record.** No claim-bearing Paper C
+> lock or final DPO/GRPO run was created from this protocol. A literature and code audit
+> found that the objective ordering, GRPO-null rule, reference-KL interpretation, and
+> implementation parity claims below are not defensible. The normative replacement is
+> [`paper-c-prereg-v2.md`](paper-c-prereg-v2.md). Nothing below may authorize a new run.
+
+**Archived original v1 text begins below. Nothing below this line is an active instruction.**
 
 > **Status: written BEFORE any DPO/GRPO run.** This document fixes the hypotheses, design, metrics,
 > analysis, and decision rules in advance so the objective-axis result cannot be reverse-fit to the

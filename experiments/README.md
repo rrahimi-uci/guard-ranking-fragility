@@ -9,6 +9,25 @@ evidence remains read-only under [`artifacts/paper_a_sft/`](../artifacts/paper_a
 > The broad-study / Paper B scripts that used to live here now sit under
 > [`legacy/`](../legacy). Nothing in this folder depends on them.
 
+## Paper C v2 — development scaffold, not a runnable study
+
+The candidate matched VerdictCE/PairCE/DPO study is separate from the completed Paper A pipeline:
+
+| File | Current role |
+|---|---|
+| `paper_c_dpo_common.py` | Exact temperature-matched margin losses, global-family split, deterministic selectors, and hashes. |
+| `prepare_paper_c_dpo.py` | Build split and selection artifacts after reference logits exist. |
+| `lock_paper_c_dpo.py` | Development lock and validators; finalization is intentionally disabled until the missing reference/dev-score producers and candidate-inventory checks exist. |
+| `train_paper_c_dpo.py` | Shared Stage-1/Stage-2 trainer; GPU smoke is still required. |
+| `eval_paper_c_dpo.py` | Development-only selected-checkpoint scorer; claim-bearing final scoring and dedicated reference/dev-score modes remain disabled or pending. |
+| `analyze_paper_c_dpo.py` | Development-only checkpoint selector and retrospective paired-analysis scaffold. |
+
+The protocol and remaining gates are in
+[`paper-c-prereg-v2.md`](../docs/paper-c-prereg-v2.md) and
+[`paper-c-development-plan.md`](../docs/paper-c-development-plan.md). No claim-bearing Paper C lock,
+adapter grid, reference-margin artifact, or result exists. `run_paper_c_objective.py` now fails closed;
+`paper_c_preference.py` is historical v1 provenance and must not be imported by v2 execution.
+
 ## Pipeline
 
 | # | Script | What it does |

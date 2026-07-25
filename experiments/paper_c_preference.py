@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-"""Paper C: the frozen, deterministic verifiable-preference / reward recipe (no learned reward model).
+"""Historical Paper C v1 preference helpers; not an executable evidence contract.
+
+This module is retained only to interpret old pilot notes.  Its hard-coded
+surface strings, objective zoo, and GRPO reward are superseded by
+``paper_c_dpo_common.py`` and the exact v2 margin losses.  New code must not
+import this module for a claim-bearing run.
 
 Every objective's training signal is derived DETERMINISTICALLY from the SAME frozen Paper A v2 train
 rows and the SAME verdict tokens, so SFT / DPO / KTO / ORPO / GRPO are directly comparable. The label

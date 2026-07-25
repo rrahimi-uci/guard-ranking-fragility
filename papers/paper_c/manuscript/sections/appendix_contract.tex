@@ -1,0 +1,16 @@
+\section{Artifact and failure contract}
+
+Every run records model and tokenizer revisions, prompt-cache hash, manifest and
+selection hashes, starting-adapter directory hash, ordered sample identity,
+objective configuration, software/device metadata, updates, wall time, and peak
+accelerator memory. Outputs are immutable; an existing nonempty run directory is
+a hard failure. Failed cells remain in the inventory.
+
+A protocol lock cannot authorize Stage-2 candidate training until the accepted
+starting adapters, prompt caches, references, and selections are bound by a
+Stage-2 design child. That candidate-training lock cannot authorize retrospective scoring because
+candidate checkpoints and development outcomes do not yet exist. The
+post-selection child binds those artifacts and the deterministic 120-cell table.
+Likewise, a retrospective lock cannot authorize confirmation. The prospective
+child must predate cohort unsealing and bind the cohort commitment, analysis,
+estimands, margins, and selected adapter identities.

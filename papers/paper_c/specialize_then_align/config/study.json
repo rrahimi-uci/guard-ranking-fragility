@@ -1,0 +1,144 @@
+{
+  "schema_version": 2,
+  "profile": "primary",
+  "study_id": "paper_c_specialize_align_mortgage_v1",
+  "project_root_marker": "README.md",
+  "taxonomy_path": "config/taxonomy.json",
+  "general_safety_policy_path": "config/general_safety_policy.json",
+  "mortgage_policy_path": "config/mortgage_policy_snapshot.json",
+  "mortgage_policy_vintage_inventory_path": "config/mortgage_policy_vintage_inventory.json",
+  "artifact_root": "artifacts",
+  "input_root": "inputs",
+  "actions": ["allow", "review", "intervene"],
+  "task": {
+    "unit": ["request", "proposed_response", "context", "jurisdiction", "policy_as_of", "policy_context"],
+    "output": ["action", "category", "violation_tags", "policy_ids", "confidence"],
+    "category_contract": "one_adjudicated_focal_category_per_primary_event",
+    "mortgage_required_context_fields": ["actor_role", "product", "transaction_stage", "applicable_regime", "coverage_facts"],
+    "mortgage_claim": "US_federal_mortgage_compliance_risk_triage",
+    "mortgage_exclusions": ["credit_decision", "legal_opinion", "compliance_certification"]
+  },
+  "backbones": {
+    "qwen25_15b": {
+      "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+      "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+    },
+    "smollm2_17b": {
+      "model_id": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "revision": "31b70e2e869a7173562077fd711b654946d38674"
+    }
+  },
+  "seeds": [42, 43, 44],
+  "core_categories": [
+    "toxicity_abuse",
+    "jailbreak_evasion",
+    "prompt_injection_exfiltration",
+    "mortgage_fair_lending",
+    "mortgage_closed_end_advertising"
+  ],
+  "data": {
+    "family_split_seed": 20260725,
+    "family_split": {"specialist_train": 0.5, "alignment_pool": 0.2, "calibration": 0.15, "checkpoint_selection": 0.15},
+    "temporal_policy_cutoff": "2026-07-20",
+    "temporal_evaluation_eligibility_field": "temporal_evaluation_eligible",
+    "mortgage_target_families": 400,
+    "rows_per_mortgage_family": 3,
+    "calibration_allow_min_per_core_category": 2000,
+    "sealed_allow_min_per_core_category": 2000,
+    "capacity_evaluation_mixture": {"allow": 0.94, "review": 0.05, "intervene": 0.01},
+    "mortgage_reviewers": 2,
+    "separate_adjudicator": true,
+    "sealed_external_test_required": true,
+    "legacy_mortgage_role": "candidate_generation_only_not_gold"
+  },
+  "specialists": {
+    "grid": "all_core_categories_x_all_backbones_x_all_seeds",
+    "lora": {"r": 32, "alpha": 64, "dropout": 0.05},
+    "learning_rate": 0.0002,
+    "max_steps": 400,
+    "calibration": "temperature_scaling",
+    "out_of_expertise_behavior": "abstain"
+  },
+  "preferences": {
+    "teacher_mode": "leave_one_backbone_out",
+    "minimum_distinct_teacher_seeds": 2,
+    "minimum_calibrated_confidence": 0.7,
+    "require_adjudicated_gold_consistency": true,
+    "require_complete_structured_candidates": true,
+    "retain_agreement_and_disagreement_strata": true,
+    "review_blinded_to_model_identity_and_order": true,
+    "candidate_sources": ["category_specialist", "joint_generalist"],
+    "candidate_calibration": "categorywise_temperature_scaling_for_both_source_types_on_calibration_split",
+    "beta": 0.1
+  },
+  "alignment": {
+    "reference": "joint_multitask_sft",
+    "arms": ["gold_sft", "soft_distill", "specialist_pairce", "generalist_cm_dpo", "specialist_cm_dpo"],
+    "learning_rate": 0.000005,
+    "max_steps": 200,
+    "checkpoint_steps": [25, 50, 100, 200],
+    "soft_distillation_target": "three_calibrated_action_probabilities_only",
+    "pair_logprob_reduction": "sum_response_token_logprob_with_prompt_masked",
+    "candidate_length_rule": "reject_pair_if_either_candidate_is_truncated",
+    "category_dro_temperature": 0.1,
+    "lambda_gold": 0.5,
+    "lambda_retain": 0.05,
+    "same_examples_tokens_optimizer": true
+  },
+  "pilot": {
+    "backbones": ["qwen25_15b", "smollm2_17b"],
+    "seeds": [7, 8],
+    "categories": "all_core_categories",
+    "expected_training_cells": 44,
+    "reuse_in_primary_panel": false,
+    "family_namespace": "pilot_disjoint_from_primary_and_sealed",
+    "purpose": "measure paired family covariance, calibration, review budget feasibility, and runtime without inspecting primary cells; seed effects are descriptive"
+  },
+  "evaluation": {
+    "benign_fpr_grid": [0.01, 0.02, 0.03, 0.04, 0.05],
+    "review_budget": {"maximum": 0.1, "scope": "capacity_evaluation_mixture"},
+    "decision_rule": "intervene_if_p_intervene_ge_ti_else_review_if_one_minus_p_allow_ge_tr_else_allow",
+    "threshold_fit_split": "calibration",
+    "checkpoint_rule": "maximize_development_worst_category_frontier_subject_to_capacity_mixture_fpr_and_review_constraints_ties_earliest",
+    "checkpoint_selection_split": "checkpoint_selection",
+    "sealed_scoring": "selected_checkpoint_once",
+    "primary": ["specialist_vs_generalist_cm_dpo_worst_category_frontier"],
+    "primary_contrast": "specialist_cm_dpo_minus_generalist_cm_dpo",
+    "secondary_contrasts": ["specialist_cm_dpo_minus_specialist_pairce", "specialist_pairce_minus_soft_distill", "specialist_cm_dpo_minus_gold_sft"],
+    "cluster_unit": "family_with_fixed_backbones_and_fixed_named_seeds",
+    "inferential_scope": "conditional_on_two_pinned_backbones_and_three_named_seeds",
+    "balanced_triplet_review_budget_applies": false,
+    "multiplicity": "simultaneous_one_sided_intervals_for_primary_and_holm_for_secondary",
+    "mortgage_disaggregated": true,
+    "heldout_transfer_categories": [
+      "mortgage_origination_disclosures",
+      "mortgage_underwriting_adverse_action",
+      "mortgage_steering_referrals",
+      "mortgage_servicing_loss_mitigation",
+      "mortgage_valuation_appraisal",
+      "mortgage_privacy_reporting",
+      "mortgage_servicemember_protections"
+    ]
+  },
+  "power": {
+    "target_primary_frontier_effect": 0.02,
+    "worst_category_noninferiority_margin": 0.02,
+    "one_sided_alpha": 0.025,
+    "target_power": 0.8,
+    "sample_size_rule": "freeze family count after pilot using paired family covariance conditional on fixed backbones and named seeds; do not inspect sealed outcomes"
+  },
+  "readiness": {
+    "mortgage_policy_sme_signed": false,
+    "annotation_rubric_signed": false,
+    "licence_ledger_complete": false,
+    "power_pilot_complete": false,
+    "sealed_cohorts_created": false
+  },
+  "readiness_evidence": {
+    "mortgage_policy_sme_signed": null,
+    "annotation_rubric_signed": null,
+    "licence_ledger_complete": null,
+    "power_pilot_complete": null,
+    "sealed_cohorts_created": null
+  }
+}
