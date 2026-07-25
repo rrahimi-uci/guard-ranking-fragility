@@ -177,11 +177,24 @@ climbs from \TransferBaseFPRPct\% (base) to \TransferSFTFPRPct\% (SFT) --- the t
 twice as many false alarms on data it never trained on --- and the pooled-negative FPR blows past target
 from \TransferBasePooledFPRPct\% to \TransferSFTPooledFPRPct\%, so the calibrated threshold simply does
 not transfer. Transfer recall rises only modestly (\TransferBaseTPRPct\% to \TransferSFTTPRPct\%),
-nowhere near the represented jump. The single-class stress sets make the cost concrete: on the hard
+nowhere near the represented jump --- and that rise is \emph{not} iso-FPR, which matters more than its
+size. The two recalls are realized at \TransferBaseFPRPct\% and \TransferSFTFPRPct\% macro FPR, so the
+tuned guard buys much of its extra recall by alarming roughly twice as often; a recall comparison at
+unequal false-alarm rates is not a comparison of discriminative power. Rethresholding each tuned guard so
+its transfer false-alarm rate matches its own base's reverses the sign of the change on three of the four
+checkpoints and in the panel mean, in both of the two thresholding reconstructions we tried. We report
+that as a direction rather than a locked row: reproducing the operating point exactly requires the
+lock-pinned analysis environment (\Cref{sec:repro}), and adding a matched-FPR row to
+\Cref{tab:sensitivity} is a stated next step. It cuts the same way as the rest of Act~I --- against the
+tuned guard.
+
+The single-class stress sets make the cost concrete: on the hard
 \code{HarmBench} attacks the tuned guard's recall \emph{falls} from \HarmBenchBaseRecallPct\% to
 \HarmBenchSFTRecallPct\% --- it catches less of the very content a guard exists to stop --- while
-benign over-refusal on \code{OR-Bench} is essentially flat (\ORBenchBaseFPRPct\% to \ORBenchSFTFPRPct\%),
-so the extra false alarms are an off-distribution phenomenon, not a blanket increase in caution.
+benign over-refusal on \code{OR-Bench} is essentially flat (\ORBenchBaseFPRPct\% to \ORBenchSFTFPRPct\%).
+Since \code{OR-Bench} is \emph{also} unseen data, ``off-distribution'' cannot be what distinguishes it:
+the extra false alarms are specific to the transfer suite's negatives, and we do not identify what
+separates them. What the flat OR-Bench line does rule out is a blanket increase in caution.
 
 \begin{table}[htbp]\centering\small\setlength{\tabcolsep}{6pt}
 \caption{Act I --- per-benchmark paired deltas (upper) and the calibration-targeted $5\%$ FPR operating
@@ -252,7 +265,7 @@ model runs are needed, only the committed per-row scores.
 \caption{\textbf{The prevalence also chooses the winner} (measured: \Cref{eq:ap-prevalence} applied to the
 four base guards' committed transfer ROC, macro-averaged over the transfer sources). As unsafe prompts get
 rarer, every guard's AP falls --- the strongest ranker (Qwen3-4B) drops from $0.94$ at balance to
-$\approx0.56$ at $1\%$ prevalence, the weakest (Qwen2.5-1.5B) from $0.82$ to $0.11$ --- \emph{and} the
+$\approx0.56$ at $1\%$ prevalence, and the guard that ends lowest (Qwen2.5-1.5B) from $0.82$ to $0.11$ --- \emph{and} the
 lower half re-orders (see text).}
 \label{fig:prevalence}
 \end{figure}
@@ -275,6 +288,9 @@ specialization in $\SpecializationSeedCount/\TotalSeedCount$ seeds (\Cref{tab:pr
 KL penalty ($\beta{=}0.5$) buys back transfer (\KLBetaHalfTransferDelta{} vs.\ SFT) at a represented cost
 \KLBetaHalfRepDelta{} (\Cref{sec:actI-klsft}).}
 {Never replace a base guard on represented AP alone; compare each tune to its \emph{own} base on
-represented \emph{and} held-out sets, and if you must SFT while caring about OOD, add the KL penalty.}
+represented \emph{and} held-out sets, and if you must SFT while caring about OOD, consider the KL penalty
+--- but as a dial, not a default: the preregistered test in \Cref{sec:adaptation} finds its
+represented-source cost fails the non-inferiority margin, and it leaves the two hardest specializers below
+their own base on transfer.}
 {Retrospective on a fixed four-checkpoint panel with an inspected manifest (overlap audit pending); a
 description of this recipe on these runs, not a population or causal law.}

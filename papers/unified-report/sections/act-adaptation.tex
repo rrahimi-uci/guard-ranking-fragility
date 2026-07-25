@@ -3,11 +3,17 @@
 
 Acts~I--II characterize what fine-tuning does to \emph{general} instruction checkpoints, and Act~III ranks
 \emph{base} guards on regulated domains --- all on panels the researcher inspected while building the
-method, so they are retrospective estimation, not confirmed findings (\Cref{sec:honesty}). This section is the one \emph{confirmatory} piece: a preregistered
-study whose estimands, decision rules, non-inferiority margin, and interpretation wording were locked in
-a committed claim registry (\code{artifacts/starting\_type\_adaptation\_v1/protocol/claim\_registry.json},
-hashed in the release lock) \emph{before} any score existed, so the verdicts below cannot be a post-hoc
-reading of the data (no HARKing). It asks two questions that the earlier acts raise but cannot settle:
+method, so they are retrospective estimation, not confirmed findings (\Cref{sec:honesty}). This section is
+the one \emph{analysis-preregistered} piece: its estimands, decision rules, non-inferiority margin, and
+interpretation wording were fixed in a committed claim registry
+(\code{artifacts/starting\_type\_adaptation\_v1/protocol/claim\_registry.json}) \emph{before} any score
+existed --- git history puts the registry a day ahead of the scores --- so the verdicts below cannot be a
+post-hoc reading of the data (no HARKing). Two limits on that label, stated here rather than in the
+appendix. The registry declares itself \code{finalization\_status: dev\_nonfinal} and is \emph{not} bound
+to a release lock (no lock exists for this study). And the study re-scores the \emph{same 3{,}308 rows} as
+Acts~I--II, from the same frozen manifest --- so it is preregistered on the \emph{analysis}, not blind on
+the \emph{data}; the uninspected-cohort half of that discipline remains future work
+(\Cref{sec:roadmap}). It asks two questions that the earlier acts raise but cannot settle:
 (RQ1) does the specialization tradeoff also hit models that are \emph{already} purpose-built safety
 guards, and (RQ2) is KL-SFT --- which recovered transfer for general checkpoints (\Cref{sec:actI-klsft})
 --- a \emph{free} improvement, i.e.\ does it retain transfer at no represented-source cost?
@@ -17,16 +23,21 @@ purpose-built guards$\}\times\{$unmodified $U$, $+$SFT, $+$KL-SFT$\}$, over \Ada
 checkpoints spanning \AdaNFamilies{} model families (gemma, granite, llama, mistral, qwen, smollm), five
 seeds, primary $\beta{=}\AdaPrimaryBeta$. Every guard keeps its \emph{native} top-level verdict
 interface (ShieldGemma \texttt{Yes/No}, Qwen3Guard \texttt{Safe/Controversial/Unsafe} --- its native
-three-tier top-level verdict, scored as a binary margin $\mathrm{logsumexp}(\text{Unsafe},\text{Controversial})-\text{Safe}$ --- Llama-Guard
+three-tier top-level verdict, reduced to the same binary decision margin as every other cell,
+$z_{\text{Unsafe}}-z_{\text{Safe}}$, which is what the committed scores record (the
+\texttt{Controversial} logit is not used) --- Llama-Guard
 \texttt{safe/unsafe}, Granite \texttt{Yes/No}, WildGuard \texttt{yes/no}), validated byte-for-byte
 against the real tokenizer at a decision-position fidelity check before scoring; all cells share the
 frozen Paper~A binary manifest, LoRA recipe, and optimizer. We report macro-AP (mean over benchmark
 sources) on the RAW logit margin, on represented (\texttt{id\_test}) and held-out (\texttt{transfer})
 splits, as a within-checkpoint change vs.\ the \emph{same} unmodified checkpoint (the KL reference is
 that checkpoint). Each statistic H is an equal-weight mean over the six \emph{model} families; its
-one-sided $97.5\%$ lower bound comes from a 10{,}000-resample bootstrap that resamples \emph{evaluation}
-(benchmark-source) groups and training seeds while holding model identities fixed, Bonferroni-split
-across the two research questions (familywise $\alpha=0.05$).
+one-sided $97.5\%$ lower bound comes from a 10{,}000-resample bootstrap that resamples near-duplicate
+\emph{evaluation row families} (\code{family\_id}; 3{,}170 clusters over 3{,}308 rows) and training seeds while
+holding model \emph{and benchmark-source} identity fixed, Bonferroni-split
+across the two research questions (familywise $\alpha=0.05$). Because benchmark identity is held fixed,
+these bounds carry evaluation-row and seed uncertainty only --- not between-benchmark or
+between-model-family uncertainty.
 
 \input{generated/tab_adaptation_gen}
 
@@ -37,8 +48,11 @@ across the two research questions (familywise $\alpha=0.05$).
 and KL-SFT ($\triangle$); arrows run SFT\,$\to$\,KL-SFT. Nearly all checkpoints --- general (blue) and
 released purpose-built guards (green) alike --- land in the specialization quadrant (represented up,
 transfer down: \textbf{RQ1}). The KL-SFT arrows point up-and-left: it recovers transfer at a
-represented-source cost (\textbf{RQ2}). Llama-Guard-3-1B's $20$-token-pruned tied head is unmovable by
-LoRA (null cell at the origin).}
+represented-source cost (\textbf{RQ2}). Llama-Guard-3-1B sits at the origin because its cell is
+\emph{degenerate, not robust}: its unmodified decision margin is a single constant on all $3{,}308$ rows
+($-0.125$, sd $0$), so its macro-AP equals the source base rates by construction and no adaptation can
+move it. We exclude it from the ensembling panel and treat it as uninformative rather than as evidence of
+LoRA-resistance.}
 \label{fig:adaptation-plane}
 \end{figure}
 
@@ -54,8 +68,9 @@ bound-confirmed transfer cost, exactly as it does a general checkpoint.
 
 \paragraph{RQ2 --- KL-SFT retains transfer but is \emph{not} a free improvement (not supported).}
 KL-SFT did preserve held-out transfer relative to SFT (H\_preserve \AdaHPreserve, LCB $\AdaHPreserveLCB>0$):
-in \Cref{tab:adaptation} every KL-SFT held-out delta is less negative (or more positive) than its SFT
-counterpart. But the represented-source \emph{cost} of that retention, H\_cost \AdaHCost, has
+in \Cref{tab:adaptation} every KL-SFT held-out delta on the nine \emph{informative} checkpoints is less
+negative (or more positive) than its SFT counterpart; on the degenerate Llama-Guard-3-1B cell both are
+exactly zero. But the represented-source \emph{cost} of that retention, H\_cost \AdaHCost, has
 LCB \AdaHCostLCB, which does not clear the preregistered non-inferiority margin of $-\AdaMargin$ --- so
 the second criterion fails and RQ2 is \textbf{not supported}. KL-SFT trades represented-source adaptation
 gain for transfer retention; on this panel it is a genuine trade, not a free lunch. This is a more

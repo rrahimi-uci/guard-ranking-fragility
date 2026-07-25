@@ -146,7 +146,14 @@ def emit_tex(rows, emit_dir):
         takeaway = ("A one-line change to the recipe --- adding $\\beta\\,\\mathrm{KL}(\\pi_\\theta\\|"
                     "\\pi_{\\text{base}})$ --- recovers much of the transfer that plain SFT sacrifices, at a "
                     "modest represented cost. The Act~I specialization is therefore partly a property of the "
-                    "recipe: it is mitigable \\emph{within} the SFT family, without the composition of Act~II.")
+                    "recipe: it is mitigable \\emph{within} the SFT family, without the composition of Act~II. "
+                    "\\textbf{Two limits travel with that, and both point the same way.} This is a "
+                    "retrospective estimate on four general checkpoints with no interval attached; the "
+                    "\\emph{preregistered} test in \\Cref{sec:adaptation} finds the represented-source cost of "
+                    "the same trade fails its non-inferiority margin (RQ2 \\textbf{not supported}). And on the "
+                    "two checkpoints that specialize hardest, KL-SFT still leaves held-out transfer "
+                    "\\emph{below} the unmodified base --- mitigation, not restoration. Treat $\\beta$ as a "
+                    "tradeoff dial, not a default.")
     elif bdt == bdt and bdt <= -0.01:
         verdict = ("In other words, the KL penalty does not recover transfer on this panel (and can cost "
                    "represented ranking), so the specialization is not merely an artifact of the "

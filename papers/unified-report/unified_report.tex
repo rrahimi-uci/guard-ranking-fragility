@@ -21,9 +21,25 @@
 \usepackage{titlesec}
 \titlespacing*{\section}{0pt}{3.4ex plus .8ex minus .3ex}{1.7ex plus .3ex}
 \titlespacing*{\subsection}{0pt}{2.6ex plus .6ex minus .2ex}{1.1ex plus .3ex}
-\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.6em}{}
+% coloured headings + a running header, so a 70-page report still reads like one document
+\definecolor{hdgmaroon}{HTML}{9A2436}
+\titleformat{\section}{\normalfont\Large\bfseries\color{hdgmaroon}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{hdgmaroon}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries\color{hdgmaroon}}{\thesubsubsection}{0.6em}{}
+\usepackage{fancyhdr}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[C]{\footnotesize\itshape The Safety-Guard Benchmark Chooses the Winner}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
 \setlength{\emergencystretch}{3em}
-\newcommand{\sectionbreak}{\clearpage}  % each section starts on a new page
+\newcommand{\sectionbreak}{\clearpage}  % every \section (and appendix) opens a new page
+% let big floats share a page with text, and pin float-only pages to the top (no centring glue)
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.85}
+\makeatletter\setlength{\@fptop}{0pt}\makeatother
 \graphicspath{{figures/}}
 
 % ---- teaching / takeaway callout boxes (reused from the simplified editions) ----
@@ -45,6 +61,10 @@
 \newtcolorbox{takeaway}[1]{colback=tkgreen,colframe=tkgreenedge,title={#1},fonttitle=\bfseries\small,
   fontupper=\small,boxrule=0.5pt,left=4pt,right=4pt,top=3pt,bottom=3pt,breakable}
 \newcommand{\code}[1]{\texttt{\small #1}}
+% ---- worked-example box (Act III case study: a real G0/D1 row a general guard misses) ----
+\newtcolorbox{casebox}[1]{colback=amberfill!35,colframe=amberedge,title={#1},
+  fonttitle=\bfseries\small,fontupper=\small,boxrule=0.6pt,arc=2pt,
+  left=5pt,right=5pt,top=3pt,bottom=3pt}   % non-breakable: the worked example is one unit
 % ---- end-of-section result module: Evidence / Decision / Boundary ----
 \newtcolorbox{edbox}[1][]{colback=cardgrey,colframe=inkgrey,boxrule=0.7pt,arc=2pt,
   left=5pt,right=5pt,top=3pt,bottom=3pt,fontupper=\small,#1}   % non-breakable: keep E/D/B summary together
@@ -68,16 +88,16 @@
 \input{generated/klsft_macros}       % KL-SFT anti-forgetting control: \KL* (placeholder until run completes)
 \input{generated/adaptation_macros}  % Starting-type adaptation study: \Ada* (H values + LCBs + verdicts)
 \input{generated/ensembling_macros}  % Ensembling appendix: \Ens* (point estimates + bootstrap + committee)
+\input{generated/teaser_macros}      % Figure 1 caption: 2-dp \Teaser* forms of the panel deltas
 
-\title{\textbf{The Benchmark Chooses the Winner:}\\[3pt]
+\title{\textbf{The Safety-Guard Benchmark Chooses the Winner:}\\[3pt]
 \large Measuring, Tuning, and Composing Small Safety Guards\\
 in High-Compliance Regulated Domains}
 \author{Reza Rahimi\\\small JazzX AI, Los Altos, CA, USA \\ \small\texttt{reza.rahimi@jazzx.ai}}
-\date{\today}
+\date{\vspace{-1.4ex}\small\today}
 
 \begin{document}
 \maketitle
-
 
 \begin{abstract}
 \noindent A safety \emph{guard} --- a small model that labels each incoming request \code{safe} or
@@ -103,17 +123,37 @@ purpose-built guards, while KL-regularized
 SFT preserves transfer but at a real represented cost --- a tradeoff dial, not a free win; and (iv)~in
 regulated domains, evaluated base-only and zero-shot, the numerically top-ranked guard \emph{differs}
 between the mortgage benchmark and the finance/health/law arm (within which one guard leads all three
-verticals; CIs overlap), and a protected-token probe separates guards that aggregate ranking rates
-alike (directional; three public-test pairs).
+verticals; CIs overlap). The protected-token probe we built to sit beside ranking turns out
+\emph{not} to separate these guards: on three pairs, one of which is not a single-token swap, and on a
+probability scale that saturates for one checkpoint, it is a negative methodological result rather than a
+fairness ranking.
 
 \smallskip
 \noindent The contribution is a measurement-and-decision \emph{workflow} for choosing guards in regulated
 products --- compare to your own base, gate on both represented and transfer, recalibrate, and treat
-repairs as gated candidates --- not a new winning model. Acts~I--III are retrospective on an inspected
-panel; only the adaptation study is confirmatory; the domain arms are base-only and zero-shot; no causal
-or fair-lending claim is licensed. Code, data manifests, and the frozen benchmark are public
-(\Cref{sec:repro}; \url{https://github.com/rrahimi-uci/guard-ranking-fragility}).
+repairs as gated candidates --- not a new winning model. Every claim-bearing table is regenerated from committed
+per-row scores by one command that reports what it could and could not verify, and the dual-labeled
+mortgage benchmark ships frozen and checksummed.
 \end{abstract}
+
+\begin{center}\small
+\href{https://github.com/rrahimi-uci/guard-ranking-fragility}{\code{github.com/rrahimi-uci/guard-ranking-fragility}}
+~~$\cdot$~~ \code{make reproduce} regenerates and byte-checks the covered tables (\Cref{sec:repro})
+~~$\cdot$~~ frozen benchmark: \code{v1\_hmda2022}, 994 rows
+\end{center}
+
+\begin{center}
+\fcolorbox{amberedge}{amberfill!30}{%
+\begin{minipage}{0.955\linewidth}\small
+\textbf{Scope and evidence tier.} Acts~I--II are \emph{retrospective} estimation on an inspected fixed
+panel, not preregistered; only the starting-type adaptation study (\Cref{sec:adaptation}) is
+preregistered and confirmatory. The domain arms (\Cref{sec:actIV}) are base-only and zero-shot, on a
+single 146-row split with 3 protected pairs, and the mortgage labels are LLM-judge and
+policy-card-consistent --- \emph{not} SME-adjudicated. No causal, universal, deployment, or
+fair-lending claim is licensed by anything in this report; the full limitations ledger is
+\Cref{sec:honesty}.
+\end{minipage}}
+\end{center}
 
 \clearpage
 \tableofcontents
@@ -121,23 +161,32 @@ or fair-lending claim is licensed. Code, data manifests, and the frozen benchmar
 \section{Introduction: why ``is this guard good?'' is the wrong question}
 \label{sec:intro}
 
-\begin{background}{In one paragraph}
-A ``guard'' is a small model that reads an incoming request and labels it \code{safe} or \code{unsafe}
-before an assistant acts on it. The common recipe is: take a general chat model, fine-tune it into a
-guard, and report its benchmark score --- usually compared against \emph{other} models. That hides the
-quantity a practitioner actually needs: what did the fine-tune change relative to the \emph{same model
-before tuning}, and does that change survive on data the guard never trained on? This report answers
-that at two scales (does tuning transfer? and can we \emph{compose} to recover it without retraining?) and
-then asks whether any of it holds where it matters most --- \emph{regulated domains} where a violation can
-read as perfectly polite text.
-\end{background}
+\begin{figure}[t]\centering
+\includegraphics[width=\linewidth]{fig_teaser.pdf}
+\caption{\textbf{The whole report, one panel per act: the benchmark co-produces the verdict.}
+\textbf{(1)}~SFT lifts represented-source macro-AP by $\TeaserRepDelta$ but moves held-out transfer by
+$\TeaserTransferDelta$, pooling per-checkpoint effects from $\TeaserTransferHi$ to
+$\TeaserTransferLo$ (dots): it \emph{specializes} (\Cref{sec:actI}).
+\textbf{(2)}~The \emph{same} four bases, zero-shot, rank differently on every arm --- the top-ranked
+mortgage guard is not the top-ranked finance/health/law guard. Point estimates with overlapping
+domain-arm CIs (\Cref{tab:baseline,tab:expguard}): the claim is that the \emph{leaderboard's answer
+moves}, not that the ordering is resolved.
+\textbf{(3)}~The worked G0/D1 row of \Cref{fig:casestudy} --- coded as ``market fit'' and neighborhood
+``resale stability,'' every guard ranks the fair-lending violation below the median benign row of the
+same split; name the protected traits and three of four rank it above nearly all of them.}
+\label{fig:teaser}
+\end{figure}
 
-A guard chosen on a leaderboard --- or ``improved'' by a quick fine-tune --- can quietly do three expensive
+\Cref{fig:teaser} is the whole report in one image, and the rest of this section says why each panel
+matters. A guard chosen on a leaderboard --- or ``improved'' by a quick fine-tune --- can quietly do three expensive
 things at once in production: \textbf{(1)} raise false alarms that block legitimate users (pooled transfer
 false alarms climb $\TransferBasePooledFPRPct\%\!\to\!\TransferSFTPooledFPRPct\%$); \textbf{(2)} miss the hardest
 attacks it was meant to stop (HarmBench recall $\HarmBenchBaseRecallPct\%\!\to\!\HarmBenchSFTRecallPct\%$);
 and \textbf{(3)}, in a regulated domain, pass a policy violation that reads as polite text or treat a
-protected group differently --- a compliance and fair-lending problem, not merely a lower number. The three
+protected group differently --- a compliance and fair-lending problem, not merely a lower number.
+\Cref{fig:casestudy} is that third failure in one concrete row: a routine-sounding underwriting
+question that solicits redlining-by-proxy, which all four guards rank \emph{below} the median benign
+request in the same split. The three
 questions below, and the decision guide that follows from them (\Cref{sec:practitioner}), exist to catch
 these failures \emph{before} deployment: when to fine-tune, when to instead \emph{compose}, and when a
 general guard is simply not enough for a regulated domain.
@@ -154,13 +203,15 @@ verdict} --- and three questions on a single shared panel of checkpoints:
   \item \textbf{Does a general-safety score cover a regulated domain?} (\Cref{sec:actIV}) --- evaluated \emph{zero-shot} across law, finance, health, and mortgage.
 \end{enumerate}
 
-\paragraph{What is new here.} Prior work shows fine-tuning can weaken safety behavior
-\citep{hsiung2025guardrails}, that guards overfit their training policy
+\paragraph{What is new here.} Prior work already measures safety degradation of the same checkpoint
+before and after fine-tuning \citep{hsiung2025guardrails}, policy-overfitting of guardrails
 \citep{liu2026domaingeneralizable}, and that a plain instruction model can rival a purpose-built guard
-\citep{bassani2024guardbench} --- but those compare \emph{different} models, which confounds ``the
-fine-tune changed the guard'' with ``the two models differ.'' Our through-line removes that confound with
-a \emph{paired, same-checkpoint} measurement and then pushes it to a composition remedy and four regulated
-domains. Concretely, the novel contributions are:
+\citep{bassani2024guardbench}; in-distribution versus out-of-distribution blocks are also standard in
+guard evaluations \citep{inan2023llamaguard,han2024wildguard,elesedy2024loraguard}. What is missing is a
+strictly \emph{paired} guard-classifier estimand that holds checkpoint, manifest, seeds and scorer fixed
+while splitting the change into represented-source versus dataset-held-out transfer with per-checkpoint
+intervals from a family-aware hierarchical bootstrap --- and then pushes that instrument to a composition
+remedy and four regulated domains. Concretely, the novel contributions are:
 \begin{enumerate}[leftmargin=1.7em,itemsep=1pt]
   \item \textbf{A paired estimand} that cleanly separates represented-source gain from held-out transfer,
   with a fixed-panel hierarchical bootstrap (\Cref{sec:actI}).
@@ -170,11 +221,15 @@ domains. Concretely, the novel contributions are:
   \item \textbf{A retraining-free composition operator} that recovers transfer, with an equal-cost SFT+SFT
   control isolating the base's contribution (\Cref{tab:sftsft}) and a candidate diversity mechanism
   (base-correlated adapter errors) --- reported as motivation, not proof (\Cref{sec:actIII}).
-  \item \textbf{A dual-labeled, HMDA-grounded mortgage benchmark} ($G\times D$) with a protected-class
+  \item \textbf{A dual-labeled, HMDA-grounded mortgage benchmark} whose mortgage-policy label $D$
+  \emph{refines} general safety $G$ on the looks-safe mass (G0/D1, 502/994 rows; the G1/D0 cell is empty,
+  so in v1 the labels are \emph{nested rather than crossed}), with a protected-class
   fairness-invariance gate, plus an external, expert-annotated finance/health/law replication
   (\Cref{sec:actIV}).
-  \item \textbf{A reproduce-from-committed-scores pipeline:} one entry point regenerates every table and
-  figure and asserts byte-identity against the paper (\Cref{sec:repro}).
+  \item \textbf{A reproduce-from-committed-scores pipeline} (tooling, not a research claim): one entry
+  point regenerates the Act~I/II, mortgage, ExpGuard, SFT+SFT, latency and teaser artifacts from committed
+  per-row scores and byte-checks them, reporting verified/unverified/uncovered counts rather than a single
+  green (\Cref{sec:repro}).
 \end{enumerate}
 \emph{What is \textbf{not} new:} we introduce no new model, metric, or training algorithm, and make no
 causal, universal, or deployment claim --- the output is a reproducible, estimation-only characterization
@@ -207,7 +262,14 @@ audit, not a deployment recommendation.
 \input{generated/mortgage_baseline_table}       % tab:baseline
 \begin{figure}[htbp]\centering
 \includegraphics[width=0.92\linewidth]{fig_mortgage_baseline.pdf}
-\caption{Zero-shot base guards on the mortgage benchmark: ranking (AP$\cdot$G, AP$\cdot$D; left) and the protected-pair fairness gap $\Delta_{\mathrm{context}}$ (right). AP$\cdot$D is only moderate, and $\Delta_{\mathrm{context}}$ separates guards that AP alone rates similarly (Qwen2.5-1.5B's $0.183$ gap vs.\ Qwen3-4B's $0$).}
+\caption{\textbf{The fairness gate does not rank these guards, and the reason is the score scale.}
+Zero-shot base guards on the mortgage benchmark: ranking (AP$\cdot$G, AP$\cdot$D; left) and the
+protected-pair gap on \emph{both} scales (right). AP$\cdot$D is only moderate --- and against the
+$0.555$ chance floor set by the $81/146$ $D$-positives, only $0.12$--$0.30$ above chance. On the
+probability scale Qwen3-4B looks perfectly invariant ($0.000$) and Qwen2.5-1.5B looks worst ($0.183$);
+on the raw margin the order nearly inverts ($0.80$ vs.\ $0.84$, against $0.10$/$0.15$ for the two
+SmolLM checkpoints), because Qwen3-4B's probabilities saturate at $p\!\sim\!10^{-6}$. Plotting only the
+left bars is what made a units artifact look like invariance (\Cref{sec:actIV-mortgage-pairs}).}
 \label{fig:mortgage-bars}
 \end{figure}
 
@@ -226,11 +288,14 @@ benchmark-co-production thesis recur across domains? --- rather than a re-run of
 mechanism. On ExpGuard's expert-annotated prompts, all four bases already rank domain violations well
 (aggregate AP $0.88$--$0.96$ across the panel; \Cref{tab:expguard}, \Cref{fig:expguard-domains}). The
 ordering echoes Act~I's lesson rather than raw capacity: \textbf{SmolLM3-3B ranks highest} (AP $0.956$,
-$95\%$ CI $[.949,.963]$, near-uniform across the three verticals), with Qwen3-4B close
-just behind ($0.951$, $[.943,.958]$ --- the two \emph{marginal} CIs overlap and no paired per-domain
-difference was computed, so their order is unresolved at this sample
-size), while the smaller checkpoints trail (Qwen2.5-1.5B $0.921$, SmolLM2-1.7B $0.883$) --- the ranking is
-\emph{not} monotone in parameter count.
+$95\%$ CI $[.949,.963]$, near-uniform across its own three verticals), with Qwen3-4B close
+just behind ($0.951$, $[.943,.958]$). Those \emph{marginal} CIs overlap, but that is the wrong test on
+paired data: scoring both guards on identical rows lets a paired bootstrap cancel row-difficulty
+variance, and it resolves one vertical. SmolLM3-3B $-$ Qwen3-4B is $+0.017$ on \textbf{health} with a CI
+excluding zero, while finance ($+0.001$) and law ($+0.001$) are genuine ties (\Cref{tab:expguard}). The
+honest statement is therefore sharper than ``unresolved at this sample size'': the sample resolves health
+and shows the other two verticals are level. The smaller checkpoints trail (Qwen2.5-1.5B $0.921$,
+SmolLM2-1.7B $0.883$) --- the ranking is \emph{not} monotone in parameter count.
 As external, expert-labeled evidence these numbers sit at a strictly stronger label tier than the mortgage
 LLM-judge, so they are reported \emph{beside}, and never pooled with, the mortgage or retrospective-panel
 numbers. The ranking score is the raw decision margin $z_{\text{unsafe}}-z_{\text{safe}}$ (not a saturating
@@ -240,15 +305,16 @@ committed text-free per-row scores; the run was independently cross-checked on a
 
 \input{generated/expguard_table}                % tab:expguard (4-guard result; from committed margins)
 
-\section{Synthesis --- one lesson at three scales}
+\section{Synthesis: one lesson at three scales, and what to do about it}
 \label{sec:synthesis}
 The three acts are one lesson. A guard's benchmark score is co-produced by the benchmark: SFT buys
 represented-source ranking, not transfer (Act~I); keeping the base in an output-space average
 \emph{recovers} some transfer without retraining (at a second inference pass), though not a threshold (Act~II); and a change of
 domain can hide the violation entirely, so regulated domains need domain-grounded evaluation and a
-fairness gate (Act~III).
+fairness gate (Act~III) --- and building that gate taught us that the gate itself needs the same
+scrutiny as the guards: ours does not survive it (\Cref{sec:actIV-mortgage-pairs}).
 The recurring cast makes it concrete: Qwen3-4B, the strongest base, specializes the most on transfer,
-is the one composition hurts, yet is \emph{numerically} the best and most invariant zero-shot mortgage
+is the one composition hurts, yet is \emph{numerically} the best-ranking zero-shot mortgage
 guard (on a small split, so read as a direction) --- the ranking flips with the benchmark.
 
 \Cref{tab:guidelines} distills the whole study into the guideline each finding implies: what we
@@ -271,8 +337,8 @@ study is preregistered. Read directional rows (marked) as a direction, not a ver
 {\color{white}\bfseries What we learned} & {\color{white}\bfseries Evidence (this study)} & {\color{white}\bfseries Guideline: what to do} \\
 \rowcolor{white}
 \textbf{\textcolor{tkgreenedge}{1.}~A guard's ranking is co-produced by the benchmark --- it flips across benchmarks.} &
-Qwen3-4B is the worst transfer specializer yet the numerically best zero-shot mortgage guard
-(\Cref{sec:synthesis}; Act~III, directional/small split). &
+Qwen3-4B is the worst transfer specializer yet the numerically best-ranking zero-shot mortgage guard
+(\Cref{tab:baseline}, \Cref{tab:expguard}; directional/small split). &
 Never rank guards on a single leaderboard; score \emph{your} candidates on represented, held-out,
 over-refusal, and domain sets. \\
 \rowcolor{guidealt}
@@ -297,8 +363,9 @@ Compose to \emph{repair} a guard you already tuned; then recalibrate the thresho
 regime (ranking recovery $\neq$ calibration transfer). \\
 \rowcolor{white}
 \textbf{\textcolor{tkgreenedge}{5.}~A domain change can hide the violation entirely; general-safety score $\neq$ compliance.} &
-Rankings and margins shift on the mortgage domain split (Act~III, \Cref{tab:composition};
-directional). &
+Rankings shift across the mortgage and finance/health/law arms (\Cref{tab:baseline},
+\Cref{fig:mortgage-bars}, \Cref{tab:expguard}; directional), and our protected-pair gate proved
+scale-dependent enough not to rank guards at all. &
 In a regulated domain, build domain-grounded, dual-labeled evaluation and a protected-pair
 invariance check before trusting any guard. \\
 \rowcolor{guidealt}
@@ -317,27 +384,16 @@ free upgrade, and re-measure both splits on your own data. \\
 \end{tabular}
 \end{table}
 
-\section{The practitioner's decision guide}
+\subsection{The decision guide: gate candidates, not leaderboards}
 \label{sec:practitioner}
-\begin{enumerate}[leftmargin=1.6em,itemsep=1pt]
-  \item \textbf{Always compare to your own base}, on represented \emph{and} held-out sets, plus a
-  benign over-refusal and a hard-attack stress set --- a leaderboard delta vs.\ other models hides
-  specialization.
-  \item \textbf{Treat composition as a repair for a guard you already tuned, not a free win over the
-  base.} If you have SFT'd and transfer regressed, an output-space base$+$adapter average recovers much of
-  what SFT gave up --- and it beats an equal-cost SFT$+$SFT ensemble (\Cref{tab:sftsft}), so the gain is the
-  base's doing, not generic ensembling --- but re-calibrate the threshold on the target regime (ranking
-  recovery $\neq$ calibration transfer). If you have \emph{not} tuned yet and transfer is the priority, the
-  untuned base can already be the best transfer scorer; compose only once tuning has actually cost you
-  transfer.
-  \item \textbf{In a regulated domain, build domain-grounded, dual-labeled evaluation} and a
-  protected-pair invariance check; a general-safety score does not cover compliance.
-  \item \textbf{Prefer a small, self-hosted guard for inline, high-volume, or regulated traffic}: one
-  local forward pass is $\approx$10--50\,ms (P50--P90, batched; P99 up to $\approx$94\,ms) (\Cref{tab:latency}) and keeps regulated prompts in-house,
-  versus a per-call fee and a network round-trip to a third party (\Cref{tab:deployment}).
-\end{enumerate}
-Each step carries its caveat: these are estimates on a fixed panel, and the domain labels are a
-measuring stick, not a verdict.
+The right-hand column of \Cref{tab:guidelines} \emph{is} the decision guide, and it carries one caveat
+throughout: these are estimates on a fixed panel, and the domain labels are a measuring stick, not a
+verdict. Two of its rows deserve a sharper edge than a table cell allows. First, composition is a
+\emph{repair} for a guard you already tuned, not a free win over the base --- if you have not tuned yet
+and transfer is the priority, the untuned base can already be your best transfer scorer, so compose only
+once tuning has actually cost you something. Second, ranking recovery is not calibration transfer: after
+composing, re-choose the threshold on the target regime rather than inheriting it. \Cref{fig:gating}
+turns the whole column into a procedure --- gate candidates, not leaderboards.
 
 \begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,node distance=7pt and 10pt,
@@ -411,16 +467,25 @@ Operational coupling & self-contained; pinned, versioned, auditable in-house & e
 % limitations/ledger/roadmap moved to Appendix E (result-specific caveats live in the E/D/B boxes)
 \section{Reproducibility}
 \label{sec:repro}
-Every number above is \code{\textbackslash input} from a committed generated table bound to a lock ---
-none is hand-typed. A single entry point, \code{make reproduce} (run in \code{papers/unified-report/}, which
+Every table and figure above is \code{\textbackslash input} from a committed generated artifact bound to a
+lock; the remaining in-prose values are transcribed from those same artifacts and are not covered by the
+byte-check. A single entry point, \code{make reproduce} (run in \code{papers/unified-report/}, which
 calls \code{reproduce.py}; distinct from the repo-root \code{make repro} that re-verifies the release cache),
-regenerates all tables/figures from committed per-row scores by calling each study's analysis (the Act~I
-specialization tables in a lock-pinned environment; the Act~II composition, mortgage, and ExpGuard tables
-from committed scores in any environment), and asserts byte-identity with the committed report tables.
+regenerates the covered tables/figures from committed per-row scores by calling each study's analysis (the
+Act~I specialization tables in a lock-pinned environment; the Act~II composition, mortgage, ExpGuard,
+SFT+SFT, latency and teaser artifacts in any environment), asserts byte-identity with the committed
+copies, and prints a verified/unverified/not-covered count. \textbf{Coverage is partial and the harness
+says so}: of the 22 generated artifacts the report \code{\textbackslash input}s, 10 are byte-checked here,
+4 require the lock-pinned environment (the Act~I tables and the \code{\textbackslash Rep*}/
+\code{\textbackslash Transfer*} macros), and 8 --- the adaptation, KL-SFT, ensembling and mortgage-composition
+tables --- are committed outputs of their own locked analyses that are not yet wired into the byte-check.
+The command exits nonzero unless every covered artifact verifies.
 
 \paragraph{Three reproducibility tiers, kept distinct.} \textbf{(i) Analysis reproducibility} --- regenerating
-every table and figure from the committed per-row scores --- is what \code{make reproduce} verifies
-byte-for-byte, with no GPU and no network, and is the tier every number in this report meets.
+a table from the committed per-row scores --- is what \code{make reproduce} verifies byte-for-byte, with no
+GPU and no network. It is the tier the 10 covered artifacts meet in any environment and the 4 Act~I
+artifacts meet under the pinned lock; the 8 uncovered artifacts are reproducible in principle by their own
+analysis scripts but are not asserted here.
 \textbf{(ii) Training/scoring reproducibility} --- re-deriving those per-row scores by training the $4\times5$
 adapters and rescoring --- requires a GPU and pinned model/data access (only re-scoring the gated ExpGuard
 set additionally needs dataset access). \textbf{(iii) Artifact-generation reproducibility} --- regenerating
@@ -441,11 +506,11 @@ mortgage baseline in \code{mortgage-benchmark/out\_eval/}, and the finance/healt
 
 \section{Conclusion}
 \label{sec:conclusion}
-A small guard's benchmark score is not a fixed property of the guard --- the benchmark co-produces it.
-Measured honestly, fine-tuning specializes rather than uniformly improves; a retraining-free composition
-recovers some of the lost transfer; and in regulated domains a general-safety score does not cover
-compliance. The disciplined next step is not a more
-confident headline but a prospectively locked evaluation on genuinely uninspected data.
+A small guard's benchmark score is not a fixed property of the guard --- the benchmark co-produces it, so
+the only defensible way to choose one is to measure your own candidates against their own bases, on both
+the sources they trained on and the sources they did not, and to gate on a domain instrument when the
+domain is regulated. The disciplined next step is not a more confident headline but a prospectively
+locked evaluation on genuinely uninspected data.
 
 \clearpage
 \appendix

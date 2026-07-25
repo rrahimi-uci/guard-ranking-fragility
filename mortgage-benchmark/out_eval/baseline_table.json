@@ -8,6 +8,7 @@
       "AP_G": 0.6805555555555555,
       "AP_D": 0.7931455210186552,
       "AP_final": 0.7931455210186552,
+      "AUROC_D": 0.7425451092117759,
       "AP_G_ci": [
         0.2605808080808081,
         1.0
@@ -23,7 +24,11 @@
       "G0D1_n": 75,
       "G0D1_missed": 4,
       "delta_context": 0.18280267155638652,
-      "delta_context_n": 3
+      "delta_context_n": 3,
+      "delta_context_margin": 0.8437499999999997,
+      "delta_context_margin_max": 2.2656249999999996,
+      "delta_context_singletoken": 0.020258865183529318,
+      "delta_context_singletoken_n": 2
     },
     {
       "guard": "qwen3_4b_base",
@@ -31,6 +36,7 @@
       "AP_G": 1.0,
       "AP_D": 0.8505002451505614,
       "AP_final": 0.8505002451505614,
+      "AUROC_D": 0.7777777777777778,
       "AP_G_ci": [
         0.9999999999999999,
         1.0
@@ -46,7 +52,11 @@
       "G0D1_n": 75,
       "G0D1_missed": 70,
       "delta_context": 1.2371211834026151e-06,
-      "delta_context_n": 3
+      "delta_context_n": 3,
+      "delta_context_margin": 0.796875,
+      "delta_context_margin_max": 0.921875,
+      "delta_context_singletoken": 1.1424044376142568e-06,
+      "delta_context_singletoken_n": 2
     },
     {
       "guard": "smollm2_17b_base",
@@ -54,6 +64,7 @@
       "AP_G": 0.26060560354678,
       "AP_D": 0.6721929336435761,
       "AP_final": 0.6721929336435761,
+      "AUROC_D": 0.6412155745489079,
       "AP_G_ci": [
         0.03563492063492063,
         0.7066227141245475
@@ -69,7 +80,11 @@
       "G0D1_n": 75,
       "G0D1_missed": 3,
       "delta_context": 0.023025836051146442,
-      "delta_context_n": 3
+      "delta_context_n": 3,
+      "delta_context_margin": 0.10156250000000004,
+      "delta_context_margin_max": 0.15625000000000006,
+      "delta_context_singletoken": 0.023812989533027573,
+      "delta_context_singletoken_n": 2
     },
     {
       "guard": "smollm3_3b_base",
@@ -77,6 +92,7 @@
       "AP_G": 0.5464997964997965,
       "AP_D": 0.7334833950674438,
       "AP_final": 0.7334833950674438,
+      "AUROC_D": 0.6027540360873694,
       "AP_G_ci": [
         0.22420766488413546,
         0.8796997182711467
@@ -92,7 +108,11 @@
       "G0D1_n": 75,
       "G0D1_missed": 56,
       "delta_context": 0.01017955600245097,
-      "delta_context_n": 3
+      "delta_context_n": 3,
+      "delta_context_margin": 0.15104166666666666,
+      "delta_context_margin_max": 0.1875,
+      "delta_context_singletoken": 0.01175339955281762,
+      "delta_context_singletoken_n": 2
     }
   ],
   "skipped": [

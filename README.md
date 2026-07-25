@@ -1,4 +1,4 @@
-# The Benchmark Chooses the Winner
+# The Safety-Guard Benchmark Chooses the Winner
 
 Auditable experiments, papers, and benchmark artifacts for understanding how compact
 prompt-safety **guards** specialize, transfer, compose, and behave in high-compliance domains.
@@ -18,7 +18,7 @@ that with a **paired, same-checkpoint** design on one fixed panel of four instru
 3. **Domains** — a dual-labeled mortgage benchmark in depth, plus finance/health/law breadth (ExpGuard).
 
 The **[unified research report](papers/unified-report/unified_report.pdf)** is the synthesis:
-*The Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards in
+*The Safety-Guard Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards in
 High-Compliance Business Domains.* Everything in it regenerates from committed per-row scores through one
 entry point (below); all three acts have committed, reproducible results. See the
 [status ledger](papers/unified-report/STATUS.md).

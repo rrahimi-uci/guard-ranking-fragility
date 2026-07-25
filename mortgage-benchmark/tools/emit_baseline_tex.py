@@ -35,24 +35,36 @@ def main() -> int:
         "(\\texttt{public\\_test}, 146 rows: 75 G0/D1, 6 G1, 3 protected pairs). AP is recomputed "
         "in the repo canonical environment from the committed per-row scores (exactly reproducible); "
         "the AP$\\cdot$D column carries a 2{,}000-resample bootstrap 95\\% CI. "
-        "Threshold-free AP$\\cdot$D is moderate (0.67--0.85) --- and its per-guard CIs overlap, so we "
-        "do not rank guards by it: soliciting fraud/discrimination reads "
-        "as unsafe even without a jailbreak, so G and D are only partially orthogonal. "
-        f"$\\Delta_{{\\mathrm{{context}}}}$ is the mean absolute protected-pair score gap (lower is more "
-        f"invariant) over only $n={dc_n}$ pairs, so its magnitude is uncertain and it is read as a "
-        "direction, not a calibrated fairness estimate. AP$\\cdot$final equals AP$\\cdot$D on this frozen "
+        "Threshold-free AP$\\cdot$D is moderate (0.67--0.85) against a \\emph{chance floor of 0.555} "
+        "(81/146 rows are $D$-positive), i.e.\\ only 0.12--0.30 above chance; AUROC$\\cdot$D is the "
+        "base-rate-free companion. Five of the six pairwise AP$\\cdot$D CI comparisons overlap (only "
+        "Qwen3-4B vs.\\ SmolLM2-1.7B separates), so we do not rank guards by it. $G$ and $D$ are also not "
+        "independent in v1: the G1/D0 cell is empty, so $G$ is nested inside $D$. "
+        "$\\Delta_{\\mathrm{context}}$ is the mean absolute protected-pair gap on the \\emph{probability} "
+        "scale (lower is more invariant); $\\Delta^{\\mathrm{margin}}$ is the same gap on the raw margin "
+        "$z_{\\text{unsafe}}-z_{\\text{safe}}$ (log-odds, scale-free), which exposes saturation --- "
+        "Qwen3-4B's $0.000$ becomes $0.80$, the second largest on the panel; $\\Delta^{\\mathrm{1tok}}$ "
+        "restricts to pairs that swap a single token (2 of 3 here; 18 of the 39 release pairs use a "
+        "multi-word placeholder arm instead), which removes Qwen2.5-1.5B's apparent outlier. "
+        f"All three rest on only $n={dc_n}$ pairs, so they are read as a "
+        "direction, not a calibrated fairness estimate --- and on this split they do not rank guards. "
+        "AP$\\cdot$final equals AP$\\cdot$D on this frozen "
         "set because the G1/D0 cell is empty (every $G$-positive row is also $D$-positive), so the composed "
         "label reduces to $D$. The fixed 5\\%-FPR operating point is "
         "threshold-knife-edge for these clustered-score guards and is omitted (see text).}",
         "\\label{tab:baseline}",
-        "\\begin{tabular}{lrrrr}", "\\toprule",
-        "Guard & AP$\\cdot$G & AP$\\cdot$D (95\\% CI) & AP$\\cdot$final & $\\Delta_{\\mathrm{context}}$ \\\\",
+        "\\begin{tabular}{lrrrrrrr}", "\\toprule",
+        "Guard & AP$\\cdot$G & AP$\\cdot$D (95\\% CI) & AUROC$\\cdot$D & AP$\\cdot$final & "
+        "$\\Delta_{\\mathrm{context}}$ & $\\Delta^{\\mathrm{margin}}_{\\mathrm{context}}$ & "
+        "$\\Delta^{\\mathrm{1tok}}_{\\mathrm{context}}$ \\\\",
         "\\midrule",
     ]
     for r in bt.get("table", []):
         name = r["guard"].replace("_", "\\_")
         lines.append(f"{name} & {fmt(r.get('AP_G'))} & {fmt_ci(r.get('AP_D'), r.get('AP_D_ci'))} & "
-                     f"{fmt(r.get('AP_final'))} & {fmt(r.get('delta_context'))} \\\\")
+                     f"{fmt(r.get('AUROC_D'))} & "
+                     f"{fmt(r.get('AP_final'))} & {fmt(r.get('delta_context'))} & "
+                     f"{fmt(r.get('delta_context_margin'), 2)} & {fmt(r.get('delta_context_singletoken'))} \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     if bt.get("skipped"):
         names = ", ".join(s["guard"].replace("_", "\\_") for s in bt["skipped"])

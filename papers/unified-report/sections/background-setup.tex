@@ -5,18 +5,9 @@ This report is written to be read by someone with a first course in statistics, 
 what fine-tuning a small language model means, and a lay familiarity with mortgage lending. Everything
 technical the three acts rely on is defined once here, from the ground up, with the exact equations and
 a worked example wherever a number would otherwise be mysterious. Nothing in this section reports a
-result; it is the vocabulary.
-
-\begin{background}{The one-paragraph orientation}
-A \emph{guard} is a small model placed in front of an assistant: it reads an incoming request and
-labels it \code{safe} or \code{unsafe} before anything acts on it. We build each guard by
-\emph{fine-tuning} a general chat model, and we score it by how well its numeric output \emph{ranks}
-truly-unsafe requests above safe ones. The central move of this report is to always compare a
-fine-tuned guard against the \emph{same model before tuning}, on identical inputs, and to separate two
-kinds of test set: benchmarks whose data the guard \emph{trained on} (represented) and benchmarks it
-\emph{never saw} (transfer). Almost every subtlety below is a way of making that comparison honest;
-\Cref{fig:design} previews the whole design on one page.
-\end{background}
+result; it is the vocabulary. Almost every subtlety below exists to make one comparison honest --- a
+tuned guard against the \emph{same model before tuning}, on identical rows, split into sources the
+guard trained on and sources it never saw --- and \Cref{fig:design} previews that design on one page.
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.70\linewidth]{experiment_design.png}
@@ -138,12 +129,10 @@ on each benchmark first and then average across benchmarks (equal weight per ben
 rates lump every row together first and then compute one rate (equal weight per row, so large
 benchmarks dominate). We report both because they can disagree.
 
-\begin{takeaway}{Ranking $\neq$ a transferable threshold}
-A guard can rank well (high AP) yet have no cutoff that holds up off-source: the score
-\emph{distribution} shifts even when the \emph{ordering} is fine. So AP answers ``does it rank?'' and
-the operating point answers ``is there a usable decision boundary?''; the two questions have different
-answers, and a deployment claim from AP alone would miss the gap.
-\end{takeaway}
+Keep the two questions apart: AP answers ``does it rank?'' and the operating point answers ``is there a
+usable decision boundary?'' A guard can rank well and still have no cutoff that survives off-source,
+because the score \emph{distribution} shifts even when the \emph{ordering} holds --- a gap Acts~I and~II
+both measure (\Cref{sec:actI-op,sec:actIII-operating}).
 
 \subsection{Estimands, the fixed panel, and the paired hierarchical bootstrap}
 \label{sec:bg-estimand}
@@ -165,15 +154,10 @@ because each adapter stays yoked to its base. Because the training rows and thei
 seed-to-seed variation reflects initialization, dropout, and execution nondeterminism --- not
 which examples the guard happened to see. The resulting intervals are \emph{conditional} on this panel,
 these datasets, and this family graph; they are descriptive, not significance tests, and not claims
-about a wider population.
-
-\begin{takeaway}{Retrospective, estimation-only}
-The fine-tuning studies (Acts I--II) were analyzed \emph{after} the benchmarks had been inspected
-during development, so we report point estimates, intervals, and leave-one-out sensitivity checks ---
-but no accept/reject hypothesis test and no ``pass/fail gate.'' Clean provenance does not make an
-inspected benchmark prospective. Confirmatory use would require a freshly locked protocol on a
-genuinely uninspected cohort.
-\end{takeaway}
+about a wider population. This is why Acts~I--II report point estimates, intervals, and leave-one-out
+sensitivity checks but no accept/reject test: they were analyzed \emph{after} the benchmarks had been
+inspected during development, and clean provenance does not make an inspected benchmark prospective
+(see the scope note on p.~1 and \Cref{sec:honesty}).
 
 \subsection{Fine-tuning the guard: LoRA-SFT}
 \label{sec:bg-objectives}
@@ -211,10 +195,9 @@ neighborhood as a proxy for race. \textbf{Disparate treatment} is intentional di
 \textbf{Proxy (coded) discrimination} uses a stand-in --- ZIP code, preferred language --- for a
 protected class. \textbf{ATR/QM} is the ability-to-repay / qualified-mortgage rule.
 \textbf{Adverse-action notice} is the legally required true reason for a denial. \textbf{UDAAP} covers
-unfair, deceptive, or abusive acts and practices.\\[2pt]
-\textbf{The dual-label construct.} Each request carries two \emph{independent} labels:
-$\mathbf{G}$ --- would an ordinary general-safety guard call this \code{unsafe}? --- and $\mathbf{D}$
---- would honoring it break mortgage policy? The load-bearing stratum is \textbf{G0/D1}: it reads
-\emph{safe} to a general guard yet is a compliance \emph{violation}. That is exactly the case a
-general-safety score cannot see.
+unfair, deceptive, or abusive acts and practices.
 \end{background}
+
+\noindent On top of that vocabulary the benchmark adds one construct
+(\Cref{sec:actIV-mortgage-design}): two \emph{separately assigned} labels per request, general safety $G$ and
+mortgage policy $D$, isolating the stratum a general-safety score cannot see.

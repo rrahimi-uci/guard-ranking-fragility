@@ -104,7 +104,7 @@ claim it does; a direct WiSE-FT rescoring control is a stated gap (\Cref{sec:act
 
 \Cref{tab:pilot-summary} reports the fixed-panel macro-AP of each operator in both regimes, plus
 the worst-of-the-two-regimes column $\min(\text{both})$. The pattern is clean. The base is the
-best \emph{transfer} scorer ($\PilotBaseTransfer$) but a poor represented one
+better of the two \emph{single} guards on transfer ($\PilotBaseTransfer$) but a poor represented one
 ($\PilotBaseRepresented$). SFT inverts that: it is the best \emph{represented} scorer
 ($\PilotSFTRepresented$) but the worst transfer scorer ($\PilotSFTTransfer$) --- the Act~I
 specialization, restated. Composition sits between the two on represented ranking
@@ -226,18 +226,12 @@ $\PilotCompositionTransferFPRPct$\%, is much better than SFT's $\PilotSFTTransfe
 it still overshoots the $\PilotTargetFPRPct$\% target and remains \emph{above the base's}
 $\PilotBaseTransferFPRPct$\%. The pooled-FPR column tells the same story ($0.043/0.170/0.091$ for
 base/SFT/comp). Recovering \emph{rank} did not hand us a threshold that \emph{transfers}: the
-cutoff chosen on calibration data lands in the wrong place off-source.
+cutoff chosen on calibration data lands in the wrong place off-source, because the score
+\emph{distribution} shifts between the calibration and transfer data even when the \emph{ordering}
+recovers. So treat an AP recovery as a reason to \emph{re-calibrate on the target regime}, never as
+evidence that the old threshold is safe to reuse.
 
 \input{generated/pilot_operating_point_table}
-
-\begin{takeaway}{Ranking $\neq$ calibration}
-A guard can order unsafe-above-safe well (good AP) and \emph{still} fire at the wrong rate once you
-fix a single cutoff, because the score distribution shifts between the calibration data and the
-transfer data. Composition narrows this gap but does not close it
-($\PilotCompositionTransferFPRPct$\% realized vs.\ a $\PilotTargetFPRPct$\% target). The
-practitioner consequence: treat an AP recovery as a reason to \emph{re-calibrate the threshold on
-the target regime}, never as evidence that the old threshold is safe to reuse.
-\end{takeaway}
 
 \subsection{Ablations, and what Act II does \emph{not} establish}
 \label{sec:actIII-ablations}
@@ -271,7 +265,8 @@ is left open.
 
 \edb{Output-space base$+$SFT averaging recovers transfer relative to SFT ($\PilotTransferDeltaSFT$) and
 beats an equal-cost SFT$+$SFT ensemble (\Cref{tab:sftsft}), so the gain is the base's, not generic
-ensembling; it has the highest worst-regime AP on the panel.}
+ensembling; it has the highest worst-regime AP of the \emph{promotable} operators (the dev-visible
+  logit-average ablation is nominally better still, $0.891$; \Cref{sec:actIII-ablations}).}
 {If you have already SFT'd and transfer regressed, compose base$+$adapter to recover it without
 retraining --- then recalibrate the threshold on the target regime.}
 {Ranking recovery $\neq$ calibration transfer: the composition operating point still misses the

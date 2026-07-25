@@ -240,14 +240,21 @@ def mortgage_baseline():
     ax1.set_title("Zero-shot ranking (AP)")
     # legend below ax1 so it clears the (2-line) guard labels and never sits over a bar
     ax1.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.20), ncol=2)
-    # no pass/fail threshold line: Delta_context is a signal, not a verdict (see text); bars are neutral
-    ax2.bar(list(x), dctx, 0.5, color=BLUE)
+    # Two scales, because the probability-scale gate is NOT cross-guard comparable when one guard
+    # saturates at p~1e-6: plotting only the left bars is what made a saturation artifact look like
+    # invariance. No pass/fail line -- Delta_context is a signal, not a verdict.
+    dmar = [r.get("delta_context_margin") or 0 for r in tbl]
+    w2 = 0.38
+    ax2.bar([i - w2/2 for i in x], dctx, w2, color=BLUE, label="probability scale")
+    ax2.bar([i + w2/2 for i in x], dmar, w2, color=RED, label="raw margin (log-odds)")
     ax2.set_xticks(list(x)); ax2.set_xticklabels(labels, fontsize=7.5)
-    ax2.set_ylabel("$\\Delta_{\\mathrm{context}}$  (0 = score-invariant)")
-    ax2.set_ylim(0, max(dctx) * 1.35)
-    ax2.set_title("Protected-pair gap ($n{=}3$ pairs)")
-    for i, v in enumerate(dctx): ax2.text(i, v + 0.004, f"{v:.3f}", ha="center", va="bottom", fontsize=7)
-    fig.suptitle("Act III: instruction models (zero-shot) rank mortgage violations only moderately; protected-pair sensitivity varies (n=3)",
+    ax2.set_ylabel("protected-pair gap  (0 = score-invariant)")
+    ax2.set_ylim(0, max(dmar + dctx) * 1.45)
+    ax2.set_title("Protected-pair gap, two scales ($n{=}3$)")
+    for i, v in enumerate(dctx): ax2.text(i - w2/2, v + 0.02, f"{v:.3f}", ha="center", va="bottom", fontsize=6.5)
+    for i, v in enumerate(dmar): ax2.text(i + w2/2, v + 0.02, f"{v:.2f}", ha="center", va="bottom", fontsize=6.5)
+    ax2.legend(frameon=False, fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.20), ncol=1)
+    fig.suptitle("Act III: zero-shot guards rank mortgage violations only moderately (chance floor 0.555);\nthe protected-pair gap flips with the score scale, so it does not rank guards (n=3)",
                  fontsize=10.5, y=1.00)
     fig.subplots_adjust(top=0.84, bottom=0.28, wspace=0.34, left=0.085, right=0.985)
     fig.savefig(HERE / "fig_mortgage_baseline.pdf", metadata={"CreationDate": None}); plt.close(fig)
@@ -285,6 +292,105 @@ def expguard_domains():
     ax.legend(frameon=False, fontsize=9, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3)
     fig.subplots_adjust(bottom=0.24)
     fig.savefig(HERE / "fig_expguard_domains.pdf", metadata={"CreationDate": None}); plt.close(fig)
+
+
+def teaser():
+    """Figure 1 (above the abstract): the whole report in three panels, one per act.
+
+    (1) SFT buys represented-source ranking, not transfer   <- analysis/results.json point estimates
+    (2) the numerically top-ranked guard changes with the benchmark  <- the three arms' committed scores
+    (3) in the mortgage domain the violation reads as safe  <- benchmark rows + out_eval scores
+    Panel 2 is the title claim; panel 3 is the worked row of fig:casestudy.
+    """
+    import numpy as np
+    res = json.loads((REPO / "artifacts/paper_a_sft_v2/analysis/results.json").read_text())
+    pe = res["point_estimates"]
+    mort = {r["guard"]: r for r in json.loads(
+        (REPO / "mortgage-benchmark/out_eval/baseline_table.json").read_text())["table"]}
+    exg = {r["guard"]: r for r in json.loads(
+        (REPO / "artifacts/expguard_external/baseline_expguard.json").read_text())["table"]}
+
+    # one colour per checkpoint, used wherever a checkpoint is a series (panel 2)
+    KEYS = ["qwen25_15b", "smollm2_17b", "smollm3_3b", "qwen3_4b"]
+    SHORT = {"qwen25_15b": "Q2.5-1.5B", "smollm2_17b": "SL2-1.7B",
+             "smollm3_3b": "SL3-3B", "qwen3_4b": "Q3-4B"}
+    COL = {"qwen25_15b": BLUE, "smollm2_17b": RED, "smollm3_3b": GREEN, "qwen3_4b": ORANGE}
+    SLATE = "#334155"
+
+    fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(7.2, 3.0),
+                                     gridspec_kw={"width_ratios": [0.92, 1.18, 1.05]})
+
+    # -- panel 1: the paired base->SFT delta, aggregate bars + the four per-checkpoint values
+    agg = [pe["aggregate"]["represented"], pe["aggregate"]["transfer"]]
+    a1.bar([0, 1], agg, 0.56, color=[BLUE, ORANGE], alpha=0.85, zorder=2)
+    for i, split in enumerate(("represented", "transfer")):
+        vals = [pe["per_checkpoint"][split][k]["delta"] for k in KEYS]
+        a1.scatter([i + 0.02 + 0.075 * j for j in range(len(vals))], vals, s=14, c=SLATE,
+                   zorder=3, edgecolors="white", linewidths=0.4)
+    a1.axhline(0, color="black", lw=0.8, zorder=1)
+    for i, v in enumerate(agg):  # inside tall bars, just outside thin ones (the transfer bar is thin)
+        if abs(v) > 0.12:
+            a1.text(i - 0.14, v / 2, f"{v:+.2f}", ha="center", va="center", fontsize=8.5,
+                    fontweight="bold", color="white", zorder=4)
+        else:
+            a1.text(i - 0.30, v - 0.035, f"{v:+.2f}", ha="center", va="top", fontsize=8.5,
+                    fontweight="bold", color=ORANGE, zorder=4)
+    a1.set_xticks([0, 1]); a1.set_xticklabels(["represented\n(trained-on)", "transfer\n(held-out)"], fontsize=8)
+    a1.set_ylabel("base$\\to$SFT $\\Delta$ macro-AP", fontsize=8.5)
+    a1.set_ylim(-0.22, 0.62); a1.set_xlim(-0.72, 1.45)   # room for the offset aggregate labels
+    a1.set_title("① Tuning buys the\nbenchmark, not transfer", fontsize=9)
+    a1.tick_params(labelsize=8)
+
+    # -- panel 2: the rank flip -- same four guards, three benchmark families, three orderings
+    arms = ["general\ntransfer", "mortgage\npolicy", "finance /\nhealth / law"]
+    score = {k: [pe["per_checkpoint"]["transfer"][k]["base"],
+                 mort[f"{k}_base"]["AP_D"], exg[f"{k}_base"]["overall_ap"]] for k in KEYS}
+    rank = [{k: r for r, k in enumerate(sorted(KEYS, key=lambda k: -score[k][j]), start=1)}
+            for j in range(len(arms))]
+    for k in KEYS:
+        ys = [rank[j][k] for j in range(len(arms))]
+        a2.plot(range(len(arms)), ys, "-o", color=COL[k], lw=1.8, ms=5.5, zorder=3,
+                markeredgecolor="white", markeredgewidth=0.6)
+        for j, y in enumerate(ys):
+            a2.annotate(f"{score[k][j]:.2f}", (j, y), fontsize=6.2, color=COL[k],
+                        xytext=(0, 6.5), textcoords="offset points", ha="center")
+        # name the lines on the RIGHT: the left axis already carries the rank tick labels
+        a2.annotate(SHORT[k], (len(arms) - 1, ys[-1]), fontsize=7, color=COL[k], fontweight="bold",
+                    xytext=(9, 0), textcoords="offset points", ha="left", va="center")
+    a2.set_xlim(-0.30, len(arms) - 1 + 0.95)
+    a2.set_xticks(range(len(arms))); a2.set_xticklabels(arms, fontsize=8)
+    a2.set_yticks([1, 2, 3, 4]); a2.set_yticklabels(["1st", "2nd", "3rd", "4th"], fontsize=8)
+    a2.set_ylim(4.45, 0.55)
+    a2.set_ylabel("rank on the arm (AP annotated)", fontsize=8.5)
+    a2.set_title("② The top-ranked guard\nchanges with the benchmark", fontsize=9)
+
+    # -- panel 3: the worked G0/D1 row -- how many benign rows each guard ranks ABOVE the violation
+    rows = [json.loads(ln) for ln in
+            (REPO / "mortgage-benchmark/benchmark/v1_hmda2022/public_test.jsonl").read_text().splitlines() if ln.strip()]
+    benign = [r["id"] for r in rows if r["quadrant"] == "G0D0"]
+    sc = {k: json.loads((REPO / f"mortgage-benchmark/out_eval/scores_{k}_base.json").read_text()) for k in KEYS}
+    above = lambda k, rid: sum(1 for b in benign if sc[k][b] > sc[k][rid])
+    coded = [above(k, "MGB-UD-00020") for k in KEYS]
+    named = [above(k, "MGB-FL-00028") for k in KEYS]
+    x = np.arange(len(KEYS)); w = 0.38
+    a3.bar(x - w / 2, coded, w, color=RED, alpha=0.85, label="coded proxy")
+    a3.bar(x + w / 2, named, w, color=GREEN, alpha=0.85, label="traits named")
+    a3.axhline(len(benign) / 2, color=SLATE, lw=0.9, ls="--", zorder=1,
+               label="median benign row")   # labelled in the legend, so no text can land on a bar
+    for xs, vals in ((x - w / 2, coded), (x + w / 2, named)):
+        for xi, v in zip(xs, vals):
+            a3.text(xi, v + 1.2, str(v), ha="center", va="bottom", fontsize=6.4)
+    a3.set_xticks(x); a3.set_xticklabels([SHORT[k] for k in KEYS], fontsize=6.8, rotation=18)
+    a3.set_ylim(0, len(benign) * 1.32)   # headroom so the legend clears the tallest bar
+    a3.set_yticks([0, 20, 40, 60])       # the scale tops out at the 65 benign rows, not at the ylim
+    a3.set_ylabel(f"benign rows ranked above\nthe violation (of {len(benign)})", fontsize=8.5)
+    a3.set_title("③ Coded, the violation ranks\nbelow the benign median", fontsize=9)
+    a3.tick_params(labelsize=8)
+    a3.legend(frameon=False, fontsize=6.2, loc="upper center", ncol=3, handlelength=1.0,
+              columnspacing=0.7, borderpad=0.1, handletextpad=0.4)
+
+    fig.subplots_adjust(left=0.085, right=0.985, top=0.84, bottom=0.20, wspace=0.48)
+    fig.savefig(HERE / "fig_teaser.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
 def diagrams():
@@ -403,7 +509,7 @@ def ensembling_plane():
 
 def main():
     made = []
-    for fn in (act1_percheckpoint, attractor, act3_composition, mortgage_quadrant, mortgage_baseline,
+    for fn in (teaser, act1_percheckpoint, attractor, act3_composition, mortgage_quadrant, mortgage_baseline,
                expguard_domains, prevalence, adaptation_plane, ensembling_plane, diagrams):
         try:
             fn(); made.append(fn.__name__)

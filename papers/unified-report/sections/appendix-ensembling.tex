@@ -7,9 +7,13 @@ adaptation panel's committed per-row margins (\Cref{sec:adaptation}): \EnsNCk{} 
 families (excluding the degenerate Llama-Guard null cell), each scored under \{unmodified base, SFT,
 KL-SFT\} $\times$ five seeds on the \emph{same} rows. Every number is equal-family macro-AP on the raw
 logit margin, anchored to each checkpoint's \emph{own} unmodified base --- identical estimand to the main
-text. Within a checkpoint the base and its adapters share one output head, so raw margins are
-scale-comparable and can be averaged directly; across checkpoints they are not, so the cross-model
-committee (below) rank-normalizes first. This appendix is retrospective on the inspected panel, not a
+text. Within a checkpoint the base and its adapters share one output head, so raw margins are scale-comparable
+in \emph{units}; they are not comparable in \emph{dispersion}, and averaging them raw is therefore not
+an equal-weight average of judgments. On this panel the base's margins are $2$--$4\times$ wider than its
+adapters' (e.g.\ Qwen3-4B $\mathrm{sd}=16.3$ vs.\ $4.2$), so a raw $\tfrac12/\tfrac12$ average is
+effectively base-weighted --- one reason the main text's operator calibrates first (\Cref{eq:comp}).
+Across checkpoints margins are not comparable at all, so the cross-model committee (below)
+rank-normalizes first. This appendix is retrospective on the inspected panel, not a
 preregistered claim.
 
 \paragraph{Ensembling a fine-tune with itself is only denoising.} Averaging the five SFT seeds into one
@@ -22,12 +26,24 @@ the shared \emph{bias} toward the represented sources --- so it polishes a speci
 un-specializing it.
 
 \paragraph{Ensembling across the specialization axis recovers transfer.} The one ensemble that lifts
-transfer above the base is the base $\oplus$ adapter combination --- which is exactly the Act~II
-composition (\Cref{sec:actIII}). On this panel it raises transfer by \EnsBaseSFTvsBaseTrans{} over the base
-(one-sided LCB \EnsBaseSFTvsBaseTransLCB{} $>0$), recovering \EnsBaseSFTvsSFTTrans{} relative to pure SFT,
+transfer above the base is the base $\oplus$ adapter combination --- the same base-plus-adapter idea as
+Act~II, but \textbf{not} the promoted operator of \Cref{eq:comp}: this row averages \emph{raw margins}
+(the non-promotable ablation of \Cref{sec:actIII-ablations}) and its adapter member is a \emph{five-seed
+mean}, so it costs six forward passes rather than two. On this panel it raises transfer by
+\EnsBaseSFTvsBaseTrans{} over the base
+(one-sided LCB \EnsBaseSFTvsBaseTransLCB{} $>0$), recovering \EnsBaseSFTvsSFTTrans{} relative to the
+\emph{five-seed SFT ensemble} (not the single-run SFT row printed in the same table),
 at a represented cost of \EnsBaseSFTvsSFTRep{} (95\% CI $[\EnsBaseSFTvsSFTRepLCB, \EnsBaseSFTvsSFTRepUCB]$).
 It is a recovery, not a Pareto win: for the strongest base the composed guard still gives back a little
-transfer (the Act~II caveat, \Cref{sec:actIII}). \Cref{fig:ensembling-plane} makes the distinction visual:
+transfer (the Act~II caveat, \Cref{sec:actIII}). \textbf{Cost-matched, the effect is about half as large.}
+Recomputing the honest 2-pass analogues on this same panel (equal-checkpoint mean over the ten cells,
+reproducing the tabulated row as a control): base $\oplus$ \emph{one} adapter on raw margins gains
+$+0.012$, and base $\oplus$ one adapter \emph{calibrated} --- exactly \Cref{eq:comp} --- gains $+0.008$,
+against the $+0.015$ of the six-pass row. So the qualitative conclusion (only crossing the specialization
+axis lifts transfer above base) survives at the promoted operator, but the magnitude does not: the
+cost-matched gain sits at the one-sided LCB the six-pass row reports, and no main-text claim rests on this
+appendix. A generated, bootstrapped row for the 2-pass calibrated operator is a stated gap
+(\Cref{sec:roadmap}). \Cref{fig:ensembling-plane} makes the distinction visual:
 the seed-ensembling arrows stay inside the ``transfer below base'' band, while the arrow to base $\oplus$
 SFT crosses into ``transfer recovered.'' Adding KL-SFT as a third member (base $\oplus$ SFT $\oplus$
 KL-SFT) lands essentially on top of base $\oplus$ SFT --- no further gain. The active ingredient is
