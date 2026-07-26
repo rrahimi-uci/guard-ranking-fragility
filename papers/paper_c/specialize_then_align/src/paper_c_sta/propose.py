@@ -47,6 +47,14 @@ def cell_dir(root: Path, kind: str, backbone: str, seed: int,
     return root / name
 
 
+def _unit_draw(key: str) -> float:
+    """Deterministic uniform draw, so candidate sampling is reproducible."""
+    import hashlib
+
+    digest = hashlib.sha256(key.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") / float(1 << 64)
+
+
 def _batched(items: Sequence, size: int):
     for start in range(0, len(items), size):
         yield items[start:start + size]
@@ -104,7 +112,24 @@ def propose_for_source(
                     )
                 for row, dist in zip(chunk, probs):
                     values = [float(x) for x in dist]
-                    action = ACTIONS[int(dist.argmax())]
+                    # Slot 0 takes the teacher's mode; slot 1 draws from the same
+                    # calibrated distribution.  Taking the mode in both slots makes a
+                    # candidate a deterministic function of the teacher, so two seeds
+                    # agree on ~87% of events and the pair is rejected for carrying no
+                    # substantive difference -- which empties the inventory and leaves
+                    # the agreement stratum unpopulated by construction.  A draw from
+                    # the teacher's own policy is still a teacher-proposed candidate,
+                    # and it exposes the disagreement the teacher actually has.
+                    if slot_index == 0:
+                        action = ACTIONS[int(dist.argmax())]
+                    else:
+                        draw = _unit_draw(f"{row['sample_id']}::{teacher_seed}")
+                        cumulative, action = 0.0, ACTIONS[-1]
+                        for name, mass in zip(ACTIONS, values):
+                            cumulative += mass
+                            if draw < cumulative:
+                                action = name
+                                break
                     gold = row.get("gold") or {}
                     candidate = make_candidate(
                         action=action,

@@ -303,3 +303,47 @@ def torch_pair_loss(
     if bool(torch.any(clean <= 0).item()):
         raise ContractError("tensor pair weights must be positive")
     return (losses * clean).sum() / clean.sum()
+
+
+def torch_composite_alignment_loss(
+    category_losses: Mapping[str, object],
+    *,
+    gold_anchor_loss,
+    retention_kl,
+    temperature: float,
+    lambda_gold: float,
+    lambda_retain: float,
+    expected_categories: Sequence[str] | set[str] | None = None,
+):
+    """Differentiable twin of :func:`composite_alignment_loss`.
+
+    The scalar version validates plain floats and is what the contract tests pin.
+    Training needs the same arithmetic on autograd tensors, so this mirrors it term
+    for term rather than reimplementing it -- ``test_torch_composite_matches_scalar``
+    holds the two to the same numbers.
+    """
+    import torch
+
+    if not isinstance(category_losses, Mapping) or not category_losses:
+        raise ContractError("category losses are empty")
+    _validate_expected_categories(category_losses, expected_categories)
+    tau = _finite_number(temperature, "temperature")
+    if tau <= 0:
+        raise ContractError("temperature must be finite and positive")
+    lam_gold = _finite_number(lambda_gold, "lambda_gold", nonnegative=True)
+    lam_retain = _finite_number(lambda_retain, "lambda_retain", nonnegative=True)
+
+    names = sorted(category_losses)
+    values = torch.stack([category_losses[name] for name in names])
+    maximum = values.max().detach()
+    # identical to the scalar form: max + tau*log(mean(exp((L-max)/tau)))
+    robust = maximum + tau * torch.log(
+        torch.exp((values - maximum) / tau).sum() / values.numel()
+    )
+    total = robust + lam_gold * gold_anchor_loss + lam_retain * retention_kl
+    return {
+        "total": total,
+        "soft_worst_category": robust,
+        "gold_anchor": gold_anchor_loss,
+        "retention_kl": retention_kl,
+    }

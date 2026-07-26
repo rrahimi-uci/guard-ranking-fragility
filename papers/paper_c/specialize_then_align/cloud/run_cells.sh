@@ -56,6 +56,15 @@ echo "staged $(ls artifacts/cells 2>/dev/null | wc -l) existing cells"
 
 IFS=',' read -ra LIST <<< "$CELLS"
 for cell in "${LIST[@]}"; do
+  # a "propose:<backbone>:<panel>" entry runs candidate generation + pair building
+  if [[ "$cell" == propose:* ]]; then
+    IFS=':' read -r _ bb panel <<< "$cell"
+    echo "=== propose $bb $panel ==="
+    $PY tools/run_propose.py "$bb" "$panel" || { echo "PROPOSE FAILED: $bb $panel"; continue; }
+    gsutil -q -m cp -r "artifacts/pairs/${panel}__${bb}" "gs://${BUCKET}/${PREFIX}/pairs/" \
+      && echo "UPLOADED pairs ${panel}__${bb}" || echo "UPLOAD FAILED pairs"
+    continue
+  fi
   echo "=== cell $cell ==="
   $PY tools/run_one_cell.py "$cell" || { echo "CELL FAILED: $cell"; continue; }
   # run_one_cell.py sanitises "::" to "__" for the directory name; upload must match.

@@ -140,3 +140,43 @@ def test_torch_dpo_detaches_reference_tensors():
     assert rejected.grad is not None
     assert chosen_reference.grad is None
     assert rejected_reference.grad is None
+
+
+def test_torch_composite_matches_scalar():
+    """The differentiable composite must equal the scalar one it mirrors.
+
+    The scalar form is what the contract pins; training uses the tensor form.  If the
+    two ever drift, the objective that was reviewed is not the objective that runs.
+    """
+    torch = pytest.importorskip("torch")
+    from paper_c_sta.objectives import (
+        composite_alignment_loss,
+        torch_composite_alignment_loss,
+    )
+
+    cats = ["a", "b", "c", "d", "e"]
+    values = [0.4, 1.9, 0.7, 0.2, 1.1]
+    kwargs = dict(temperature=0.1, lambda_gold=0.5, lambda_retain=0.05,
+                  expected_categories=cats)
+    scalar = composite_alignment_loss(
+        dict(zip(cats, values)), gold_anchor_loss=1.3, retention_kl=0.04, **kwargs)
+    tensor = torch_composite_alignment_loss(
+        {c: torch.tensor(v) for c, v in zip(cats, values)},
+        gold_anchor_loss=torch.tensor(1.3), retention_kl=torch.tensor(0.04), **kwargs)
+    for key in ("total", "soft_worst_category"):
+        assert abs(scalar[key] - float(tensor[key])) < 1e-5, key
+
+
+def test_torch_composite_gradient_reaches_every_category():
+    """No category may be silently excluded from the worst-category term."""
+    torch = pytest.importorskip("torch")
+    from paper_c_sta.objectives import torch_composite_alignment_loss
+
+    cats = ["a", "b", "c", "d", "e"]
+    losses = {c: torch.tensor(float(i + 1) / 5, requires_grad=True)
+              for i, c in enumerate(cats)}
+    out = torch_composite_alignment_loss(
+        losses, gold_anchor_loss=torch.tensor(0.0), retention_kl=torch.tensor(0.0),
+        temperature=0.5, lambda_gold=0.5, lambda_retain=0.05, expected_categories=cats)
+    out["total"].backward()
+    assert all(losses[c].grad is not None and float(losses[c].grad) > 0 for c in cats)

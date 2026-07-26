@@ -21,9 +21,9 @@ The three loss families:
     Forward KL from the teacher's three calibrated action probabilities to the
     student's, and nothing else -- not tags, not policy ids, not rationales.
 
-Every arm optimises the same composite: a soft worst-category term over the five
-focal categories, plus a gold anchor and a retention-KL term at the configured
-weights.  Only the per-example term differs between arms.
+The alignment arms trained on pairs optimise a composite: a soft worst-category term
+over the five focal categories, plus a gold anchor and a general-replay KL to the
+frozen reference.  SFT-family cells optimise plain cross-entropy by definition.
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ from .modeling import (
     render_prompt,
     render_response,
 )
-from .objectives import composite_alignment_loss, torch_pair_loss
+from .objectives import torch_composite_alignment_loss, torch_pair_loss
 
 KINDS = ("reference", "specialist", "gold_sft", "soft_distill",
          "specialist_pairce", "generalist_cm_dpo", "specialist_cm_dpo")
@@ -153,7 +153,52 @@ def _pair_batch_loss(model, reference, tokenizer, rows: Sequence[Mapping], *, ar
                 reference, tokenizer, rejected, device=device, max_length=max_length)
         kwargs["chosen_reference_logps"] = ref_chosen[index]
         kwargs["rejected_reference_logps"] = ref_rejected[index]
-    return torch_pair_loss(**kwargs), len(rows) - len(keep)
+    mean = torch_pair_loss(**kwargs)
+    # per-example values for the worst-category term: recompute elementwise from the
+    # same margins the mean was built from, so the two can never disagree.
+    policy_margin = chosen_lp[index] - rejected_lp[index]
+    if arm == "cm_dpo":
+        policy_margin = policy_margin - (
+            kwargs["chosen_reference_logps"] - kwargs["rejected_reference_logps"])
+    per_example = torch.nn.functional.softplus(-beta * policy_margin)
+    kept_rows = [rows[i] for i in keep]
+    return mean, per_example, kept_rows, len(rows) - len(keep)
+
+
+def _category_losses(rows: Sequence[Mapping], per_example, categories: Sequence[str]):
+    """Group per-example losses by focal category, mean within each.
+
+    Categories absent from a batch are given the batch mean rather than dropped, so
+    the soft worst-category term always ranges over the full expected set and a
+    category cannot be sacrificed simply by being unlucky in the sampler.
+    """
+    import torch
+
+    buckets: dict[str, list] = {}
+    for row, value in zip(rows, per_example):
+        buckets.setdefault(row["category"], []).append(value)
+    batch_mean = torch.stack(list(per_example)).mean()
+    return {
+        name: (torch.stack(buckets[name]).mean() if name in buckets else batch_mean)
+        for name in categories
+    }
+
+
+def _retention_kl(model, reference, tokenizer, rows, *, device):
+    """Forward KL from the frozen reference's action head to the policy's.
+
+    This is the general-replay term: it keeps the student from forgetting the joint
+    reference's behaviour while it chases preference signal.
+    """
+    import torch
+
+    prompts = [render_prompt(r) for r in rows]
+    with torch.no_grad():
+        ref = torch.softmax(
+            action_logits(reference, tokenizer, prompts, device=device).float(), -1)
+    student = torch.log_softmax(
+        action_logits(model, tokenizer, prompts, device=device).float(), -1)
+    return torch.nn.functional.kl_div(student, ref, reduction="batchmean")
 
 
 def run_cell(
@@ -203,9 +248,12 @@ def run_cell(
 
     loss_kind = "sft" if kind in ("reference", "specialist") else ARM_LOSS[kind]
     reference = None
-    if loss_kind == "cm_dpo":
+    if loss_kind in ("cm_dpo", "cross_pairce"):
         if not reference_adapter:
-            raise ContractError("cm_dpo requires the frozen joint reference adapter")
+            raise ContractError(
+                "alignment arms require the frozen joint reference adapter: cm_dpo "
+                "for its centering term, and every pair arm for the general-replay KL"
+            )
         reference, _ = load_backbone(
             backbone["model_id"], backbone["revision"], device=device,
             adapter_path=reference_adapter, trainable=False,
@@ -222,6 +270,10 @@ def run_cell(
     order = list(range(len(rows)))
     random.Random(seed).shuffle(order)
     beta = float(config["preferences"]["beta"])
+    core_categories = list(config["core_categories"])
+    # The composite applies to the alignment arms trained on pairs.  SFT-family cells
+    # (reference, specialist, gold_sft) optimise plain cross-entropy by definition.
+    use_composite = loss_kind in ("cross_pairce", "cm_dpo") and reference is not None
     history, dropped_total, cursor = [], 0, 0
     started = time.time()
 
@@ -233,16 +285,37 @@ def run_cell(
                 random.Random(seed + step).shuffle(order)
             batch.append(rows[order[cursor]])
             cursor += 1
+        parts = None
         if loss_kind == "sft":
             loss = _sft_batch_loss(model, tokenizer, batch, device=device,
                                    max_length=max_length)
         elif loss_kind == "distill":
             loss = _distill_batch_loss(model, tokenizer, batch, device=device)
         else:
-            loss, dropped = _pair_batch_loss(
+            loss, per_example, kept, dropped = _pair_batch_loss(
                 model, reference, tokenizer, batch, arm=loss_kind, device=device,
                 beta=beta, max_length=max_length)
             dropped_total += dropped
+            if use_composite:
+                # The specified objective is NOT the bare pair loss: it is a soft
+                # worst-category term over the five focal categories, plus a gold
+                # anchor and a general-replay KL to the frozen reference.  Without
+                # this the thinnest category can be traded away for aggregate gain,
+                # which is exactly what the design forbids.
+                cat_losses = _category_losses(kept, per_example, core_categories)
+                gold_anchor = _sft_batch_loss(model, tokenizer, kept, device=device,
+                                              max_length=max_length)
+                retention = _retention_kl(model, reference, tokenizer, kept, device=device)
+                parts = torch_composite_alignment_loss(
+                    {k: v for k, v in cat_losses.items()},
+                    gold_anchor_loss=gold_anchor,
+                    retention_kl=retention,
+                    temperature=float(config["alignment"]["category_dro_temperature"]),
+                    lambda_gold=float(config["alignment"]["lambda_gold"]),
+                    lambda_retain=float(config["alignment"]["lambda_retain"]),
+                    expected_categories=core_categories,
+                )
+                loss = parts["total"]
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(
@@ -252,7 +325,11 @@ def run_cell(
         optimizer.zero_grad(set_to_none=True)
 
         if step % log_every == 0 or step == 1:
-            history.append({"step": step, "loss": float(loss.detach())})
+            entry = {"step": step, "loss": float(loss.detach())}
+            if parts is not None:
+                entry.update({k: float(v.detach()) if hasattr(v, "detach") else float(v)
+                          for k, v in parts.items() if k != "total"})
+            history.append(entry)
             print(f"    step {step:4d}/{steps}  loss={float(loss.detach()):.4f}", flush=True)
         if step in ladder:
             model.save_pretrained(str(target / f"step{step:04d}"))
@@ -271,6 +348,10 @@ def run_cell(
         "learning_rate": float(settings["learning_rate"]),
         "beta": beta if loss_kind in ("cross_pairce", "cm_dpo") else None,
         "pairs_dropped_truncated": dropped_total,
+        "composite_objective": bool(use_composite),
+        "category_dro_temperature": config["alignment"]["category_dro_temperature"],
+        "lambda_gold": config["alignment"]["lambda_gold"],
+        "lambda_retain": config["alignment"]["lambda_retain"],
         "reference_adapter": reference_adapter,
         "wall_seconds": round(time.time() - started, 1),
         "loss_history": history,
