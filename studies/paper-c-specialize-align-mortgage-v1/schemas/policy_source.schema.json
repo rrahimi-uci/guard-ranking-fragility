@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-policy-source-v2",
+  "title": "Archived US-federal mortgage authority record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "policy_snapshot_id",
+    "category",
+    "title",
+    "url",
+    "authority_kind",
+    "jurisdiction",
+    "effective_as_of",
+    "retrieved_on",
+    "archived_path",
+    "sha256",
+    "coverage",
+    "reviewer_ids"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "policy_snapshot_id": {"type": "string", "minLength": 1},
+    "category": {
+      "enum": [
+        "mortgage_fair_lending",
+        "mortgage_closed_end_advertising",
+        "mortgage_origination_disclosures",
+        "mortgage_underwriting_adverse_action",
+        "mortgage_steering_referrals",
+        "mortgage_servicing_loss_mitigation",
+        "mortgage_valuation_appraisal",
+        "mortgage_privacy_reporting",
+        "mortgage_servicemember_protections"
+      ]
+    },
+    "title": {"type": "string", "minLength": 1},
+    "url": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "authority_kind": {
+      "enum": [
+        "statute",
+        "regulation",
+        "final_rule",
+        "official_interpretation",
+        "agency_guidance"
+      ]
+    },
+    "jurisdiction": {"const": "US_federal"},
+    "effective_as_of": {"type": "string", "format": "date"},
+    "effective_through": {"type": ["string", "null"], "format": "date"},
+    "retrieved_on": {"type": "string", "format": "date"},
+    "archived_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\.\\.).+"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actor_roles",
+        "products",
+        "transaction_stages",
+        "applicable_regimes",
+        "coverage_facts_required",
+        "exclusions",
+        "review_if_uncertain"
+      ],
+      "properties": {
+        "actor_roles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "products": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "transaction_stages": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "applicable_regimes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "coverage_facts_required": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "exclusions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "review_if_uncertain": {"const": true}
+      }
+    },
+    "reviewer_ids": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "adjudicator_id": {"type": "string", "minLength": 1}
+  }
+}

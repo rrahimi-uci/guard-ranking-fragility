@@ -1,7 +1,21 @@
-# Paper C status
+# Paper C status — ARCHIVED PREDECESSOR
+
+> **SUPERSEDED 2026-07-25.** Paper C is now the study in
+> [`specialize_then_align/`](specialize_then_align/README.md) — *Specialize, Then Align?* — per
+> `specialize_then_align/provenance/MIGRATION_DECISION.md`. The reference-centering study
+> recorded below is historical: its final smoke failed the policy/reference identity check
+> before Stage 2, all seven cloud attempts exited unsuccessfully, and it supplies no reusable
+> result, pilot estimate, readiness gate, or lock parent. Nothing here may be cited as evidence
+> for the successor study.
+>
+> The design work below — the learning-rate-invariant frontier estimand and the executable power
+> gate — remains a correct treatment of *that* study's confound and is retained for the record.
+> It does not transfer: the successor's two primary arms share one objective and one reference,
+> so the initialization-time gradient-weight asymmetry it was built to neutralize does not arise
+> there.
 
 **Date:** 2026-07-25  
-**State:** executable development package; no claim-bearing result
+**State:** archived; no claim-bearing result, no successor authority
 
 ## Design revision: frontier estimand + power gate (2026-07-25)
 

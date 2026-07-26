@@ -839,7 +839,7 @@ Do not currently call this “Act II.”
 
 The repository had a numbering conflict under the superseded Paper C v1 plan:
 
-- [`STATUS.md`](STATUS.md) and [the unified-report plan](../../docs/unified-report-plan.md) historically reserved Act II for a DPO/GRPO objective study;
+- The superseded Paper C v1 planning recorded in [`STATUS.md`](STATUS.md) historically reserved Act II for a DPO/GRPO objective study;
 - [Paper C v1](../../docs/paper-c-prereg.md) is superseded, while [Paper C v2](../../docs/paper-c-prereg-v2.md) is an unrun companion-study protocol candidate and does not reserve an act;
 - [`sections/act3.tex`](sections/act3.tex) displays composition as Act II while retaining `sec:actIII`; and
 - [`sections/act4-mortgage.tex`](sections/act4-mortgage.tex) displays mortgage as Act III while retaining `sec:actIV`.

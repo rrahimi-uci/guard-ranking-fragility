@@ -110,3 +110,75 @@ clean:      ## remove Python and paper build caches
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
 	find . -type f -name '*.pyc' -delete
 	$(MAKE) -C $(PAPER_DIR) clean
+
+# ─────────────────────────────────────────────────────────────── verification tiers
+# Repository Layout v2, Phase 1. Every tier names one absolute interpreter, because
+# nested Makefiles disagree on the variable name (PY vs PYTHON) and the local .venv is
+# Python 3.14 while Paper A's documented release environment requires 3.12 -- local
+# convenience success is not release verification.
+PY_ABS ?= $(CURDIR)/.venv/bin/python
+
+.PHONY: check-fast check-registry check-links check-locks check-papers check-data-local check-all
+.PHONY: explorer-public explorer-local
+
+explorer-public:  ## ledger-gated explorer build; emits text only for approved sources
+	$(PY_ABS) apps/benchmark-explorer/src/build.py --target public --fixtures
+
+explorer-local:  ## full-text build for local inspection; ignored dist/, never published
+	$(PY_ABS) apps/benchmark-explorer/src/build.py --target local --fixtures
+
+check-registry:  ## validate the registry + ledger and assert generated indexes are current
+	$(PY_ABS) tools/validate_registries.py
+	$(PY_ABS) tools/render_indexes.py --check
+
+check-links:  ## verify relative Markdown links in indexes resolve
+	$(PY_ABS) tools/check_markdown_links.py
+
+check-fast: check-registry check-links  ## hermetic tests across every suite
+	$(PY_ABS) -m pytest -q
+	$(PY_ABS) -m pytest apps/benchmark-explorer/tests -q
+	$(PY_ABS) apps/benchmark-explorer/src/build.py --target public --fixtures
+	$(MAKE) -C mortgage-benchmark test PY=$(PY_ABS)
+	$(MAKE) -C papers/base-adapter-composition test PYTHON=$(PY_ABS)
+	@echo "--- Paper C suites: predecessor and successor ---"
+	@$(MAKE) -C papers/paper_c test PYTHON=$(PY_ABS) \
+	  || echo "NOTE paper_c predecessor: expected_fail, see studies/registry.yaml"
+	@$(MAKE) -C papers/paper_c/specialize_then_align test PY=$(PY_ABS) \
+	  || echo "NOTE specialize_then_align: expected_fail (candidate lock binds live source bytes)"
+	@$(MAKE) -C studies/paper-c-specialize-align-mortgage-v1 test PY=$(PY_ABS) \
+	  || echo "NOTE sta study package: expected_fail (same declared candidate-lock failure)"
+
+check-locks:  ## contract-specific checks; expected_fail cases are declared in the registry
+	$(PY_ABS) tools/validate_registries.py --run-verification
+
+check-papers:  ## isolated manuscript builds plus link checks
+	bash papers/paper_c/specialize_then_align/manuscript/build.sh
+	$(PY_ABS) tools/check_markdown_links.py
+
+check-data-local:  ## inventories over ignored local data; explicitly not hermetic
+	@test -d data/benchmarks || { echo "data/benchmarks absent: local-only tier"; exit 1; }
+	$(PY_ABS) -c "import pathlib,json; \
+	  fs=sorted(pathlib.Path('data/benchmarks').rglob('*.jsonl')); \
+	  print(f'{len(fs)} local corpora'); \
+	  [print(f'  {f.name}: {sum(1 for _ in f.open())} rows') for f in fs]"
+
+# Paper A's LOCK.json pins a runtime software fingerprint at Python 3.12. The default
+# .venv is 3.14, so release reproduction needs its own interpreter and its own tier;
+# a local pass under 3.14 would not be release verification.
+PY_RELEASE ?= /opt/homebrew/bin/python3.12
+
+check-release:  ## pinned-3.12 release reproduction; skips cleanly if that env lacks deps
+	@# One shell: each recipe line gets its own, so a bare `exit 0` would not skip the rest.
+	@set -e; \
+	if [ ! -x "$(PY_RELEASE)" ]; then \
+	  echo "SKIP check-release: no interpreter at $(PY_RELEASE)"; exit 0; fi; \
+	"$(PY_RELEASE)" -c 'import sys; sys.exit(0 if sys.version_info[:2]==(3,12) else 1)' \
+	  || { echo "SKIP check-release: $(PY_RELEASE) is not Python 3.12"; exit 0; }; \
+	"$(PY_RELEASE)" -c 'import numpy, pandas, sklearn' 2>/dev/null \
+	  || { echo "SKIP check-release: the 3.12 env lacks scientific deps."; \
+	       echo "  to enable: $(PY_RELEASE) -m pip install -r requirements.txt"; exit 0; }; \
+	echo "3.12 env ready; running release reproduction"; \
+	$(MAKE) repro-release PY="$(PY_RELEASE)"
+
+check-all: check-fast check-locks check-papers  ## aggregate; check-data-local is local-only
+	@echo "check-all complete"

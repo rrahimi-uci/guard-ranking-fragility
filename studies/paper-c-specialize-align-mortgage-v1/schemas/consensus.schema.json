@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-consensus-v2",
+  "title": "Non-gold specialist aggregation record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "reason",
+    "routing_action",
+    "sample_id",
+    "family_id",
+    "calibration_lock_id",
+    "candidate_action",
+    "probabilities",
+    "eligible_votes",
+    "eligible_seeds",
+    "teacher_backbones",
+    "eligible_candidates",
+    "eligible_vote_ids",
+    "eligible_candidate_sha256",
+    "excluded",
+    "requires_adjudication",
+    "is_gold",
+    "aggregation_id"
+  ],
+  "properties": {
+    "status": {"enum": ["candidate_consensus", "no_consensus"]},
+    "reason": {
+      "type": ["string", "null"],
+      "enum": [null, "insufficient_teachers", "teacher_disagreement"]
+    },
+    "routing_action": {"enum": ["candidate", "abstain"]},
+    "sample_id": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "calibration_lock_id": {"type": "string", "minLength": 1},
+    "candidate_action": {
+      "type": ["string", "null"],
+      "enum": [null, "allow", "review", "intervene"]
+    },
+    "probabilities": {
+      "oneOf": [
+        {"$ref": "#/$defs/probabilities"},
+        {"type": "null"}
+      ]
+    },
+    "eligible_votes": {"type": "integer", "minimum": 0},
+    "eligible_seeds": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 1},
+      "uniqueItems": true
+    },
+    "teacher_backbones": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "eligible_candidates": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/eligibleCandidate"}
+    },
+    "eligible_vote_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "eligible_candidate_sha256": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/sha256"}
+    },
+    "excluded": {"$ref": "#/$defs/excluded"},
+    "requires_adjudication": {"const": true},
+    "is_gold": {"const": false},
+    "aggregation_id": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "probabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "review", "intervene"],
+      "properties": {
+        "allow": {"type": "number", "minimum": 0, "maximum": 1},
+        "review": {"type": "number", "minimum": 0, "maximum": 1},
+        "intervene": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "eligibleCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vote_id",
+        "candidate_sha256",
+        "candidate",
+        "calibration_id",
+        "backbone_key",
+        "seed"
+      ],
+      "properties": {
+        "vote_id": {"type": "string", "minLength": 1},
+        "candidate_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate": {"$ref": "#/$defs/candidate"},
+        "calibration_id": {"type": "string", "minLength": 1},
+        "backbone_key": {"type": "string", "minLength": 1},
+        "seed": {"type": "integer", "minimum": 1}
+      }
+    },
+    "coreCategory": {
+      "enum": [
+        "toxicity_abuse",
+        "jailbreak_evasion",
+        "prompt_injection_exfiltration",
+        "mortgage_fair_lending",
+        "mortgage_closed_end_advertising"
+      ]
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "category",
+        "violation_tags",
+        "policy_ids",
+        "confidence",
+        "confidence_source"
+      ],
+      "properties": {
+        "action": {"enum": ["allow", "review", "intervene"]},
+        "category": {"$ref": "#/$defs/coreCategory"},
+        "violation_tags": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "policy_ids": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "confidence_source": {"const": "calibrated_action_distribution"}
+      }
+    },
+    "excluded": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "self_backbone",
+        "wrong_category",
+        "not_in_locked_calibration_inventory",
+        "locked_unqualified",
+        "submitted_abstain",
+        "low_confidence"
+      ],
+      "properties": {
+        "self_backbone": {"type": "integer", "minimum": 0},
+        "wrong_category": {"type": "integer", "minimum": 0},
+        "not_in_locked_calibration_inventory": {"type": "integer", "minimum": 0},
+        "locked_unqualified": {"type": "integer", "minimum": 0},
+        "submitted_abstain": {"type": "integer", "minimum": 0},
+        "low_confidence": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "no_consensus"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": ["insufficient_teachers", "teacher_disagreement"]
+          },
+          "routing_action": {"const": "abstain"},
+          "candidate_action": {"type": "null"},
+          "probabilities": {"type": "null"}
+        }
+      },
+      "else": {
+        "properties": {
+          "reason": {"type": "null"},
+          "routing_action": {"const": "candidate"},
+          "candidate_action": {"enum": ["allow", "review", "intervene"]},
+          "probabilities": {"$ref": "#/$defs/probabilities"}
+        }
+      }
+    }
+  ]
+}

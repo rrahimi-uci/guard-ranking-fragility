@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "manifest_id": "paper_c_sta_external_objects_v1",
+  "study_id": "paper_c_specialize_align_mortgage_v1",
+  "recorded_on": "2026-07-26",
+  "classification": "development_only",
+  "authorization_note": "None of these objects is authorized evidence. They were produced under a non-authorizing protocol candidate; no child authorization lock exists. They may not be cited as a result and are not upgraded by being manifested here.",
+  "bucket": "gs://jazzx-gcp-poc-1-paper-c/v2/sta/",
+  "prefixes": {
+    "cells": {
+      "uri": "gs://jazzx-gcp-poc-1-paper-c/v2/sta/cells/",
+      "entry_count": 80,
+      "bytes": 20477482153,
+      "gib": 19.07
+    },
+    "pairs": {
+      "uri": "gs://jazzx-gcp-poc-1-paper-c/v2/sta/pairs/",
+      "entry_count": 1,
+      "bytes": 2505057,
+      "gib": 0.0
+    },
+    "scores": {
+      "uri": "gs://jazzx-gcp-poc-1-paper-c/v2/sta/scores/",
+      "entry_count": 20,
+      "bytes": 81676185,
+      "gib": 0.08
+    },
+    "logs": {
+      "uri": "gs://jazzx-gcp-poc-1-paper-c/v2/sta/logs/",
+      "entry_count": 13,
+      "bytes": 419658,
+      "gib": 0.0
+    }
+  },
+  "restore": {
+    "command": "gsutil -m cp -r gs://jazzx-gcp-poc-1-paper-c/v2/sta/<prefix> <dest>/",
+    "tested": true,
+    "tested_note": "Per-item loop with absolute destination paths verified during the pilot; a wildcard 'cp -r .../*' with -n silently transferred only one entry, so the per-item form is the supported restore."
+  },
+  "secrets": {
+    "env_file_present": true,
+    "permission_mode": "0644",
+    "injection": "set -a; . ./.env; set +a",
+    "contents_recorded": false,
+    "note": "Presence and injection mechanism only. Never record key contents or hashes."
+  },
+  "environment": {
+    "vm_image_family": "pytorch-2-9-cu129-ubuntu-2204-nvidia-580",
+    "image_project": "deeplearning-platform-release",
+    "machine_type": "a2-highgpu-1g",
+    "accelerator": "NVIDIA A100-SXM4-40GB",
+    "torch": "2.9.1+cu129",
+    "installed": [
+      "transformers==5.12.1",
+      "peft==0.19.1",
+      "accelerate"
+    ],
+    "removed": [
+      "torchaudio (ABI mismatch with the image build; imported transitively by transformers loss_rnnt)"
+    ],
+    "python": "3.10 (image default)",
+    "local_venv_python": "3.14.4 (analysis only; not a release environment)"
+  },
+  "backbones": {
+    "qwen25_15b": {
+      "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+      "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+    },
+    "smollm2_17b": {
+      "model_id": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "revision": "31b70e2e869a7173562077fd711b654946d38674"
+    }
+  },
+  "totals": {
+    "entries": 114,
+    "bytes": 20562083053,
+    "gib": 19.15
+  },
+  "inventory_note": "cells=80 comprises 10 joint references, 50 category specialists, and 20 pilot students. pairs=1 because the authored-verdict regeneration was stopped mid-run; the four calibrated derived-field inventories it replaced were deleted. scores=20 covers the pilot students' checkpoint ladders. No primary-panel cell exists."
+}

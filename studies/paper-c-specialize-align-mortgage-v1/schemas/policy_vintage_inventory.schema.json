@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-policy-vintage-inventory-v1",
+  "title": "Locked mortgage policy-vintage inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "inventory_id",
+    "jurisdiction",
+    "temporal_policy_cutoff",
+    "review_status",
+    "complete",
+    "temporal_side_coverage",
+    "vintages"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "inventory_id": {"type": "string", "minLength": 1},
+    "jurisdiction": {"const": "US_federal"},
+    "temporal_policy_cutoff": {"const": "2026-07-20"},
+    "review_status": {"enum": ["candidate_not_sme_signed", "sme_signed"]},
+    "complete": {"type": "boolean"},
+    "temporal_side_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pre_cutoff", "post_cutoff"],
+      "properties": {
+        "pre_cutoff": {"enum": ["missing", "candidate_not_sme_signed", "sme_signed"]},
+        "post_cutoff": {"enum": ["missing", "candidate_not_sme_signed", "sme_signed"]}
+      }
+    },
+    "vintages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/vintage"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "vintage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "snapshot_path",
+        "snapshot_object_sha256",
+        "policy_vintage_lock_id",
+        "valid_from",
+        "valid_through",
+        "temporal_side",
+        "review_status",
+        "authority_archive_manifest_path",
+        "authority_archive_manifest_sha256"
+      ],
+      "properties": {
+        "snapshot_id": {"type": "string", "minLength": 1},
+        "snapshot_path": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\.\\.).+"},
+        "snapshot_object_sha256": {"$ref": "#/$defs/sha256"},
+        "policy_vintage_lock_id": {"type": "string", "minLength": 1},
+        "valid_from": {"type": "string", "format": "date"},
+        "valid_through": {"type": ["string", "null"], "format": "date"},
+        "temporal_side": {"enum": ["pre_cutoff", "post_cutoff"]},
+        "review_status": {"enum": ["candidate_not_sme_signed", "sme_signed"]},
+        "authority_archive_manifest_path": {
+          "type": ["string", "null"],
+          "pattern": "^(?!/)(?!.*\\.\\.).+"
+        },
+        "authority_archive_manifest_sha256": {
+          "oneOf": [
+            {"$ref": "#/$defs/sha256"},
+            {"type": "null"}
+          ]
+        }
+      }
+    }
+  }
+}

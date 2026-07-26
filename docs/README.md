@@ -36,6 +36,6 @@ results live in [`../papers/`](../papers) and [`../artifacts/paper_a_sft_v2/`](.
   artifact schemas, and required tests.
 - [paper-c-objective-axis-reward-and-design.md](paper-c-objective-axis-reward-and-design.md) —
   nonnormative rationale and current prior-art boundary.
-- [paper-c-prereg.md](paper-c-prereg.md) and
-  [paper-b-topic-proposal.md](paper-b-topic-proposal.md) — superseded v1/pilot records retained for
-  provenance; they do not authorize a run.
+- [paper-c-prereg.md](paper-c-prereg.md) — superseded v1 amendment record retained for
+  provenance; it does not authorize a run. The earlier pilot topic proposal remains available
+  in Git history.

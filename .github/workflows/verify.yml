@@ -1,0 +1,114 @@
+name: verify
+
+# Phase 1 of docs/architecture/repository-layout-v2.md. Until this workflow runs, the
+# layout contract is documented but not enforced -- so this exists to make it enforced.
+#
+# Scope is deliberately narrow: the hermetic fast tier plus registry and link
+# validation. It does NOT run check-data-local (needs ignored corpora),
+# check-release (needs a pinned 3.12 env with scientific deps), or any public
+# explorer build (blocked by benchmarks/registry/distribution.yaml).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # 3.12 matches Paper A's documented release environment. The local dev .venv is
+      # 3.14, which is why release reproduction is a separate tier rather than a CI job.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Assert interpreter identity
+        run: |
+          python -c "import sys; assert sys.version_info[:2]==(3,12), sys.version; print(sys.version)"
+
+      - name: Install pinned root requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyyaml jsonschema
+          python -m pip check
+
+      - name: Validate registry and distribution ledger
+        run: python tools/validate_registries.py
+
+      - name: Assert generated indexes are current
+        run: python tools/render_indexes.py --check
+
+      - name: Check Markdown links
+        run: python tools/check_markdown_links.py
+
+      - name: Root test suite
+        run: python -m pytest -q
+
+      - name: Explorer distribution gate (negative tests)
+        run: python -m pytest apps/benchmark-explorer/tests -q
+
+      - name: Explorer fixture build must emit no source text
+        run: |
+          python apps/benchmark-explorer/src/build.py --target public --fixtures
+          ! grep -rq "SYNTHETIC FIXTURE" apps/benchmark-explorer/dist/public/
+
+      - name: Mortgage benchmark suite
+        run: make -C mortgage-benchmark test PY=$(which python)
+
+      - name: Paper B composition suite
+        run: make -C papers/base-adapter-composition test PYTHON=$(which python)
+
+      - name: Paper C predecessor suite
+        run: make -C papers/paper_c test PYTHON=$(which python)
+
+      # Declared expected_fail in studies/registry.yaml: the candidate lock binds live
+      # source bytes, so it fails once source evolves. Recorded, not silenced -- if it
+      # ever starts passing, `make check-locks` reports that as an error.
+      - name: Paper C successor suite (declared expected_fail)
+        continue-on-error: true
+        run: make -C papers/paper_c/specialize_then_align test PY=$(which python)
+
+      # Phase 5 migrated copy of the tree above. Both are run because the evidence that
+      # the migration was behaviour-preserving is that they fail identically -- 66 passed
+      # / 1 failed -- not that the new one merely runs.
+      - name: Paper C study package (declared expected_fail)
+        continue-on-error: true
+        run: make -C studies/paper-c-specialize-align-mortgage-v1 test PY=$(which python)
+
+  distribution-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pyyaml jsonschema
+
+      # A source reaching publish_text without an affirmatively redistributable license
+      # is a licensing defect, so it fails the build rather than warning.
+      - name: No source may be published without an affirmative license decision
+        run: |
+          python - <<'EOF'
+          import sys, yaml
+          ledger = yaml.safe_load(open("benchmarks/registry/distribution.yaml"))
+          bad = [s["source_id"] for s in ledger["sources"]
+                 if s["redistribution_decision"] == "publish_text"
+                 and s["license"]["permits_redistribution"] is not True]
+          if bad:
+              print(f"FAIL: publish_text without a redistributable license: {bad}")
+              sys.exit(1)
+          approved = [s["source_id"] for s in ledger["sources"]
+                      if s["redistribution_decision"] == "publish_text"]
+          print(f"publish_text-approved sources: {approved or 'none'}")
+          print("no public text build is authorized" if not approved else "")
+          EOF

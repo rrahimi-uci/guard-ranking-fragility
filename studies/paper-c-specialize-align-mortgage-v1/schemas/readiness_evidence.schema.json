@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-readiness-evidence-v1",
+  "title": "Exact evidence records for the five readiness gates",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mortgage_policy_sme_signed",
+    "annotation_rubric_signed",
+    "licence_ledger_complete",
+    "power_pilot_complete",
+    "sealed_cohorts_created"
+  ],
+  "properties": {
+    "mortgage_policy_sme_signed": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/mortgagePolicyEvidence"}
+      ]
+    },
+    "annotation_rubric_signed": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/annotationEvidence"}
+      ]
+    },
+    "licence_ledger_complete": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/licenceEvidence"}
+      ]
+    },
+    "power_pilot_complete": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/pilotEvidence"}
+      ]
+    },
+    "sealed_cohorts_created": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/sealedEvidence"}
+      ]
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate",
+        "artifact_path",
+        "artifact_sha256",
+        "lock_id",
+        "issued_utc",
+        "approver_ids"
+      ],
+      "properties": {
+        "gate": {"type": "string", "minLength": 1},
+        "artifact_path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*\\.\\.).+"
+        },
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "lock_id": {"type": "string", "minLength": 1},
+        "issued_utc": {"type": "string", "format": "date-time"},
+        "approver_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      }
+    },
+    "mortgagePolicyEvidence": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {
+          "properties": {
+            "gate": {"const": "mortgage_policy_sme_signed"},
+            "approver_ids": {"minItems": 2}
+          }
+        }
+      ]
+    },
+    "annotationEvidence": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {"properties": {"gate": {"const": "annotation_rubric_signed"}}}
+      ]
+    },
+    "licenceEvidence": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {"properties": {"gate": {"const": "licence_ledger_complete"}}}
+      ]
+    },
+    "pilotEvidence": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {"properties": {"gate": {"const": "power_pilot_complete"}}}
+      ]
+    },
+    "sealedEvidence": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {"properties": {"gate": {"const": "sealed_cohorts_created"}}}
+      ]
+    }
+  }
+}

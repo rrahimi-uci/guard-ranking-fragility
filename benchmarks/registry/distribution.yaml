@@ -1,0 +1,280 @@
+# Source-by-source distribution ledger
+#
+# Canonical redistribution decision for every benchmark source whose text can reach a
+# build. Validated by distribution.schema.json.
+#
+# This ledger fails closed. `default_decision: local_only` applies to any source not
+# listed, and a source reaches `publish_text` only when its license affirmatively
+# permits redistribution AND an attribution notice is recorded. The schema enforces
+# both conditions, so an unresolved source cannot be published by omission.
+#
+# STATUS: no source currently qualifies for publish_text. The tracked explorer blob
+# `benchmark-explorer/index.public.html` (53.0 MB, sha256 d7a67af5..., 16,146 rows
+# across the ten sources below) therefore has NO affirmative distribution decision
+# and must not be republished, shard-built, or served from Pages until each source
+# below carries one.
+
+schema_version: 1
+ledger_id: guard_ranking_fragility_distribution_v1
+reviewed_on: "2026-07-26"
+default_decision: local_only
+
+notes: >
+  Two decisions are outstanding and require a human with authority to make them.
+  (1) MortgageGuardBench-2K ships LICENSE_NOT_SELECTED.md, which states no publication
+  license has been chosen and that organizational and legal review is required before
+  redistribution; all 2,000 of its rows are presently embedded in a tracked, pushed
+  blob in a public repository. (2) Several general-safety corpora are redistributed
+  here as verbatim rows although their upstream terms are noncommercial or unverified.
+  Until both are resolved, every source is local_only or text_free_only and no public
+  build is authorized. Removing the blob from the working tree does not remove it from
+  Git history; history rewriting is a separate destructive migration needing explicit
+  approval and coordination with every clone.
+
+sources:
+  - source_id: guard_benchmark_hard
+    kind: draft_unlicensed
+    access_class: unresolved
+    license:
+      spdx_or_name: NOT_SELECTED
+      permits_redistribution: false
+      commercial_use: unknown
+      snapshot: >
+        No LICENSE file accompanies this corpus. Authored in-house (mortgage/fair-lending
+        hard negatives with persona, trap_type and rationale fields, same family as
+        mortgage_guard_bench_2k_v0_1_0, whose license is likewise NOT_SELECTED).
+    redistribution_decision: local_only
+    derived_output_license: none_until_source_license_selected
+    sensitive_text_class: synthetic_harmful
+    attribution_notice: null
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 334
+    payload:
+      path: data/guard_benchmark_hard.jsonl
+      revision: "3e30663"
+      sha256: "c17ff6eb2ef46db9dc6b48229bdcf4637165c8b9946fa6ff63f9df5ed4f0a2af"
+    blocking_reason: >
+      ALREADY PUBLISHED, AND THE LEDGER DID NOT KNOW. This file is force-added past the
+      /data/ ignore rule, carries verbatim prompt text, and has been on the public remote
+      since 3e30663 -- while being absent from this ledger entirely. That is the gap the
+      ledger exists to close: gather() refuses an unknown source at build time, but nothing
+      checked corpora already tracked outside the explorer. Recorded as local_only to match
+      its in-house sibling; a human must decide whether to license it for publication or
+      withdraw it. Withdrawal would not retract the published copies.
+
+  - source_id: mortgage_guard_bench_2k_v0_1_0
+    kind: draft_unlicensed
+    access_class: unresolved
+    license:
+      spdx_or_name: NOT_SELECTED
+      permits_redistribution: false
+      commercial_use: unknown
+      snapshot: "data/mortgage_guard_bench_2k_v0_1_0/LICENSE_NOT_SELECTED.md, read 2026-07-26"
+    redistribution_decision: local_only
+    derived_output_license: none_until_source_license_selected
+    sensitive_text_class: synthetic_harmful
+    attribution_notice: null
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 2000
+    payload:
+      path: data/mortgage_guard_bench_2k_v0_1_0/data/mortgage_guard_bench_full.jsonl
+      revision: v0.1.0
+      sha256: f80b41484107227e6f2893ad619a5f07b9eb100a8ef2bb868aa2bf84badcc903
+    blocking_reason: >
+      Source states no publication license has been selected and requires legal review
+      before redistribution. All 2,000 rows are currently embedded in the tracked
+      explorer blob and have been pushed to a public remote.
+
+  - source_id: mortgage_benchmark_v1_hmda2022
+    kind: synthetic_internal
+    access_class: internal
+    license:
+      spdx_or_name: repo_internal_unstated
+      permits_redistribution: unknown
+      commercial_use: unknown
+      snapshot: "mortgage-benchmark/benchmark/v1_hmda2022/, no LICENSE file present, 2026-07-26"
+    redistribution_decision: local_only
+    derived_output_license: none_until_decision
+    sensitive_text_class: synthetic_harmful
+    attribution_notice: null
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 994
+    payload:
+      path: mortgage-benchmark/benchmark/v1_hmda2022/
+      revision: v1_hmda2022
+      sha256: unhashed
+    blocking_reason: >
+      Release checksums cover release bytes only, not generator, judge, configuration,
+      or code, and no redistribution decision is recorded. Rows are tracked and public.
+
+  - source_id: toxicchat
+    kind: public_corpus
+    access_class: open
+    license:
+      spdx_or_name: CC-BY-NC-4.0
+      permits_redistribution: unknown
+      commercial_use: false
+      snapshot: "upstream dataset card, not re-verified at this audit"
+    redistribution_decision: text_free_only
+    derived_output_license: CC-BY-NC-4.0_inherited
+    sensitive_text_class: unreviewed
+    attribution_notice: "ToxicChat, redistributed under its upstream noncommercial terms."
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 5083
+    payload:
+      path: data/benchmarks/full/toxicchat.jsonl
+      revision: null
+      sha256: unhashed
+    blocking_reason: >
+      Noncommercial upstream terms; verbatim redistribution not affirmatively approved.
+
+  - source_id: beavertails
+    kind: public_corpus
+    access_class: open
+    license:
+      spdx_or_name: CC-BY-NC-4.0
+      permits_redistribution: unknown
+      commercial_use: false
+      snapshot: "upstream dataset card, not re-verified at this audit"
+    redistribution_decision: text_free_only
+    derived_output_license: CC-BY-NC-4.0_inherited
+    sensitive_text_class: unreviewed
+    attribution_notice: "BeaverTails (PKU-Alignment), upstream noncommercial terms."
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 3021
+    payload:
+      path: data/benchmarks/full/beavertails.jsonl
+      revision: null
+      sha256: unhashed
+    blocking_reason: Noncommercial upstream terms; not affirmatively approved.
+
+  - source_id: openai_moderation
+    kind: public_corpus
+    access_class: open
+    license:
+      spdx_or_name: MIT_upstream_unverified
+      permits_redistribution: unknown
+      commercial_use: unknown
+      snapshot: "not re-verified at this audit"
+    redistribution_decision: text_free_only
+    derived_output_license: none_until_decision
+    sensitive_text_class: unreviewed
+    attribution_notice: "OpenAI moderation evaluation set."
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 1680
+    payload:
+      path: data/benchmarks/full/openai_moderation.jsonl
+      revision: null
+      sha256: unhashed
+    blocking_reason: License not verified at source.
+
+  - source_id: safepyramid
+    kind: public_corpus
+    access_class: open
+    license:
+      spdx_or_name: unverified
+      permits_redistribution: unknown
+      commercial_use: unknown
+      snapshot: "not re-verified at this audit"
+    redistribution_decision: text_free_only
+    derived_output_license: none_until_decision
+    sensitive_text_class: unreviewed
+    attribution_notice: "SafePyramid (ByteDance)."
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 3000
+    payload:
+      path: data/benchmarks/safepyramid.jsonl
+      revision: null
+      sha256: unhashed
+    blocking_reason: License not verified at source.
+
+  - source_id: jailbreakbench
+    kind: public_corpus
+    access_class: open
+    license:
+      spdx_or_name: MIT_upstream_unverified
+      permits_redistribution: unknown
+      commercial_use: unknown
+      snapshot: "not re-verified at this audit"
+    redistribution_decision: text_free_only
+    derived_output_license: none_until_decision
+    sensitive_text_class: synthetic_harmful
+    attribution_notice: "JailbreakBench (JBB-Behaviors)."
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 200
+    payload:
+      path: data/benchmarks/full/jailbreakbench.jsonl
+      revision: null
+      sha256: unhashed
+    blocking_reason: License not verified at source.
+
+  - source_id: jailbreak_classification
+    kind: public_corpus
+    access_class: open
+    license:
+      spdx_or_name: unverified
+      permits_redistribution: unknown
+      commercial_use: unknown
+      snapshot: "not re-verified at this audit"
+    redistribution_decision: text_free_only
+    derived_output_license: none_until_decision
+    sensitive_text_class: synthetic_harmful
+    attribution_notice: null
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 262
+    payload:
+      path: data/benchmarks/full/jailbreak_classification.jsonl
+      revision: null
+      sha256: unhashed
+    blocking_reason: License not verified at source.
+
+  - source_id: prompt_injections
+    kind: public_corpus
+    access_class: open
+    license:
+      spdx_or_name: unverified
+      permits_redistribution: unknown
+      commercial_use: unknown
+      snapshot: "not re-verified at this audit"
+    redistribution_decision: text_free_only
+    derived_output_license: none_until_decision
+    sensitive_text_class: synthetic_harmful
+    attribution_notice: null
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 116
+    payload:
+      path: data/benchmarks/full/prompt_injections.jsonl
+      revision: null
+      sha256: unhashed
+    blocking_reason: License not verified at source.
+
+  - source_id: xstest
+    kind: public_corpus
+    access_class: open
+    license:
+      spdx_or_name: unverified
+      permits_redistribution: unknown
+      commercial_use: unknown
+      snapshot: "not re-verified at this audit"
+    redistribution_decision: text_free_only
+    derived_output_license: none_until_decision
+    sensitive_text_class: none
+    attribution_notice: null
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 450
+    payload:
+      path: data/benchmarks/full/xstest.jsonl
+      revision: null
+      sha256: unhashed
+    blocking_reason: License not verified at source.

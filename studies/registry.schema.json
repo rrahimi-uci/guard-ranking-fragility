@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guard-ranking-fragility/studies/registry.schema.json",
+  "title": "Study registry",
+  "description": "Normative machine-readable record of every study, its contract class, and how to verify it. README prose summarizes this file; it must not redefine study state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_id",
+    "last_verified",
+    "studies"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "registry_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "last_verified": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "git_revision",
+        "dirty_tree",
+        "date"
+      ],
+      "properties": {
+        "git_revision": {
+          "type": "string",
+          "minLength": 7
+        },
+        "dirty_tree": {
+          "type": "boolean"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "studies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/study"
+      }
+    }
+  },
+  "$defs": {
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "study_id",
+        "title",
+        "question",
+        "study_state",
+        "evidence_state",
+        "publication_state",
+        "distribution_state",
+        "test_exposure",
+        "evidence_tier",
+        "claim_authorization",
+        "contract_type",
+        "verification_mode",
+        "expected_verification_status",
+        "code_root",
+        "lock_bound_paths"
+      ],
+      "properties": {
+        "study_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "study_state": {
+          "enum": [
+            "protocol_candidate",
+            "development_only",
+            "active",
+            "blocked",
+            "contract_drifted",
+            "stopped",
+            "superseded",
+            "released",
+            "invalidated"
+          ]
+        },
+        "evidence_state": {
+          "enum": [
+            "none",
+            "development_only",
+            "retrospective_estimation",
+            "preregistered_analysis",
+            "sealed_confirmation"
+          ]
+        },
+        "publication_state": {
+          "enum": [
+            "none",
+            "draft",
+            "candidate",
+            "current",
+            "historical",
+            "superseded"
+          ]
+        },
+        "distribution_state": {
+          "enum": [
+            "local_only",
+            "text_free_only",
+            "publish_text",
+            "unresolved"
+          ]
+        },
+        "test_exposure": {
+          "enum": [
+            "check_fast",
+            "check_data_local",
+            "check_locks",
+            "check_papers",
+            "none"
+          ]
+        },
+        "evidence_tier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claim_authorization": {
+          "description": "Whether any claim-bearing result is authorized. false is the safe default.",
+          "type": "boolean"
+        },
+        "contract_type": {
+          "enum": [
+            "live_release",
+            "historical_scientific_lock",
+            "checksum_only_release",
+            "protocol_candidate",
+            "none"
+          ]
+        },
+        "verification_mode": {
+          "enum": [
+            "live_tree",
+            "source_snapshot",
+            "authority_archive",
+            "candidate_inventory",
+            "none"
+          ]
+        },
+        "verification_command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expected_verification_status": {
+          "description": "expected_fail is legitimate for a historical lock against an evolved tree; it must be declared, not discovered.",
+          "enum": [
+            "expected_pass",
+            "expected_fail",
+            "not_applicable"
+          ]
+        },
+        "verification_failure_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "code_root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "protocol_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "environment_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "artifact_roots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "manuscript_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "consumes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "produces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "predecessor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "successor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "supersedes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lock_bound_paths": {
+          "type": "boolean"
+        },
+        "source_snapshot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "external_object_manifest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "restore_command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "comment": "A study may not claim authorization without evidence beyond development.",
+          "if": {
+            "properties": {
+              "claim_authorization": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidence_state": {
+                "enum": [
+                  "retrospective_estimation",
+                  "preregistered_analysis",
+                  "sealed_confirmation"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "comment": "A declared expected_fail must say why, so a real regression cannot hide behind it.",
+          "if": {
+            "properties": {
+              "expected_verification_status": {
+                "const": "expected_fail"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "verification_failure_reason"
+            ],
+            "properties": {
+              "verification_failure_reason": {
+                "type": "string",
+                "minLength": 10
+              }
+            }
+          }
+        },
+        {
+          "comment": "A protocol candidate authorizes nothing.",
+          "if": {
+            "properties": {
+              "contract_type": {
+                "const": "protocol_candidate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "claim_authorization": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "comment": "A verification mode other than none requires a command to run.",
+          "if": {
+            "properties": {
+              "verification_mode": {
+                "not": {
+                  "const": "none"
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "verification_command"
+            ],
+            "properties": {
+              "verification_command": {
+                "type": "string",
+                "minLength": 3
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

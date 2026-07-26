@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-comparison-manifest-v1",
+  "title": "Matched CM-DPO candidate-source comparison",
+  "description": "The executable contract additionally requires all matched fields to be equal across arms, distinct run IDs, and distinct pair inventories.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["comparison_id", "backbone_key", "seed", "arms"],
+  "properties": {
+    "comparison_id": {"type": "string", "minLength": 1},
+    "backbone_key": {"type": "string", "minLength": 1},
+    "seed": {"type": "integer", "minimum": 1},
+    "arms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generalist_cm_dpo", "specialist_cm_dpo"],
+      "properties": {
+        "generalist_cm_dpo": {
+          "$ref": "#/$defs/generalistArm"
+        },
+        "specialist_cm_dpo": {
+          "$ref": "#/$defs/specialistArm"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "checkpointSteps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "integer", "minimum": 1},
+      "uniqueItems": true
+    },
+    "matchedArmFields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "arm",
+        "candidate_source",
+        "pair_inventory_sha256",
+        "reference_checkpoint_sha256",
+        "source_event_manifest_sha256",
+        "source_event_ids_sha256",
+        "retained_pair_event_ids_sha256",
+        "pair_quota_manifest_sha256",
+        "adjudicated_gold_manifest_sha256",
+        "retention_replay_manifest_sha256",
+        "optimizer_config_sha256",
+        "objective_config_sha256",
+        "serialization_config_sha256",
+        "review_protocol_sha256",
+        "checkpoint_steps",
+        "pair_quota",
+        "token_budget"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "arm": {
+          "enum": ["generalist_cm_dpo", "specialist_cm_dpo"]
+        },
+        "candidate_source": {
+          "enum": ["joint_generalist", "category_specialist"]
+        },
+        "pair_inventory_sha256": {"$ref": "#/$defs/sha256"},
+        "reference_checkpoint_sha256": {"$ref": "#/$defs/sha256"},
+        "source_event_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "source_event_ids_sha256": {"$ref": "#/$defs/sha256"},
+        "retained_pair_event_ids_sha256": {"$ref": "#/$defs/sha256"},
+        "pair_quota_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "adjudicated_gold_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "retention_replay_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "optimizer_config_sha256": {"$ref": "#/$defs/sha256"},
+        "objective_config_sha256": {"$ref": "#/$defs/sha256"},
+        "serialization_config_sha256": {"$ref": "#/$defs/sha256"},
+        "review_protocol_sha256": {"$ref": "#/$defs/sha256"},
+        "checkpoint_steps": {"$ref": "#/$defs/checkpointSteps"},
+        "pair_quota": {"type": "integer", "minimum": 1},
+        "token_budget": {"type": "integer", "minimum": 1}
+      }
+    },
+    "generalistArm": {
+      "allOf": [
+        {"$ref": "#/$defs/matchedArmFields"},
+        {
+          "properties": {
+            "arm": {"const": "generalist_cm_dpo"},
+            "candidate_source": {"const": "joint_generalist"}
+          }
+        }
+      ]
+    },
+    "specialistArm": {
+      "allOf": [
+        {"$ref": "#/$defs/matchedArmFields"},
+        {
+          "properties": {
+            "arm": {"const": "specialist_cm_dpo"},
+            "candidate_source": {"const": "category_specialist"}
+          }
+        }
+      ]
+    }
+  }
+}
