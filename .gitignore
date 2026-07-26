@@ -92,3 +92,9 @@ artifacts/starting_type_adaptation_v1/scores/combined.parquet
 # benchmark-explorer: the full local index.html embeds the gated ExpGuard dataset's
 # prompt text — never commit it. Commit index.public.html (public + synthetic only).
 benchmark-explorer/index.html
+
+# Office editor lock files are not publication artifacts
+~$*
+
+# Transient execution outputs (storage contract: runs/<study_id>/<run_id>/)
+/runs/
