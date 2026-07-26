@@ -25,7 +25,7 @@
 > (see the revised §3.1/§3.2 and new §1.7 below). A confirmatory *not-supported* result (RQ2) is a
 > finding, not a gap.
 >
-> **Several P0 corrections are already applied** (commits + a `report.md` critique pass this proposal
+> **Several P0 corrections are already applied** (commits + a `papers/unified-report/review-2026-07-17.md` critique pass this proposal
 > predates) — do not re-litigate them: 15/15 → **15/20** (`unified_report.tex:314`); the KL-SFT
 > "free/keeps-specialization" overclaim removed and cross-linked to the RQ2 failure (`tab:guidelines`
 > Row 3); abstract mortgage "winner flips" → "top-ranked guard differs (directional, small split)";
@@ -321,7 +321,7 @@ sealed-cohort.
 > (`presentation-style-proposal-review.md`, 50 findings) before using this section.** Several P0 rows
 > below are already applied (marked DONE), the preregistration row is INVERTED (the preregistration is
 > real — propagate it, do not remove it), and the top remaining task is the abstract carve-out at
-> `unified_report.tex:130`. Cross-walk each row against `report.md` (17 findings, most applied) rather than
+> `unified_report.tex:130`. Cross-walk each row against `papers/unified-report/review-2026-07-17.md` (17 findings, most applied) rather than
 > re-litigating settled work.
 
 Presentation changes will amplify whatever the paper says. The following correctness changes therefore precede layout work.
@@ -332,7 +332,7 @@ Presentation changes will amplify whatever the paper says. The following correct
 
 | Priority | Status | Current location | Problem | Required language or analysis |
 |---|---|---|---|---|
-| P0 | **OPEN — top task** | Abstract, `unified_report.tex:130` | The abstract still reads "All evidence here is retrospective and estimation-only," which contradicts the preregistered confirmatory study (`sec:adaptation`, `\input` into the report and advertised at :119–120). The limitations carve-out was applied but the abstract sentence was not (`report.md` rec #1 — flagged as the single most damaging class of issue). | Scope the "estimation-only" clause to Acts I–III and carve out the preregistered adaptation study; keep the panel-conditional / no-fair-lending clause. This is the highest-value remaining claim fix. |
+| P0 | **OPEN — top task** | Abstract, `unified_report.tex:130` | The abstract still reads "All evidence here is retrospective and estimation-only," which contradicts the preregistered confirmatory study (`sec:adaptation`, `\input` into the report and advertised at :119–120). The limitations carve-out was applied but the abstract sentence was not (`papers/unified-report/review-2026-07-17.md` rec #1 — flagged as the single most damaging class of issue). | Scope the "estimation-only" clause to Acts I–III and carve out the preregistered adaptation study; keep the panel-conditional / no-fair-lending clause. This is the highest-value remaining claim fix. |
 | P0 | **DONE** (value fixed; residual infra ask only) | `unified_report.tex:314` (now `tab:guidelines` Row 2) | Fixed: the ratio now renders 15/20 via `\SpecializationSeedCount/\TotalSeedCount`. | Residual (still absent): add a source lint for the duplicated-macro wiring and a compiled-PDF regression test asserting the displayed 15/20; a generator-only value assertion cannot catch this wiring error. |
 | P0 | **INVERTED — do NOT remove** | `tab:guidelines` caption / abstract / intro / ledger | The preregistration is real and load-bearing (`sec:adaptation`'s locked, non-HARKing claim registry). Acts I–III being retrospective is now a correct, intentional contrast, not a contradiction. | Do **not** remove the preregistration statement — *propagate* the confirmatory status through abstract/intro/ledger/conclusion (see the top OPEN row). Retain only the still-valid sub-point: define LCB/UCB on first use (now done in `sec:adaptation`) and keep two-sided-CI vs one-sided-LCB terminology consistent. |
 | P0 | **OPEN** | `unified_report.tex:110, :255, :270` | Overlapping marginal CIs still call two guards "statistically tied" in three places, with no paired-difference interval. | Compute a paired difference interval. Without it, say "the ordering is unresolved." |
@@ -553,7 +553,7 @@ The page-3 selector must show five outcomes:
 > verdict (KL-SFT not free) the *authoritative* KL-SFT result in Section 4 (demoting the n=4 Act I control to
 > corroboration), and gather the design + `tab:adaptation` into a short **§4b "Confirmatory adaptation study"**
 > subsection carrying the *preregistered, panel-conditional* badge. Migration note: `sections/act-adaptation.tex`
-> is currently `\input` right after Act I even though its opener references "Acts I–III" (`report.md` flow-2) —
+> is currently `\input` right after Act I even though its opener references "Acts I–III" (`papers/unified-report/review-2026-07-17.md` flow-2) —
 > fix its placement during the source migration, do not merely move the file.
 
 #### 1. Why a Leaderboard Winner Is Not a Deployment Decision
@@ -1202,7 +1202,7 @@ The research appendix should convert open questions into sealed protocols.
 > The preregistered confirmatory analysis of KL-SFT (RQ2 in `sec:adaptation`) is **already done** — it
 > returned *not supported* (preserves transfer, fails the −0.02 non-inferiority margin). The remaining gap is
 > **not "any confirmation"** but a fresh, genuinely-*uninspected* cohort (the current study still scores on
-> the inspected Paper A manifest — `report.md` rec #11). Scope this protocol to that residual step:
+> the inspected Paper A manifest — `papers/unified-report/review-2026-07-17.md` rec #11). Scope this protocol to that residual step:
 
 - freeze one beta and one recipe before claim-bearing evaluation;
 - declare represented non-inferiority (margin −0.02) and transfer superiority/retention estimands, one-sided 97.5% LCBs, and Bonferroni multiplicity, before unblinding (template on the executed study);
@@ -1315,8 +1315,8 @@ End on:
 | [sections/limitations-validation.tex](unified-report/sections/limitations-validation.tex) | Evidence matrix and open dependencies in Section 7 | Exhaustive limitations and roadmap in Appendix E. |
 | Root reproducibility and conclusion | Section 7 reproduction box and the five-paragraph conclusion | Full artifact manifest in Appendix E. |
 
-<!-- REVISED (v2): the migration must also read report.md and this review as inputs. -->
-> **Inputs to the migration:** in addition to the source `.tex` files, read `report.md` (17 findings, most
+<!-- REVISED (v2): the migration must also read papers/unified-report/review-2026-07-17.md and this review as inputs. -->
+> **Inputs to the migration:** in addition to the source `.tex` files, read `papers/unified-report/review-2026-07-17.md` (17 findings, most
 > applied) and the companion `presentation-style-proposal-review.md` (50 findings) so the refactor starts
 > from the current build and does not re-litigate applied fixes or orphan the confirmatory section.
 
@@ -1353,8 +1353,8 @@ Keep generated numbers in generated files and presentation prose in authored sec
 #### Phase 0: Correct evidence language
 
 <!-- REVISED (v2): most P0s are done; the top task is the abstract carve-out; the preregistration item is inverted; PDF/UA smoke is best-effort. -->
-- **Top task — carve out the abstract:** scope `unified_report.tex:130` ("All evidence here is retrospective and estimation-only") to Acts I–III and carve out the preregistered adaptation study (`report.md` rec #1, still OPEN);
-- **Reconciliation pass:** cross-walk §2.1 against `report.md`, marking each item DONE / SUPERSEDED / STILL-OPEN, so applied work (15/20, KL Row-3 overclaim, mortgage directional caveat, base-only labels) is not re-litigated;
+- **Top task — carve out the abstract:** scope `unified_report.tex:130` ("All evidence here is retrospective and estimation-only") to Acts I–III and carve out the preregistered adaptation study (`papers/unified-report/review-2026-07-17.md` rec #1, still OPEN);
+- **Reconciliation pass:** cross-walk §2.1 against `papers/unified-report/review-2026-07-17.md`, marking each item DONE / SUPERSEDED / STILL-OPEN, so applied work (15/20, KL Row-3 overclaim, mortgage directional caveat, base-only labels) is not re-litigated;
 - **propagate** (do NOT remove) the preregistration/confirmatory status through abstract/intro/ledger/conclusion; keep Acts I–III labeled retrospective as the intended contrast;
 - finish the genuinely-remaining P0 claim fixes: replace "statistically tied" with a paired-difference interval or "ordering unresolved" at the three sites (`unified_report.tex:110, :255, :270`); reserve "safe/deployable" for gate-passing candidates (composition "highest observed min" wording); replace any self-host-cheaper-than-API conclusion with the serving-study checklist; remove any remaining causal/domain-remedy overclaims;
 - keep the general-checkpoint KL result exploratory while presenting the released-guard KL result as confirmatory-not-supported (a finding, not a gap);
@@ -1362,7 +1362,7 @@ Keep generated numbers in generated files and presentation prose in authored sec
 - add reproduction coverage assertions over the enumerated **17** consumed inputs (incl. the adaptation/KL stages) and fix the figure-check write path; and
 - attempt the one-page tagged-PDF smoke as a **best-effort** spike (do not block on it; do not switch off Tectonic — see §4.10).
 
-Exit gate: no known P0 claim contradiction remains in source or generated captions (the abstract carve-out landed), and §2.1 is reconciled against `report.md`.
+Exit gate: no known P0 claim contradiction remains in source or generated captions (the abstract carve-out landed), and §2.1 is reconciled against `papers/unified-report/review-2026-07-17.md`.
 
 #### Phase 1: Build the 38-page skeleton
 
@@ -1636,10 +1636,10 @@ Automate:
 
 ## Recommended first editing pass
 
-<!-- REVISED (v2): derive from tab:guidelines (do not "replace Table 16"); reconcile against report.md; add a lean critical-path note. -->
+<!-- REVISED (v2): derive from tab:guidelines (do not "replace Table 16"); reconcile against papers/unified-report/review-2026-07-17.md; add a lean critical-path note. -->
 Do not begin with typography. The first pass should:
 
-1. correct the remaining P0 claims (top: the abstract carve-out at `unified_report.tex:130`) and their generator-owned text, after reconciling §2.1 against `report.md`;
+1. correct the remaining P0 claims (top: the abstract carve-out at `unified_report.tex:130`) and their generator-owned text, after reconciling §2.1 against `papers/unified-report/review-2026-07-17.md`;
 2. create the new section skeleton and executive spread;
 3. move existing material into the new evidence order (including a first-class home for the confirmatory study);
 4. derive the executive evidence/action map from the seven rows of `tab:guidelines` and add a confirmatory card — do not "replace Table 16" (that object no longer exists);

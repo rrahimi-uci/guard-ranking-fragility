@@ -6,8 +6,8 @@ clean artifact chain under `artifacts/paper_a_sft_v2/`; the committed legacy
 evidence remains read-only under [`artifacts/paper_a_sft/`](../artifacts/paper_a_sft). Run each
 **from the repo root**.
 
-> The broad-study / Paper B scripts that used to live here now sit under
-> [`legacy/`](../legacy). Nothing in this folder depends on them.
+> The earlier broad-study / Paper B scripts have been retired from this checkout.
+> Nothing in this folder depends on them.
 
 ## Paper C v2 — development scaffold, not a runnable study
 

@@ -11,8 +11,8 @@ window. Nothing here fabricates numbers; pending pieces await their locked runs.
 
 ## Present in the checkout
 - **Paper C protocol rewrite.** `docs/paper-c-prereg-v2.md`, the development plan, code design, and
-  rationale define the candidate matched VerdictCE/PairCE/DPO study. The v1 preregistration and old
-  unified plan are retained only as superseded provenance.
+  rationale define the candidate matched VerdictCE/PairCE/DPO study. The v1 preregistration remains
+  as a superseded amendment record; the old unified plan remains available in Git history.
 - **Current report scaffold.** `unified_report.tex` is a three-act article: specialization (Act I),
   output-space composition (Act II), and regulated-domain evidence (Act III). Paper C v2 is not an
   act or placeholder in the manuscript; it can be integrated only after locked evidence exists.

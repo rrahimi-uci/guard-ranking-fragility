@@ -20,45 +20,47 @@ that with a **paired, same-checkpoint** design on one fixed panel of four instru
 The **[unified research report](papers/unified-report/unified_report.pdf)** is the synthesis:
 *The Safety-Guard Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards in
 High-Compliance Business Domains.* Everything in it regenerates from committed per-row scores through one
-entry point (below); all three acts have committed, reproducible results. See the
-[status ledger](papers/unified-report/STATUS.md).
+entry point (below); all three acts have committed, reproducible results.
+
+**Study state lives in one place.** [`studies/registry.yaml`](studies/registry.yaml) is the
+normative record of every study's state, evidence tier, contract class, and how to verify it.
+[`studies/README.md`](studies/README.md) and [`papers/README.md`](papers/README.md) are generated
+views of it; this README summarizes it and does not redefine it. Run `make check-registry`.
 
 ---
 
 ## Repository structure
 
+Layout follows [`docs/architecture/repository-layout-v2.md`](docs/architecture/repository-layout-v2.md).
+Released, path-bound studies stay at their compatibility paths; new structure is prospective.
+
 ```text
 guard-ranking-fragility/
-├── papers/                              # all manuscripts (LaTeX + built PDFs)
-│   ├── unified-report/                  # ← the three-act synthesis (primary artifact)
-│   │   ├── unified_report.tex           #   main document
-│   │   ├── unified_report.pdf           #   built PDF (committed; refreshed by `make pdf`)
-│   │   ├── sections/                    #   background + related-work + the three acts + limitations
-│   │   ├── generated/                   #   auto-generated tables/macros (written by reproduce.py)
-│   │   ├── figures/                     #   matplotlib figures + Graphviz .dot flowcharts + make_figures.py
-│   │   ├── reproduce.py                 #   one-command "regenerate every result" harness
-│   │   ├── refs.bib, STATUS.md, Makefile
-│   ├── finetuning-specialization[-simplified]/   # formal Paper A  (+ plain-language edition)
-│   ├── base-adapter-composition[-simplified]/    # formal Paper B  (+ plain-language edition)
-│   └── mortgage-guardrail-benchmark[-simplified]/# formal mortgage paper (+ plain-language edition)
-│
+├── studies/                             # registry.yaml = normative study state (+ schema, generated README)
+├── benchmarks/registry/                 # distribution.yaml = per-source redistribution decisions
 ├── guard_research/                      # canonical library: metrics, thresholds, prompts, provenance
-├── experiments/                         # Paper A pipeline; composition; ExpGuard scorer
-├── mortgage-benchmark/                  # generator (magen/), frozen release, scorer, baselines, tests
-├── artifacts/
-│   ├── paper_a_sft_v2/                  # primary clean-v2 lock, release, text-free scores, analysis
-│   ├── paper_a_sft/                     # immutable archived-v1 evidence
-│   └── expguard_external/               # text-free finance/health/law per-row scores (Act III breadth)
-├── configs/                            # Paper A config + v2 release anchor
-├── docs/                               # reproducibility contracts, pre-registration, plans
-├── tests/                              # canonical unit + artifact-contract tests
-├── legacy/                             # quarantined earlier broad-study code
-├── Makefile  pyproject.toml  requirements.txt  .python-version  .env.example
+├── experiments/                         # Paper A pipeline; composition; KL-SFT; ExpGuard; adaptation
+├── mortgage-benchmark/                  # generator (magen/), frozen v1 release, scorer, baselines, tests
+├── papers/                              # manuscripts (LaTeX + built PDFs); see papers/README.md for state
+│   ├── unified-report/                  # ← the three-act synthesis (primary artifact) + slides/
+│   ├── finetuning-specialization[-simplified]/    # Paper A  (+ plain-language edition)
+│   ├── base-adapter-composition[-simplified]/     # Paper B  (+ plain-language edition)
+│   ├── mortgage-guardrail-benchmark[-simplified]/ # mortgage paper (+ plain-language edition)
+│   └── paper_c/                         # stopped predecessor + specialize_then_align/ successor
+├── artifacts/                           # released & development evidence: locks, manifests, text-free scores
+├── configs/                             # study configs + the Paper A v2 release anchor
+├── tools/                               # registry validator, link checker, index renderer
+├── docs/architecture/                   # repository-layout-v2.md (the migration plan this tree follows)
+├── data/                                # ignored: raw/licensed corpora and download cache
+├── runs/                                # ignored: transient execution output, runs/<study_id>/<run_id>/
+└── tests/                               # canonical unit + artifact-contract tests
 ```
 
-Raw third-party prompt text and large training artifacts stay local/gitignored. Committed release
-artifacts keep pinned identifiers, source revisions, content hashes, and **text-free per-row scores**
-(row hash → score) rather than redistributing prompts.
+Four storage classes, enforced rather than described: **source** is tracked, **evidence** enters
+`artifacts/<study_id>/` under an allowlist, **raw or licensed data** stays in ignored `data/` with its
+decision recorded in `benchmarks/registry/`, and **transient runs** go to ignored `runs/`. Committed
+release artifacts keep pinned identifiers, source revisions, content hashes, and **text-free per-row
+scores** (row hash → score) rather than redistributing prompts.
 
 ---
 
@@ -157,7 +159,50 @@ processes — the [data-split construction](papers/unified-report/figures/data_s
 
 ---
 
+## Verification
+
+Tiered, because a single `make test` cannot mean the same thing for a released study and
+for a stopped protocol candidate. Each tier names one absolute interpreter, since nested
+Makefiles disagree on `PY` vs `PYTHON`.
+
+```bash
+make check-registry     # registry + distribution ledger validate; generated indexes current
+make check-links        # relative Markdown links in every index resolve
+make check-fast         # the above, plus every hermetic test suite
+make check-locks        # runs each study's declared verification command
+make check-papers       # isolated manuscript builds
+make check-data-local   # inventories over ignored local corpora (explicitly not hermetic)
+```
+
+`check-fast` deliberately tolerates one declared failure: the Paper C successor's candidate
+lock binds live source bytes, so it fails once source evolves. That is recorded as
+`expected_fail` with a reason in the registry, and `make check-locks` fails if an
+`expected_fail` ever starts passing — a stale blocker is treated as an error, not a relief.
+
+`make -C papers/unified-report reproduce-check` is **not** in any read-only tier: it
+overwrites canonical figures and intermediates. Run it in a disposable worktree.
+
+## Distribution status
+
+**No benchmark source is currently approved for verbatim public redistribution.**
+[`benchmarks/registry/distribution.yaml`](benchmarks/registry/distribution.yaml) records a
+per-source decision — license, access class, sensitive-text class, reviewer, and payload
+hash — and fails closed: a source absent from the ledger defaults to `local_only`, and the
+schema refuses `publish_text` unless the license affirmatively permits redistribution.
+
+Two decisions are outstanding and need a human with the authority to make them.
+MortgageGuardBench-2K ships `LICENSE_NOT_SELECTED.md` stating that no publication license
+has been chosen and that legal review is required before redistribution, yet all 2,000 of
+its rows are embedded in the tracked 53 MB `benchmark-explorer/index.public.html`. Several
+general-safety corpora are redistributed there as verbatim rows under noncommercial or
+unverified upstream terms. Until both are resolved, no Pages, release, or shard build is
+authorized. Note that removing the blob from the working tree does not remove it from Git
+history; a history rewrite is a separate destructive migration.
+
 ## Status
+
+Per-study state is generated from the registry — see [`studies/README.md`](studies/README.md).
+The table below is the narrative summary.
 
 | Track | Main artifact | Honest status |
 |---|---|---|
@@ -165,6 +210,7 @@ processes — the [data-split construction](papers/unified-report/figures/data_s
 | **Act II — composition** | [Paper B](papers/base-adapter-composition/compose_dont_tune.pdf) | **Retrospective pilot complete.** No separately locked prospective run; controls remain roadmap items. |
 | **Act III — mortgage depth** | [frozen benchmark](mortgage-benchmark/benchmark/v1_hmda2022/) | **994-row synthetic benchmark + four-base baselines complete.** LLM-judge / policy-card labels, *not* SME-adjudicated. |
 | **Act III — ExpGuard breadth** | [scores](artifacts/expguard_external/) + [evaluator](experiments/eval_expguard_external.py) | **Complete** four-checkpoint base eval on 2,275 finance/health/law prompts; text-free scores committed; tuned comparison is future work. |
+| **Paper C — specialize-then-align** | [study](papers/paper_c/specialize_then_align/) | **Stopped after its pilot.** Its result is an identifiability finding: with a three-action head and gold-based adjudication, the two candidate-source inventories were 98% byte-identical and the primary contrast was unidentified. No primary panel, no sealed cohort, no claim. |
 
 Acts I and II are reproducible but **retrospective** (their sources were inspected during development).
 The report keeps retrospective, external-expert, and LLM-judge evidence in separate tiers and never pools

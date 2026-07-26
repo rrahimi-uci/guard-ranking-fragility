@@ -65,5 +65,5 @@ canonical metric module (`guard_research/metrics.py`) and generated analysis
 metadata. See the repository [`../README.md`](../README.md) “Auditable evidence
 chain” and [`../docs/reproducibility.md`](../docs/reproducibility.md). V1 analysis
 requires `--allow-legacy-lock`; strict v2 analysis never implies it. The earlier
-broad study's code lives under [`../legacy/`](../legacy) and is not part of this
-focused paper.
+broad study's exploratory code has been retired from this checkout and is not part
+of this focused paper.
