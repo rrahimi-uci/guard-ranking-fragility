@@ -50,8 +50,11 @@ jobs:
       - name: Check Markdown links
         run: python tools/check_markdown_links.py
 
+      # -rs reports skip reasons. The hermetic tier legitimately skips suites that load a
+      # real checkpoint offline, and a tier that silently shrinks is worse than one that
+      # fails: these lines are the record of what was NOT covered on this runner.
       - name: Root test suite
-        run: python -m pytest -q
+        run: python -m pytest -q -rs
 
       - name: Explorer distribution gate (negative tests)
         run: python -m pytest apps/benchmark-explorer/tests -q

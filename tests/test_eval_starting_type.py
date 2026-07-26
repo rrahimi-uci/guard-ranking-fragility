@@ -32,6 +32,11 @@ TINY = {
     "model_revision": None, "tokenizer_revision": None,
     "trust_remote_code": False, "dtype": "float32", "max_length": 512,
 }
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _hub import require_cached_model  # noqa: E402
+
+require_cached_model(TINY["model_id"])
+
 RECIPE = {
     "max_length": 512, "max_steps": 3, "learning_rate": 2e-4, "warmup_ratio": 0.0,
     "per_device_batch": 1, "gradient_accumulation": 2, "scheduler": "constant",

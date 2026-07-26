@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "manifest_id": "paper_c_sta_migration_v1",
   "migrated_on": "2026-07-26",
   "git_revision": "421a836",
@@ -7,17 +7,17 @@
   "operation": "copy_not_move",
   "digest_tool": "tools/tree_digest.py",
   "digest_coverage_rule": "all regular files except build residue (__pycache__, *.pyc, .pytest_cache, *.egg-info, .DS_Store) and except the contents of artifacts/, inputs/, build/ -- but .gitkeep placeholders inside those directories ARE included",
-  "reverify_command": "python tools/tree_digest.py papers/paper_c/specialize_then_align studies/paper-c-specialize-align-mortgage-v1 --exclude provenance/MIGRATION_MANIFEST.json --diff",
+  "reverify_command": "python tools/tree_digest.py papers/paper_c/specialize_then_align studies/paper-c-specialize-align-mortgage-v1 --tracked-only --exclude provenance/MIGRATION_MANIFEST.json --diff",
   "old_tree": {
     "path": "papers/paper_c/specialize_then_align",
-    "aggregate_sha256": "8fcb1d69a1e2595a93f0f48366b87d7e3b0f1de49e0c9492720e76709eeea306",
-    "file_count": 70,
+    "aggregate_sha256": "98306ce90594e5c18b8a51356b5197d7996780239769ebdb9aa2a1d1f956a243",
+    "file_count": 68,
     "status": "intact_compatibility_surface"
   },
   "new_tree": {
     "path": "studies/paper-c-specialize-align-mortgage-v1",
-    "aggregate_sha256": "d2129b0689de5466e6198e4b4d294644ba6af46735d91d90425801b0d9be0583",
-    "file_count": 72,
+    "aggregate_sha256": "6727c4842e7c4b067bd9f599301d01c2cfa52ef34a878e4afbf790d7f10a0844",
+    "file_count": 71,
     "status": "phase_4_study_package"
   },
   "pre_migration_snapshot": {
@@ -39,6 +39,7 @@
   "divergence": {
     "only_in_old_tree": [],
     "only_in_new_tree": [
+      "artifacts/.gitkeep",
       "environment/README.md",
       "environment/gpu-requirements.txt"
     ],
@@ -47,12 +48,12 @@
     ],
     "explanation": "The new package adds an environment record and this manifest, which the predecessor has no equivalent of, and rewrites README.md to state that it is a copy that authorizes nothing. Nothing is missing from the new tree. All source, config, schemas, tests, tools, cloud scripts, manuscript, locks and layout placeholders are byte-identical.",
     "correction": "An earlier version of this manifest reported one divergent file and a 67/68 file split. That comparison hashed only non-ignored files, so it could not see .gitkeep placeholders living under ignored prefixes -- and the copy had in fact dropped three of them (artifacts/, inputs/, build/). inputs/.gitkeep was tracked source, so the new tree was genuinely incomplete while the check reported it faithful. The placeholders were restored byte-for-byte and the coverage rule is now stated above and printed by the tool on every run.",
-    "note": "Counts and the only_in_new_tree list are stated with this manifest excluded; including it the new tree is 73 files."
+    "note": "artifacts/.gitkeep appears as new-tree-only because of the .gitignore asymmetry recorded below: it is trackable under studies/ and excluded outright by papers/paper_c/.gitignore, so the predecessor cannot track it. Both trees have the file on disk; only one can commit it. Counts are stated with this manifest excluded."
   },
   "gitignore_asymmetry": {
     "finding": "artifacts/.gitkeep is TRACKABLE in the new tree but IGNORED in the old one; build/.gitkeep is ignored in both.",
     "cause": "The package .gitignore writes `artifacts/**` then `!artifacts/.gitkeep`, but git cannot re-include a file whose parent DIRECTORY is excluded. papers/paper_c/.gitignore:7 excludes `artifacts/` outright, which kills the negation there; no such ancestor rule exists under studies/, so it takes effect. The root .gitignore:7 excludes `build/`, which kills that negation in both.",
-    "consequence": "None for execution -- writers call mkdir(parents=True, exist_ok=True), so a missing placeholder directory is created on demand. It matters only for what a fresh clone shows.",
+    "consequence": "None for execution -- writers call mkdir(parents=True, exist_ok=True). It does show up in the tracked-file comparison as a declared divergence, and it means a fresh clone of the predecessor has no artifacts/ directory until something creates it.",
     "not_fixed_here": "Editing papers/paper_c/.gitignore or the root .gitignore to make the negations live would change ignore semantics for paths outside this study package, which is beyond a Phase 5 copy. Recorded rather than silently adjusted."
   },
   "authorization": {
@@ -87,5 +88,7 @@
   "digest_excludes": [
     "provenance/MIGRATION_MANIFEST.json"
   ],
-  "digest_exclude_reason": "This manifest records the hash of the tree it lives in, so it must exclude itself or the recorded value is stale the instant it is written. The exclusion is passed explicitly to the tool rather than hardcoded, so the number below is reproducible."
+  "digest_exclude_reason": "This manifest records the hash of the tree it lives in, so it must exclude itself or the recorded value is stale the instant it is written. The exclusion is passed explicitly to the tool rather than hardcoded, so the number below is reproducible.",
+  "digest_mode": "tracked_only",
+  "digest_mode_reason": "Hashes cover only files git tracks. A working-tree digest is not reproducible in a fresh clone: the first version of this manifest hashed whatever was on disk, so CI -- which has no ignored files -- computed a different hash for an unchanged tree and the enforcement test failed on a clean checkout. Recording a number that only one machine can reproduce is not provenance."
 }

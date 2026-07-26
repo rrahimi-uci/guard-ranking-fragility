@@ -40,6 +40,7 @@ import argparse
 import hashlib
 import json
 import pathlib
+import subprocess
 import sys
 
 SKIP_DIRS = {"__pycache__", ".pytest_cache", ".git", ".mypy_cache", ".ruff_cache"}
@@ -67,12 +68,22 @@ def included(root: pathlib.Path, path: pathlib.Path) -> bool:
     return True
 
 
-def digest(root: pathlib.Path, exclude: tuple[str, ...] = ()) -> dict:
+def tracked_paths(root: pathlib.Path) -> list[pathlib.Path]:
+    """Paths git tracks under `root`, which is what a fresh clone actually contains."""
+    out = subprocess.run(["git", "ls-files", "-z", "--", str(root)],
+                         cwd=root, capture_output=True, text=True, check=True)
+    return [root / rel for rel in out.stdout.split("\0") if rel]
+
+
+def digest(root: pathlib.Path, exclude: tuple[str, ...] = (), *,
+           tracked_only: bool = False) -> dict:
     root = root.resolve()
     if not root.is_dir():
         raise SystemExit(f"not a directory: {root}")
+    candidates = (sorted(tracked_paths(root)) if tracked_only
+                  else sorted(root.rglob("*")))
     entries = {}
-    for path in sorted(root.rglob("*")):
+    for path in candidates:
         if not path.is_file() or path.is_symlink() or not included(root, path):
             continue
         rel = str(path.relative_to(root))
@@ -89,6 +100,7 @@ def digest(root: pathlib.Path, exclude: tuple[str, ...] = ()) -> dict:
     }
     if exclude:
         out["excluded"] = list(exclude)
+    out["tracked_only"] = tracked_only
     return out
 
 
@@ -97,13 +109,19 @@ def main() -> int:
     ap.add_argument("trees", nargs="+", type=pathlib.Path)
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--diff", action="store_true", help="compare exactly two trees")
+    ap.add_argument("--tracked-only", action="store_true",
+                    help="digest only files git tracks. Required for any hash recorded in "
+                         "a manifest: a working-tree digest is not reproducible in a fresh "
+                         "clone, because ignored files present on one machine are simply "
+                         "absent on another.")
     ap.add_argument("--exclude", action="append", default=[], metavar="RELPATH",
                     help="relative path to omit from the digest; repeatable. Use this for "
                          "a manifest that records its own tree's hash, which would "
                          "otherwise be stale the moment it is written.")
     args = ap.parse_args()
 
-    results = [digest(t, tuple(args.exclude)) for t in args.trees]
+    results = [digest(t, tuple(args.exclude), tracked_only=args.tracked_only)
+               for t in args.trees]
 
     if args.diff:
         if len(results) != 2:

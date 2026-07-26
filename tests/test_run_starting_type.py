@@ -24,6 +24,14 @@ import paper_a_common as C  # noqa: E402
 import starting_type_common as S  # noqa: E402
 import run_starting_type_adaptation as R  # noqa: E402
 
+# Loads a real checkpoint offline; skip cleanly when the cache is cold rather than
+# failing. Order-dependent otherwise: another test module sets HF_HUB_OFFLINE=1 at
+# import, so whether this suite can download depends on collection order.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _hub import require_cached_model  # noqa: E402
+
+require_cached_model("HuggingFaceTB/SmolLM2-135M-Instruct")
+
 REGISTRY = os.path.join(ROOT, "configs", "starting_type_adaptation_v1.yaml")
 
 

@@ -208,6 +208,13 @@ CI ([`.github/workflows/verify.yml`](.github/workflows/verify.yml)) runs the her
 plus registry, index-freshness, and link validation on Python 3.12, and fails the build if
 any source reaches `publish_text` without an affirmatively redistributable license.
 
+`check-fast` is hermetic in the sense that it needs no network and no ignored corpora —
+but suites that load a real checkpoint **skip** rather than run: they set `HF_HUB_OFFLINE=1`
+by design and need a warm Hugging Face cache. On a fresh clone with a cold cache the root
+suite reports 180 passed / 26 skipped, and CI prints every skip reason (`-rs`) so the tier
+cannot quietly shrink. Warm the cache once to run them locally:
+`python -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('HuggingFaceTB/SmolLM2-135M-Instruct')"`.
+
 `check-fast` deliberately tolerates two declared failures — the same one twice. The Paper C
 candidate lock binds live source bytes, so it fails once source evolves, and both the
 predecessor tree and the migrated study package carry it. Each is recorded as `expected_fail`

@@ -35,8 +35,16 @@ def manifest() -> dict:
 
 @pytest.fixture(scope="module")
 def digests(manifest):
+    """Tracked-only, matching the manifest: a working-tree digest is clone-unstable.
+
+    The first version compared whatever was on disk. CI has no ignored files, so it
+    computed a different hash for an unchanged tree and this test failed on a clean
+    checkout -- the check was measuring local disk state, not the migration.
+    """
+    assert manifest["digest_mode"] == "tracked_only"
     exclude = tuple(manifest["digest_excludes"])
-    return (tree_digest.digest(OLD, exclude), tree_digest.digest(NEW, exclude))
+    return (tree_digest.digest(OLD, exclude, tracked_only=True),
+            tree_digest.digest(NEW, exclude, tracked_only=True))
 
 
 def test_predecessor_tree_still_exists(manifest):
