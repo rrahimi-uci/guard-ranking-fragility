@@ -1,11 +1,14 @@
 # Repository Layout v2 — Migration Plan
 
-**Status:** deeply audited planning document; not authorized for execution
+**Status:** partially executed — Phases 0, 1, 3 and 5 applied; 2 and 4 open
 **Written:** 2026-07-26
 **Last audited:** 2026-07-26 against Git `8f66f83b9ac0e24a090874ce5a8c5fbb5b060745`
 with a 63-entry dirty worktree and active GCS transfers
-**Execution state:** **BLOCKED** while Paper C work or transfers are active and until
-the protocol-integrity and distribution gates below are resolved
+**Execution state:** unblocked on 2026-07-26 — Paper C was stopped and its GCS
+transfers finished, clearing the concurrency freeze. See
+[Implementation status](#implementation-status) for exactly what was applied, what was
+deviated from, and what remains. **The distribution gate is still open**: no source is
+approved for verbatim redistribution, so no public text build is authorized.
 
 This plan separates reusable code, executable studies, benchmarks, publications,
 immutable evidence, local data, and transient runs without invalidating the
@@ -714,3 +717,132 @@ The next operational sequence is:
 
 This sequence provides navigational benefit without destroying provenance or
 allowing directory cleanup to mask a scientific or distribution-control problem.
+
+---
+
+## Implementation status
+
+Recorded 2026-07-26, after the plan was executed. The sections above are the plan **as
+written** and are left unedited; this section is the record of what actually happened, so
+that a later reader can tell specification from state without re-deriving it from the log.
+
+Applied across seven commits, one per phase boundary, per the rollback rule:
+`12192b0` Phase 0 capture · `7fa0ef7` distribution ledger · `de93614` Phase 1 registry,
+validators, tiers · `55a15af` README · `f2d0b00` verification reconciliation + CI ·
+`421a836` Phase 3 explorer · `84eb61e` Phase 5 migration.
+
+### What was applied
+
+| Phase | State | Evidence |
+|---|---|---|
+| 0 — capture active work | done | Tracked/ignored/GCS state captured; Paper C classified development-only; `EXTERNAL_OBJECT_MANIFEST.json` (114 objects, 19.15 GiB) |
+| 1 — additive navigation and verification | done | `studies/registry.yaml` + schema (12 studies), `benchmarks/registry/distribution.yaml` + schema (10 sources), `tools/validate_registries.py`, `check_markdown_links.py`, `render_indexes.py`, `tree_digest.py`, eight `make check-*` tiers (`check-all`, `check-data-local`, `check-fast`, `check-links`, `check-locks`, `check-papers`, `check-registry`, `check-release`), `.github/workflows/verify.yml` |
+| 2 — Paper C navigation and dispositions | **not done** | See below |
+| 3 — separate application builds from source | done, with the gate held shut | `apps/benchmark-explorer/` with `src/`/`fixtures/`/ignored `dist/`, positive-allowlist build, 8 negative tests, expected count/hash manifest |
+| 4 — prospective study package layout | done as a template, one deviation | `studies/paper-c-specialize-align-mortgage-v1/` |
+| 5 — Paper C migration | done as a copy | `provenance/MIGRATION_MANIFEST.json`, enforced by `tests/test_migration_manifest.py` |
+
+**Nothing claim-bearing moved.** Zero git renames. `artifacts/`, `guard_research/`,
+`mortgage-benchmark/`, `configs/`, `experiments/` and root `tests/` keep their paths, so
+every existing lock still binds. No history was rewritten.
+
+**Verification declarations are reconciled, not assumed.** All 12 registry entries declare
+`expected_pass` or `expected_fail` with a reason, and `validate_registries.py
+--run-verification` runs each and fails if an outcome disagrees with its declaration.
+Writing that reconciliation caught four wrong declarations, including a `paper_a_sft_v2`
+entry declared passing that in fact fails on `python_mismatch` (3.12 release env vs. the
+3.14 local `.venv`) — a real environment split the registry now states rather than hides.
+
+### Deviations from the plan as written
+
+1. **Phase 4 layout: `PROTOCOL.md` at package root, no `protocol/` directory.** The
+   spec lists `protocol/`. The study carries a single protocol document plus
+   `DEVELOPMENT_PLAN.md`; a directory for one file adds a level without adding
+   structure. `studies/registry.yaml` addresses it through `protocol_paths`, so
+   discovery does not depend on the layout choice. Revisit when a study needs
+   versioned protocol amendments.
+
+2. **Phase 5 item 5: manuscript copied inside the package, not into a separate paper
+   root.** The plan routes manuscript material to "the separately authorized future
+   paper root." No such authorization exists, and the study is stopped with nothing to
+   publish, so `manuscript/` stays in the package. Creating a paper root for a stopped
+   study would imply a publication path that is not authorized.
+
+3. **Phase 5 item 8: the environment record is explicitly incomplete.** Phase 4 requires
+   pinning Python and every scientific dependency for a claimed result. This study claims
+   nothing, and the record *cannot* be completed: torch/CUDA came from the VM image
+   rather than pip, `accelerate` was installed unpinned and never captured, and the pilot
+   A100s are deleted, so no `pip freeze` is recoverable. `environment/gpu-requirements.txt`
+   says so in its header instead of presenting two pins as a lock. Consequence, stated
+   plainly: **the GCS development artefacts cannot be exactly reproduced.** They are
+   development-only and nothing depends on reproducing them.
+
+4. **Source-group split isolation was infeasible as specified.** The protocol's wording
+   implies unioning on `source_id`, which left 9 units across 9 datasets and made a 4-way
+   split impossible. Splitting on the family ↔ content-family transitive closure works and
+   is what the code does. The protocol wording still needs correcting — it describes an
+   operation that cannot be performed on this corpus.
+
+### What Phase 2 requires and why it was not done
+
+Phase 2 disposes of the older flat matched-DPO scaffold spanning `docs/`, `configs/`,
+`experiments/` and root `tests/`. It is skipped deliberately: it is the only phase whose
+steps include *removing* live-code presentation, and its own preconditions are unmet —
+it requires proving the scaffold is not consumed, and verifying the recorded commit is
+independently retrievable from the authoritative remote. Both are audits of external
+state, not edits. The two scaffold studies are meanwhile registered
+(`paper_c_matched_dpo_scaffold`, `paper_c_reference_centering`), both verify
+`expected_pass`, and both carry an explicit relation to their successor — which delivers
+Phase 2's *navigational* purpose without any deletion.
+
+### Defects found by executing the plan
+
+Executing a layout plan is a test of the code it moves. Four defects surfaced that no
+amount of reading would have found, all fixed in **both** the predecessor and the
+migrated tree so they stay byte-identical:
+
+1. **Fixed-parent repository discovery.** `parents[2]` is correct at the predecessor's
+   depth of 3 and resolves *outside the repository* at the study package's depth of 2 —
+   it would have read corpora from the wrong place rather than raising. Replaced with
+   marker-based `repository_root()`. This is the concrete case for Phase 4's rule against
+   depending on a fixed parent depth.
+
+2. **The storage contract's `runs/` location was unreachable.** Phase 5 item 6 routes new
+   execution to `runs/<study_id>/`. `output_path()` *rejected* an absolute
+   `<repo>/runs/<slug>/` path and silently resolved a relative `runs/x` inside the
+   workspace, so documentation promising that routing described behaviour the code
+   refused. Added `runs_root()` and a second permitted root — still fail-closed at
+   exactly two — with four tests covering the admitted path, the boundary, non-widening
+   of an explicit `root=`, and unchanged relative-path behaviour.
+
+3. **A migration check that could not see what it verified.** The first manifest reported
+   the trees differing by one file, because the comparison hashed only non-ignored files —
+   so `.gitkeep` placeholders under `artifacts/`, `inputs/` and `build/` were invisible,
+   and the copy had dropped all three. `inputs/.gitkeep` is tracked source, so the new
+   tree was genuinely incomplete while the check called it faithful. This is the failure
+   mode the "verification required for every migration" section exists to prevent, and it
+   still happened, because the coverage rule was implicit. `tools/tree_digest.py` now
+   states its rule and prints it with every result, and `tests/test_migration_manifest.py`
+   recomputes the comparison from disk — deleting `inputs/.gitkeep` fails three of its
+   seven tests independently.
+
+4. **A dead `.gitignore` negation.** `!artifacts/.gitkeep` cannot re-include a file whose
+   parent directory is excluded, and `papers/paper_c/.gitignore` excludes `artifacts/`
+   outright — so the negation is dead in the predecessor and live under `studies/`.
+   Recorded in the migration manifest rather than silently changed: making them agree
+   would alter ignore semantics for paths outside this study.
+
+### Still open
+
+- **The distribution gate.** No source is approved for verbatim redistribution, so
+  `publishable()` returns empty and no public text build is authorized. The validator
+  emits this as a standing warning on every run.
+- **Tracked, already-pushed `benchmark-explorer/index.public.html`** — 53 MB, 16,146 rows
+  across 10 sources, embedding all 2,000 MGB2K rows whose own `LICENSE_NOT_SELECTED.md`
+  states that no publication license has been selected and legal review is required. The
+  new build cannot produce this file, but the existing one is public and needs a **human
+  licensing decision**; removing it from history is a separate migration requiring
+  explicit approval.
+- **Phase 2**, per the reasoning above.
+- **The `paper_a_sft_v2` interpreter split** (3.12 release vs. 3.14 local) is declared and
+  enforced, not resolved.

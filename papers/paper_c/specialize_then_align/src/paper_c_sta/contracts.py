@@ -114,13 +114,56 @@ def _inside(root: Path, candidate: Path) -> bool:
         return False
 
 
+STUDY_ID = "paper_c_specialize_align_mortgage_v1"
+RUNS_SLUG = "paper-c-specialize-align-mortgage-v1"
+
+
+def runs_root() -> Path:
+    """The storage contract's transient-output location: ignored <repo>/runs/<slug>/.
+
+    Named by study slug rather than by workspace directory name so both the
+    predecessor tree and the migrated study package route to the same place -- the
+    study is one study regardless of which path is executing it.
+    """
+    return repository_root() / "runs" / RUNS_SLUG
+
+
 def output_path(value: str | Path, *, root: Path | None = None) -> Path:
-    base = (root or project_root()).resolve()
+    """Confine writes to this workspace or to the study's ignored runs/ directory.
+
+    The workspace is the default so committed development output keeps resolving.
+    <repo>/runs/<slug>/ is admitted as a second root because the storage contract
+    puts transient execution there, and until this existed the contract was
+    unreachable: an absolute repo-level runs/ path raised, and a relative "runs/x"
+    silently landed *inside* the workspace instead. Documentation promising that
+    routing was therefore describing behaviour the code rejected.
+
+    Still fail-closed -- exactly two roots, and anything else raises. A caller
+    passing `root=` narrows to that root alone, since an explicit root is a
+    containment request and widening it would defeat the point.
+    """
     raw = Path(value)
+    if root is not None:
+        base = Path(root).resolve()
+        candidate = raw.resolve() if raw.is_absolute() else (base / raw).resolve()
+        if not _inside(base, candidate):
+            raise ContractError(f"output escapes the requested root: {value}")
+        return candidate
+
+    base = project_root().resolve()
     candidate = raw.resolve() if raw.is_absolute() else (base / raw).resolve()
-    if not _inside(base, candidate):
-        raise ContractError(f"output escapes Paper C v2 workspace: {value}")
-    return candidate
+    if _inside(base, candidate):
+        return candidate
+    try:
+        runs = runs_root().resolve()
+    except ContractError:
+        runs = None
+    if runs is not None and _inside(runs, candidate):
+        return candidate
+    allowed = f"{base}" + (f" or {runs}" if runs is not None else "")
+    raise ContractError(
+        f"output escapes Paper C v2 workspace: {value} (permitted roots: {allowed})"
+    )
 
 
 def read_json(path: str | Path, *, root: Path | None = None) -> dict:

@@ -1,6 +1,18 @@
-# Pinned GPU stack as actually installed on the pilot VM. torchaudio is deliberately
-# absent: the image build's ABI fails to load and transformers 5.x pulls it in via
-# loss_rnnt, so it must be uninstalled before importing transformers.
+# PARTIAL RECORD -- NOT AN ENVIRONMENT LOCK. Do not treat this as reproducing the
+# pilot runs. Phase 4 requires that a claimed result pin Python and every scientific
+# dependency; this study claims nothing, and this file cannot be completed now:
+#
+#   * torch/CUDA/cuDNN came from the VM image, not from pip -- the image identifier in
+#     README.md (pytorch-2-9-cu129-ubuntu-2204-nvidia-580) is the real pin for that layer;
+#   * `accelerate` was installed unpinned and its resolved version was never captured;
+#   * the pilot A100 VMs have all been deleted, so no `pip freeze` can be recovered.
+#
+# Completing it would require re-provisioning and re-running, which is a new experiment
+# and needs its own authorization. Recorded as incomplete rather than dressed up.
+#
+# torchaudio is deliberately absent: the image build's ABI fails to load and
+# transformers 5.x imports it transitively via loss_rnnt, so it must be uninstalled
+# before importing transformers.
 transformers==5.12.1
 peft==0.19.1
-accelerate
+accelerate                 # version not captured; unpinned as actually installed

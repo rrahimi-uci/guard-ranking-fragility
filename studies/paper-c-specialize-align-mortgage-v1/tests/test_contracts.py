@@ -5,6 +5,7 @@ import hashlib
 
 import pytest
 
+from paper_c_sta import contracts
 from paper_c_sta.contracts import (
     ContractError,
     canonical_sha256,
@@ -107,3 +108,42 @@ def test_policy_snapshot_carries_2026_temporal_conflict():
     policy = load_policy_snapshot(taxonomy=taxonomy)
     conflict = {row["id"]: row for row in policy["temporal_conflicts"]}
     assert conflict["ECOA_FHA_EFFECTS_2026"]["required_action"] == "review"
+
+
+def test_output_path_admits_the_storage_contract_runs_directory(tmp_path):
+    """<repo>/runs/<slug>/ must be writable, or the storage contract is unreachable."""
+    target = contracts.runs_root() / "run_2026_07_26" / "cell.json"
+    assert contracts.output_path(target) == target.resolve()
+    assert contracts.runs_root().name == "paper-c-specialize-align-mortgage-v1"
+    assert contracts.runs_root().parent.name == "runs"
+    # the slug is the study, not the executing directory: both trees agree
+    assert contracts.runs_root().parent.parent == contracts.repository_root()
+
+
+def test_output_path_still_rejects_everything_outside_both_roots(tmp_path):
+    """Two permitted roots, not open containment."""
+    for bad in (contracts.repository_root() / "artifacts/paper_a_sft_v2/LOCK.json",
+                contracts.repository_root() / "runs/some-other-study/x.json",
+                tmp_path / "elsewhere.json"):
+        with pytest.raises(contracts.ContractError) as excinfo:
+            contracts.output_path(bad)
+        assert "permitted roots" in str(excinfo.value)
+
+
+def test_explicit_root_is_not_widened_by_the_runs_allowance(tmp_path):
+    """An explicit root= is a containment request; runs/ must not escape it."""
+    with pytest.raises(contracts.ContractError) as excinfo:
+        contracts.output_path(contracts.runs_root() / "x.json", root=tmp_path)
+    assert "requested root" in str(excinfo.value)
+    inside = tmp_path / "ok.json"
+    assert contracts.output_path("ok.json", root=tmp_path) == inside.resolve()
+
+
+def test_relative_paths_still_resolve_inside_the_workspace(tmp_path):
+    """Regression: 'runs/x' used to land inside the workspace and must keep doing so.
+
+    The workspace stays the default root, so committed development output and every
+    existing config path resolve exactly as before this allowance was added.
+    """
+    assert contracts.output_path("artifacts/generated/x.json") == (
+        contracts.project_root() / "artifacts/generated/x.json").resolve()

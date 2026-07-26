@@ -196,10 +196,13 @@ CI ([`.github/workflows/verify.yml`](.github/workflows/verify.yml)) runs the her
 plus registry, index-freshness, and link validation on Python 3.12, and fails the build if
 any source reaches `publish_text` without an affirmatively redistributable license.
 
-`check-fast` deliberately tolerates one declared failure: the Paper C successor's candidate
-lock binds live source bytes, so it fails once source evolves. That is recorded as
-`expected_fail` with a reason in the registry, and `make check-locks` fails if an
-`expected_fail` ever starts passing — a stale blocker is treated as an error, not a relief.
+`check-fast` deliberately tolerates two declared failures — the same one twice. The Paper C
+candidate lock binds live source bytes, so it fails once source evolves, and both the
+predecessor tree and the migrated study package carry it. Each is recorded as `expected_fail`
+with a reason in the registry, and `make check-locks` fails if an `expected_fail` ever starts
+passing — a stale blocker is treated as an error, not a relief. That the two trees fail
+*identically* (1 failed, 70 passed) is what evidences the migration preserved behaviour;
+[`tests/test_migration_manifest.py`](tests/test_migration_manifest.py) fails if they drift.
 
 `make -C papers/unified-report reproduce-check` is **not** in any read-only tier: it
 overwrites canonical figures and intermediates. Run it in a disposable worktree.
