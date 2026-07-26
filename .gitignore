@@ -89,9 +89,16 @@ artifacts/starting_type_adaptation_v1/scores/combined.parquet
 /artifacts/paper_c_dpo_v2/provenance/
 /artifacts/paper_c_dpo_v2/smoke/
 
-# benchmark-explorer: the full local index.html embeds the gated ExpGuard dataset's
-# prompt text — never commit it. Commit index.public.html (public + synthetic only).
-benchmark-explorer/index.html
+# benchmark-explorer: withdrawn, superseded by apps/benchmark-explorer/.
+# This rule used to read "Commit index.public.html (public + synthetic only)" — that
+# instruction is what produced a tracked, pushed 55 MB blob carrying all 2,000 rows of a
+# dataset whose license is NOT_SELECTED. "Public + synthetic" was asserted per file, not
+# derived per source, so it was wrong the moment a source was added. Licensing decisions
+# now live in benchmarks/registry/distribution.yaml and are applied by a build that fails
+# closed; nothing bulk under benchmark-explorer/ is committable.
+benchmark-explorer/*.html
+benchmark-explorer/*.withdrawn-local
+apps/benchmark-explorer/dist/
 
 # Office editor lock files are not publication artifacts
 ~$*

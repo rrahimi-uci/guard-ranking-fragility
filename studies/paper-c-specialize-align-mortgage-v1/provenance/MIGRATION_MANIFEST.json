@@ -10,13 +10,13 @@
   "reverify_command": "python tools/tree_digest.py papers/paper_c/specialize_then_align studies/paper-c-specialize-align-mortgage-v1 --exclude provenance/MIGRATION_MANIFEST.json --diff",
   "old_tree": {
     "path": "papers/paper_c/specialize_then_align",
-    "aggregate_sha256": "ef42f05cd322aeaa048cdfa57943ed336acf8110e8fc31df142434ee46afeeca",
+    "aggregate_sha256": "8fcb1d69a1e2595a93f0f48366b87d7e3b0f1de49e0c9492720e76709eeea306",
     "file_count": 70,
     "status": "intact_compatibility_surface"
   },
   "new_tree": {
     "path": "studies/paper-c-specialize-align-mortgage-v1",
-    "aggregate_sha256": "920ec5102d0714ece4caae2fd2432484bb61e53e2baae3d0db9b9743759d1269",
+    "aggregate_sha256": "d2129b0689de5466e6198e4b4d294644ba6af46735d91d90425801b0d9be0583",
     "file_count": 72,
     "status": "phase_4_study_package"
   },
@@ -28,11 +28,13 @@
   },
   "source_changes_since_snapshot": {
     "files": [
+      "PROTOCOL.md",
       "src/paper_c_sta/contracts.py",
       "src/paper_c_sta/ingest.py",
+      "src/paper_c_sta/splits.py",
       "tests/test_contracts.py"
     ],
-    "reason": "Two defects found by migrating, both fixed in BOTH trees so they stay byte-identical. (1) Fixed-parent repository discovery: parents[2] is correct only at depth 3; at the study package's depth 2 it resolved OUTSIDE the repository, which would have read corpora from the wrong place rather than failing. Replaced with marker-based repository_root(). (2) The storage contract's runs/ location was unreachable: output_path() rejected an absolute <repo>/runs/<slug>/ path and silently resolved a relative 'runs/x' inside the workspace, so documentation promising that routing described behaviour the code refused. Added runs_root() and a second permitted root, still fail-closed at exactly two roots, plus four tests."
+    "reason": "Three defects found by migrating, all fixed in BOTH trees so they stay byte-identical. (1) Fixed-parent repository discovery: parents[2] is correct only at depth 3; at depth 2 it resolved OUTSIDE the repository, reading corpora from the wrong place rather than failing. Replaced with marker-based repository_root(). (2) The storage contract's runs/ location was unreachable: output_path() rejected an absolute <repo>/runs/<slug>/ path and silently resolved a relative 'runs/x' inside the workspace. Added runs_root() and a second permitted root, still fail-closed at exactly two, plus four tests. (3) PROTOCOL.md specified source-group split isolation that is infeasible on the reuse corpus (9 units across 9 datasets vs. four splits at 50/20/15/15). Corrected to the achievable family/content-family closure, held-out-source transfer put out of scope, and validate_split_isolation() documented as reachable only from tests rather than wired into the pipeline."
   },
   "divergence": {
     "only_in_old_tree": [],

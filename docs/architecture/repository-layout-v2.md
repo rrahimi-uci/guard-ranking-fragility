@@ -375,6 +375,13 @@ rows of MortgageGuardBench-2K even though that dataset says its publication lice
 has not been selected. "Publicly accessible" and "not gated" do not mean
 "redistributable."
 
+**Resolved in tracking, 2026-07-26.** That file and its ungated generator were removed
+from the index, `.gitignore` no longer instructs committing them, and
+`tests/test_no_unlicensed_publication.py` fails the root suite if either returns or if any
+bulk export appears under a publication path. The blob remains in Git history and on the
+public remote; purging it is the separate destructive migration named below and has not
+been performed.
+
 Before any Pages, release, shard, or replacement build:
 
 1. create the canonical source-by-source ledger at
@@ -777,11 +784,17 @@ entry declared passing that in fact fails on `python_mismatch` (3.12 release env
    plainly: **the GCS development artefacts cannot be exactly reproduced.** They are
    development-only and nothing depends on reproducing them.
 
-4. **Source-group split isolation was infeasible as specified.** The protocol's wording
-   implies unioning on `source_id`, which left 9 units across 9 datasets and made a 4-way
-   split impossible. Splitting on the family ↔ content-family transitive closure works and
-   is what the code does. The protocol wording still needs correcting — it describes an
-   operation that cannot be performed on this corpus.
+4. **Source-group split isolation was infeasible as specified — protocol now corrected.**
+   The wording implied unioning on `source_id`, which left 9 units across 9 datasets:
+   fewer than the four splits need populated at 50/20/15/15, so no assignment satisfies it.
+   The code splits on the family ↔ content-family transitive closure. `PROTOCOL.md` in both
+   trees now states the achievable contract, puts held-out-*source* transfer out of scope
+   as not estimable on this corpus, and records that
+   `splits.validate_split_isolation()` is reachable only from the test suite — it is not
+   wired into the ingest path, so at the source level it specifies intent rather than
+   enforcing it. The validator was left checking all three levels rather than weakened to
+   the two that are achievable: relaxing it would let it pass on a corpus that cannot
+   support the claim it exists to protect.
 
 ### What Phase 2 requires and why it was not done
 
@@ -837,12 +850,12 @@ migrated tree so they stay byte-identical:
 - **The distribution gate.** No source is approved for verbatim redistribution, so
   `publishable()` returns empty and no public text build is authorized. The validator
   emits this as a standing warning on every run.
-- **Tracked, already-pushed `benchmark-explorer/index.public.html`** — 53 MB, 16,146 rows
-  across 10 sources, embedding all 2,000 MGB2K rows whose own `LICENSE_NOT_SELECTED.md`
-  states that no publication license has been selected and legal review is required. The
-  new build cannot produce this file, but the existing one is public and needs a **human
-  licensing decision**; removing it from history is a separate migration requiring
-  explicit approval.
+- **`benchmark-explorer/index.public.html` in Git history and on the public remote.**
+  Withdrawn from tracking on 2026-07-26 along with its generator, and now guarded by
+  `tests/test_no_unlicensed_publication.py` — but withdrawal is not retraction. The blob
+  (55 MB, 16,146 rows, all 2,000 MGB2K rows) is still reachable in published history.
+  Purging it rewrites public commits and breaks every existing clone, so it remains a
+  separate irreversible migration requiring explicit approval and coordination.
 - **Phase 2**, per the reasoning above.
 - **The `paper_a_sft_v2` interpreter split** (3.12 release vs. 3.14 local) is declared and
   enforced, not resolved.

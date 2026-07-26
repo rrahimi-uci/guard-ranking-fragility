@@ -32,6 +32,37 @@ notes: >
   approval and coordination with every clone.
 
 sources:
+  - source_id: guard_benchmark_hard
+    kind: draft_unlicensed
+    access_class: unresolved
+    license:
+      spdx_or_name: NOT_SELECTED
+      permits_redistribution: false
+      commercial_use: unknown
+      snapshot: >
+        No LICENSE file accompanies this corpus. Authored in-house (mortgage/fair-lending
+        hard negatives with persona, trap_type and rationale fields, same family as
+        mortgage_guard_bench_2k_v0_1_0, whose license is likewise NOT_SELECTED).
+    redistribution_decision: local_only
+    derived_output_license: none_until_source_license_selected
+    sensitive_text_class: synthetic_harmful
+    attribution_notice: null
+    reviewer: unassigned
+    decision_date: "2026-07-26"
+    row_count: 334
+    payload:
+      path: data/guard_benchmark_hard.jsonl
+      revision: "3e30663"
+      sha256: "c17ff6eb2ef46db9dc6b48229bdcf4637165c8b9946fa6ff63f9df5ed4f0a2af"
+    blocking_reason: >
+      ALREADY PUBLISHED, AND THE LEDGER DID NOT KNOW. This file is force-added past the
+      /data/ ignore rule, carries verbatim prompt text, and has been on the public remote
+      since 3e30663 -- while being absent from this ledger entirely. That is the gap the
+      ledger exists to close: gather() refuses an unknown source at build time, but nothing
+      checked corpora already tracked outside the explorer. Recorded as local_only to match
+      its in-house sibling; a human must decide whether to license it for publication or
+      withdraw it. Withdrawal would not retract the published copies.
+
   - source_id: mortgage_guard_bench_2k_v0_1_0
     kind: draft_unlicensed
     access_class: unresolved

@@ -139,6 +139,24 @@ def validate_split_isolation(
     *,
     config: Mapping | None = None,
 ) -> None:
+    """Fail if any family, content family, or source crosses a split boundary.
+
+    NOT WIRED INTO THE PIPELINE. Every caller is in the test suite, so on the reuse
+    corpus this states intent rather than enforcing it -- and it would in fact fail
+    there, at the source level: unioning on source_id yields 9 isolation units across
+    9 datasets, fewer than the four splits need populated at 50/20/15/15, so no
+    assignment satisfies it. The constraint is infeasible on that corpus, not merely
+    strict.
+
+    Left checking all three levels rather than weakened to the two that are
+    achievable. Relaxing it would make the function pass on a corpus that cannot
+    support a held-out-source claim, which is the failure it exists to prevent; the
+    honest statement is that the corpus does not meet the contract. PROTOCOL.md now
+    says so, and puts held-out-source transfer out of scope.
+
+    A study that needs source isolation must author enough independent sources to
+    make it satisfiable, then call this from the ingest path.
+    """
     if not rows:
         raise ContractError("split inventory is empty")
     cutoff = _split_contract(config)[2] if config is not None else None

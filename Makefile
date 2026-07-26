@@ -119,6 +119,13 @@ clean:      ## remove Python and paper build caches
 PY_ABS ?= $(CURDIR)/.venv/bin/python
 
 .PHONY: check-fast check-registry check-links check-locks check-papers check-data-local check-all
+.PHONY: explorer-public explorer-local
+
+explorer-public:  ## ledger-gated explorer build; emits text only for approved sources
+	$(PY_ABS) apps/benchmark-explorer/src/build.py --target public --fixtures
+
+explorer-local:  ## full-text build for local inspection; ignored dist/, never published
+	$(PY_ABS) apps/benchmark-explorer/src/build.py --target local --fixtures
 
 check-registry:  ## validate the registry + ledger and assert generated indexes are current
 	$(PY_ABS) tools/validate_registries.py

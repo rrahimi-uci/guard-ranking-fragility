@@ -215,14 +215,29 @@ per-source decision — license, access class, sensitive-text class, reviewer, a
 hash — and fails closed: a source absent from the ledger defaults to `local_only`, and the
 schema refuses `publish_text` unless the license affirmatively permits redistribution.
 
-Two decisions are outstanding and need a human with the authority to make them.
 MortgageGuardBench-2K ships `LICENSE_NOT_SELECTED.md` stating that no publication license
 has been chosen and that legal review is required before redistribution, yet all 2,000 of
-its rows are embedded in the tracked 53 MB `benchmark-explorer/index.public.html`. Several
-general-safety corpora are redistributed there as verbatim rows under noncommercial or
-unverified upstream terms. Until both are resolved, no Pages, release, or shard build is
-authorized. Note that removing the blob from the working tree does not remove it from Git
-history; a history rewrite is a separate destructive migration.
+its rows were embedded in the tracked 55 MB `benchmark-explorer/index.public.html`, along
+with several general-safety corpora redistributed as verbatim rows under noncommercial or
+unverified upstream terms.
+
+**That artifact and its ungated generator are now withdrawn from tracking** — see
+[`benchmark-explorer/README.md`](benchmark-explorer/README.md). The `.gitignore` comment
+that authorized it ("Commit index.public.html (public + synthetic only)") asserted a
+licensing conclusion per *file* while the real decision is per *source*, so it was wrong
+as soon as a source was added, and nothing checked it.
+[`tests/test_no_unlicensed_publication.py`](tests/test_no_unlicensed_publication.py)
+replaces that comment with four executable rules: the named blob and generator stay
+untracked, no bulk export is tracked under a publication path, no tracked publication file
+carries restricted-corpus prose, and the "nothing is approved for redistribution" claim
+fails loudly if a licensing decision ever changes.
+
+**Still outstanding, and needing a human with the authority to decide:** withdrawal stops
+distribution *from this repository* but does not remove the blob from Git history, and
+does not retract copies already pushed to the public remote. Purging history rewrites
+published commits and breaks every existing clone — a separate, irreversible migration
+that has not been performed. Until it is resolved, no Pages, release, or shard build is
+authorized.
 
 ## Status
 

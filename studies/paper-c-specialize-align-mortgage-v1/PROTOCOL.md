@@ -94,9 +94,25 @@ contain at least 2,000 independent `ALLOW` examples per core category. Their
 families, templates, sources, and policy vintages must be disjoint from training,
 alignment, checkpoint selection, and each other.
 
-Every row stores both `family_id` and `content_family_id`; source grouping is
-bound by `provenance.source_id`. Split validation fails if any ordinary family,
-semantic content family, or source group crosses split boundaries.
+Every row stores both `family_id` and `content_family_id`. Isolation units are
+the **transitive closure of `family_id` ↔ `content_family_id`**: a family and a
+content family that share any row are one unit, and a unit is assigned to exactly
+one split. Split validation fails if any ordinary family or semantic content
+family crosses a split boundary.
+
+**Source-level disjointness is not claimed on the reuse corpus, because it is not
+achievable there.** An earlier version of this section additionally bound grouping
+by `provenance.source_id` and failed validation on any source crossing a split.
+Unioning on `source_id` over the reuse corpus yields 9 isolation units across 9
+datasets — fewer units than the four splits need populated at the prescribed 50 /
+20 / 15 / 15 proportions, so no assignment satisfies it and the constraint is
+infeasible rather than merely strict. Two consequences, stated rather than
+buried: this study **cannot** support a held-out-*source* transfer claim, and
+`splits.validate_split_isolation()` still checks all three levels but is reachable
+only from the test suite — it is not wired into the pipeline, so on the reuse
+corpus it is a specification of intent, not an operating control. A study that
+needs held-out-source transfer must author enough independent sources to make the
+constraint satisfiable first.
 
 Temporal routing is explicitly opt-in. Only mortgage rows carrying
 `temporal_evaluation_eligible=true` are compared against the configured
@@ -287,8 +303,10 @@ for `C_specialist_source` on the prespecified capacity-evaluation mixture.
 `REVIEW` does not silently count as `INTERVENE`: report false allow, false
 intervention, review rate, action confusion, and risk-coverage separately.
 Report per-category AP,
-calibration, protected-pair invariance, held-out-family/source transfer, router
-regret, and mortgage policy-time transfer.
+calibration, protected-pair invariance, held-out-family transfer, router
+regret, and mortgage policy-time transfer. Held-out-*source* transfer is
+explicitly out of scope: the reuse corpus cannot be split source-disjointly (see
+the isolation section), so the quantity is not estimable here.
 
 The two pinned backbones and three primary seeds are a fixed named panel.
 Inference resamples scenario families only while pairing arm comparisons within

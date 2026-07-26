@@ -1,34 +1,48 @@
-# Benchmark Explorer
+# Benchmark Explorer — withdrawn; superseded by `apps/benchmark-explorer/`
 
-Self-contained HTML explorers for browsing every available sample in each included benchmark.
-Each card shows the source prompt or task, its label, tags, and supporting benchmark context.
-Search and label filters run against the complete datasets, with large result sets paginated at
-100 samples per page.
+This directory's published artifact has been **withdrawn from tracking**, and its
+generator removed, because both violated the distribution ledger.
 
-Regenerate everything deterministically in source order:
+## What was wrong
+
+`index.public.html` was a tracked, pushed, 55.4 MB single-file blob inlining 16,146 rows
+across 10 sources. Among them were all 2,000 rows of `mortgage_guard_bench_2k_v0_1_0`,
+whose own [`LICENSE_NOT_SELECTED.md`](../data/mortgage_guard_bench_2k_v0_1_0/LICENSE_NOT_SELECTED.md)
+states that no publication license has been selected and that legal review is required.
+[`benchmarks/registry/distribution.yaml`](../benchmarks/registry/distribution.yaml) records
+that source as `local_only` with `permits_redistribution: false`. The file was verified to
+carry substantive prompt text, not identifiers alone.
+
+`generate.py` inlined every row of every source regardless of license, with no ledger
+consulted and no allowlist. Keeping it would let the same artifact be recreated and
+re-committed by anyone who ran the documented command. It is removed rather than fixed;
+its replacement already exists and is gated. Recover it from Git history if needed.
+
+## Use instead
+
+[`apps/benchmark-explorer/`](../apps/benchmark-explorer/) builds from a positive allowlist
+and fails closed:
 
 ```bash
-python3 benchmark-explorer/generate.py
+make -C .. explorer-public     # ledger-gated; emits text only for approved sources
+python apps/benchmark-explorer/src/build.py --target local   # full text, ignored dist/, never published
 ```
 
-## Files
+A source absent from the ledger is treated as forbidden, not permitted-by-default, and the
+build refuses to run on an unknown source id. Eight negative tests in
+[`apps/benchmark-explorer/tests/`](../apps/benchmark-explorer/tests/) cover the gate, and
+[`tests/test_no_unlicensed_publication.py`](../tests/test_no_unlicensed_publication.py)
+fails the root suite if a bulk artifact like this one is ever tracked again.
 
-| File | Contents | Committed? |
-|------|----------|------------|
-| `generate.py` | Generator. Reads the 7 `data/benchmarks/full/*.jsonl` sets, SafePyramid, the hardened mortgage guard set, MortgageGuardBench-2K, and ExpGuard. It can use `HF_TOKEN` from `.env` to cache ExpGuard when needed. | ✅ yes |
-| `index.public.html` | **Shareable build.** All 16,146 rows from 10 public/synthetic benchmark sections. No gated text. | ✅ yes |
-| `index.html` | **Full local build.** All 18,421 rows in 13 sections: everything above **plus all 2,275 gated ExpGuard rows** across finance, healthcare, and law. Embeds gated prompt text. | ❌ **gitignored** |
+**As of the current ledger, no source is approved for verbatim redistribution**, so a
+public build carries counts and labels but no source text at all.
 
-## Why two files
+## Still open — needs a human decision
 
-ExpGuard (`6rightjade/expguardmix`) is a **gated / licensed** dataset. Its prompt text must
-not be redistributed, so the repo never commits it (only text-free hashes + labels + scores
-live under `artifacts/expguard_external/`).
+Withdrawing the file from tracking stops further distribution *from this repository*. It
+does **not** remove the blob from Git history, and it does not retract the copies already
+pushed to the public remote. Purging it from history is a separate, irreversible migration
+that rewrites published commits and breaks every existing clone, so it requires explicit
+approval and coordination — it has not been done.
 
-- `index.html` embeds ExpGuard text and is therefore **gitignored** — for local viewing only.
-- `index.public.html` is the gated-free equivalent — safe to commit and share.
-
-`generate.py` builds `index.html` with ExpGuard when the dataset is already cached or when a valid
-`HF_TOKEN` in `.env` can access it; otherwise it prints a note and `index.html` omits ExpGuard.
-
-> ⚠ Never commit or share `index.html`. Share `index.public.html`.
+The local copy is retained, untracked, as `index.public.html.withdrawn-local`.
