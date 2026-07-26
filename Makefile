@@ -110,3 +110,46 @@ clean:      ## remove Python and paper build caches
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
 	find . -type f -name '*.pyc' -delete
 	$(MAKE) -C $(PAPER_DIR) clean
+
+# ─────────────────────────────────────────────────────────────── verification tiers
+# Repository Layout v2, Phase 1. Every tier names one absolute interpreter, because
+# nested Makefiles disagree on the variable name (PY vs PYTHON) and the local .venv is
+# Python 3.14 while Paper A's documented release environment requires 3.12 -- local
+# convenience success is not release verification.
+PY_ABS ?= $(CURDIR)/.venv/bin/python
+
+.PHONY: check-fast check-registry check-links check-locks check-papers check-data-local check-all
+
+check-registry:  ## validate the registry + ledger and assert generated indexes are current
+	$(PY_ABS) tools/validate_registries.py
+	$(PY_ABS) tools/render_indexes.py --check
+
+check-links:  ## verify relative Markdown links in indexes resolve
+	$(PY_ABS) tools/check_markdown_links.py
+
+check-fast: check-registry check-links  ## hermetic tests across every suite
+	$(PY_ABS) -m pytest -q
+	$(MAKE) -C mortgage-benchmark test PY=$(PY_ABS)
+	$(MAKE) -C papers/base-adapter-composition test PYTHON=$(PY_ABS)
+	@echo "--- Paper C suites: predecessor and successor ---"
+	@$(MAKE) -C papers/paper_c test PYTHON=$(PY_ABS) \
+	  || echo "NOTE paper_c predecessor: expected_fail, see studies/registry.yaml"
+	@$(MAKE) -C papers/paper_c/specialize_then_align test PY=$(PY_ABS) \
+	  || echo "NOTE specialize_then_align: expected_fail (candidate lock binds live source bytes)"
+
+check-locks:  ## contract-specific checks; expected_fail cases are declared in the registry
+	$(PY_ABS) tools/validate_registries.py --run-verification
+
+check-papers:  ## isolated manuscript builds plus link checks
+	bash papers/paper_c/specialize_then_align/manuscript/build.sh
+	$(PY_ABS) tools/check_markdown_links.py
+
+check-data-local:  ## inventories over ignored local data; explicitly not hermetic
+	@test -d data/benchmarks || { echo "data/benchmarks absent: local-only tier"; exit 1; }
+	$(PY_ABS) -c "import pathlib,json; \
+	  fs=sorted(pathlib.Path('data/benchmarks').rglob('*.jsonl')); \
+	  print(f'{len(fs)} local corpora'); \
+	  [print(f'  {f.name}: {sum(1 for _ in f.open())} rows') for f in fs]"
+
+check-all: check-fast check-locks check-papers  ## aggregate; check-data-local is local-only
+	@echo "check-all complete"

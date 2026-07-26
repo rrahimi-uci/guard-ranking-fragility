@@ -1,0 +1,307 @@
+# Study registry — normative source of truth
+#
+# Validated by registry.schema.json. The root README, papers/README.md, and every
+# status table summarize this file; none of them redefines study state.
+#
+# Two fields do the work that prose kept getting wrong:
+#   expected_verification_status  a historical lock is *expected* to fail against an
+#                                 evolved tree. Declaring that is how a real
+#                                 regression stops hiding behind a known failure.
+#   claim_authorization           false unless a contemporaneous authorization chain
+#                                 proves otherwise. Development output never becomes
+#                                 evidence by being moved, renamed, or re-verified.
+
+schema_version: 1
+registry_id: guard_ranking_fragility_studies_v1
+
+last_verified:
+  git_revision: "9361982"
+  dirty_tree: true
+  date: "2026-07-26"
+
+studies:
+  # ─────────────────────────────────────────────────────────── released / consumed
+  - study_id: paper_a_sft_v2
+    title: "Fine-tuning specializes a guard"
+    question: >
+      On a fixed four-checkpoint panel, what does LoRA-SFT change relative to the same
+      checkpoint before tuning, split into represented-source and held-out transfer?
+    study_state: released
+    evidence_state: retrospective_estimation
+    publication_state: current
+    distribution_state: text_free_only
+    test_exposure: check_fast
+    evidence_tier: "retrospective estimation on an inspected fixed panel; not preregistered"
+    claim_authorization: true
+    contract_type: live_release
+    verification_mode: live_tree
+    verification_command: "make repro-release"
+    expected_verification_status: expected_pass
+    code_root: experiments/
+    config_paths: [configs/paper_a_sft.yaml, configs/paper_a_sft_v2_release_anchor.json]
+    artifact_roots: [artifacts/paper_a_sft_v2/, artifacts/paper_a_sft/]
+    manuscript_paths: [papers/finetuning-specialization/, papers/unified-report/]
+    lock_bound_paths: true
+    source_snapshot: "artifacts/paper_a_sft_v2/ execution-source snapshot"
+    notes: >
+      The live compatibility contract is the release-cache contract. The historical
+      training LOCK.json validates fully only against its recorded execution-source
+      snapshot; four bound source files differ from their recorded hashes in the
+      hardened live checkout, which is expected and is not a regression.
+
+  - study_id: paper_a_sft_v1_historical
+    title: "Paper A v1 historical training lock"
+    question: "Archival predecessor of the v2 panel."
+    study_state: superseded
+    evidence_state: development_only
+    publication_state: historical
+    distribution_state: local_only
+    test_exposure: check_locks
+    evidence_tier: "historical; superseded by paper_a_sft_v2"
+    claim_authorization: false
+    contract_type: historical_scientific_lock
+    verification_mode: source_snapshot
+    verification_command: "make verify-legacy-lock"
+    expected_verification_status: expected_fail
+    verification_failure_reason: >
+      Bound source files have legitimately evolved since the v1 lock was issued. The
+      lock must be verified in its recorded immutable snapshot, never made green by
+      rewriting the historical contract.
+    code_root: experiments/
+    artifact_roots: [artifacts/paper_a_sft/]
+    lock_bound_paths: true
+    successor: paper_a_sft_v2
+
+  - study_id: base_adapter_composition
+    title: "Output-space composition recovers transfer without retraining"
+    question: >
+      Does a calibrated equal-weight average of a base guard and its own SFT adapter
+      recover the held-out transfer that fine-tuning gave up?
+    study_state: released
+    evidence_state: retrospective_estimation
+    publication_state: current
+    distribution_state: text_free_only
+    test_exposure: check_fast
+    evidence_tier: "retrospective estimation, fixed panel, descriptive intervals"
+    claim_authorization: true
+    contract_type: live_release
+    verification_mode: live_tree
+    verification_command: "make -C papers/base-adapter-composition test"
+    expected_verification_status: expected_pass
+    code_root: experiments/
+    artifact_roots: [artifacts/paper_a_sft_v2/]
+    manuscript_paths: [papers/base-adapter-composition/, papers/unified-report/]
+    lock_bound_paths: true
+    consumes: [paper_a_sft_v2]
+
+  - study_id: klsft_v1
+    title: "KL-regularized SFT as an anti-forgetting control"
+    question: "Does a base-anchored KL penalty preserve the transfer plain SFT gives up?"
+    study_state: released
+    evidence_state: retrospective_estimation
+    publication_state: current
+    distribution_state: text_free_only
+    test_exposure: none
+    evidence_tier: "retrospective, four checkpoints, no interval attached"
+    claim_authorization: true
+    contract_type: checksum_only_release
+    verification_mode: live_tree
+    verification_command: "ls artifacts/klsft_v1/"
+    expected_verification_status: expected_pass
+    code_root: experiments/
+    artifact_roots: [artifacts/klsft_v1/]
+    manuscript_paths: [papers/unified-report/]
+    lock_bound_paths: false
+    consumes: [paper_a_sft_v2]
+
+  - study_id: expguard_external
+    title: "External validation on ExpGuard"
+    question: "Do the base guards rank domain violations well on expert-annotated finance/health/law prompts?"
+    study_state: released
+    evidence_state: retrospective_estimation
+    publication_state: current
+    distribution_state: local_only
+    test_exposure: none
+    evidence_tier: "expert-annotated; the strongest tier in the repository"
+    claim_authorization: true
+    contract_type: checksum_only_release
+    verification_mode: live_tree
+    verification_command: "ls artifacts/expguard_external/"
+    expected_verification_status: expected_pass
+    code_root: experiments/
+    artifact_roots: [artifacts/expguard_external/]
+    manuscript_paths: [papers/unified-report/]
+    lock_bound_paths: false
+    notes: "Gated dataset; row text is not redistributable."
+
+  # ──────────────────────────────────────────────────── contract-drifted / blocked
+  - study_id: starting_type_adaptation_v1
+    title: "Adapting released guards: a confirmatory starting-type study"
+    question: "Does the specialization tradeoff also hit models that are already purpose-built guards?"
+    study_state: contract_drifted
+    evidence_state: preregistered_analysis
+    publication_state: current
+    distribution_state: text_free_only
+    test_exposure: check_fast
+    evidence_tier: "analysis-preregistered in a committed claim registry; not blind on data"
+    claim_authorization: true
+    # Not a protocol candidate: committed checksummed artifacts exist and the unified
+    # report states RQ1/RQ2 verdicts from them. The defect is contract drift, not
+    # absence of evidence, so the contract class is the release it actually has.
+    contract_type: checksum_only_release
+    verification_mode: live_tree
+    verification_command: "ls artifacts/starting_type_adaptation_v1/"
+    expected_verification_status: expected_fail
+    verification_failure_reason: >
+      No final LOCK.json exists, the normative contract is dev_nonfinal, and the
+      recorded authoring-config hash no longer matches configs/starting_type_adaptation_v1.yaml.
+      Committed results exist but the contract has drifted; disposition unrecorded.
+    code_root: experiments/
+    config_paths: [configs/starting_type_adaptation_v1.yaml]
+    environment_path: requirements-starting-type-adaptation.txt
+    artifact_roots: [artifacts/starting_type_adaptation_v1/]
+    protocol_paths: [papers/unified-report/proposal.md]
+    manuscript_paths: [papers/unified-report/]
+    lock_bound_paths: true
+    notes: >
+      claim_authorization is true because RQ1/RQ2 verdicts are reported in the unified
+      report, but the contract is drifted; resolve before any new claim.
+
+  - study_id: mortgage_benchmark_v1_hmda2022
+    title: "HMDA-grounded dual-labeled mortgage guard benchmark"
+    question: "Can a general-safety score see a mortgage-policy violation that reads as polite text?"
+    study_state: released
+    evidence_state: retrospective_estimation
+    publication_state: current
+    distribution_state: unresolved
+    test_exposure: check_fast
+    evidence_tier: "LLM-judge and policy-card-consistent; not SME-adjudicated"
+    claim_authorization: true
+    contract_type: checksum_only_release
+    verification_mode: live_tree
+    verification_command: "make -C mortgage-benchmark test"
+    expected_verification_status: expected_pass
+    code_root: mortgage-benchmark/
+    artifact_roots: [mortgage-benchmark/out_eval/]
+    manuscript_paths: [papers/mortgage-guardrail-benchmark/, papers/unified-report/]
+    lock_bound_paths: false
+    notes: >
+      Checksums cover release bytes only, not the generator, judge, configuration, or
+      code. distribution_state is unresolved: see benchmarks/registry/distribution.yaml.
+
+  # ───────────────────────────────────────────────────────────── Paper C surfaces
+  - study_id: paper_c_matched_dpo_scaffold
+    title: "Paper C root-level matched-DPO candidate (unrun scaffold)"
+    question: "Does DPO's frozen reference help a binary guard beyond an uncentered pairwise loss?"
+    study_state: superseded
+    evidence_state: none
+    publication_state: superseded
+    distribution_state: local_only
+    test_exposure: check_fast
+    evidence_tier: "none; never executed"
+    claim_authorization: false
+    contract_type: protocol_candidate
+    verification_mode: candidate_inventory
+    verification_command: "PYTHONPATH=. .venv/bin/python -m pytest tests/test_paper_c_dpo.py -q"
+    expected_verification_status: expected_pass
+    code_root: experiments/
+    config_paths: [configs/paper_c_dpo_v2.json]
+    protocol_paths: [docs/paper-c-prereg-v2.md, docs/paper-c-code-design.md]
+    lock_bound_paths: false
+    successor: paper_c_specialize_align_mortgage_v1
+    notes: >
+      A flat scaffold spanning docs/, configs/, experiments/ and tests/. Never run. Its
+      disposition relative to the active successor is recorded here; some older indexes
+      still described it as current.
+
+  - study_id: paper_c_reference_centering
+    title: "Paper C predecessor: reference centering (stopped)"
+    question: "What does DPO's frozen reference buy a one-token binary safety guard?"
+    study_state: stopped
+    evidence_state: none
+    publication_state: historical
+    distribution_state: local_only
+    test_exposure: check_fast
+    evidence_tier: "none; final smoke failed a policy/reference identity check before Stage 2"
+    claim_authorization: false
+    contract_type: historical_scientific_lock
+    verification_mode: source_snapshot
+    # The CPU contract suite passes (35 tests). What legitimately fails is *lock*
+    # validation against the evolved tree -- a different operation, recorded in notes
+    # rather than conflated with the test command, so a real suite regression is visible.
+    verification_command: "make -C papers/paper_c test"
+    expected_verification_status: expected_pass
+    code_root: papers/paper_c/
+    status_path: papers/paper_c/STATUS.md
+    manuscript_paths: [papers/paper_c/manuscript/]
+    lock_bound_paths: true
+    successor: paper_c_specialize_align_mortgage_v1
+    notes: >
+      All seven cloud attempts exited unsuccessfully. Supplies no reusable result,
+      pilot estimate, readiness gate, or lock parent. The frontier-estimand and
+      power-gate design work is retained for the record but does not transfer.
+
+  - study_id: paper_c_specialize_align_mortgage_v1
+    title: "Specialize, Then Align? (stopped after the disjoint pilot)"
+    question: >
+      With the student objective fixed, do adjudicated specialist candidates teach a
+      more uniformly capable guard than adjudicated generalist candidates?
+    study_state: stopped
+    evidence_state: development_only
+    publication_state: draft
+    distribution_state: local_only
+    test_exposure: check_fast
+    evidence_tier: "development-only; auto-adjudicated against gold, no human reviewer, no sealed cohort"
+    claim_authorization: false
+    contract_type: protocol_candidate
+    verification_mode: candidate_inventory
+    verification_command: "make -C papers/paper_c/specialize_then_align test"
+    expected_verification_status: expected_fail
+    verification_failure_reason: >
+      The tracked candidate lock binds live source bytes and the source tree has since
+      evolved, so test_candidate_lock fails by design. The candidate authorizes no data
+      build, training, or claim, and no child authorization lock exists.
+    code_root: papers/paper_c/specialize_then_align/
+    config_paths:
+      - papers/paper_c/specialize_then_align/config/study.json
+      - papers/paper_c/specialize_then_align/config/smoke.json
+    protocol_paths:
+      - papers/paper_c/specialize_then_align/PROTOCOL.md
+      - papers/paper_c/specialize_then_align/DEVELOPMENT_PLAN.md
+    status_path: papers/paper_c/specialize_then_align/STATUS.md
+    manuscript_paths: [papers/paper_c/specialize_then_align/manuscript/]
+    lock_bound_paths: true
+    predecessor: paper_c_reference_centering
+    supersedes: [paper_c_reference_centering, paper_c_matched_dpo_scaffold]
+    external_object_manifest: papers/paper_c/specialize_then_align/provenance/EXTERNAL_OBJECT_MANIFEST.json
+    restore_command: "gsutil -m cp -r gs://jazzx-gcp-poc-1-paper-c/v2/sta/ <dest>"
+    notes: >
+      Stopped after the 44-cell pilot. Its result is an identifiability finding: with a
+      three-action head, gold-based adjudication, and structured fields derived from
+      gold, the two candidate-source inventories were 98.9%/97.7% byte-identical and
+      the primary contrast was unidentified. The 66-cell primary panel was never
+      authorized; all five readiness gates remain false.
+
+  # ─────────────────────────────────────────────────────────────── publications
+  - study_id: unified_report
+    title: "The Safety-Guard Benchmark Chooses the Winner"
+    question: "Synthesis: how the benchmark co-produces a guard's apparent quality."
+    study_state: released
+    evidence_state: retrospective_estimation
+    publication_state: current
+    distribution_state: text_free_only
+    test_exposure: check_papers
+    evidence_tier: "mixed; each act declares its own tier"
+    claim_authorization: true
+    contract_type: live_release
+    verification_mode: live_tree
+    verification_command: "make -C papers/unified-report reproduce"
+    expected_verification_status: expected_pass
+    code_root: papers/unified-report/
+    manuscript_paths: [papers/unified-report/unified_report.pdf, papers/unified-report/slides/]
+    lock_bound_paths: true
+    consumes: [paper_a_sft_v2, base_adapter_composition, klsft_v1, expguard_external,
+               starting_type_adaptation_v1, mortgage_benchmark_v1_hmda2022]
+    notes: >
+      reproduce-check mutates canonical figure/intermediate files; it is excluded from
+      read-only verification tiers until refactored to temporary output roots.
