@@ -129,6 +129,8 @@ check-links:  ## verify relative Markdown links in indexes resolve
 
 check-fast: check-registry check-links  ## hermetic tests across every suite
 	$(PY_ABS) -m pytest -q
+	$(PY_ABS) -m pytest apps/benchmark-explorer/tests -q
+	$(PY_ABS) apps/benchmark-explorer/src/build.py --target public --fixtures
 	$(MAKE) -C mortgage-benchmark test PY=$(PY_ABS)
 	$(MAKE) -C papers/base-adapter-composition test PYTHON=$(PY_ABS)
 	@echo "--- Paper C suites: predecessor and successor ---"

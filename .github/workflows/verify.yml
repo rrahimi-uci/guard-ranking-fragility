@@ -53,6 +53,14 @@ jobs:
       - name: Root test suite
         run: python -m pytest -q
 
+      - name: Explorer distribution gate (negative tests)
+        run: python -m pytest apps/benchmark-explorer/tests -q
+
+      - name: Explorer fixture build must emit no source text
+        run: |
+          python apps/benchmark-explorer/src/build.py --target public --fixtures
+          ! grep -rq "SYNTHETIC FIXTURE" apps/benchmark-explorer/dist/public/
+
       - name: Mortgage benchmark suite
         run: make -C mortgage-benchmark test PY=$(which python)
 

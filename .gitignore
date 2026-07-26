@@ -98,3 +98,7 @@ benchmark-explorer/index.html
 
 # Transient execution outputs (storage contract: runs/<study_id>/<run_id>/)
 /runs/
+
+# Explorer build roots are fully ignored: dist/public is audited allowlist-only
+# staging, dist/local is gated full-data output. The pre-existing global `dist/` rule
+# already covers them; the build creates both. Never a tracked Git blob.
