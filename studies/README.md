@@ -11,12 +11,12 @@ Registry `guard_ranking_fragility_studies_v1` last verified at `9361982` on 2026
 
 | Study | State | Evidence | Claims? | Contract | Verification |
 | --- | --- | --- | --- | --- | --- |
-| `paper_a_sft_v2` | released | retrospective estimation | **yes** | live release | expected pass |
-| `paper_a_sft_v1_historical` | superseded | development only | no | historical scientific lock | expected fail |
+| `paper_a_sft_v2` | released | retrospective estimation | **yes** | live release | expected fail |
+| `paper_a_sft_v1_historical` | superseded | development only | no | historical scientific lock | expected pass |
 | `base_adapter_composition` | released | retrospective estimation | **yes** | live release | expected pass |
 | `klsft_v1` | released | retrospective estimation | **yes** | checksum only release | expected pass |
 | `expguard_external` | released | retrospective estimation | **yes** | checksum only release | expected pass |
-| `starting_type_adaptation_v1` | contract-drifted | preregistered analysis | **yes** | checksum only release | expected fail |
+| `starting_type_adaptation_v1` | contract-drifted | preregistered analysis | **yes** | checksum only release | expected pass |
 | `mortgage_benchmark_v1_hmda2022` | released | retrospective estimation | **yes** | checksum only release | expected pass |
 | `paper_c_matched_dpo_scaffold` | superseded | none | no | protocol candidate | expected pass |
 | `paper_c_reference_centering` | stopped | none | no | historical scientific lock | expected pass |
@@ -28,15 +28,11 @@ Registry `guard_ranking_fragility_studies_v1` last verified at `9361982` on 2026
 A historical lock is *expected* to fail against an evolved tree. Declaring that
 is how a real regression stops hiding behind a known one.
 
-**`paper_a_sft_v1_historical`** — `make verify-legacy-lock`
+**`paper_a_sft_v2`** — `make repro-release PY=$(pwd)/.venv/bin/python`
 
-> Bound source files have legitimately evolved since the v1 lock was issued. The lock must be verified in its recorded immutable snapshot, never made green by rewriting the historical contract.
+> LOCK.json records a runtime software fingerprint pinning Python 3.12; the local .venv is 3.14.4, so score validation reports python_mismatch. This is a check-release-tier operation requiring the pinned interpreter, not a local one. Local convenience success would not be release verification.
 
-**`starting_type_adaptation_v1`** — `ls artifacts/starting_type_adaptation_v1/`
-
-> No final LOCK.json exists, the normative contract is dev_nonfinal, and the recorded authoring-config hash no longer matches configs/starting_type_adaptation_v1.yaml. Committed results exist but the contract has drifted; disposition unrecorded.
-
-**`paper_c_specialize_align_mortgage_v1`** — `make -C papers/paper_c/specialize_then_align test`
+**`paper_c_specialize_align_mortgage_v1`** — `make -C papers/paper_c/specialize_then_align test PY=$(pwd)/.venv/bin/python`
 
 > The tracked candidate lock binds live source bytes and the source tree has since evolved, so test_candidate_lock fails by design. The candidate authorizes no data build, training, or claim, and no child authorization lock exists.
 

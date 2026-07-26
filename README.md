@@ -172,7 +172,17 @@ make check-fast         # the above, plus every hermetic test suite
 make check-locks        # runs each study's declared verification command
 make check-papers       # isolated manuscript builds
 make check-data-local   # inventories over ignored local corpora (explicitly not hermetic)
+make check-release      # release reproduction under pinned Python 3.12
 ```
+
+`check-release` exists because Paper A's `LOCK.json` pins a runtime software fingerprint
+at Python 3.12 while the development `.venv` is 3.14 — so a local pass would not be
+release verification. It skips cleanly, with install instructions, when no suitable 3.12
+environment is present.
+
+CI ([`.github/workflows/verify.yml`](.github/workflows/verify.yml)) runs the hermetic tier
+plus registry, index-freshness, and link validation on Python 3.12, and fails the build if
+any source reaches `publish_text` without an affirmatively redistributable license.
 
 `check-fast` deliberately tolerates one declared failure: the Paper C successor's candidate
 lock binds live source bytes, so it fails once source evolves. That is recorded as

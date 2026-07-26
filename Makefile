@@ -151,5 +151,23 @@ check-data-local:  ## inventories over ignored local data; explicitly not hermet
 	  print(f'{len(fs)} local corpora'); \
 	  [print(f'  {f.name}: {sum(1 for _ in f.open())} rows') for f in fs]"
 
+# Paper A's LOCK.json pins a runtime software fingerprint at Python 3.12. The default
+# .venv is 3.14, so release reproduction needs its own interpreter and its own tier;
+# a local pass under 3.14 would not be release verification.
+PY_RELEASE ?= /opt/homebrew/bin/python3.12
+
+check-release:  ## pinned-3.12 release reproduction; skips cleanly if that env lacks deps
+	@# One shell: each recipe line gets its own, so a bare `exit 0` would not skip the rest.
+	@set -e; \
+	if [ ! -x "$(PY_RELEASE)" ]; then \
+	  echo "SKIP check-release: no interpreter at $(PY_RELEASE)"; exit 0; fi; \
+	"$(PY_RELEASE)" -c 'import sys; sys.exit(0 if sys.version_info[:2]==(3,12) else 1)' \
+	  || { echo "SKIP check-release: $(PY_RELEASE) is not Python 3.12"; exit 0; }; \
+	"$(PY_RELEASE)" -c 'import numpy, pandas, sklearn' 2>/dev/null \
+	  || { echo "SKIP check-release: the 3.12 env lacks scientific deps."; \
+	       echo "  to enable: $(PY_RELEASE) -m pip install -r requirements.txt"; exit 0; }; \
+	echo "3.12 env ready; running release reproduction"; \
+	$(MAKE) repro-release PY="$(PY_RELEASE)"
+
 check-all: check-fast check-locks check-papers  ## aggregate; check-data-local is local-only
 	@echo "check-all complete"
