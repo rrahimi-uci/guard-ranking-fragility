@@ -1,81 +1,81 @@
-# Paper C v2 status
+# Paper C v2 status — STOPPED before the primary panel
 
-**Date:** 2026-07-25  
-**State:** redesigned at the protocol and schema level; data curation, pilot
-training, and primary training are not authorized
+**Date:** 2026-07-26
+**State:** stopped by decision after the disjoint pilot; the primary panel was never
+authorised and no confirmatory claim exists
 
-## Specified
+## Why it stopped
 
-- isolated v2 namespace and predecessor provenance;
-- five core focal categories crossed with two pinned backbones;
-- three semantic deployment actions plus separate specialist `ABSTAIN` and
-  aggregation `NO_CONSENSUS` states;
-- manifest-bound general-safety policy and immutable, row-bound US-federal
-  mortgage `policy_context` contracts, including snapshot-object and
-  policy-vintage-lock hashes;
-- five matched student arms, including the same-objective
-  `generalist_cm_dpo` control;
-- primary contrast `specialist_cm_dpo - generalist_cm_dpo`;
-- four family-disjoint development roles: specialist training, alignment pool,
-  calibration, and checkpoint selection;
-- explicit `temporal_evaluation_eligible` routing, preventing ordinary
-  current-vintage mortgage rows from being diverted into the temporal test;
-- family, content-family, and source-group isolation across every split;
-- independent, low-prevalence calibration and sealed streams with a primary
-  minimum of 2,000 `ALLOW` examples per core category in each;
-- two-threshold `ALLOW / REVIEW / INTERVENE` decision rule;
-- fixed-two-backbone inferential scope;
-- exact evidence-bound readiness gates;
-- policy-source coverage records for both core and all seven held-out mortgage
-  transfer categories;
-- authority-byte archives whose unique excerpt records bind each excerpt hash to
-  the exact authority IDs it supports;
-- an ordered pilot/primary lock chain with a mandatory post-pilot prospective
-  primary-protocol freeze and distinct pilot versus primary data/preference locks;
-- candidate protocol-lock implementation and an unrun manuscript draft.
+The pilot did what a pilot is for: it found that the instrument could not express its
+own treatment. Under a three-action head with gold-based adjudication and
+deterministically derived structured fields, the two candidate-source inventories were
+**98.9% and 97.7% byte-identical**. The two CM-DPO arms therefore trained on the same
+pairs for ~98% of matched events, and the primary contrast
+`specialist_cm_dpo - generalist_cm_dpo` was not estimable.
 
-## Frozen run inventory
+A fix was implemented and verified — letting each teacher author its own verdict drops
+byte identity to **14.4%** — but the study was stopped before spending the remaining
+~5 hours and ~$50 to run it, because the pilot arms sat within 0.006 of each other
+against a projected primary resolution of ±0.007. The decision was to bank the
+methodological findings rather than pursue a probable bounded null.
 
-The disjoint pilot uses seeds 7 and 8: four joint references, 20 specialists,
-and 20 aligned students, for 44 cells. The primary panel uses seeds 42, 43, and
-44: six joint references, 30 specialists, and 30 aligned students, for 66 cells.
-The complete planned program therefore contains 110 training cells. Pilot cells
-are not reused in the primary inventory.
+## What was completed
 
-## Not completed and therefore not claimable
+- 13,266-row corpus, 84.9% reused from existing repository benchmarks, 15.1% generated
+  to fill two genuine gaps; 10,990 split units with zero family or content-family
+  leakage.
+- 60 infrastructure cells on A100: 10 joint multitask references, 50 category
+  specialists. 400 steps on 6,608 rows in 92-105 s per cell.
+- 4 preference inventories, category-wise temperature calibrated.
+- The complete 44-cell pilot panel: 4 references + 20 specialists + 20 students across
+  all five arms, trained and scored over the checkpoint ladder.
+- Pilot freeze executed.
 
-- signed general-safety annotation rubric and mortgage policy review;
-- immutable, versioned source archives and verified coverage records;
-- an SME-signed pre-cutoff policy snapshot and complete two-sided vintage
-  inventory (the candidate inventory currently has only the unsigned post side);
-- licence-compatible, family-isolated input cohorts;
-- two-reviewer mortgage adjudication and blinded preference adjudication;
-- independent calibration and sealed `ALLOW` cohorts;
-- disjoint 44-cell pilot and prospective power/margin freeze;
-- any of the 66 primary cells;
-- checkpoint selection or sealed scoring;
-- any empirical, architecture-general, legal-compliance, or credit-decision
-  result.
+## What was never done, and is therefore not claimable
 
-All five readiness values and evidence pointers remain false/null. Training is
-blocked until the evidence records verify and the appropriate lock is issued.
+- the 66-cell primary panel;
+- any sealed evaluation — no separately authored sealed cohort exists;
+- the three ensemble baselines (implemented, never scored);
+- SME sign-off, signed annotation rubric, licence ledger, two-reviewer adjudication.
+  All five readiness gates remain false. Adjudication was automatic against gold, not
+  human, and no row is counsel-reviewed.
+- **No claim about whether specialise-then-align works.** The single measured contrast
+  is invalid by construction and must not be cited in either direction.
 
-## Predecessor boundary
+## Findings that stand
 
-The reference-centering study remains historical. Its final smoke completed two
-Stage-1 Qwen steps, then failed before Stage-2 training because the policy and
-reference margins differed by `0.375`, above the `0.001` contract. All seven
-cloud attempts exited unsuccessfully. See
-`provenance/LEGACY_REFERENCE_CENTERING.json`. Nothing from that run populates a
-v2 result, pilot estimate, readiness gate, or lock parent.
+1. **Source invariance.** With three actions, gold-based adjudication, and structured
+   fields derived from gold, cross-model preference pairs are near-source-invariant:
+   100% identical chosen actions, 98% byte-identical pairs, between-arm policy movement
+   of 0.13 logits against 2.4 within-arm. Generative teacher authoring restores the
+   treatment (identity 98.9% -> 14.4%) and, as a side effect, populates the
+   `teacher_agreement` stratum that was structurally empty before (0 -> 303 of 355).
+2. **Calibration infeasibility at 1.5-1.7B.** No operating point satisfies a 5%
+   worst-category false-alarm target, a 10% review budget, and a bounded
+   intervene-miss rate simultaneously, in any of the 20 pilot cells.
+3. **Derived cohort size.** The specificity-cohort minimum is 1,825 ALLOW rows per core
+   category from a Wald half-width of 0.01 on a 5% false-alarm rate, replacing the
+   2,000 that was asserted in six places and derived in none.
 
-## Next authorized sequence
+## Implementation defects found and fixed
 
-1. Policy and domain reviewers sign the policy snapshots, focal-category rubric,
-   mortgage coverage matrix, and action definitions.
-2. Build the pilot-only families, independent calibration stream, and blinded
-   candidate/adjudication inventory.
-3. Execute the disjoint 44-cell pilot and freeze family counts, margins,
-   thresholds, and the primary protocol.
-4. Validate all five evidence-bound readiness gates.
-5. Only then authorize the 66-cell primary panel and one-time sealed scoring.
+Four would have silently corrupted the full panel:
+
+- `composite_alignment_loss` was imported by the trainer and never called; the
+  soft worst-category term, gold anchor, and replay KL never reached the optimizer.
+- `response_logprob` built log-softmax over the whole sequence x 151k vocabulary when
+  only response positions contribute, exhausting a 40 GB A100 once the composite added
+  its two extra forwards.
+- Teacher probabilities were uncalibrated; fitted temperatures span 0.11 to 5.02, so
+  raw softmax confounded teacher sharpness with teacher quality.
+- `torch_pair_loss` silently ignored reference tensors on the uncentered arm.
+
+Also added but never exercised: abstain enforcement out-of-expertise, and three
+inference-time ensemble baselines (independent, OR-vote, routed).
+
+## Restarting
+
+The corpus, all modules, 60 infrastructure cells and 4 pair inventories are intact in
+`gs://jazzx-gcp-poc-1-paper-c/v2/sta/`. A restart needs only the generative pair
+inventories completed (~1.5 h), 20 pilot students re-run (~30 min), and the go/no-go
+contrast read. Nothing already computed is wasted.

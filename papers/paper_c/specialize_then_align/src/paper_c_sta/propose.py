@@ -28,7 +28,8 @@ from pathlib import Path
 
 from .contracts import ContractError, output_path
 from .evaluate import fit_temperature, softmax_t
-from .modeling import ACTIONS, action_logits, load_backbone, render_prompt
+from .modeling import (ACTIONS, action_logits, generate_candidates,
+                       load_backbone, parse_verdict, render_prompt)
 from .pairs import make_candidate
 
 SOURCES = ("category_specialist", "joint_generalist")
@@ -118,6 +119,7 @@ def propose_for_source(
     out: dict[str, dict[str, dict]] = {}
     used_cells: list[str] = []
     temperatures: dict[str, float] = {}
+    unparsed: dict[str, int] = {}
 
     for slot_index, teacher_seed in enumerate(sorted(teacher_seeds)[:2]):
         slot = f"s{slot_index}"
@@ -155,11 +157,25 @@ def propose_for_source(
                     probs = torch.softmax(
                         action_logits(model, tokenizer, prompts, device=device).float(), -1
                     )
-                for row, dist in zip(chunk, probs):
+                # Each teacher authors its own verdict.  Slot 0 decodes greedily, slot 1
+                # samples, so two teachers that agree on the action can still disagree on
+                # tags and authorities -- which is the only way the candidate *source*
+                # survives into the pair.
+                continuations = generate_candidates(
+                    model, tokenizer, prompts, device=device,
+                    do_sample=(slot_index == 1), temperature=0.9,
+                    seed=teacher_seed * 1000 + slot_index,
+                )
+                for row, dist, continuation in zip(chunk, probs, continuations):
                     raw = [float(x) for x in dist]
                     tau = temps.get(row["category"], 1.0)
                     values = softmax_t(
                         [math.log(max(v, 1e-12)) for v in raw], tau) if tau != 1.0 else raw
+                    verdict = parse_verdict(continuation,
+                                            fallback_category=row["category"])
+                    if verdict is None:
+                        unparsed[slot] = unparsed.get(slot, 0) + 1
+                        continue
                     # Slot 0 takes the teacher's mode; slot 1 draws from the same
                     # calibrated distribution.  Taking the mode in both slots makes a
                     # candidate a deterministic function of the teacher, so two seeds
@@ -168,25 +184,11 @@ def propose_for_source(
                     # the agreement stratum unpopulated by construction.  A draw from
                     # the teacher's own policy is still a teacher-proposed candidate,
                     # and it exposes the disagreement the teacher actually has.
-                    if slot_index == 0:
-                        action = ACTIONS[int(dist.argmax())]
-                    else:
-                        draw = _unit_draw(f"{row['sample_id']}::{teacher_seed}")
-                        cumulative, action = 0.0, ACTIONS[-1]
-                        for name, mass in zip(ACTIONS, values):
-                            cumulative += mass
-                            if draw < cumulative:
-                                action = name
-                                break
-                    gold = row.get("gold") or {}
                     candidate = make_candidate(
-                        action=action,
-                        category=row["category"],
-                        # the teacher proposes tags/authorities it can see in the event
-                        violation_tags=list(gold.get("violation_tags") or [])[:3]
-                        if action != "allow" else [],
-                        policy_ids=list(gold.get("policy_ids") or [])[:3]
-                        if action != "allow" else [],
+                        action=verdict["action"],
+                        category=verdict["category"],
+                        violation_tags=verdict["violation_tags"],
+                        policy_ids=verdict["policy_ids"],
                         probabilities=dict(zip(ACTIONS, values)),
                         vote_id=f"{source}:{teacher_backbone}:{teacher_seed}:{row['sample_id']}",
                     )
@@ -207,5 +209,7 @@ def propose_for_source(
         "checkpoint": checkpoint,
         "calibrated": bool(calibration_rows),
         "category_temperatures": temperatures,
+        "generative": True,
+        "unparsed_continuations": unparsed,
     }
     return complete, record

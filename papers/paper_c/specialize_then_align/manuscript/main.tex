@@ -1,6 +1,11 @@
 \documentclass[10pt]{article}
 \usepackage[margin=0.78in]{geometry}
-\usepackage{amsmath,amssymb,booktabs,array,microtype,graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,booktabs,array,graphicx}
+% expansion=false: the bundled font set is not scalable, and pdfTeX makes
+% that a fatal error rather than a warning.
+\usepackage[expansion=false]{microtype}
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
@@ -24,39 +29,49 @@
 \cfoot{\thepage}
 
 \title{\textbf{Specialize, Then Align?}\\
-A Controlled Study of Cross-Model Preference Learning for Safety and
-US Mortgage-Risk Guardrails}
+An Identifiability Failure in Cross-Model Preference Learning\\
+for Safety and US Mortgage-Risk Guards}
 \author{Anonymous authors}
-\date{Protocol candidate, July 25, 2026}
+\date{Stopped after the disjoint pilot, July 26, 2026}
 
 \begin{document}
 \maketitle
 
 \noindent\colorbox{softgray}{\parbox{0.965\linewidth}{
-\todoresult. This is a lock-ready, machine-checkable protocol scaffold, not a
-completed or locked experiment. It reports no model comparison, legal conclusion,
-or confirmatory evidence. Mortgage examples remain candidate material until
-policy review, independent adjudication, and sealed-cohort locks are complete.
+\textbf{Scope and evidence tier.} This study was \emph{stopped after its disjoint
+pilot}. The 66-cell primary panel was never authorised, no sealed cohort exists, and
+all five readiness gates remain false. Adjudication was automatic against gold rather
+than by qualified human reviewers, and no mortgage row is counsel-reviewed. \textbf{No
+claim is made, in either direction, about whether specialist-sourced preferences
+improve a guard.} The single measured contrast is invalid by construction, for the
+reason this paper reports. What is claimed is a measurement result: a widely natural
+instantiation of the specialize-then-align design cannot identify its own treatment,
+and we quantify both the failure and its remedy.
 }}
 
 \begin{abstract}
 Category specialists may preserve rare guard boundaries that a single generalist
-blurs, but evidence for a specialist-first training benefit requires holding the
-student objective fixed. We specify a controlled study in which two candidate
-sources---category specialists and joint generalists---produce structured outputs
-for the same family-disjoint events. Blinded reviewers adjudicate both sources,
-and otherwise matched students receive the same reference-centered objective.
-The primary estimand is therefore the worst-core-category intervention-recall
-frontier of specialist-source \method{} minus generalist-source \method, at fixed
-benign false-positive and human-review constraints. The fixed panel crosses two
-pinned small-language-model backbones, three primary seeds, three general-safety
-categories, and two narrow US-federal mortgage-risk categories. Mortgage events
-include immutable policy context and return \allow, \review, or \intervene;
-out-of-expertise specialists instead \abstain{} at the routing layer. A disjoint
-pilot precedes 66 primary cells, for 110 planned training cells in total. The
-study is risk triage, not a credit decision, legal opinion, or compliance
-certification. Its contribution is a falsifiable candidate-source comparison and
-reproducible protocol, not a new pairwise loss or a claimed empirical win.
+blurs. Testing that requires holding the student objective fixed and varying only
+which model proposed the training candidates, so we built a matched design in which
+two candidate sources---category specialists and a joint generalist---feed otherwise
+identical reference-centered students over the same family-disjoint events. The
+disjoint pilot revealed that this design, instantiated the natural way, \emph{cannot
+measure its own treatment}. With a three-action verdict head, adjudication against
+gold, and structured fields derived from that gold, the chosen candidate becomes a
+deterministic function of the label: the two source inventories were $98.9\%$ and
+$97.7\%$ byte-identical, chosen actions agreed on $100\%$ of events, and the two
+aligned arms ended $0.13$ logits apart against $2.4$ logits of within-arm movement.
+The contrast is not underpowered; it is unidentified. We show the failure is
+structural rather than incidental, and that letting each teacher author its own
+verdict restores the treatment---byte identity falls to $14.4\%$, matched pairs rise
+$87\%$, and the \emph{teacher-agreement} stratum that was previously empty by
+construction becomes the majority stratum. Two further results survive: no operating
+point satisfies a $5\%$ worst-category false-alarm target, a $10\%$ review budget, and
+a bounded intervention-miss rate simultaneously in any of twenty $1.5$--$1.7$B pilot
+cells; and the specificity-cohort size, asserted at $2{,}000$ in six places and
+derived in none, follows from the precision target at $1{,}825$. We stopped before the
+primary panel. The contribution is a measurement prerequisite for this family of
+designs, not an empirical win.
 \end{abstract}
 
 \section{Introduction}
@@ -361,17 +376,163 @@ under the same DPO objective, combined with blinded adjudication, explicit
 \abstain/\review{} separation, immutable policy context, and a high-stakes
 mortgage-risk triage test.
 
-\section{Results}
+\section{What the pilot executed}
 
-\todoresult. Result tables are deliberately absent. They may be generated only
-from once-scored sealed outputs after pilot data, calibration, and preference
-locks; the post-pilot prospective primary-protocol freeze; distinct primary data
-and preference locks; aligned-candidate and checkpoint-selection locks; and the
-sealed-confirmation lock validate in that order. Pilot scores, development
-scores, failed smoke runs, and predecessor experiments cannot populate this
-section.
+The disjoint pilot completed in full: four joint multitask references, twenty
+category specialists, and twenty aligned students across all five arms, for the
+planned 44 cells. Training used pinned Qwen2.5-1.5B-Instruct and
+SmolLM2-1.7B-Instruct at fixed revisions, seeds $7$ and $8$, $400$ specialist steps
+and $200$ alignment steps on one A100 each, at $92$--$105$\,s per infrastructure cell.
+
+The corpus is $13{,}266$ events, $84.9\%$ reused from existing benchmarks and $15.1\%$
+generated only where reuse could not reach: a \texttt{mortgage\_closed\_end\_advertising}
+category absent from every available source, and \review{} examples for four of five
+categories that otherwise held none. Split assignment runs over the transitive closure
+of family and content-family identity, giving $10{,}990$ split units with zero family
+and zero content-family leakage.
+
+\emph{Nothing beyond this was run.} The 66-cell primary panel was never authorised,
+no sealed cohort exists, and the three ensemble baselines are implemented but unscored.
+
+\section{The primary contrast is unidentified, not underpowered}
+\label{sec:identifiability}
+
+The pilot contrast came out at $-0.0011$ worst-category accuracy, with a $95\%$ paired
+family-bootstrap interval of $[-0.0052,\,+0.0128]$ over $1{,}665$ families. Read naively
+that is a tight null. It is not: it is an artifact, and the mechanism is exact.
+
+\subsection{Three deterministic choices compose into a collapse}
+
+Adjudication ranks candidates against adjudicated gold, so the \emph{chosen} candidate
+is whichever matches the gold action. The action space has three values, so once gold
+is known the chosen action is \emph{determined}. And the structured fields---focal
+category, violation tags, cited authorities---were derived from that same gold, so the
+chosen candidate's serialization is fully determined by the pair (gold, category).
+
+The chosen candidate is therefore a deterministic function of the label, identical
+across candidate sources by construction. Only the \emph{rejected} side retains
+freedom, over the two remaining actions, and it differs only when two teachers happen
+to select different wrong answers.
+
+\begin{table}[t]
+\centering
+\caption{Measured source invariance in the pilot inventories, before and after
+letting each teacher author its own verdict. The treatment is the candidate source;
+in the derived condition it is almost absent from the data.}
+\label{tab:invariance}
+\begin{tabular}{lrr}
+\toprule
+& derived fields & \textbf{authored fields} \\
+\midrule
+chosen action identical across sources     & $100.0\%$ & $100.0\%$ \\
+rejected action identical                  & $98.9\%$  & $91.3\%$ \\
+chosen serialization identical             & $98.9\%$  & $\mathbf{15.8\%}$ \\
+chosen + rejected byte-identical           & $98.9\%$  & $\mathbf{14.4\%}$ \\
+\midrule
+matched pairs per source                   & $190$     & $\mathbf{355}$ \\
+\texttt{teacher\_agreement} stratum        & $0$       & $\mathbf{303}$ \\
+\texttt{teacher\_disagreement} stratum     & $190$     & $52$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:invariance} gives the measurement. In the derived condition the two arms
+train on byte-identical pairs for $98.9\%$ of matched events on one backbone and
+$97.7\%$ on the other.
+
+\subsection{The students confirm it}
+
+Table~\ref{tab:movement} separates movement caused by the objective from movement
+caused by the treatment. Pair-trained arms sit $2.8$--$3.6$ logits from the
+SFT-family arms, and each moves $2.4$ logits along its own checkpoint ladder: the
+objective does a great deal. The two CM-DPO arms sit $0.132$ logits apart and agree on
+$99.8\%$ of predictions: the treatment does almost nothing, because the treatment is
+almost absent.
+
+\begin{table}[t]
+\centering
+\caption{Mean absolute action-logit difference on $3{,}995$ shared evaluation rows,
+Qwen2.5-1.5B seed $7$, final checkpoint. Between-arm movement is $5\%$ of within-arm
+movement.}
+\label{tab:movement}
+\begin{tabular}{lrr}
+\toprule
+comparison & mean $|\Delta\text{logit}|$ & prediction agreement \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{objective effect}}\\
+\quad \texttt{gold\_sft} vs \texttt{generalist\_cm\_dpo}   & $3.315$ & $96.9\%$ \\
+\quad \texttt{soft\_distill} vs \texttt{specialist\_cm\_dpo} & $3.510$ & $96.8\%$ \\
+\quad within \texttt{specialist\_cm\_dpo}, step 25 $\to$ 200 & $2.407$ & $98.1\%$ \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{treatment effect}}\\
+\quad \texttt{generalist\_cm\_dpo} vs \texttt{specialist\_cm\_dpo} & $\mathbf{0.132}$ & $\mathbf{99.8\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All five arms fall within $0.006$ worst-category accuracy of one another, against a
+paired interval half-width of $0.009$: no arm is separable from any other, and the
+ordering places \texttt{generalist\_cm\_dpo} nominally first. None of that is citable.
+
+\subsection{The remedy, and why it also repairs a protocol requirement}
+
+Letting each teacher author its own verdict---decoding the continuation of the fixed
+\verb|{"action": "| prefix rather than deriving fields from gold---restores the
+treatment. Byte identity falls from $98.9\%$ to $14.4\%$, and matched pairs rise from
+$190$ to $355$.
+
+It also repairs something the protocol demanded and the derived design made impossible.
+The protocol requires retaining both \texttt{teacher\_agreement} and
+\texttt{teacher\_disagreement} strata. Under derived fields a pair required differing
+actions, so agreement pairs could never form and the agreement stratum was empty by
+construction: a requirement unsatisfiable rather than merely unmet. Once teachers author
+their own evidence, two teachers can agree on the action while citing different
+authorities, which is a genuine substantive difference---and agreement becomes the
+\emph{majority} stratum, $303$ of $355$ pairs.
+
+\subsection{Why this generalises beyond one study}
+
+Nothing in the collapse depends on mortgage policy, on these backbones, or on DPO. It
+needs only three ingredients that a careful designer would plausibly choose: a small
+discrete action space, adjudication against a trusted label, and structured output
+fields populated from that label. Any cross-model preference study with those three
+properties will find its candidate-source contrast unidentified, and---because the
+symptom is a \emph{tight interval around zero}---will be tempted to report it as a
+confident null. The diagnostic is cheap: measure byte identity between the source
+inventories before training anything.
+
+\section{Two further results}
+
+\paragraph{Calibration is infeasible at this scale.}
+In all twenty pilot cells, no operating point satisfies a $5\%$ worst-category benign
+false-alarm target, a $10\%$ review budget, and a bounded worst-category
+intervention-miss rate simultaneously; every cell reports
+\texttt{constraints\_met=false}. This is a property of the constraint set at
+$1.5$--$1.7$B, not a fitting failure. It is reported only because the threshold search
+was built to refuse a degenerate corner: a false-alarm constraint alone is maximised by
+never escalating, and an all-\allow{} guard satisfies every stated constraint at chance
+accuracy. Requiring the guard to \emph{act} converts a vacuous pass into an honest
+infeasibility.
+
+\paragraph{The specificity-cohort size follows from precision, not assertion.}
+The design stated a minimum of $2{,}000$ \allow{} rows per core category in six places
+and derived it in none, while that single number set the study's entire data cost. A
+Wald half-width of $0.01$ on a $5\%$ false-alarm rate gives $z^2p(1-p)/h^2 = 1{,}825$.
+The asserted figure was close, which is luck rather than derivation: it moves when the
+precision target moves, and the protocol already treated the neighbouring mortgage
+family count as pilot-frozen rather than asserted.
 
 \section{Limitations, safety, and legal constraints}
+
+The binding limitation is that this study was stopped after its pilot. There is no
+primary panel, no sealed evaluation, and no confirmatory claim; the single measured
+contrast is invalid for the reason reported in \S\ref{sec:identifiability} and must not
+be read as evidence in either direction. Adjudication was automatic against gold rather
+than by qualified human reviewers, so the preference inventories are machine-derived and
+no mortgage row is counsel-reviewed. All five readiness gates remain false. The three
+ensemble baselines---independent, OR-vote, and routed---are implemented but never
+scored, so the practically important question of whether an aligned student beats
+routing to specialists at inference time is untouched.
 
 Two fixed backbones permit the planned transfer mechanism but cannot support an
 architecture-population claim. Specialist and generalist candidates may share
@@ -384,15 +545,51 @@ credit decisions. Federal rules can change or be stayed after a snapshot, and
 state, licensing, investor, and program requirements remain outside scope. All
 deployment-facing mortgage outputs require qualified human review.
 
+\section{Why we stopped, and what a restart needs}
+
+We stopped after the pilot rather than running the primary panel. The reasoning was
+explicit. The remedy of \S\ref{sec:identifiability} is verified but unrun, the five
+pilot arms sat within $0.006$ of one another, and the projected primary resolution was
+$\pm 0.007$; a primary panel was therefore likely to return a bounded null on a
+question the pilot had already shown to be delicately instrumented. Banking the
+measurement result was worth more than a probable null.
+
+A restart is cheap and nothing computed is wasted. The corpus, the sixty infrastructure
+cells, and four calibrated preference inventories persist. Completing the authored-verdict
+inventories, re-running twenty pilot students, and reading the contrast is roughly two
+hours of A100 time. If that contrast clears $\pm 0.007$, the primary panel becomes
+worth authorising; if it does not, the honest output is a bounded null with the
+resolution stated, which the design was built to report.
+
+Three further prerequisites remain outside compute entirely, and no amount of GPU time
+substitutes for them: mortgage-policy sign-off by qualified reviewers, an annotation
+rubric and two-reviewer adjudication, and an independently authored sealed cohort. Until
+those exist, every number here is estimation at a machine-validated tier.
+
 \section{Conclusion}
 
-This protocol asks a narrow causal question: with the student objective fixed,
-do adjudicated specialist candidates teach a more uniformly capable guard than
-adjudicated generalist candidates? The fixed-panel, focal-category design makes
-that question testable while mortgage risk makes abstention, escalation,
-provenance, and policy time part of the scientific object. The answer remains
-empirical. The present contribution is a lock-ready, machine-checkable scaffold,
-not a locked design or a claimed win.
+We set out to ask whether adjudicated specialist candidates teach a more uniformly
+capable guard than adjudicated generalist candidates, with the student objective held
+fixed. We cannot answer that question, and the reason is the result.
+
+A natural instantiation of the design---three actions, adjudication against gold,
+structured fields derived from gold---makes the chosen candidate a deterministic
+function of the label. The two candidate sources then supply byte-identical training
+pairs on $98\%$ of events, the two arms land $0.13$ logits apart against $2.4$ logits of
+objective-driven movement, and the contrast is unidentified rather than small. The
+symptom is a tight interval around zero, which is precisely what a confident negative
+result looks like. We report the failure, quantify it, and show that letting each
+teacher author its own verdict restores the treatment and, incidentally, makes a
+protocol requirement satisfiable that had been structurally impossible.
+
+Alongside it: at $1.5$--$1.7$B, no operating point meets a $5\%$ worst-category
+false-alarm target, a $10\%$ review budget, and a bounded intervention-miss rate
+together; and a cohort size that had been asserted in six places follows from its
+precision target instead.
+
+The contribution is a measurement prerequisite. Before comparing candidate sources,
+measure whether your inventories differ at all---it costs nothing, and the alternative
+is a hundred training cells spent confirming an artifact.
 
 \bibliographystyle{plain}
 \bibliography{refs}

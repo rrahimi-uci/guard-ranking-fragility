@@ -52,11 +52,29 @@ PROBE
 # from them.  -n means existing local copies are never overwritten.
 mkdir -p artifacts/cells
 gsutil -q -m cp -n -r "gs://${BUCKET}/${PREFIX}/cells/*" artifacts/cells/ 2>/dev/null || true
-echo "staged $(ls artifacts/cells 2>/dev/null | wc -l) existing cells"
+mkdir -p artifacts/pairs
+gsutil -q -m cp -n -r "gs://${BUCKET}/${PREFIX}/pairs/*" artifacts/pairs/ 2>/dev/null || true
+echo "staged $(ls artifacts/cells 2>/dev/null | wc -l) cells, $(ls artifacts/pairs 2>/dev/null | wc -l) pair sets"
 
 IFS=',' read -ra LIST <<< "$CELLS"
 for cell in "${LIST[@]}"; do
   # a "propose:<backbone>:<panel>" entry runs candidate generation + pair building
+  if [[ "$cell" == student::* ]]; then
+    echo "=== student $cell ==="
+    $PY tools/run_student.py "$cell" || { echo "CELL FAILED: $cell"; continue; }
+    safe="${cell//::/__}"
+    gsutil -q -m cp -r "artifacts/cells/${safe}" "gs://${BUCKET}/${PREFIX}/cells/" \
+      && echo "UPLOADED ${safe}" || echo "UPLOAD FAILED ${safe}"
+    continue
+  fi
+  if [[ "$cell" == score:* ]]; then
+    IFS=':' read -r _ cellname bb <<< "$cell"
+    echo "=== score $cellname ==="
+    $PY tools/run_score.py "$cellname" "$bb" || { echo "SCORE FAILED: $cellname"; continue; }
+    gsutil -q -m cp -r "artifacts/scores/${cellname}" "gs://${BUCKET}/${PREFIX}/scores/" \
+      && echo "UPLOADED scores ${cellname}" || echo "UPLOAD FAILED scores"
+    continue
+  fi
   if [[ "$cell" == propose:* ]]; then
     IFS=':' read -r _ bb panel <<< "$cell"
     echo "=== propose $bb $panel ==="

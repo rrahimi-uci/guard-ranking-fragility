@@ -119,11 +119,18 @@ def response_logprob(model, tokenizer, prompt: str, response: str, *, device,
     if n_response <= 0:
         raise ContractError("response was fully truncated; the pair must be rejected")
     tensor = torch.tensor([ids], device=device)
-    logits = model(input_ids=tensor).logits[0, :-1, :]
-    targets = tensor[0, 1:]
-    logprobs = torch.log_softmax(logits.float(), dim=-1)
-    picked = logprobs.gather(-1, targets.unsqueeze(-1)).squeeze(-1)
-    return picked[-n_response:].sum(), len(response_ids) > n_response
+    # Only the response positions contribute, so slice before any softmax.  Building
+    # log_softmax over the whole sequence costs seq_len x vocab floats -- for a 1024
+    # token prompt and a 151k vocab that is ~620 MB per forward, and with four pair
+    # forwards plus the composite's gold-anchor and replay passes it exhausts a 40 GB
+    # A100.  Slicing to the ~40 response tokens cuts it by more than an order of
+    # magnitude and changes no value.
+    all_logits = model(input_ids=tensor).logits[0]          # (T, V)
+    logits = all_logits[-(n_response + 1):-1, :]            # response positions only
+    targets = tensor[0, -n_response:]
+    picked = logits.gather(-1, targets.unsqueeze(-1)).squeeze(-1).float()
+    denominator = torch.logsumexp(logits, dim=-1).float()
+    return (picked - denominator).sum(), len(response_ids) > n_response
 
 
 def batch_response_logprobs(model, tokenizer, pairs: Sequence[tuple[str, str]], *, device,
@@ -168,3 +175,78 @@ def load_backbone(model_id: str, revision: str, *, device: str, dtype: str = "au
             parameter.requires_grad_(False)
     action_token_ids(tokenizer)  # fail at load, not mid-run
     return model, tokenizer
+
+
+def generate_candidates(model, tokenizer, prompts: Sequence[str], *, device,
+                        max_new_tokens: int = 56, do_sample: bool = False,
+                        temperature: float = 1.0, seed: int | None = None,
+                        max_length: int = 768):
+    """Let a teacher author its own structured verdict, not just pick an action.
+
+    The prompt already ends at ``{"action": "`` so the continuation *is* the verdict.
+    This exists because an action-only candidate is a deterministic function of
+    (gold, category): with three actions and gold-based adjudication, two different
+    teachers produce byte-identical pairs on ~98% of events, and the candidate source
+    -- the treatment -- vanishes from the data.  Letting each teacher write its own
+    tags and policy ids restores it.
+    """
+    import torch
+
+    if seed is not None:
+        torch.manual_seed(seed)
+    batch = tokenizer(
+        list(prompts), return_tensors="pt", padding=True, truncation=True,
+        max_length=max_length, padding_side="left",
+    ).to(device)
+    with torch.no_grad():
+        out = model.generate(
+            **batch,
+            max_new_tokens=max_new_tokens,
+            do_sample=do_sample,
+            temperature=temperature if do_sample else None,
+            top_p=0.95 if do_sample else None,
+            pad_token_id=tokenizer.pad_token_id,
+        )
+    generated = out[:, batch["input_ids"].shape[1]:]
+    return [tokenizer.decode(row, skip_special_tokens=True) for row in generated]
+
+
+def parse_verdict(continuation: str, *, fallback_category: str) -> dict | None:
+    """Parse a generated continuation of ``{"action": "`` into a verdict.
+
+    Returns None when the model produced nothing usable.  Failing closed matters: a
+    silently defaulted verdict would be identical across teachers and would recreate
+    the very collapse this generative path exists to avoid.
+    """
+    text = (continuation or "").strip()
+    if not text:
+        return None
+    action = None
+    for candidate in ACTIONS:
+        if text.startswith(candidate):
+            action = candidate
+            break
+    if action is None:
+        return None
+    body = "{\"action\": \"" + text
+    # tolerate a truncated tail: close the object at the last complete field
+    for end in range(len(body), len(body) - 200, -1):
+        chunk = body[:end]
+        if chunk.count("{") == 0:
+            break
+        try:
+            parsed = json.loads(chunk + "}" * (chunk.count("{") - chunk.count("}")))
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if not isinstance(parsed, dict):
+            continue
+        tags = parsed.get("violation_tags")
+        ids = parsed.get("policy_ids")
+        return {
+            "action": action,
+            "category": parsed.get("category") or fallback_category,
+            "violation_tags": [str(x) for x in tags][:6] if isinstance(tags, list) else [],
+            "policy_ids": [str(x) for x in ids][:6] if isinstance(ids, list) else [],
+        }
+    return {"action": action, "category": fallback_category,
+            "violation_tags": [], "policy_ids": []}
