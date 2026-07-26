@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guard-ranking-fragility/benchmarks/registry/distribution.schema.json",
+  "title": "Source-by-source distribution ledger",
+  "description": "Canonical redistribution decision for every benchmark source whose text can reach a build. Fails closed: a source with no affirmative decision is local_only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ledger_id",
+    "reviewed_on",
+    "default_decision",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "ledger_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewed_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "default_decision": {
+      "description": "Applied to any source absent from this ledger. Must be a non-publishing class.",
+      "enum": [
+        "local_only",
+        "text_free_only"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "kind",
+        "access_class",
+        "license",
+        "redistribution_decision",
+        "derived_output_license",
+        "sensitive_text_class",
+        "reviewer",
+        "decision_date",
+        "row_count",
+        "payload"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "public_corpus",
+            "synthetic_internal",
+            "third_party_gated",
+            "draft_unlicensed"
+          ]
+        },
+        "access_class": {
+          "enum": [
+            "open",
+            "gated",
+            "internal",
+            "unresolved"
+          ]
+        },
+        "license": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spdx_or_name",
+            "permits_redistribution",
+            "snapshot"
+          ],
+          "properties": {
+            "spdx_or_name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "permits_redistribution": {
+              "enum": [
+                true,
+                false,
+                "unknown"
+              ]
+            },
+            "commercial_use": {
+              "enum": [
+                true,
+                false,
+                "unknown"
+              ]
+            },
+            "snapshot": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Where the license text/terms were read from, and when."
+            }
+          }
+        },
+        "redistribution_decision": {
+          "description": "publish_text is the only class permitting verbatim rows in a public build.",
+          "enum": [
+            "publish_text",
+            "text_free_only",
+            "local_only",
+            "forbidden"
+          ]
+        },
+        "derived_output_license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sensitive_text_class": {
+          "enum": [
+            "none",
+            "synthetic_harmful",
+            "real_pii",
+            "unreviewed"
+          ]
+        },
+        "attribution_notice": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "revision": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^([0-9a-f]{64}|unhashed)$"
+            }
+          }
+        },
+        "blocking_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "redistribution_decision": {
+                "const": "publish_text"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "license": {
+                "properties": {
+                  "permits_redistribution": {
+                    "const": true
+                  }
+                }
+              },
+              "sensitive_text_class": {
+                "enum": [
+                  "none",
+                  "synthetic_harmful"
+                ]
+              }
+            },
+            "required": [
+              "attribution_notice"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
