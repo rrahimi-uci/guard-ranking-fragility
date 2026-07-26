@@ -77,6 +77,13 @@ jobs:
         continue-on-error: true
         run: make -C papers/paper_c/specialize_then_align test PY=$(which python)
 
+      # Phase 5 migrated copy of the tree above. Both are run because the evidence that
+      # the migration was behaviour-preserving is that they fail identically -- 66 passed
+      # / 1 failed -- not that the new one merely runs.
+      - name: Paper C study package (declared expected_fail)
+        continue-on-error: true
+        run: make -C studies/paper-c-specialize-align-mortgage-v1 test PY=$(which python)
+
   distribution-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 10

@@ -1,0 +1,597 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.78in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,booktabs,array,graphicx}
+% expansion=false: the bundled font set is not scalable, and pdfTeX makes
+% that a fatal error rather than a warning.
+\usepackage[expansion=false]{microtype}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{authblk}
+\usepackage{fancyhdr}
+
+\definecolor{riskred}{HTML}{A93226}
+\definecolor{softgray}{HTML}{F3F4F6}
+\newcommand{\method}{\textsc{CM-DPO}}
+\newcommand{\allow}{\textsc{Allow}}
+\newcommand{\review}{\textsc{Review}}
+\newcommand{\intervene}{\textsc{Intervene}}
+\newcommand{\abstain}{\textsc{Abstain}}
+\newcommand{\todoresult}{\textcolor{riskred}{\textbf{UNRUN---NO EMPIRICAL RESULT}}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\setlist{nosep,leftmargin=*}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Paper C protocol candidate}
+\rhead{Specialize, Then Align?}
+\cfoot{\thepage}
+
+\title{\textbf{Specialize, Then Align?}\\
+An Identifiability Failure in Cross-Model Preference Learning\\
+for Safety and US Mortgage-Risk Guards}
+\author{Anonymous authors}
+\date{Stopped after the disjoint pilot, July 26, 2026}
+
+\begin{document}
+\maketitle
+
+\noindent\colorbox{softgray}{\parbox{0.965\linewidth}{
+\textbf{Scope and evidence tier.} This study was \emph{stopped after its disjoint
+pilot}. The 66-cell primary panel was never authorised, no sealed cohort exists, and
+all five readiness gates remain false. Adjudication was automatic against gold rather
+than by qualified human reviewers, and no mortgage row is counsel-reviewed. \textbf{No
+claim is made, in either direction, about whether specialist-sourced preferences
+improve a guard.} The single measured contrast is invalid by construction, for the
+reason this paper reports. What is claimed is a measurement result: a widely natural
+instantiation of the specialize-then-align design cannot identify its own treatment,
+and we quantify both the failure and its remedy.
+}}
+
+\begin{abstract}
+Category specialists may preserve rare guard boundaries that a single generalist
+blurs. Testing that requires holding the student objective fixed and varying only
+which model proposed the training candidates, so we built a matched design in which
+two candidate sources---category specialists and a joint generalist---feed otherwise
+identical reference-centered students over the same family-disjoint events. The
+disjoint pilot revealed that this design, instantiated the natural way, \emph{cannot
+measure its own treatment}. With a three-action verdict head, adjudication against
+gold, and structured fields derived from that gold, the chosen candidate becomes a
+deterministic function of the label: the two source inventories were $98.9\%$ and
+$97.7\%$ byte-identical, chosen actions agreed on $100\%$ of events, and the two
+aligned arms ended $0.13$ logits apart against $2.4$ logits of within-arm movement.
+The contrast is not underpowered; it is unidentified. We show the failure is
+structural rather than incidental, and that letting each teacher author its own
+verdict restores the treatment---byte identity falls to $14.4\%$, matched pairs rise
+$87\%$, and the \emph{teacher-agreement} stratum that was previously empty by
+construction becomes the majority stratum. Two further results survive: no operating
+point satisfies a $5\%$ worst-category false-alarm target, a $10\%$ review budget, and
+a bounded intervention-miss rate simultaneously in any of twenty $1.5$--$1.7$B pilot
+cells; and the specificity-cohort size, asserted at $2{,}000$ in six places and
+derived in none, follows from the precision target at $1{,}825$. We stopped before the
+primary panel. The contribution is a measurement prerequisite for this family of
+designs, not an empirical win.
+\end{abstract}
+
+\section{Introduction}
+
+Guardrails are commonly trained as if one compact model should recognize every
+policy boundary equally well. Toxic abuse, jailbreak attempts, prompt injection,
+and rule-bound financial conduct, however, require different evidence. Separate
+specialists may preserve local distinctions, but a naive union compounds false
+alarms and raises deployment cost. Distillation into one student may erase the
+same distinctions that motivated specialization.
+
+We test \emph{specialize, then align} as a candidate-source hypothesis, not as a
+new name for DPO. Every core category is crossed with each pinned backbone and
+seed, avoiding a category--architecture assignment confound. Qualified
+specialists from the other backbone and joint generalists each generate
+candidates for the same events. Human adjudication remains authoritative. Most
+importantly, specialist-source and generalist-source students use the same
+\method{} objective; their paired contrast isolates the incremental value of
+specialist candidate provenance conditional on this fixed two-backbone panel.
+
+Mortgage lending supplies a high-stakes, highly regulated domain in which policy
+time, actor, product, transaction stage, statutory regime, and coverage facts are
+load-bearing. The confirmatory mortgage scope is limited to fair-lending risk and
+Regulation Z closed-end mortgage advertising. The guard screens a proposed
+response or operational action; it never approves credit or certifies legality.
+
+The protocol contributes:
+\begin{enumerate}
+  \item a same-objective control that makes specialist candidate source the
+  primary manipulated factor;
+  \item a leave-one-backbone-out, blinded, human-grounded preference pipeline
+  that retains both teacher-agreement and teacher-disagreement strata; and
+  \item one preregistered selective-classification endpoint with separate
+  calibration, checkpoint-selection, and sealed-evaluation cohorts.
+\end{enumerate}
+
+\section{Task and claim boundary}
+
+\subsection{Focal-category guard event}
+
+Each primary record is $(x,k^*)$, where $k^*$ is the independently adjudicated
+focal-category label and the model input is
+\[
+x=(r,a,c,j,t,h),
+\]
+where $r$ is the request, $a$ the proposed response or operational action, $c$
+structured context, $j$ jurisdiction, $t$ policy date, and $h$ immutable
+\texttt{policy\_context}. The latter contains the exact policy text or retrieval
+payload, source identifier, effective date, and content hash used for the label.
+Request-only safety rows explicitly set absent response and process context to
+null. The guard emits
+\[
+g_\theta(x)=(d,\widehat{k},v,p,q), \qquad
+d\in\{\allow,\review,\intervene\},
+\]
+with violation tags $v$, policy identifiers $p$, and calibrated action
+confidence $q$ derived from decision logits rather than free-form self-report.
+
+The confirmatory panel excludes cross-category overlaps: it asks whether a guard
+handles one known focal boundary, not whether a scalar label represents several
+simultaneous policies. Overlapping events may be reported descriptively but
+cannot support the primary claim. \review{} is an in-scope semantic action for
+missing decisive facts, unresolved coverage, exceptions, dates, or policy
+interaction. \abstain{} is different: it is a routing-layer state emitted by a
+specialist that is not qualified for $k^*$ and is never scored as task-level
+\review{} or inferred as \allow.
+
+\subsection{Mortgage boundary}
+
+A claim-bearing mortgage row must include actor role, product, transaction
+stage, applicable federal regime, coverage facts, US-federal jurisdiction, and
+policy date. The system performs \emph{US-federal mortgage-risk triage}. It does
+not approve or deny credit, determine eligibility, calculate legal deadlines,
+replace counsel, or certify compliance. Live-file decisions, state law,
+licensing or usury, investor and government-program overlays, disputed coverage,
+and incomplete deadline facts route to \review. Labels are adjudicated benchmark
+reference actions, not legal determinations.
+
+\section{Method}
+
+\subsection{Crossed specialists and candidate sources}
+
+Let $\mathcal C$ contain the five core categories and $\mathcal B$ the two pinned
+SLM backbones. For each
+$(c,b,s)\in\mathcal C\times\mathcal B\times\{42,43,44\}$, the primary panel
+trains a LoRA specialist. Separate category-wise temperature maps for specialist
+and joint-generalist candidate generators use only the dedicated, family-disjoint
+calibration split. Out-of-expertise specialists \abstain.
+
+For target backbone $b$, specialist candidates come only from qualified models
+with $b'\ne b$ that pass the frozen confidence floor. Multiple seeds are a
+stability check, not independent model families. Both agreement and disagreement
+strata remain eligible for annotation. A joint generalist of the same teacher
+backbone supplies the control-source candidates. Specialist and generalist pools
+are matched by event family, output opportunity, candidate count, and annotation
+budget.
+
+Reviewers are blinded to candidate order, backbone, seed, and source type. They
+establish the reference action independently of candidate provenance and then
+rank complete structured outputs. Each mortgage event receives two qualified
+reviews; a distinct adjudicator resolves disagreement. A retained pair must
+match the adjudicated action and differ substantively in action, tags, policy
+grounding, or review behavior. Model agreement can prioritize review but never
+becomes ground truth. Each pair has a positive, prelocked reliability weight
+$w_i$ estimated independently of the pair ordering; weighting cannot reverse an
+adjudicated preference.
+
+\subsection{Fixed-objective candidate-source comparison}
+
+For chosen output $y_i^+$, rejected output $y_i^-$, frozen joint-SFT reference
+$\pi_0$, and student $\pi_\theta$, define
+\begin{align}
+\Delta_\theta &= \log\pi_\theta(y_i^+|x_i)-\log\pi_\theta(y_i^-|x_i),\\
+\Delta_0 &= \log\pi_0(y_i^+|x_i)-\log\pi_0(y_i^-|x_i),\\
+\ell_i^{\text{CM-DPO}} &= w_i\,\operatorname{softplus}
+\!\left[-\beta(\Delta_\theta-\Delta_0)\right].
+\end{align}
+This is the standard reference-centered DPO loss
+\cite{rafailov2023dpo}, applied to adjudicated candidates. At
+$\pi_\theta=\pi_0$, its unweighted base term is $\log 2$, the weighted
+per-example term is $w_i\log 2$, and a weight-normalized batch mean is
+$\log 2$. Log probability is the sum over response tokens after prompt masking;
+a pair is rejected if either candidate is truncated. The same serialization and
+length rule is frozen for both sources.
+
+Let $L_c$ be the weight-normalized loss for focal category $c$. The pairwise
+student objective is
+\begin{equation}
+L=\tau\log\left(\frac{1}{|\mathcal C|}\sum_{c\in\mathcal C}
+e^{L_c/\tau}\right)+\lambda_g L_{\mathrm{gold}}+
+\lambda_r D_{\mathrm{KL}}(\pi_0\Vert\pi_\theta),
+\end{equation}
+where the smooth maximum prevents high-volume categories from dominating, the
+human-gold anchor stabilizes decisions, and replay KL limits drift. The primary
+\texttt{specialist\_cm\_dpo} and \texttt{generalist\_cm\_dpo} arms share this
+objective, initialization, event identities, pair quotas, token budget,
+optimizer, checkpoint ladder, and replay. Only candidate source changes.
+The per-backbone/seed comparison manifest hashes this objective and requires
+identical opportunity and retained-pair event IDs plus the same
+category/action/agreement-stratum quota manifest; candidate-content inventories
+remain distinct by construction.
+
+\section{Prospective experimental design}
+
+\subsection{Categories and data}
+
+\begin{table}[!ht]
+\centering
+\small
+\caption{Confirmatory focal categories. Mortgage outputs are risk flags within
+the cited federal scope, not determinations of legal compliance.}
+\begin{tabular}{L{0.27\linewidth}L{0.15\linewidth}L{0.49\linewidth}}
+\toprule
+Category & Domain & Mandatory boundary examples \\
+\midrule
+Toxicity and abuse & Safety & Quotation, counterspeech, benign identity terms \\
+Jailbreak and evasion & Safety & Policy explanation, defensive testing, mixed intent \\
+Prompt injection/exfiltration & Safety & Authorized retrieval, quoted instructions, trust boundaries \\
+Mortgage fair lending & Mortgage & Explicit protected-basis treatment, consistently applied criteria, unresolved proxy/effects cases \\
+Closed-end mortgage advertising & Mortgage & Misleading term, accurate qualified education, missing trigger or coverage facts \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The second mortgage category is implemented exactly as
+\texttt{mortgage\_closed\_end\_advertising}; it does not imply coverage of all
+mortgage marketing or product-representation law.
+
+Each mortgage base scenario yields a minimally changed triplet: an
+\intervene{} event, an \allow{} near-neighbor, and a fact-dependent \review{}
+event. These balanced triplets test construct boundaries; they do not represent
+deployment prevalence. The development target is 400 mortgage families (1,200
+triplet rows), balanced across the two mortgage scopes. Families, never rows,
+are assigned 50\% to specialist/joint-SFT training, 20\% to the alignment pool,
+15\% to calibration, and 15\% to checkpoint selection. A separately authored
+sealed test shares no family or source lineage.
+
+Threshold calibration and sealed scoring each require at least 2,000 independent
+\allow{} examples per core category. A prespecified capacity-evaluation mixture,
+not an estimate of deployment prevalence, uses 94\% \allow, 5\% \review, and
+1\% \intervene{} for capacity and false-positive checks. The general-safety
+rubric and each mortgage row's policy context are
+immutable inputs; a changed snapshot creates a new temporal cohort, never a
+silent relabel.
+
+\subsection{Student arms and complete run count}
+
+Every backbone/seed starts from the same joint multitask SFT reference. Five
+student arms are trained:
+\begin{enumerate}
+  \item continued adjudicated-gold SFT;
+  \item distillation of only the three calibrated action probabilities (not
+  free-text rationales, tags, or policy citations);
+  \item specialist-source uncentered PairCE;
+  \item generalist-source \method; and
+  \item specialist-source \method.
+\end{enumerate}
+The first three are supporting controls; arm 4 versus arm 5 is the sole
+confirmatory candidate-source comparison. Primary cells comprise six joint
+references, 30 specialists, and 30 students, for 66 cells. A disjoint pilot uses
+both backbones, all categories, and seeds 7 and 8: four references, 20
+specialists, and 20 students, for 44 cells. Pilot cells are never reused in the
+primary panel. The complete planned inventory is therefore 110 training cells;
+failures and restarts remain visible rather than being replaced silently.
+
+\section{Evaluation and estimand}
+
+\subsection{Separated selection pipeline}
+
+Action-logit temperature and decision thresholds are fit on the calibration
+split only. For thresholds $(t_i,t_r)$, the deterministic decision is
+\intervene{} if $p(\intervene)\ge t_i$; otherwise \review{} if
+$1-p(\allow)\ge t_r$; otherwise \allow. Candidate thresholds must respect the
+capacity-mixture review budget of at most 10\% and benign FPR grid
+$\mathcal F=\{1,2,3,4,5\}\%$.
+
+The separate checkpoint-selection cohort chooses exactly one checkpoint per
+cell by maximizing the development worst-category frontier subject to those FPR
+and review constraints; ties select the earliest checkpoint. After this rule is
+locked, the chosen checkpoint and calibration map are scored once on the sealed
+cohort. Neither threshold fitting nor checkpoint choice can inspect sealed
+labels.
+
+\subsection{One primary endpoint}
+
+For the selected checkpoint of arm $A$, let
+\[
+R_{A,c}=\frac{1}{|\mathcal F|}\sum_{f\in\mathcal F}
+\operatorname{TPR}_{A,c}(f)
+\]
+be sealed intervention recall averaged over feasible specificity budgets. The
+single primary endpoint is the worst focal-category paired source contrast
+\[
+C_{\mathrm{spec}}=\min_{c\in\mathcal C}
+\left[R_{\mathrm{specialist\_cm\_dpo},c}-
+R_{\mathrm{generalist\_cm\_dpo},c}\right].
+\]
+A positive one-sided simultaneous lower bound supports the specialist-source
+hypothesis; otherwise it does not. The pilot estimates paired family covariance
+and freezes the final family count for 80\% power at one-sided
+$\alpha=0.025$ under a 0.02 planning effect. A prelocked $-0.02$
+worst-category noninferiority margin is reported only as a secondary deployment
+diagnostic and cannot rescue a failed primary test.
+
+Inference resamples scenario families only while treating the two named
+backbones and three primary seeds as a fixed panel. Across-seed dispersion is
+descriptive. Thus every claim is conditional on Qwen2.5-1.5B,
+SmolLM2-1.7B, and seeds 42--44, rather than populations of architectures or
+training seeds. Secondary
+contrasts examine reference centering, PairCE versus soft distillation, and
+specialist \method{} versus gold SFT with Holm correction. Descriptive outcomes
+include per-category AP and recall/FPR, calibration, risk--coverage, review rate
+and precision, protected-pair invariance, benign low-prevalence performance,
+held-out-family/source transfer, policy-time transfer, and separately labeled
+policy-grounded probes for held-out mortgage scopes. No aggregate may hide a
+failed mortgage category.
+
+\section{Mortgage policy-time design}
+
+The candidate policy pack was retrieved July 25, 2026. Regulation B governs
+discrimination and discouragement \cite{regb10024}; Regulation Z governs the
+confirmatory closed-end advertising scope \cite{regz102624}. Adverse action,
+steering, ability to repay, and loss mitigation remain nonconfirmatory transfer
+scopes \cite{regb10029,regz102636,regz102643,regx102441}. Before any label is
+claim-bearing, qualified reviewers must sign the scope and the exact authority
+bytes, source URLs, effective dates, retrieval dates, and hashes must be locked
+into \texttt{policy\_context}.
+
+The present candidate inventory deliberately registers only an unsigned
+post-change snapshot; its pre-change side is marked missing. Consequently, a
+pre-change row cannot yet pass the runtime vintage contract. Claim-bearing
+validation is the default and requires two nonoverlapping, SME-signed snapshot
+vintages plus an excerpt hash verified against archived authority bytes. The
+matching excerpt record must itself cover every authority ID cited by the row;
+an unrelated authority elsewhere in the same archive cannot satisfy this check.
+
+Policy vintage is load-bearing. A Regulation B amendment effective July 21,
+2026 states that ECOA does not recognize effects-test liability
+\cite{regb2026final}, while the current Fair Housing Act regulation retains a
+discriminatory-effects framework \cite{fha100500}. These are concurrent but
+different legal regimes, not a rule conflict, and the ECOA change does not erase
+possible FHA coverage. Neutral-policy statistical-disparity scenarios with
+unresolved coverage, causation, justification, or less-discriminatory
+alternatives therefore route to \review. Pre-July-21 and post-July-21 cohorts
+carry separate immutable policy contexts rather than one timeless binary label.
+
+\section{Related work and novelty boundary}
+
+DPO supplies the reference-centered objective used here
+\cite{rafailov2023dpo}; classical and multi-teacher distillation motivate the
+teacher controls \cite{hinton2015distilling,zhang2018dml,zhang2022camt}.
+Preference-based distillation already includes pseudo-pair, distribution-aware,
+and preference-distribution approaches
+\cite{plad2024,dadpo2025,pad2025}, while multi-objective DPO studies preference
+composition \cite{modpo2024}. Guard models and benchmarks likewise establish
+multi-category input/output moderation and the importance of false refusals
+\cite{llamaguard2023,wildguard2024,guardbench2024}.
+
+Accordingly, this paper does not claim a new loss. Its prospective novelty is a
+controlled comparison of specialist versus generalist candidate provenance
+under the same DPO objective, combined with blinded adjudication, explicit
+\abstain/\review{} separation, immutable policy context, and a high-stakes
+mortgage-risk triage test.
+
+\section{What the pilot executed}
+
+The disjoint pilot completed in full: four joint multitask references, twenty
+category specialists, and twenty aligned students across all five arms, for the
+planned 44 cells. Training used pinned Qwen2.5-1.5B-Instruct and
+SmolLM2-1.7B-Instruct at fixed revisions, seeds $7$ and $8$, $400$ specialist steps
+and $200$ alignment steps on one A100 each, at $92$--$105$\,s per infrastructure cell.
+
+The corpus is $13{,}266$ events, $84.9\%$ reused from existing benchmarks and $15.1\%$
+generated only where reuse could not reach: a \texttt{mortgage\_closed\_end\_advertising}
+category absent from every available source, and \review{} examples for four of five
+categories that otherwise held none. Split assignment runs over the transitive closure
+of family and content-family identity, giving $10{,}990$ split units with zero family
+and zero content-family leakage.
+
+\emph{Nothing beyond this was run.} The 66-cell primary panel was never authorised,
+no sealed cohort exists, and the three ensemble baselines are implemented but unscored.
+
+\section{The primary contrast is unidentified, not underpowered}
+\label{sec:identifiability}
+
+The pilot contrast came out at $-0.0011$ worst-category accuracy, with a $95\%$ paired
+family-bootstrap interval of $[-0.0052,\,+0.0128]$ over $1{,}665$ families. Read naively
+that is a tight null. It is not: it is an artifact, and the mechanism is exact.
+
+\subsection{Three deterministic choices compose into a collapse}
+
+Adjudication ranks candidates against adjudicated gold, so the \emph{chosen} candidate
+is whichever matches the gold action. The action space has three values, so once gold
+is known the chosen action is \emph{determined}. And the structured fields---focal
+category, violation tags, cited authorities---were derived from that same gold, so the
+chosen candidate's serialization is fully determined by the pair (gold, category).
+
+The chosen candidate is therefore a deterministic function of the label, identical
+across candidate sources by construction. Only the \emph{rejected} side retains
+freedom, over the two remaining actions, and it differs only when two teachers happen
+to select different wrong answers.
+
+\begin{table}[t]
+\centering
+\caption{Measured source invariance in the pilot inventories, before and after
+letting each teacher author its own verdict. The treatment is the candidate source;
+in the derived condition it is almost absent from the data.}
+\label{tab:invariance}
+\begin{tabular}{lrr}
+\toprule
+& derived fields & \textbf{authored fields} \\
+\midrule
+chosen action identical across sources     & $100.0\%$ & $100.0\%$ \\
+rejected action identical                  & $98.9\%$  & $91.3\%$ \\
+chosen serialization identical             & $98.9\%$  & $\mathbf{15.8\%}$ \\
+chosen + rejected byte-identical           & $98.9\%$  & $\mathbf{14.4\%}$ \\
+\midrule
+matched pairs per source                   & $190$     & $\mathbf{355}$ \\
+\texttt{teacher\_agreement} stratum        & $0$       & $\mathbf{303}$ \\
+\texttt{teacher\_disagreement} stratum     & $190$     & $52$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:invariance} gives the measurement. In the derived condition the two arms
+train on byte-identical pairs for $98.9\%$ of matched events on one backbone and
+$97.7\%$ on the other.
+
+\subsection{The students confirm it}
+
+Table~\ref{tab:movement} separates movement caused by the objective from movement
+caused by the treatment. Pair-trained arms sit $2.8$--$3.6$ logits from the
+SFT-family arms, and each moves $2.4$ logits along its own checkpoint ladder: the
+objective does a great deal. The two CM-DPO arms sit $0.132$ logits apart and agree on
+$99.8\%$ of predictions: the treatment does almost nothing, because the treatment is
+almost absent.
+
+\begin{table}[t]
+\centering
+\caption{Mean absolute action-logit difference on $3{,}995$ shared evaluation rows,
+Qwen2.5-1.5B seed $7$, final checkpoint. Between-arm movement is $5\%$ of within-arm
+movement.}
+\label{tab:movement}
+\begin{tabular}{lrr}
+\toprule
+comparison & mean $|\Delta\text{logit}|$ & prediction agreement \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{objective effect}}\\
+\quad \texttt{gold\_sft} vs \texttt{generalist\_cm\_dpo}   & $3.315$ & $96.9\%$ \\
+\quad \texttt{soft\_distill} vs \texttt{specialist\_cm\_dpo} & $3.510$ & $96.8\%$ \\
+\quad within \texttt{specialist\_cm\_dpo}, step 25 $\to$ 200 & $2.407$ & $98.1\%$ \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{treatment effect}}\\
+\quad \texttt{generalist\_cm\_dpo} vs \texttt{specialist\_cm\_dpo} & $\mathbf{0.132}$ & $\mathbf{99.8\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All five arms fall within $0.006$ worst-category accuracy of one another, against a
+paired interval half-width of $0.009$: no arm is separable from any other, and the
+ordering places \texttt{generalist\_cm\_dpo} nominally first. None of that is citable.
+
+\subsection{The remedy, and why it also repairs a protocol requirement}
+
+Letting each teacher author its own verdict---decoding the continuation of the fixed
+\verb|{"action": "| prefix rather than deriving fields from gold---restores the
+treatment. Byte identity falls from $98.9\%$ to $14.4\%$, and matched pairs rise from
+$190$ to $355$.
+
+It also repairs something the protocol demanded and the derived design made impossible.
+The protocol requires retaining both \texttt{teacher\_agreement} and
+\texttt{teacher\_disagreement} strata. Under derived fields a pair required differing
+actions, so agreement pairs could never form and the agreement stratum was empty by
+construction: a requirement unsatisfiable rather than merely unmet. Once teachers author
+their own evidence, two teachers can agree on the action while citing different
+authorities, which is a genuine substantive difference---and agreement becomes the
+\emph{majority} stratum, $303$ of $355$ pairs.
+
+\subsection{Why this generalises beyond one study}
+
+Nothing in the collapse depends on mortgage policy, on these backbones, or on DPO. It
+needs only three ingredients that a careful designer would plausibly choose: a small
+discrete action space, adjudication against a trusted label, and structured output
+fields populated from that label. Any cross-model preference study with those three
+properties will find its candidate-source contrast unidentified, and---because the
+symptom is a \emph{tight interval around zero}---will be tempted to report it as a
+confident null. The diagnostic is cheap: measure byte identity between the source
+inventories before training anything.
+
+\section{Two further results}
+
+\paragraph{Calibration is infeasible at this scale.}
+In all twenty pilot cells, no operating point satisfies a $5\%$ worst-category benign
+false-alarm target, a $10\%$ review budget, and a bounded worst-category
+intervention-miss rate simultaneously; every cell reports
+\texttt{constraints\_met=false}. This is a property of the constraint set at
+$1.5$--$1.7$B, not a fitting failure. It is reported only because the threshold search
+was built to refuse a degenerate corner: a false-alarm constraint alone is maximised by
+never escalating, and an all-\allow{} guard satisfies every stated constraint at chance
+accuracy. Requiring the guard to \emph{act} converts a vacuous pass into an honest
+infeasibility.
+
+\paragraph{The specificity-cohort size follows from precision, not assertion.}
+The design stated a minimum of $2{,}000$ \allow{} rows per core category in six places
+and derived it in none, while that single number set the study's entire data cost. A
+Wald half-width of $0.01$ on a $5\%$ false-alarm rate gives $z^2p(1-p)/h^2 = 1{,}825$.
+The asserted figure was close, which is luck rather than derivation: it moves when the
+precision target moves, and the protocol already treated the neighbouring mortgage
+family count as pilot-frozen rather than asserted.
+
+\section{Limitations, safety, and legal constraints}
+
+The binding limitation is that this study was stopped after its pilot. There is no
+primary panel, no sealed evaluation, and no confirmatory claim; the single measured
+contrast is invalid for the reason reported in \S\ref{sec:identifiability} and must not
+be read as evidence in either direction. Adjudication was automatic against gold rather
+than by qualified human reviewers, so the preference inventories are machine-derived and
+no mortgage row is counsel-reviewed. All five readiness gates remain false. The three
+ensemble baselines---independent, OR-vote, and routed---are implemented but never
+scored, so the practically important question of whether an aligned student beats
+routing to specialists at inference time is untouched.
+
+Two fixed backbones permit the planned transfer mechanism but cannot support an
+architecture-population claim. Specialist and generalist candidates may share
+pretraining and data biases; adjudication can still encode a flawed construct.
+The focal-category restriction improves identifiability but excludes interacting
+risks, and held-out mortgage categories are descriptive probes rather than proof
+of full-lifecycle coverage. Synthetic mortgage scenarios may underrepresent
+operational complexity. The study excludes real applicant PII and makes no
+credit decisions. Federal rules can change or be stayed after a snapshot, and
+state, licensing, investor, and program requirements remain outside scope. All
+deployment-facing mortgage outputs require qualified human review.
+
+\section{Why we stopped, and what a restart needs}
+
+We stopped after the pilot rather than running the primary panel. The reasoning was
+explicit. The remedy of \S\ref{sec:identifiability} is verified but unrun, the five
+pilot arms sat within $0.006$ of one another, and the projected primary resolution was
+$\pm 0.007$; a primary panel was therefore likely to return a bounded null on a
+question the pilot had already shown to be delicately instrumented. Banking the
+measurement result was worth more than a probable null.
+
+A restart is cheap and nothing computed is wasted. The corpus, the sixty infrastructure
+cells, and four calibrated preference inventories persist. Completing the authored-verdict
+inventories, re-running twenty pilot students, and reading the contrast is roughly two
+hours of A100 time. If that contrast clears $\pm 0.007$, the primary panel becomes
+worth authorising; if it does not, the honest output is a bounded null with the
+resolution stated, which the design was built to report.
+
+Three further prerequisites remain outside compute entirely, and no amount of GPU time
+substitutes for them: mortgage-policy sign-off by qualified reviewers, an annotation
+rubric and two-reviewer adjudication, and an independently authored sealed cohort. Until
+those exist, every number here is estimation at a machine-validated tier.
+
+\section{Conclusion}
+
+We set out to ask whether adjudicated specialist candidates teach a more uniformly
+capable guard than adjudicated generalist candidates, with the student objective held
+fixed. We cannot answer that question, and the reason is the result.
+
+A natural instantiation of the design---three actions, adjudication against gold,
+structured fields derived from gold---makes the chosen candidate a deterministic
+function of the label. The two candidate sources then supply byte-identical training
+pairs on $98\%$ of events, the two arms land $0.13$ logits apart against $2.4$ logits of
+objective-driven movement, and the contrast is unidentified rather than small. The
+symptom is a tight interval around zero, which is precisely what a confident negative
+result looks like. We report the failure, quantify it, and show that letting each
+teacher author its own verdict restores the treatment and, incidentally, makes a
+protocol requirement satisfiable that had been structurally impossible.
+
+Alongside it: at $1.5$--$1.7$B, no operating point meets a $5\%$ worst-category
+false-alarm target, a $10\%$ review budget, and a bounded intervention-miss rate
+together; and a cohort size that had been asserted in six places follows from its
+precision target instead.
+
+The contribution is a measurement prerequisite. Before comparing candidate sources,
+measure whether your inventories differ at all---it costs nothing, and the alternative
+is a hundred training cells spent confirming an artifact.
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

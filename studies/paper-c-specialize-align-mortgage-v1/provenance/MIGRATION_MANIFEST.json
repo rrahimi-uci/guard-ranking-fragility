@@ -1,0 +1,87 @@
+{
+  "schema_version": 2,
+  "manifest_id": "paper_c_sta_migration_v1",
+  "migrated_on": "2026-07-26",
+  "git_revision": "421a836",
+  "study_id": "paper_c_specialize_align_mortgage_v1",
+  "operation": "copy_not_move",
+  "digest_tool": "tools/tree_digest.py",
+  "digest_coverage_rule": "all regular files except build residue (__pycache__, *.pyc, .pytest_cache, *.egg-info, .DS_Store) and except the contents of artifacts/, inputs/, build/ -- but .gitkeep placeholders inside those directories ARE included",
+  "reverify_command": "python tools/tree_digest.py papers/paper_c/specialize_then_align studies/paper-c-specialize-align-mortgage-v1 --exclude provenance/MIGRATION_MANIFEST.json --diff",
+  "old_tree": {
+    "path": "papers/paper_c/specialize_then_align",
+    "aggregate_sha256": "dc0273dc7ce8304a73c29fb79c52cca768cf911c948e095b8cb6cea9035028fb",
+    "file_count": 70,
+    "status": "intact_compatibility_surface"
+  },
+  "new_tree": {
+    "path": "studies/paper-c-specialize-align-mortgage-v1",
+    "aggregate_sha256": "0d47daf02aa6f371b69b4e691824498b9c298bfbb930861e61687a7f578eb6d0",
+    "file_count": 72,
+    "status": "phase_4_study_package"
+  },
+  "pre_migration_snapshot": {
+    "aggregate_sha256": "e19a3985cc253379803ff65e85cfadd27fc29b593e3251ac49c50d7fa59fdb66",
+    "file_count": 67,
+    "taken_before_any_copy": true,
+    "note": "Taken with the FIRST digest rule, which excluded every file under artifacts/, inputs/ and build/ including their .gitkeep placeholders, and so is not comparable to the v2 hashes above. Kept verbatim rather than recomputed: it is the record of what was frozen before the copy, and silently restating it under a new rule would destroy the only evidence of the pre-copy state."
+  },
+  "source_changes_since_snapshot": {
+    "files": [
+      "src/paper_c_sta/contracts.py",
+      "src/paper_c_sta/ingest.py"
+    ],
+    "reason": "Fixed-parent repository discovery replaced with marker-based discovery. parents[2] is correct only at depth 3; at the study package's depth 2 it resolved OUTSIDE the repository, which would have read corpora from the wrong place. Applied to BOTH trees so they remain behaviourally identical."
+  },
+  "divergence": {
+    "only_in_old_tree": [],
+    "only_in_new_tree": [
+      "environment/README.md",
+      "environment/gpu-requirements.txt"
+    ],
+    "content_differs": [
+      "README.md"
+    ],
+    "explanation": "The new package adds an environment record and this manifest, which the predecessor has no equivalent of, and rewrites README.md to state that it is a copy that authorizes nothing. Nothing is missing from the new tree. All source, config, schemas, tests, tools, cloud scripts, manuscript, locks and layout placeholders are byte-identical.",
+    "correction": "An earlier version of this manifest reported one divergent file and a 67/68 file split. That comparison hashed only non-ignored files, so it could not see .gitkeep placeholders living under ignored prefixes -- and the copy had in fact dropped three of them (artifacts/, inputs/, build/). inputs/.gitkeep was tracked source, so the new tree was genuinely incomplete while the check reported it faithful. The placeholders were restored byte-for-byte and the coverage rule is now stated above and printed by the tool on every run.",
+    "note": "Counts and the only_in_new_tree list are stated with this manifest excluded; including it the new tree is 73 files."
+  },
+  "gitignore_asymmetry": {
+    "finding": "artifacts/.gitkeep is TRACKABLE in the new tree but IGNORED in the old one; build/.gitkeep is ignored in both.",
+    "cause": "The package .gitignore writes `artifacts/**` then `!artifacts/.gitkeep`, but git cannot re-include a file whose parent DIRECTORY is excluded. papers/paper_c/.gitignore:7 excludes `artifacts/` outright, which kills the negation there; no such ancestor rule exists under studies/, so it takes effect. The root .gitignore:7 excludes `build/`, which kills that negation in both.",
+    "consequence": "None for execution -- writers call mkdir(parents=True, exist_ok=True), so a missing placeholder directory is created on demand. It matters only for what a fresh clone shows.",
+    "not_fixed_here": "Editing papers/paper_c/.gitignore or the root .gitignore to make the negations live would change ignore semantics for paths outside this study package, which is beyond a Phase 5 copy. Recorded rather than silently adjusted."
+  },
+  "authorization": {
+    "claim_authorization": false,
+    "evidence_state": "development_only",
+    "note": "This migration copies a STOPPED study. It authorizes no data build, training, scoring, or claim. No lock was rewritten and no development output gained evidentiary status by being copied."
+  },
+  "independent_verification": {
+    "old_tree": {
+      "command": "make -C papers/paper_c/specialize_then_align test PY=<abs>",
+      "result": "1 failed, 66 passed"
+    },
+    "new_tree": {
+      "command": "make -C studies/paper-c-specialize-align-mortgage-v1 test PY=<abs>",
+      "result": "1 failed, 66 passed"
+    },
+    "declared_failure": "tests/test_candidate_lock.py::test_tracked_candidate_lock_binds_live_sources_and_authorizes_nothing",
+    "declared_failure_detail": "ContractError: locked config bytes drifted -- the candidate lock binds live source bytes and the source tree has evolved. Declared expected_fail in studies/registry.yaml for both trees; `make check-locks` errors if it ever starts passing.",
+    "identical_outcomes": true,
+    "repo_root_resolution": {
+      "papers/paper_c/specialize_then_align": "guard-ranking-fragility",
+      "studies/paper-c-specialize-align-mortgage-v1": "guard-ranking-fragility"
+    },
+    "note_on_tallies": "Run pytest without adding -q: pyproject sets addopts=\"-q\" already, and a second -q suppresses the count line entirely. The first attempt at this verification read an absent count line rather than a real one."
+  },
+  "not_migrated": {
+    "build/": "vendored Cloud SDK, 530 MB; Phase 5 requires the SDK installed OUTSIDE the repo. The placeholder is present; the contents are not.",
+    "artifacts/": "generated development output; inventoried in EXTERNAL_OBJECT_MANIFEST.json (114 objects, 19.15 GiB, development-only)",
+    "inputs/": "ignored local corpora, rebuildable from benchmarks/ per the ledger"
+  },
+  "digest_excludes": [
+    "provenance/MIGRATION_MANIFEST.json"
+  ],
+  "digest_exclude_reason": "This manifest records the hash of the tree it lives in, so it must exclude itself or the recorded value is stale the instant it is written. The exclusion is passed explicitly to the tool rather than hardcoded, so the number below is reproducible."
+}

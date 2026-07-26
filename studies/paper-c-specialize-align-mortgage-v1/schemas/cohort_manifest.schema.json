@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-primary-specificity-cohort-v1",
+  "title": "Independent primary calibration or sealed specificity cohort",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "cohort_id",
+    "profile",
+    "role",
+    "family_namespace",
+    "category_counts",
+    "minimum_allow_per_core_category",
+    "operational_prevalence",
+    "disjoint_from",
+    "family_manifest_path",
+    "family_manifest_sha256",
+    "policy_snapshot_ids"
+  ],
+  "properties": {
+    "cohort_id": {"type": "string", "minLength": 1},
+    "profile": {"const": "primary"},
+    "role": {"enum": ["calibration", "sealed_operational"]},
+    "family_namespace": {"type": "string", "minLength": 1},
+    "category_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "toxicity_abuse",
+        "jailbreak_evasion",
+        "prompt_injection_exfiltration",
+        "mortgage_fair_lending",
+        "mortgage_closed_end_advertising"
+      ],
+      "properties": {
+        "toxicity_abuse": {"$ref": "#/$defs/counts"},
+        "jailbreak_evasion": {"$ref": "#/$defs/counts"},
+        "prompt_injection_exfiltration": {"$ref": "#/$defs/counts"},
+        "mortgage_fair_lending": {"$ref": "#/$defs/counts"},
+        "mortgage_closed_end_advertising": {"$ref": "#/$defs/counts"}
+      }
+    },
+    "minimum_allow_per_core_category": {
+      "description": "Frozen by the disjoint pilot from the FPR precision target, not asserted a priori. Before the pilot lock this is null and no cohort may claim primary status.",
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "allow_minimum_provenance": {
+      "description": "How minimum_allow_per_core_category was obtained. 'pilot_frozen' requires the pilot lock that derived it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis", "pilot_lock_id"],
+      "properties": {
+        "basis": {"enum": ["pilot_frozen", "pending_pilot"]},
+        "pilot_lock_id": {"type": ["string", "null"], "minLength": 1},
+        "target_fpr_halfwidth": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "derivation": {"type": ["string", "null"], "minLength": 1}
+      }
+    },
+    "operational_prevalence": {
+      "description": "Prespecified capacity-evaluation mixture; not an estimate of deployment prevalence.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "review", "intervene"],
+      "properties": {
+        "allow": {"const": 0.94},
+        "review": {"const": 0.05},
+        "intervene": {"const": 0.01}
+      }
+    },
+    "disjoint_from": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "family_manifest_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\.\\.).+"
+    },
+    "family_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "policy_snapshot_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "review", "intervene"],
+      "properties": {
+        "allow": {"type": "integer", "minimum": 0},
+        "review": {"type": "integer", "minimum": 0},
+        "intervene": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

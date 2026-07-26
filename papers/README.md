@@ -19,6 +19,7 @@ current — the label below is authoritative.
 | [`papers/unified-report/`](unified-report/) | `mortgage_benchmark_v1_hmda2022` | current | LLM-judge and policy-card-consistent; not SME-adjudicated |
 | [`papers/paper_c/manuscript/`](paper_c/manuscript/) | `paper_c_reference_centering` | historical | none; final smoke failed a policy/reference identity check before Stage 2 |
 | [`papers/paper_c/specialize_then_align/manuscript/`](paper_c/specialize_then_align/manuscript/) | `paper_c_specialize_align_mortgage_v1` | draft | development-only; auto-adjudicated against gold, no human reviewer, no sealed cohort |
+| [`studies/paper-c-specialize-align-mortgage-v1/manuscript/`](../studies/paper-c-specialize-align-mortgage-v1/manuscript/) | `paper_c_sta_study_package_v1` | draft | development-only; a copy authorizes nothing the original did not |
 | [`papers/unified-report/unified_report.pdf`](unified-report/unified_report.pdf) | `unified_report` | current | mixed; each act declares its own tier |
 | [`papers/unified-report/slides/`](unified-report/slides/) | `unified_report` | current | mixed; each act declares its own tier |
 

@@ -21,6 +21,7 @@ Registry `guard_ranking_fragility_studies_v1` last verified at `9361982` on 2026
 | `paper_c_matched_dpo_scaffold` | superseded | none | no | protocol candidate | expected pass |
 | `paper_c_reference_centering` | stopped | none | no | historical scientific lock | expected pass |
 | `paper_c_specialize_align_mortgage_v1` | stopped | development only | no | protocol candidate | expected fail |
+| `paper_c_sta_study_package_v1` | stopped | development only | no | protocol candidate | expected fail |
 | `unified_report` | released | retrospective estimation | **yes** | live release | expected pass |
 
 ## Declared verification failures
@@ -36,6 +37,10 @@ is how a real regression stops hiding behind a known one.
 
 > The tracked candidate lock binds live source bytes and the source tree has since evolved, so test_candidate_lock fails by design. The candidate authorizes no data build, training, or claim, and no child authorization lock exists.
 
+**`paper_c_sta_study_package_v1`** — `make -C studies/paper-c-specialize-align-mortgage-v1 test PY=$(pwd)/.venv/bin/python`
+
+> Same declared failure as the predecessor tree: the candidate lock binds live source bytes and the source has evolved. 66 passed / 1 failed, identical to the original, which is the evidence that the copy is behaviourally equivalent.
+
 
 ## Lineage
 
@@ -45,6 +50,7 @@ is how a real regression stops hiding behind a known one.
 - `paper_c_matched_dpo_scaffold` — before `paper_c_specialize_align_mortgage_v1`
 - `paper_c_reference_centering` — before `paper_c_specialize_align_mortgage_v1`
 - `paper_c_specialize_align_mortgage_v1` — after `paper_c_reference_centering`; supersedes `paper_c_reference_centering`, `paper_c_matched_dpo_scaffold`
+- `paper_c_sta_study_package_v1` — after `paper_c_specialize_align_mortgage_v1`
 - `unified_report` — consumes `paper_a_sft_v2`, `base_adapter_composition`, `klsft_v1`, `expguard_external`, `starting_type_adaptation_v1`, `mortgage_benchmark_v1_hmda2022`
 
 ## Distribution
@@ -59,3 +65,4 @@ No source is currently approved for `publish_text`.
 - `paper_c_matched_dpo_scaffold` — local only
 - `paper_c_reference_centering` — local only
 - `paper_c_specialize_align_mortgage_v1` — local only
+- `paper_c_sta_study_package_v1` — local only

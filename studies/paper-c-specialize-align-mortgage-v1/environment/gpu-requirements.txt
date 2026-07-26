@@ -1,0 +1,6 @@
+# Pinned GPU stack as actually installed on the pilot VM. torchaudio is deliberately
+# absent: the image build's ABI fails to load and transformers 5.x pulls it in via
+# loss_rnnt, so it must be uninstalled before importing transformers.
+transformers==5.12.1
+peft==0.19.1
+accelerate

@@ -287,6 +287,48 @@ studies:
       the primary contrast was unidentified. The 66-cell primary panel was never
       authorized; all five readiness gates remain false.
 
+  - study_id: paper_c_sta_study_package_v1
+    title: "Specialize, Then Align? — Phase 4 study package (migrated copy)"
+    question: >
+      Same question as paper_c_specialize_align_mortgage_v1; this is the migrated
+      study-package instantiation, not a second study.
+    study_state: stopped
+    evidence_state: development_only
+    publication_state: draft
+    distribution_state: local_only
+    test_exposure: check_fast
+    evidence_tier: "development-only; a copy authorizes nothing the original did not"
+    claim_authorization: false
+    contract_type: protocol_candidate
+    verification_mode: candidate_inventory
+    verification_command: "make -C studies/paper-c-specialize-align-mortgage-v1 test PY=$(pwd)/.venv/bin/python"
+    expected_verification_status: expected_fail
+    verification_failure_reason: >
+      Same declared failure as the predecessor tree: the candidate lock binds live source
+      bytes and the source has evolved. 66 passed / 1 failed, identical to the original,
+      which is the evidence that the copy is behaviourally equivalent.
+    code_root: studies/paper-c-specialize-align-mortgage-v1/
+    config_paths:
+      - studies/paper-c-specialize-align-mortgage-v1/config/study.json
+      - studies/paper-c-specialize-align-mortgage-v1/config/smoke.json
+    protocol_paths:
+      - studies/paper-c-specialize-align-mortgage-v1/PROTOCOL.md
+    environment_path: studies/paper-c-specialize-align-mortgage-v1/environment/README.md
+    status_path: studies/paper-c-specialize-align-mortgage-v1/STATUS.md
+    manuscript_paths: [studies/paper-c-specialize-align-mortgage-v1/manuscript/]
+    lock_bound_paths: true
+    predecessor: paper_c_specialize_align_mortgage_v1
+    external_object_manifest: studies/paper-c-specialize-align-mortgage-v1/provenance/EXTERNAL_OBJECT_MANIFEST.json
+    restore_command: "gsutil -m cp -r gs://jazzx-gcp-poc-1-paper-c/v2/sta/<prefix> <dest>/"
+    notes: >
+      A COPY, not a move: papers/paper_c/specialize_then_align/ remains intact as a
+      compatibility surface, per the plan's prohibition on moving an active tree before
+      the new version verifies independently. Both verify at 66 passed / 1 failed and
+      both resolve the repository root correctly, which required replacing fixed-parent
+      discovery -- parents[2] is right at depth 3 but pointed outside the repository at
+      the study package's depth 2. provenance/MIGRATION_MANIFEST.json records old and new
+      tree hashes; the only divergent file between the trees is that manifest.
+
   # ─────────────────────────────────────────────────────────────── publications
   - study_id: unified_report
     title: "The Safety-Guard Benchmark Chooses the Winner"

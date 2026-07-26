@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paper-c-specialize-then-align"
+version = "0.1.0"
+description = "Scientific contracts for cross-model preference alignment of guard specialists"
+requires-python = ">=3.11"
+
+[project.scripts]
+paper-c-sta = "paper_c_sta.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -37,7 +37,9 @@ Released, path-bound studies stay at their compatibility paths; new structure is
 ```text
 guard-ranking-fragility/
 ├── studies/                             # registry.yaml = normative study state (+ schema, generated README)
+│   └── paper-c-specialize-align-mortgage-v1/  # first Phase 4 study package (a copy; see below)
 ├── benchmarks/registry/                 # distribution.yaml = per-source redistribution decisions
+├── apps/benchmark-explorer/             # ledger-driven, fail-closed explorer build + negative tests
 ├── guard_research/                      # canonical library: metrics, thresholds, prompts, provenance
 ├── experiments/                         # Paper A pipeline; composition; KL-SFT; ExpGuard; adaptation
 ├── mortgage-benchmark/                  # generator (magen/), frozen v1 release, scorer, baselines, tests
@@ -49,12 +51,22 @@ guard-ranking-fragility/
 │   └── paper_c/                         # stopped predecessor + specialize_then_align/ successor
 ├── artifacts/                           # released & development evidence: locks, manifests, text-free scores
 ├── configs/                             # study configs + the Paper A v2 release anchor
-├── tools/                               # registry validator, link checker, index renderer
+├── tools/                               # registry validator, link checker, index renderer, tree digest
 ├── docs/architecture/                   # repository-layout-v2.md (the migration plan this tree follows)
 ├── data/                                # ignored: raw/licensed corpora and download cache
 ├── runs/                                # ignored: transient execution output, runs/<study_id>/<run_id>/
 └── tests/                               # canonical unit + artifact-contract tests
 ```
+
+One study now exists in both layouts. `studies/paper-c-specialize-align-mortgage-v1/` is a **copy**
+of `papers/paper_c/specialize_then_align/`, not a move: the plan forbids relocating an active tree
+before the new location verifies independently, so both are tested and both must stay behaviourally
+identical. The evidence that the migration preserved behaviour is that they fail *identically* —
+66 passed, 1 failed, that one being a declared `expected_fail` — rather than that the new one merely
+runs. Migrating exposed one real defect: fixed-parent repository discovery (`parents[2]`) is correct
+at the old depth but resolves outside the repository at the new one, so discovery is now
+marker-based in both trees. See `studies/paper-c-specialize-align-mortgage-v1/provenance/MIGRATION_MANIFEST.json`
+for the tree hashes.
 
 Four storage classes, enforced rather than described: **source** is tracked, **evidence** enters
 `artifacts/<study_id>/` under an allowlist, **raw or licensed data** stays in ignored `data/` with its
@@ -220,7 +232,7 @@ The table below is the narrative summary.
 | **Act II — composition** | [Paper B](papers/base-adapter-composition/compose_dont_tune.pdf) | **Retrospective pilot complete.** No separately locked prospective run; controls remain roadmap items. |
 | **Act III — mortgage depth** | [frozen benchmark](mortgage-benchmark/benchmark/v1_hmda2022/) | **994-row synthetic benchmark + four-base baselines complete.** LLM-judge / policy-card labels, *not* SME-adjudicated. |
 | **Act III — ExpGuard breadth** | [scores](artifacts/expguard_external/) + [evaluator](experiments/eval_expguard_external.py) | **Complete** four-checkpoint base eval on 2,275 finance/health/law prompts; text-free scores committed; tuned comparison is future work. |
-| **Paper C — specialize-then-align** | [study](papers/paper_c/specialize_then_align/) | **Stopped after its pilot.** Its result is an identifiability finding: with a three-action head and gold-based adjudication, the two candidate-source inventories were 98% byte-identical and the primary contrast was unidentified. No primary panel, no sealed cohort, no claim. |
+| **Paper C — specialize-then-align** | [study](papers/paper_c/specialize_then_align/) · [package](studies/paper-c-specialize-align-mortgage-v1/) | **Stopped after its pilot.** Its result is an identifiability finding: with a three-action head and gold-based adjudication, the two candidate-source inventories were 98% byte-identical and the primary contrast was unidentified. No primary panel, no sealed cohort, no claim. |
 
 Acts I and II are reproducible but **retrospective** (their sources were inspected during development).
 The report keeps retrospective, external-expert, and LLM-judge evidence in separate tiers and never pools

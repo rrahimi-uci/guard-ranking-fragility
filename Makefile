@@ -138,6 +138,8 @@ check-fast: check-registry check-links  ## hermetic tests across every suite
 	  || echo "NOTE paper_c predecessor: expected_fail, see studies/registry.yaml"
 	@$(MAKE) -C papers/paper_c/specialize_then_align test PY=$(PY_ABS) \
 	  || echo "NOTE specialize_then_align: expected_fail (candidate lock binds live source bytes)"
+	@$(MAKE) -C studies/paper-c-specialize-align-mortgage-v1 test PY=$(PY_ABS) \
+	  || echo "NOTE sta study package: expected_fail (same declared candidate-lock failure)"
 
 check-locks:  ## contract-specific checks; expected_fail cases are declared in the registry
 	$(PY_ABS) tools/validate_registries.py --run-verification

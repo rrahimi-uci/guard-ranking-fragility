@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper-c-sta-sample-v2",
+  "title": "Focal-category guard event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sample_id",
+    "family_id",
+    "content_family_id",
+    "category",
+    "domain",
+    "request",
+    "proposed_response",
+    "context",
+    "jurisdiction",
+    "policy_as_of",
+    "temporal_evaluation_eligible",
+    "policy_context",
+    "gold",
+    "provenance"
+  ],
+  "properties": {
+    "sample_id": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "content_family_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Semantic/template family used for cross-split leakage checks."
+    },
+    "category": {
+      "description": "The one independently adjudicated focal category; it is not an oracle deployment input.",
+      "enum": [
+        "toxicity_abuse",
+        "jailbreak_evasion",
+        "prompt_injection_exfiltration",
+        "mortgage_fair_lending",
+        "mortgage_closed_end_advertising",
+        "mortgage_origination_disclosures",
+        "mortgage_underwriting_adverse_action",
+        "mortgage_steering_referrals",
+        "mortgage_servicing_loss_mitigation",
+        "mortgage_valuation_appraisal",
+        "mortgage_privacy_reporting",
+        "mortgage_servicemember_protections"
+      ]
+    },
+    "domain": {"enum": ["general_safety", "mortgage"]},
+    "request": {"type": "string", "minLength": 1},
+    "proposed_response": {"type": ["string", "null"]},
+    "context": {"type": ["object", "null"]},
+    "jurisdiction": {"type": ["string", "null"]},
+    "policy_as_of": {"type": ["string", "null"], "format": "date"},
+    "temporal_evaluation_eligible": {
+      "type": "boolean",
+      "description": "Only true rows may be routed by the configured policy-time cutoff."
+    },
+    "temporal_policy_side": {
+      "type": ["string", "null"],
+      "enum": [null, "pre_cutoff", "post_cutoff"]
+    },
+    "split": {
+      "enum": [
+        "specialist_train",
+        "alignment_pool",
+        "calibration",
+        "checkpoint_selection",
+        "public_test",
+        "sealed_test",
+        "temporal_test"
+      ]
+    },
+    "policy_context": {
+      "oneOf": [
+        {"$ref": "#/$defs/policyContext"},
+        {"type": "null"}
+      ]
+    },
+    "gold": {"$ref": "#/$defs/gold"},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "policyContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "snapshot_object_sha256",
+        "policy_vintage_lock_id",
+        "policy_as_of",
+        "authority_ids",
+        "policy_text",
+        "content_sha256"
+      ],
+      "properties": {
+        "snapshot_id": {"type": "string", "minLength": 1},
+        "snapshot_object_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "policy_vintage_lock_id": {"type": "string", "minLength": 1},
+        "policy_as_of": {"type": "string", "format": "date"},
+        "authority_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "policy_text": {"type": "string", "minLength": 1},
+        "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "gold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "violation_tags",
+        "policy_ids",
+        "rationale"
+      ],
+      "properties": {
+        "action": {"enum": ["allow", "review", "intervene"]},
+        "category": {
+          "enum": [
+            "toxicity_abuse",
+            "jailbreak_evasion",
+            "prompt_injection_exfiltration",
+            "mortgage_fair_lending",
+            "mortgage_closed_end_advertising",
+            "mortgage_origination_disclosures",
+            "mortgage_underwriting_adverse_action",
+            "mortgage_steering_referrals",
+            "mortgage_servicing_loss_mitigation",
+            "mortgage_valuation_appraisal",
+            "mortgage_privacy_reporting",
+            "mortgage_servicemember_protections"
+          ]
+        },
+        "violation_tags": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "policy_ids": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "rationale": {"type": "string", "minLength": 1},
+        "reviewer_ids": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "adjudicator_id": {"type": ["string", "null"]}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "source_id",
+        "content_sha256",
+        "licence_id",
+        "synthetic",
+        "contains_real_pii"
+      ],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "licence_id": {"type": "string", "minLength": 1},
+        "synthetic": {"type": "boolean"},
+        "contains_real_pii": {"const": false}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"domain": {"const": "mortgage"}},
+        "required": ["domain"]
+      },
+      "then": {
+        "properties": {
+          "category": {
+            "enum": [
+              "mortgage_fair_lending",
+              "mortgage_closed_end_advertising",
+              "mortgage_origination_disclosures",
+              "mortgage_underwriting_adverse_action",
+              "mortgage_steering_referrals",
+              "mortgage_servicing_loss_mitigation",
+              "mortgage_valuation_appraisal",
+              "mortgage_privacy_reporting",
+              "mortgage_servicemember_protections"
+            ]
+          },
+          "proposed_response": {"type": "string", "minLength": 1},
+          "context": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "actor_role",
+              "product",
+              "transaction_stage",
+              "applicable_regime",
+              "coverage_facts"
+            ],
+            "properties": {
+              "actor_role": {"type": "string", "minLength": 1},
+              "product": {"type": "string", "minLength": 1},
+              "transaction_stage": {"type": "string", "minLength": 1},
+              "applicable_regime": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+                "uniqueItems": true
+              },
+              "coverage_facts": {"type": "object", "minProperties": 1}
+            }
+          },
+          "jurisdiction": {"const": "US_federal"},
+          "policy_as_of": {"type": "string", "format": "date"},
+          "policy_context": {"$ref": "#/$defs/policyContext"},
+          "gold": {
+            "required": ["reviewer_ids", "adjudicator_id"],
+            "properties": {
+              "policy_ids": {"minItems": 1},
+              "reviewer_ids": {"minItems": 2},
+              "adjudicator_id": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "category": {
+            "enum": [
+              "toxicity_abuse",
+              "jailbreak_evasion",
+              "prompt_injection_exfiltration"
+            ]
+          },
+          "proposed_response": {"const": null},
+          "context": {"const": null},
+          "jurisdiction": {"const": null},
+          "policy_as_of": {"const": null},
+          "policy_context": {"const": null},
+          "temporal_evaluation_eligible": {"const": false},
+          "gold": {
+            "properties": {
+              "policy_ids": {"maxItems": 0}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"temporal_evaluation_eligible": {"const": true}},
+        "required": ["temporal_evaluation_eligible"]
+      },
+      "then": {
+        "required": ["temporal_policy_side"],
+        "properties": {
+          "domain": {"const": "mortgage"},
+          "policy_as_of": {"type": "string", "format": "date"},
+          "temporal_policy_side": {"enum": ["pre_cutoff", "post_cutoff"]},
+          "split": {"const": "temporal_test"}
+        }
+      },
+      "else": {
+        "properties": {
+          "temporal_policy_side": {"type": "null"}
+        }
+      }
+    }
+  ]
+}
