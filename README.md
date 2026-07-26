@@ -37,7 +37,11 @@ Released, path-bound studies stay at their compatibility paths; new structure is
 ```text
 guard-ranking-fragility/
 ├── studies/                             # registry.yaml = normative study state (+ schema, generated README)
-│   └── paper-c-specialize-align-mortgage-v1/  # first Phase 4 study package (a copy; see below)
+│   ├── composition/                     # ┐ navigation packages: generated README + `make verify`.
+│   ├── expguard/                        # │ Code stays at code_root — LOCK.json binds experiments/,
+│   ├── klsft/                           # │ so these point at it rather than copying it.
+│   ├── starting-type-adaptation/        # ┘
+│   └── paper-c-specialize-align-mortgage-v1/  # self-contained study package (a copy; see below)
 ├── benchmarks/registry/                 # distribution.yaml = per-source redistribution decisions
 ├── apps/benchmark-explorer/             # ledger-driven, fail-closed explorer build + negative tests
 ├── guard_research/                      # canonical library: metrics, thresholds, prompts, provenance
@@ -58,14 +62,22 @@ guard-ranking-fragility/
 └── tests/                               # canonical unit + artifact-contract tests
 ```
 
+Each study has one page under `studies/` answering what it asks, what it may claim, where
+its code and evidence live, and how to verify it — `make -C studies/expguard verify`. Those
+pages are **generated from the registry**, and their Makefiles look the command up rather
+than restating it, so a package cannot disagree with the registry; `make check-registry`
+fails if one goes stale. The code itself does not move: `artifacts/paper_a_sft_v2/LOCK.json`
+binds `experiments/` paths in eight places, so a copy would either break the lock or
+silently diverge from it.
+
 One study now exists in both layouts. `studies/paper-c-specialize-align-mortgage-v1/` is a **copy**
 of `papers/paper_c/specialize_then_align/`, not a move: the plan forbids relocating an active tree
 before the new location verifies independently, so both are tested and both must stay behaviourally
 identical. The evidence that the migration preserved behaviour is that they fail *identically* —
-66 passed, 1 failed, that one being a declared `expected_fail` — rather than that the new one merely
-runs. Migrating exposed one real defect: fixed-parent repository discovery (`parents[2]`) is correct
-at the old depth but resolves outside the repository at the new one, so discovery is now
-marker-based in both trees. See `studies/paper-c-specialize-align-mortgage-v1/provenance/MIGRATION_MANIFEST.json`
+70 passed, 1 failed, that one being a declared `expected_fail` — rather than that the new one merely
+runs. Migrating exposed two real defects: fixed-parent repository discovery (`parents[2]`) is correct
+at the old depth but resolves outside the repository at the new one; and the storage contract's
+`runs/` location was unreachable. Both are fixed in both trees. See `studies/paper-c-specialize-align-mortgage-v1/provenance/MIGRATION_MANIFEST.json`
 for the tree hashes.
 
 Four storage classes, enforced rather than described: **source** is tracked, **evidence** enters

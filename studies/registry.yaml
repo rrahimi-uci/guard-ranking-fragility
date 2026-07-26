@@ -78,6 +78,7 @@ studies:
 
   - study_id: base_adapter_composition
     title: "Output-space composition recovers transfer without retraining"
+    package_path: studies/composition/
     question: >
       Does a calibrated equal-weight average of a base guard and its own SFT adapter
       recover the held-out transfer that fine-tuning gave up?
@@ -100,6 +101,7 @@ studies:
 
   - study_id: klsft_v1
     title: "KL-regularized SFT as an anti-forgetting control"
+    package_path: studies/klsft/
     question: "Does a base-anchored KL penalty preserve the transfer plain SFT gives up?"
     study_state: released
     evidence_state: retrospective_estimation
@@ -120,6 +122,7 @@ studies:
 
   - study_id: expguard_external
     title: "External validation on ExpGuard"
+    package_path: studies/expguard/
     question: "Do the base guards rank domain violations well on expert-annotated finance/health/law prompts?"
     study_state: released
     evidence_state: retrospective_estimation
@@ -141,6 +144,7 @@ studies:
   # ──────────────────────────────────────────────────── contract-drifted / blocked
   - study_id: starting_type_adaptation_v1
     title: "Adapting released guards: a confirmatory starting-type study"
+    package_path: studies/starting-type-adaptation/
     question: "Does the specialization tradeoff also hit models that are already purpose-built guards?"
     study_state: contract_drifted
     evidence_state: preregistered_analysis

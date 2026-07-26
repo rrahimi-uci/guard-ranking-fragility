@@ -274,6 +274,11 @@
             "string",
             "null"
           ]
+        },
+        "package_path": {
+          "type": "string",
+          "pattern": "^studies/[a-z0-9-]+/$",
+          "description": "Path to a GENERATED navigation package: a README and a Makefile rendered from this registry by tools/render_indexes.py. Set this only for studies whose code stays at code_root. Do NOT set it for a self-contained study package that owns its own Makefile and sources (studies/paper-c-specialize-align-mortgage-v1/) -- rendering would overwrite that package's real build entry point."
         }
       },
       "allOf": [

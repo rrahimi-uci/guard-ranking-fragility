@@ -112,6 +112,78 @@ def papers_index(reg) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _bullets(label, values, note=""):
+    if not values:
+        return []
+    out = [f"**{label}**" + (f" — {note}" if note else "")]
+    out += [f"- [`{v}`](" + "../" * 2 + f"{v})" for v in values]
+    return out + [""]
+
+
+def package_readme(study, reg) -> str:
+    """One study's navigation page, rendered from the registry.
+
+    A package is navigation, not a second home. For a lock-bound study it holds no copy
+    of the code -- `artifacts/paper_a_sft_v2/LOCK.json` binds `experiments/` paths, so a
+    copy would either break the lock or silently diverge from it. What the package adds
+    is a single place per study that answers: what does it ask, what may it claim, where
+    does its code, config, evidence and manuscript live, and how do I verify it.
+    """
+    sid = study["study_id"]
+    claims = ("**This study authorizes claims.**" if study["claim_authorization"]
+              else "**This study authorizes no claim.**")
+    lines = [BANNER, "", f"# {study['title']}", "",
+             f"`{sid}` · {STATE_MARK.get(study['study_state'], study['study_state'])}"
+             f" · evidence: {study['evidence_state'].replace('_', ' ')}"
+             f" · contract: {study['contract_type'].replace('_', ' ')}", "",
+             "## Question", "", study["question"].strip(), "",
+             "## Standing", "",
+             claims + " " + study.get("evidence_tier", "").strip().capitalize() + ".", ""]
+
+    if study.get("notes"):
+        lines += [study["notes"].strip(), ""]
+
+    lines += ["## Where things live", ""]
+    lines += _bullets("Code", [study["code_root"]] if study.get("code_root") else [],
+                      "authoritative location; not copied here")
+    lines += _bullets("Config", study.get("config_paths", []))
+    lines += _bullets("Protocol", study.get("protocol_paths", []))
+    lines += _bullets("Evidence", study.get("artifact_paths", []))
+    lines += _bullets("Manuscript", study.get("manuscript_paths", []))
+    if study.get("environment_path"):
+        lines += _bullets("Environment", [study["environment_path"]])
+
+    exp = study["expected_verification_status"].replace("_", " ")
+    lines += ["## Verify", "", "```bash", "make -C " + study["package_path"].rstrip("/")
+              + " verify", "```", "",
+              f"Runs the registry's declared command and expects **{exp}**:", "",
+              "```", study["verification_command"], "```", ""]
+    if study.get("verification_failure_reason"):
+        lines += [study["verification_failure_reason"].strip(), ""]
+
+    lines += ["---", "",
+              "Generated from [`studies/registry.yaml`](../registry.yaml), which is the only",
+              "source of study state. This page adds no facts of its own; edit the registry",
+              "and run `python tools/render_indexes.py`.", ""]
+    return "\n".join(lines)
+
+
+def package_makefile(study) -> str:
+    sid = study["study_id"]
+    return (f"# Verification entry point for {sid}.\n"
+            "# Delegates to the command declared in studies/registry.yaml rather than\n"
+            "# restating it, so a package can never disagree with the registry.\n"
+            "#\n"
+            "# PY is overridable and defaults to python3: `python` is absent on a stock\n"
+            "# macOS PATH, and the repo venv is .venv/bin/python.\n"
+            "PY ?= python3\n\n"
+            ".PHONY: verify command\n\n"
+            "verify:\n"
+            f"\t@cd ../.. && $(PY) tools/study_verify.py {sid}\n\n"
+            "command:  ## print the declared command without running it\n"
+            f"\t@cd ../.. && $(PY) tools/study_verify.py {sid} --print\n")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
@@ -119,6 +191,12 @@ def main() -> int:
     reg = load()
     targets = {ROOT / "studies/README.md": studies_index(reg),
                ROOT / "papers/README.md": papers_index(reg)}
+    for study in reg["studies"]:
+        pkg = study.get("package_path")
+        if not pkg:
+            continue
+        targets[ROOT / pkg / "README.md"] = package_readme(study, reg)
+        targets[ROOT / pkg / "Makefile"] = package_makefile(study)
     stale = []
     for path, content in targets.items():
         if args.check:
@@ -126,6 +204,7 @@ def main() -> int:
             if current != content:
                 stale.append(str(path.relative_to(ROOT)))
         else:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)
             print(f"wrote {path.relative_to(ROOT)}")
     if stale:
