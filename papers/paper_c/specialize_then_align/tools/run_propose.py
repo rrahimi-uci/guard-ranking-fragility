@@ -34,14 +34,16 @@ def main(target_backbone: str, panel: str) -> int:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     config = read_json(output_path("config/study.json"))
 
-    rows = []
+    rows, calibration_rows = [], []
     with (ROOT / "artifacts/cohort/samples.jsonl").open() as handle:
         for line in handle:
             row = json.loads(line)
             if row.get("split") == "alignment_pool":
                 rows.append(row)
-    print(f"alignment_pool rows: {len(rows)}  target={target_backbone} panel={panel} "
-          f"device={device}", flush=True)
+            elif row.get("split") == "calibration":
+                calibration_rows.append(row)
+    print(f"alignment_pool rows: {len(rows)}  calibration rows: {len(calibration_rows)}  "
+          f"target={target_backbone} panel={panel} device={device}", flush=True)
 
     teacher_seeds = PANEL_TEACHER_SEEDS[panel]
     cells_root = ROOT / "artifacts/cells"
@@ -51,7 +53,7 @@ def main(target_backbone: str, panel: str) -> int:
         candidates, record = propose_for_source(
             config, rows, source=source, target_backbone_key=target_backbone,
             teacher_seeds=teacher_seeds, cells_root=cells_root, device=device,
-            batch_size=16,
+            batch_size=16, calibration_rows=calibration_rows,
         )
         record["wall_seconds"] = round(time.time() - started, 1)
         print(f"  {source:20s} events_with_two_candidates="

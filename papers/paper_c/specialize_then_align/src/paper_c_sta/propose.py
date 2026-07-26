@@ -23,9 +23,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 import json
+import math
 from pathlib import Path
 
 from .contracts import ContractError, output_path
+from .evaluate import fit_temperature, softmax_t
 from .modeling import ACTIONS, action_logits, load_backbone, render_prompt
 from .pairs import make_candidate
 
@@ -60,6 +62,36 @@ def _batched(items: Sequence, size: int):
         yield items[start:start + size]
 
 
+def fit_teacher_temperatures(model, tokenizer, calibration_rows, *, device,
+                            batch_size: int = 16) -> dict[str, float]:
+    """Category-wise temperature for one teacher, fit on the calibration split.
+
+    config.preferences.candidate_calibration requires this and the first
+    implementation skipped it, taking a raw softmax instead.  That matters more here
+    than in ordinary scoring: the two arms' candidates come from *different teacher
+    types*, so any miscalibration is confounded with the treatment itself -- a
+    sharper specialist would look like a better specialist.
+    """
+    import torch
+
+    by_category: dict[str, list[dict]] = {}
+    for row in calibration_rows:
+        by_category.setdefault(row["category"], []).append(row)
+    out: dict[str, float] = {}
+    for category, rows in by_category.items():
+        scored = []
+        for start in range(0, len(rows), batch_size):
+            chunk = rows[start:start + batch_size]
+            with torch.no_grad():
+                logits = action_logits(
+                    model, tokenizer, [render_prompt(r) for r in chunk], device=device)
+            for row, values in zip(chunk, logits):
+                scored.append({"action_logits": [float(v) for v in values],
+                               "gold_action": row["gold"]["action"]})
+        out[category] = fit_temperature(scored) if scored else 1.0
+    return out
+
+
 def propose_for_source(
     config: Mapping,
     rows: Sequence[Mapping],
@@ -68,6 +100,7 @@ def propose_for_source(
     target_backbone_key: str,
     teacher_seeds: Sequence[int],
     cells_root: Path,
+    calibration_rows: Sequence[Mapping] | None = None,
     device: str = "cpu",
     batch_size: int = 16,
     checkpoint: str = "step0400",
@@ -84,6 +117,7 @@ def propose_for_source(
     spec = config["backbones"][teacher_backbone]
     out: dict[str, dict[str, dict]] = {}
     used_cells: list[str] = []
+    temperatures: dict[str, float] = {}
 
     for slot_index, teacher_seed in enumerate(sorted(teacher_seeds)[:2]):
         slot = f"s{slot_index}"
@@ -104,6 +138,17 @@ def propose_for_source(
                 spec["model_id"], spec["revision"], device=device,
                 adapter_path=str(adapter),
             )
+            # Calibrate this teacher before its probabilities are used or compared.
+            temps = {}
+            if calibration_rows:
+                relevant = [r for r in calibration_rows
+                            if source != "category_specialist"
+                            or r["category"] == group[0]["category"]]
+                if relevant:
+                    temps = fit_teacher_temperatures(
+                        model, tokenizer, relevant, device=device, batch_size=batch_size)
+                    temperatures.update({f"{Path(path_str).name}::{k}": v
+                                         for k, v in temps.items()})
             for chunk in _batched(group, batch_size):
                 prompts = [render_prompt(r) for r in chunk]
                 with torch.no_grad():
@@ -111,7 +156,10 @@ def propose_for_source(
                         action_logits(model, tokenizer, prompts, device=device).float(), -1
                     )
                 for row, dist in zip(chunk, probs):
-                    values = [float(x) for x in dist]
+                    raw = [float(x) for x in dist]
+                    tau = temps.get(row["category"], 1.0)
+                    values = softmax_t(
+                        [math.log(max(v, 1e-12)) for v in raw], tau) if tau != 1.0 else raw
                     # Slot 0 takes the teacher's mode; slot 1 draws from the same
                     # calibrated distribution.  Taking the mode in both slots makes a
                     # candidate a deterministic function of the teacher, so two seeds
@@ -157,5 +205,7 @@ def propose_for_source(
         "events_in": len(rows),
         "events_with_two_candidates": len(complete),
         "checkpoint": checkpoint,
+        "calibrated": bool(calibration_rows),
+        "category_temperatures": temperatures,
     }
     return complete, record
