@@ -76,6 +76,7 @@ jobs:
         run: |
           mkdir -p _site
           cp papers/unified-report-html/index.html _site/
+          cp papers/unified-report-html/robots.txt papers/unified-report-html/sitemap.xml _site/
           cp -r papers/unified-report-html/assets _site/assets
           find _site -type f | sort
 

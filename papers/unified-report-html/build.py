@@ -35,6 +35,52 @@ OUT = HERE / "index.html"
 ASSETS = HERE / "assets"
 FIG = ASSETS / "fig"
 
+# One source of truth for the published URL: the canonical link, the Open Graph tags, the
+# JSON-LD, robots.txt and sitemap.xml all interpolate this. A canonical that disagrees with
+# where the page actually lives is a silent SEO failure, so a test asserts they match.
+SITE_URL = "https://rrahimi-uci.github.io/safety-guard-dynamics/"
+
+DESCRIPTION = (
+    "What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint "
+    "study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling "
+    "but not transfer, and at an equal false-alarm budget it catches less than half of what "
+    "its own untuned base catches off-source. Plus a retraining-free composition repair, a "
+    "preregistered ten-checkpoint replication, and a dual-labeled mortgage benchmark."
+)
+KEYWORDS = (
+    "AI safety, safety guard, LLM guardrail, prompt safety classifier, small language model, "
+    "LoRA fine-tuning, supervised fine-tuning, specialization, out-of-distribution transfer, "
+    "average precision, calibration, false-alarm rate, model composition, model merging, "
+    "jailbreak detection, prompt injection, HMDA, mortgage lending, fair lending, "
+    "redlining proxy, regulated domains, benchmark design, reproducibility"
+)
+
+
+def seo_files() -> dict[str, str]:
+    """robots.txt and sitemap.xml, which jekyll-sitemap used to generate on the old site.
+
+    No <lastmod>: it would have to come from a clock or a file mtime, which makes the build
+    nondeterministic and defeats `--check` -- for no crawler benefit on a one-page site.
+    """
+    return {
+        "robots.txt": (
+            "User-agent: *\n"
+            "Allow: /\n"
+            "\n"
+            f"Sitemap: {SITE_URL}sitemap.xml\n"
+        ),
+        "sitemap.xml": (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            "  <url>\n"
+            f"    <loc>{SITE_URL}</loc>\n"
+            "    <changefreq>monthly</changefreq>\n"
+            "    <priority>1.0</priority>\n"
+            "  </url>\n"
+            "</urlset>\n"
+        ),
+    }
+
 # Sentinels chosen from a range LaTeX never emits and pandoc passes through untouched.
 REF, CITE, BOX, ENDBOX, RAW = "\u27e6REF:", "\u27e6CITE:", "\u27e6BOX:", "\u27e6/BOX\u27e7", "\u27e6RAW:"
 EQ = "\u27e6EQ:"
@@ -675,21 +721,27 @@ def main(argv=None) -> int:
                                   "in High-Compliance Business Domains"),
                  "{{ABSTRACT}}": abstract_html, "{{TOC}}": toc,
                  "{{BODY}}": body, "{{BIB}}": bib,
+                 "{{SITE_URL}}": SITE_URL, "{{DESCRIPTION}}": DESCRIPTION,
+                 "{{KEYWORDS}}": KEYWORDS,
                  "{{NTAB}}": str(counts["tables"]), "{{NFIG}}": str(counts["figures"])}.items():
         page = page.replace(k, v)
+    assert "{{" not in page, f"unsubstituted template placeholder: {page[page.index('{{'):][:40]}"
+
+    emitted = {"index.html": page, **seo_files()}
 
     if args.check:
-        if not OUT.exists():
-            print("CHECK FAILED: index.html is not committed")
+        stale = [n for n, want in emitted.items()
+                 if not (HERE / n).exists() or (HERE / n).read_text() != want]
+        if stale:
+            print(f"CHECK FAILED: differs from a fresh build: {', '.join(sorted(stale))}")
             return 1
-        if OUT.read_text() != page:
-            print("CHECK FAILED: index.html differs from a fresh build")
-            return 1
-        print("  index.html is byte-identical to a fresh build")
+        print(f"  byte-identical to a fresh build: {', '.join(sorted(emitted))}")
         return 1 if problems and "skipped" not in problems[0] else 0
 
-    OUT.write_text(page)
-    print(f"  wrote {OUT.relative_to(HERE.parent.parent)}  ({len(page)/1024:.0f} KB)")
+    for name, text in emitted.items():
+        (HERE / name).write_text(text)
+    print("  wrote " + ", ".join(f"{n} ({len(t)/1024:.0f} KB)" if n.endswith(".html")
+                                 else n for n, t in emitted.items()))
     return 1 if problems and "skipped" not in problems[0] else 0
 
 

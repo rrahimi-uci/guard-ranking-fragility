@@ -3,10 +3,60 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Safety-Guard Benchmark Chooses the Winner</title>
-<meta name="description" content="Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Business Domains — measuring what fine-tuning actually buys a compact safety guard, on a fixed four-checkpoint panel.">
+<title>The Safety-Guard Benchmark Chooses the Winner — Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Business Domains</title>
+<meta name="description" content="What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, and a dual-labeled mortgage benchmark.">
 <meta name="author" content="Reza Rahimi">
 <meta name="color-scheme" content="light dark">
+
+<!-- Discoverability. The predecessor site got this from jekyll-seo-tag and jekyll-sitemap;
+     this site is a static upload with no Jekyll, so the same fields are emitted directly and
+     the sitemap is written by build.py. One source of truth for the URL: SITE_URL. -->
+<link rel="canonical" href="https://rrahimi-uci.github.io/safety-guard-dynamics/">
+<meta name="keywords" content="AI safety, safety guard, LLM guardrail, prompt safety classifier, small language model, LoRA fine-tuning, supervised fine-tuning, specialization, out-of-distribution transfer, average precision, calibration, false-alarm rate, model composition, model merging, jailbreak detection, prompt injection, HMDA, mortgage lending, fair lending, redlining proxy, regulated domains, benchmark design, reproducibility">
+<meta name="robots" content="index, follow">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Safety-Guard Dynamics">
+<meta property="og:title" content="The Safety-Guard Benchmark Chooses the Winner">
+<meta property="og:description" content="What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, and a dual-labeled mortgage benchmark.">
+<meta property="og:url" content="https://rrahimi-uci.github.io/safety-guard-dynamics/">
+<meta property="og:image" content="https://rrahimi-uci.github.io/safety-guard-dynamics/assets/fig/og_teaser.png">
+<meta property="og:image:alt" content="Three panels: fine-tuning's represented gain versus flat transfer, the top-ranked guard changing with the benchmark, and a fair-lending violation ranked below benign rows.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Safety-Guard Benchmark Chooses the Winner">
+<meta name="twitter:description" content="What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, and a dual-labeled mortgage benchmark.">
+<meta name="twitter:image" content="https://rrahimi-uci.github.io/safety-guard-dynamics/assets/fig/og_teaser.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "headline": "The Safety-Guard Benchmark Chooses the Winner",
+  "alternativeHeadline": "Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Business Domains",
+  "description": "What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, and a dual-labeled mortgage benchmark.",
+  "url": "https://rrahimi-uci.github.io/safety-guard-dynamics/",
+  "image": "https://rrahimi-uci.github.io/safety-guard-dynamics/assets/fig/og_teaser.png",
+  "inLanguage": "en",
+  "datePublished": "2026-07",
+  "keywords": "AI safety, safety guard, LLM guardrail, prompt safety classifier, small language model, LoRA fine-tuning, supervised fine-tuning, specialization, out-of-distribution transfer, average precision, calibration, false-alarm rate, model composition, model merging, jailbreak detection, prompt injection, HMDA, mortgage lending, fair lending, redlining proxy, regulated domains, benchmark design, reproducibility",
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "creativeWorkStatus": "Preprint",
+  "author": {
+    "@type": "Person",
+    "name": "Reza Rahimi",
+    "affiliation": {"@type": "Organization", "name": "JazzX AI"},
+    "url": "https://github.com/rrahimi-uci"
+  },
+  "codeRepository": "https://github.com/rrahimi-uci/safety-guard-dynamics",
+  "encoding": {
+    "@type": "MediaObject",
+    "encodingFormat": "application/pdf",
+    "contentUrl": "https://github.com/rrahimi-uci/safety-guard-dynamics/blob/main/papers/unified-report/unified_report.pdf",
+    "description": "PDF edition, including the case-study prompt text withheld from this web edition."
+  }
+}
+</script>
+
 <link rel="stylesheet" href="assets/styles.css">
 <script>
   window.MathJax = {

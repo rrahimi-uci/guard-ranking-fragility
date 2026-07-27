@@ -220,6 +220,55 @@ def test_every_relative_link_in_the_page_resolves_inside_the_published_site():
     )
 
 
+SEO_FILES = ("robots.txt", "sitemap.xml")
+
+
+def test_the_site_url_agrees_everywhere_and_is_where_the_page_actually_lives():
+    r"""A canonical URL that disagrees with reality fails silently -- crawlers just obey it.
+
+    The predecessor site got these fields from jekyll-seo-tag against a `baseurl` in
+    _config.yml. This site interpolates one SITE_URL constant instead, so the risk moves from
+    "two configs disagree" to "the constant is stale". Pin it to the repository name, which is
+    what GitHub Pages derives the path from.
+    """
+    page = PAGE.read_text(encoding="utf-8", errors="replace")
+    expected = "https://rrahimi-uci.github.io/safety-guard-dynamics/"
+
+    canonical = re.search(r'<link rel="canonical" href="([^"]+)"', page)
+    assert canonical and canonical.group(1) == expected, (
+        f"canonical is {canonical.group(1) if canonical else 'absent'}, expected {expected}"
+    )
+    og = re.search(r'property="og:url" content="([^"]+)"', page)
+    assert og and og.group(1) == expected, "og:url disagrees with the canonical URL"
+
+    for name in SEO_FILES:
+        f = PAGE.parent / name
+        assert f.is_file(), f"{name} is not generated; run build.py"
+        assert expected in f.read_text(), f"{name} does not reference {expected}"
+
+    # The JSON-LD must be valid, or search engines silently drop the structured data.
+    ld = re.search(r'type="application/ld\+json">\s*(\{.*?\})\s*</script>', page, re.S)
+    assert ld, "no JSON-LD block in the page"
+    data = json.loads(ld.group(1))          # raises if malformed
+    assert data["url"] == expected, "JSON-LD url disagrees with the canonical URL"
+    assert data["@type"] == "ScholarlyArticle"
+    assert data["image"].startswith(expected), "og/JSON-LD image is not on this site"
+    assert (PAGE.parent / data["image"][len(expected):]).is_file(), (
+        "the social preview image referenced by og:image / JSON-LD does not exist"
+    )
+
+
+def test_the_workflow_stages_the_seo_files(workflow):
+    """robots.txt and sitemap.xml are useless if they are not actually served."""
+    staging = " ".join(str(s.get("run", "")) for j in workflow["jobs"].values()
+                       for s in j.get("steps", []))
+    missing = [n for n in SEO_FILES if n not in staging]
+    assert not missing, (
+        f"the workflow does not stage {missing} into the published site, so crawlers will "
+        "get a 404 for them"
+    )
+
+
 def test_the_workflow_stages_the_site_rather_than_the_source_directory(workflow):
     """Uploading the source directory also serves build.py, the README and the requirements."""
     upload = [s for j in workflow["jobs"].values() for s in j.get("steps", [])

@@ -10,9 +10,19 @@ Open [`index.html`](index.html) in any browser. No server required.
 ## Build
 
 ```bash
-python build.py           # regenerate index.html + assets/fig/
-python build.py --check   # fail if index.html differs from a fresh build
+python build.py           # regenerate index.html, robots.txt, sitemap.xml + assets/fig/
+python build.py --check   # fail if any of the three differs from a fresh build
 ```
+
+The page carries discoverability metadata the predecessor site got from `jekyll-seo-tag` and
+`jekyll-sitemap`: a canonical URL, keywords, Open Graph and Twitter card tags, a
+`ScholarlyArticle` JSON-LD block, and a social preview card rendered from the teaser figure
+(`assets/fig/og_teaser.png`). This site is a static upload with no Jekyll, so `build.py` emits
+those fields and both SEO files directly from one `SITE_URL` constant — a test asserts the
+canonical, `og:url`, JSON-LD, `robots.txt` and `sitemap.xml` all agree, because a canonical
+that disagrees with where the page lives fails silently. The sitemap carries no `<lastmod>`:
+it would have to come from a clock or an mtime, which defeats `--check` for no crawler benefit
+on a one-page site.
 
 Requires `pandoc`, `pdftocairo` (poppler), and `beautifulsoup4`. MathJax loads from a CDN at
 view time; everything else is local, so the page renders offline apart from formula typesetting.
