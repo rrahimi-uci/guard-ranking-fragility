@@ -1196,5 +1196,76 @@ Honest next step, straight from the conclusion: not a more confident headline, b
 prospectively locked evaluation on genuinely uninspected data.
 """)
 
+# ------------------------------------------------- 18 · contribution and next steps
+# The deck used to end on the decision guide, which is a good place to leave a room but
+# states no contribution and no next step. This is the conclusion slide.
+s = d.blank()
+y = d.header(s, "What this contributes",
+             "Four things we can defend, and what would make them evidence")
+
+cw = (CW - Inches(0.34)) / 2
+bullets(s, M, y - Inches(0.02), cw, Inches(3.1), [
+    ("A paired, same-checkpoint estimand.", "Compare each guard only to its OWN base on "
+     "identical rows, split by represented vs held-out. That is what turns a leaderboard "
+     "delta into an attributable one \u2014 three results here exist only because of it."),
+    ("The matched-alarm-budget read.", "Cheap, almost never done, and it reverses a "
+     "headline: transfer recall 0.517 \u2192 0.217 at an equal false-alarm budget. Ranking "
+     "arithmetic on committed scores \u2014 no GPU, no retraining."),
+    ("Negative results kept as results.", "The preregistered study fails its own second "
+     "criterion. The fairness probe we built fails its own audit. An accidental repeat "
+     "gave us a measured reproduction noise floor that bounds our own small effects."),
+    ("A released instrument.", "v1_hmda2022 \u2014 994 dual-labeled rows, CC BY 4.0 \u2014 plus "
+     "text-free per-row scores and one command that regenerates the covered tables and "
+     "prints the coverage it did NOT achieve."),
+], size=11.5, gap=9)
+
+rx = M + cw + Inches(0.34)
+tf = tbox(s, rx, y - Inches(0.06), cw, Inches(0.3))
+p_ = para(tf, first=True, space_after=0)
+run(p_, "WHAT WOULD MAKE IT EVIDENCE", size=11, bold=True, color=ACCENT, spc=110)
+
+bullets(s, rx, y + Inches(0.34), cw, Inches(2.8), [
+    ("1 \u00b7 A prospectively locked run", "on genuinely uninspected sources. No amount of "
+     "further analysis of these rows raises that ceiling."),
+    ("2 \u00b7 Environment-controlled replication", "to shrink the noise floor rather than "
+     "report it. Below it, nothing is resolvable."),
+    ("3 \u00b7 Decompose the transfer loss", "per source \u2014 free, on committed scores \u2014 then "
+     "a diversity ladder at a fixed row budget."),
+    ("4 \u00b7 Finish the mortgage instrument", "SME adjudication, the empty G1/D0 quadrant, "
+     "and the 39 unscored protected pairs."),
+    ("5 \u00b7 Close the loop to the policy source", "supply the policy explicitly, and route "
+     "an observably invalid packet to review."),
+], size=11, gap=8)
+
+callout(s, rx, y + Inches(3.30), cw, Inches(1.02), "The through-line",
+        "Prefer the measurement that can be wrong in a detectable way. Everything above that "
+        "survived did so because some check was built to fail first.",
+        color=GREEN, body_size=11.5)
+
+d.notes(s, """
+Close here, not on the decision guide. Two minutes, and do not read the columns aloud.
+
+The left column is the answer to "what did you actually do." Lead with the paired estimand,
+because it is the cheap methodological point that costs a reader nothing to adopt and changes
+what their own numbers mean. Then the matched-alarm-budget read: that is the result to be
+remembered, and the reason to say it out loud is that it is nearly free and it reverses a
+headline. If you only get one sentence, use that one.
+
+The third bullet is the one that earns trust in a research audience. We preregistered a
+criterion and failed it. We built a fairness probe and it did not survive its own audit. We
+found a reproduction noise floor by accident and then used it against our own small effects.
+Say plainly that the noise floor is a tooling problem before it is a science problem.
+
+On the right, items 1 and 2 are the honest ceiling of this work: retrospective on an inspected
+manifest, and an environment term the bootstrap intervals do not capture. Item 3 is the cheapest
+real science available -- the per-source decomposition runs on committed scores at zero cost and
+decides whether the next experiment should add training SOURCES or wider CONSTRUCT coverage.
+
+If asked "so what would you deploy": nothing here, yet. That is the correct answer and it is not
+evasive -- the report measures a workflow for choosing guards, and every arm still fails at least
+one gate the workflow itself defines.
+""")
+
+
 path = d.save()
 print(f"wrote {path}  ({d.n + 1} slides)")

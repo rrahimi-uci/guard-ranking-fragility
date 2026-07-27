@@ -30,7 +30,7 @@ non-inferiority margin. Treat β as a tradeoff dial, not a default.
 
 The **[unified research report](papers/unified-report/unified_report.pdf)** is the synthesis:
 *The Safety-Guard Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards in
-High-Compliance Business Domains.* One entry point (below) regenerates and byte-checks the covered
+High-Compliance Regulated Domains.* One entry point (below) regenerates and byte-checks the covered
 tables and figures from committed per-row scores — and prints the coverage it did *not* achieve, because
 that coverage is partial: 12 of the 24 generated artifacts the report `\input`s are byte-checked in any
 environment, 4 need the lock-pinned analysis environment, and 8 are committed outputs of their own
@@ -483,9 +483,10 @@ three pairs and on a saturating scale, cannot answer.
 
 ## Citation & license
 
-[CITATION.cff](CITATION.cff) cites the unified report — its recorded subtitle still reads
-"High-Compliance *Regulated* Domains" where the report's own title says "Business Domains".
-Repository code and original content are
+[CITATION.cff](CITATION.cff) cites the unified report, and its title matches the paper's own
+(an earlier note here claimed otherwise and had it backwards: the `.tex` and the `.cff` agree on
+"High-Compliance Regulated Domains"; it was this README and the HTML edition that said
+"Business", and both are now corrected). Repository code and original content are
 [Apache 2.0](LICENSE); third-party datasets/models retain their own licenses. Review the mortgage
 [DATA_CARD.md](mortgage-benchmark/benchmark/v1_hmda2022/DATA_CARD.md) before redistributing generated
 prompts.

@@ -720,7 +720,7 @@ def main(argv=None) -> int:
     page = (HERE / "template.html").read_text()
     for k, v in {"{{TITLE}}": "The Safety-Guard Benchmark Chooses the Winner",
                  "{{SUBTITLE}}": ("Measuring, Tuning, and Composing Small Safety Guards "
-                                  "in High-Compliance Business Domains"),
+                                  "in High-Compliance Regulated Domains"),
                  "{{ABSTRACT}}": abstract_html, "{{TOC}}": toc,
                  "{{BODY}}": body, "{{BIB}}": bib,
                  "{{SITE_URL}}": SITE_URL, "{{DESCRIPTION}}": DESCRIPTION,

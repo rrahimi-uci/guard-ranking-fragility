@@ -1,6 +1,6 @@
 # Presentation deck
 
-`safety_guard_benchmark_deck.pptx` — 17 slides, 16:9, speaker notes on every slide.
+`safety_guard_benchmark_deck.pptx` — 18 slides, 16:9, speaker notes on every slide.
 
 Built for conference talks and internal briefings from the same committed artifacts the
 report itself `\input`s, so a number in the deck cannot drift from a number in the paper.
@@ -56,6 +56,7 @@ but Arial is forced wherever digits sit next to letters: in Georgia, `G0 / D0` r
 | 15 | Act III — two negatives | Tables 12, 13 |
 | 16 | Deployment economics: why self-host | Tables 15, 16 |
 | 17 | The decision guide | Table 14, Figure 12 |
+| 18 | What this contributes, and what would make it evidence | §9 |
 
 Table numbers above are the *rendered* numbers in the current PDF. Adding
 `tab:matchedfpr` as Table 4 shifted every later table by one; the deck itself cites

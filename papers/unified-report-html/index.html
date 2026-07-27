@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Safety-Guard Benchmark Chooses the Winner — Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Business Domains</title>
+<title>The Safety-Guard Benchmark Chooses the Winner — Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Regulated Domains</title>
 <meta name="description" content="What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, and a dual-labeled mortgage benchmark.">
 <meta name="author" content="Reza Rahimi, PhD">
 <meta name="color-scheme" content="light dark">
@@ -32,7 +32,7 @@
   "@context": "https://schema.org",
   "@type": "ScholarlyArticle",
   "headline": "The Safety-Guard Benchmark Chooses the Winner",
-  "alternativeHeadline": "Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Business Domains",
+  "alternativeHeadline": "Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Regulated Domains",
   "description": "What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, and a dual-labeled mortgage benchmark.",
   "url": "https://rrahimi-uci.github.io/safety-guard-dynamics/",
   "image": "https://rrahimi-uci.github.io/safety-guard-dynamics/assets/fig/og_teaser.png",
@@ -73,7 +73,7 @@
   <div class="masthead-inner">
     <div class="eyebrow">JazzX AI · Research Report · July 2026</div>
     <h1 class="doctitle">The Safety-Guard Benchmark Chooses the Winner</h1>
-    <p class="docsub">Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Business Domains</p>
+    <p class="docsub">Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Regulated Domains</p>
     <div class="byline">
       <b>Reza Rahimi, PhD</b> · <span class="affil">JazzX AI, Los Altos, CA · reza.rahimi@jazzx.ai</span>
     </div>
@@ -2560,11 +2560,83 @@ mortgage baseline in <code>mortgage-benchmark/out_eval/</code>, and the finance/
 <code>artifacts/expguard_external/</code>); and the figures are built by
 <code>papers/unified-report/figures/make_figures.py</code>.</p>
 <h1 data-num="9" id="sec:conclusion"><span class="secnum">9</span>Conclusion</h1>
-<p>A small guard’s benchmark score is not a fixed property of the guard — the benchmark co-produces it, so
-the only defensible way to choose one is to measure your own candidates against their own bases, on both
-the sources they trained on and the sources they did not, and to gate on a domain instrument when the
-domain is regulated. The disciplined next step is not a more confident headline but a prospectively
-locked evaluation on genuinely uninspected data.</p>
+<p>A small guard’s benchmark score is not a fixed property of the guard. It is co-produced by the
+benchmark that measures it, the objective that tuned it, the threshold that reads it, and the domain
+it is deployed into — and this report is an attempt to say that precisely enough to act on, by
+varying each of those four factors while holding the others fixed.</p>
+<h4 class="runin" id="what-the-measurement-discipline-bought.">What the measurement discipline bought.</h4>
+<p>The single design choice that carries the report
+is comparing each guard only against <em>its own</em> pre-tuning checkpoint, on identical rows, split
+by whether the source was trained on. That is what turns a leaderboard delta into an attributable
+one, and three of the report’s results exist only because of it. Fine-tuning lifts represented-source
+ranking by +0.3234 while changing held-out transfer by -0.0589
+(<a class="xref" href="#tab:primary">Table 1</a>) — a split invisible to any single score. The post-tuning endpoint is
+<em>benchmark-fixed</em> rather than skill-dependent, so “stronger bases specialize more” is largely
+arithmetic (<a class="xref" href="#app:detail">Appendix C</a>). And a retraining-free average of a base with its own adapter recovers
++0.076 of the lost transfer (<a class="xref" href="#sec:actIII-results">Section 5.3</a>) — a result with no
+meaning at all unless “its own” is enforced.</p>
+<h4 class="runin" id="the-operating-point-is-where-the-story-turns.">The operating point is where the story turns.</h4>
+<p>Ranking is threshold-free; deployment is
+not. Read at each guard’s own calibrated threshold, tuning appears to buy a little transfer recall.
+Read at an <em>equal false-alarm budget</em> — the only comparison that isolates discriminative power
+— it does the opposite: transfer recall falls 0.517 <span class="math inline">\(\to\)</span> 0.217
+and <code>HarmBench</code> recall 0.780 <span class="math inline">\(\to\)</span> 0.203, on
+4 of 4 checkpoints (<a class="xref" href="#tab:matchedfpr">Table 4</a>). We report this
+prominently because it is cheap and almost never done: matching alarm rates is ranking arithmetic on
+committed scores, needing no GPU and no retraining, and it reverses the sign of a headline. A recall
+comparison at unequal alarm rates should be treated as uninterpretable by default.</p>
+<h4 class="runin" id="the-negative-and-null-results-are-contributions-not-residue.">The negative and null results are contributions, not residue.</h4>
+<p>A preregistered
+ten-checkpoint study confirms the specialization tradeoff on released, purpose-built guards
+(+0.174, LCB +0.129) and, in the same breath, <em>fails</em> its own second criterion:
+KL-regularized SFT retains transfer but at a represented cost of -0.036 (LCB -0.060) that
+does not clear the preregistered <span class="math inline">\(-0.02\)</span> margin, so it is a tradeoff dial and not a free
+upgrade (<a class="xref" href="#sec:adaptation">Section 4</a>). The protected-token probe we built to sit beside ranking turns out
+not to separate these guards at all: on a saturating probability scale and three pairs, one of which
+is not a single-token swap, it is a negative methodological result about the instrument rather than a
+fairness ranking (<a class="xref" href="#sec:actIV-mortgage-pairs">Section 6.3</a>). And an accidental repeat of Act I under a
+different execution environment gave us something we did not have before — a measured reproduction
+noise floor — which retroactively bounds what several small effects in this report can mean, our own
+included.</p>
+<h4 class="runin" id="what-we-are-releasing.">What we are releasing.</h4>
+<p>A frozen, checksummed, dual-labeled mortgage benchmark
+(<code>v1_hmda2022</code>, 994 rows, CC BY 4.0) whose <em>policy</em> label is assigned independently of its
+general-safety label, so the looks-safe stratum can be isolated rather than inferred; text-free
+per-row scores for the full panel; and one command that regenerates the covered tables from those
+scores and prints the coverage it did <em>not</em> achieve (<a class="xref" href="#sec:repro">Section 8</a>). The deliverable is a
+measurement-and-decision workflow — compare to your own base, at a matched alarm budget, on
+represented <em>and</em> held-out sets, then gate on a domain instrument and recalibrate — not a new
+winning model, and not a claim that any guard here is good enough to deploy.</p>
+<h4 class="runin" id="what-would-move-this-from-estimation-to-evidence.">What would move this from estimation to evidence.</h4>
+<p>In rough order of value per unit of
+effort:</p>
+<ol>
+<li><p><strong>A prospectively locked run on genuinely uninspected sources.</strong> Acts I–II are
+retrospective on an inspected manifest; that ceiling cannot be raised by more analysis of the same
+rows.</p></li>
+<li><p><strong>Environment-controlled replication</strong>, to shrink the reproduction noise floor rather
+than merely report it. Any effect below it is currently unresolvable, which is a tooling problem
+before it is a science problem.</p></li>
+<li><p><strong>Isolate what drives the transfer loss.</strong> A per-source decomposition of the transfer AP
+and false-alarm changes runs on the committed scores at zero cost and would establish whether the
+loss is diffuse or concentrated — and therefore whether the right lever is more training
+<em>sources</em> or wider construct coverage. The obvious follow-on is a diversity ladder at a fixed
+row budget with a permanently held-out source set, which keeps the transfer estimand intact.</p></li>
+<li><p><strong>Finish the mortgage instrument.</strong> SME adjudication with per-label agreement, a
+populated G1/D0 quadrant, and the 39 release protected pairs scored — the last is a
+zero-training recompute and would let the fairness gate rank guards, which on the current split it
+cannot.</p></li>
+<li><p><strong>Replicate the one resolved external vertical</strong> under multiplicity control; health
+clears zero by a margin that a Bonferroni split would not survive.</p></li>
+<li><p><strong>Close the loop to the policy source.</strong> Every guard here is handed a policy implicitly,
+through its training data. The untested question is what happens when the policy is supplied
+explicitly, compiled from authoritative documents that can be stale, mis-extracted, or internally
+inconsistent — and whether a guard can be made to route an observably invalid policy packet to
+human review rather than acting on it.</p></li>
+</ol>
+<p>The through-line is unchanged: prefer the measurement that can be wrong in a detectable
+way. Every result above that survived did so because some check was built to fail first, and the two
+we are least sure of are the two we could not build such a check for.</p>
 <h1 data-num="A" id="sec:related"><span class="secnum">A</span>Related work</h1>
 <p>This report sits at the intersection of five literatures: the design of small LLM-based
 <em>guard classifiers</em>; the growing evidence that <em>fine-tuning degrades</em> or narrows a

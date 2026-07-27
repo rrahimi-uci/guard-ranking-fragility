@@ -529,11 +529,86 @@ mortgage baseline in \code{mortgage-benchmark/out\_eval/}, and the finance/healt
 
 \section{Conclusion}
 \label{sec:conclusion}
-A small guard's benchmark score is not a fixed property of the guard --- the benchmark co-produces it, so
-the only defensible way to choose one is to measure your own candidates against their own bases, on both
-the sources they trained on and the sources they did not, and to gate on a domain instrument when the
-domain is regulated. The disciplined next step is not a more confident headline but a prospectively
-locked evaluation on genuinely uninspected data.
+
+A small guard's benchmark score is not a fixed property of the guard. It is co-produced by the
+benchmark that measures it, the objective that tuned it, the threshold that reads it, and the domain
+it is deployed into --- and this report is an attempt to say that precisely enough to act on, by
+varying each of those four factors while holding the others fixed.
+
+\paragraph{What the measurement discipline bought.} The single design choice that carries the report
+is comparing each guard only against \emph{its own} pre-tuning checkpoint, on identical rows, split
+by whether the source was trained on. That is what turns a leaderboard delta into an attributable
+one, and three of the report's results exist only because of it. Fine-tuning lifts represented-source
+ranking by \RepDelta{} while changing held-out transfer by \TransferDelta{}
+(\Cref{tab:primary}) --- a split invisible to any single score. The post-tuning endpoint is
+\emph{benchmark-fixed} rather than skill-dependent, so ``stronger bases specialize more'' is largely
+arithmetic (\Cref{app:detail}). And a retraining-free average of a base with its own adapter recovers
+\PilotTransferDeltaSFT{} of the lost transfer (\Cref{sec:actIII-results}) --- a result with no
+meaning at all unless ``its own'' is enforced.
+
+\paragraph{The operating point is where the story turns.} Ranking is threshold-free; deployment is
+not. Read at each guard's own calibrated threshold, tuning appears to buy a little transfer recall.
+Read at an \emph{equal false-alarm budget} --- the only comparison that isolates discriminative power
+--- it does the opposite: transfer recall falls \MatchedTransferBase{}\,$\to$\,\MatchedTransferSft{}
+and \code{HarmBench} recall \MatchedHarmBase{}\,$\to$\,\MatchedHarmSft{}, on
+\MatchedWorseTransfer{} of \MatchedWorseTransfer{} checkpoints (\Cref{tab:matchedfpr}). We report this
+prominently because it is cheap and almost never done: matching alarm rates is ranking arithmetic on
+committed scores, needing no GPU and no retraining, and it reverses the sign of a headline. A recall
+comparison at unequal alarm rates should be treated as uninterpretable by default.
+
+\paragraph{The negative and null results are contributions, not residue.} A preregistered
+ten-checkpoint study confirms the specialization tradeoff on released, purpose-built guards
+(\AdaHGain, LCB \AdaHGainLCB) and, in the same breath, \emph{fails} its own second criterion:
+KL-regularized SFT retains transfer but at a represented cost of \AdaHCost{} (LCB \AdaHCostLCB) that
+does not clear the preregistered $-\AdaMargin$ margin, so it is a tradeoff dial and not a free
+upgrade (\Cref{sec:adaptation}). The protected-token probe we built to sit beside ranking turns out
+not to separate these guards at all: on a saturating probability scale and three pairs, one of which
+is not a single-token swap, it is a negative methodological result about the instrument rather than a
+fairness ranking (\Cref{sec:actIV-mortgage-pairs}). And an accidental repeat of Act~I under a
+different execution environment gave us something we did not have before --- a measured reproduction
+noise floor --- which retroactively bounds what several small effects in this report can mean, our own
+included.
+
+\paragraph{What we are releasing.} A frozen, checksummed, dual-labeled mortgage benchmark
+(\code{v1\_hmda2022}, 994 rows, CC~BY~4.0) whose \emph{policy} label is assigned independently of its
+general-safety label, so the looks-safe stratum can be isolated rather than inferred; text-free
+per-row scores for the full panel; and one command that regenerates the covered tables from those
+scores and prints the coverage it did \emph{not} achieve (\Cref{sec:repro}). The deliverable is a
+measurement-and-decision workflow --- compare to your own base, at a matched alarm budget, on
+represented \emph{and} held-out sets, then gate on a domain instrument and recalibrate --- not a new
+winning model, and not a claim that any guard here is good enough to deploy.
+
+\paragraph{What would move this from estimation to evidence.} In rough order of value per unit of
+effort:
+
+\begin{enumerate}[leftmargin=1.5em,itemsep=1pt]
+  \item \textbf{A prospectively locked run on genuinely uninspected sources.} Acts~I--II are
+  retrospective on an inspected manifest; that ceiling cannot be raised by more analysis of the same
+  rows.
+  \item \textbf{Environment-controlled replication}, to shrink the reproduction noise floor rather
+  than merely report it. Any effect below it is currently unresolvable, which is a tooling problem
+  before it is a science problem.
+  \item \textbf{Isolate what drives the transfer loss.} A per-source decomposition of the transfer AP
+  and false-alarm changes runs on the committed scores at zero cost and would establish whether the
+  loss is diffuse or concentrated --- and therefore whether the right lever is more training
+  \emph{sources} or wider construct coverage. The obvious follow-on is a diversity ladder at a fixed
+  row budget with a permanently held-out source set, which keeps the transfer estimand intact.
+  \item \textbf{Finish the mortgage instrument.} SME adjudication with per-label agreement, a
+  populated G1/D0 quadrant, and the 39 release protected pairs scored --- the last is a
+  zero-training recompute and would let the fairness gate rank guards, which on the current split it
+  cannot.
+  \item \textbf{Replicate the one resolved external vertical} under multiplicity control; health
+  clears zero by a margin that a Bonferroni split would not survive.
+  \item \textbf{Close the loop to the policy source.} Every guard here is handed a policy implicitly,
+  through its training data. The untested question is what happens when the policy is supplied
+  explicitly, compiled from authoritative documents that can be stale, mis-extracted, or internally
+  inconsistent --- and whether a guard can be made to route an observably invalid policy packet to
+  human review rather than acting on it.
+\end{enumerate}
+
+\noindent The through-line is unchanged: prefer the measurement that can be wrong in a detectable
+way. Every result above that survived did so because some check was built to fail first, and the two
+we are least sure of are the two we could not build such a check for.
 
 \clearpage
 \appendix
