@@ -1,7 +1,7 @@
 # Compose, Don't Tune? — the plain-language version
 
 *A retrospective study of averaging a base model with its fine-tuned safety guard.*
-Reza Rahimi (JazzX AI). Plain-language companion to the formal Paper B draft.
+Reza Rahimi, PhD (JazzX AI). Plain-language companion to the formal Paper B draft.
 
 > **Read this first.** This is a **retrospective feasibility** result, not a proven claim. The
 > "held-out" transfer benchmarks were kept out of fine-tuning, but we looked at them while

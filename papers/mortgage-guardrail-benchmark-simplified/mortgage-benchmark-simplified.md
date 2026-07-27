@@ -4,7 +4,7 @@
 *A mortgage safety-guardrail benchmark, in plain words.*
 
 *Why a general "is this prompt unsafe?" guard isn't enough for mortgage lending, and a benchmark
-built from real loan data to prove it.* Reza Rahimi (JazzX AI). Plain-language companion to the
+built from real loan data to prove it.* Reza Rahimi, PhD (JazzX AI). Plain-language companion to the
 formal draft.
 
 > **Read this first.** The benchmark's prompts are **made-up (synthetic)** and its right-answers

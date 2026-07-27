@@ -28,7 +28,7 @@
 
 \title{Safe-Looking but Non-Compliant:\\
 \large An HMDA-Grounded, Dual-Labeled Benchmark for Mortgage Safety Guardrails}
-\author{Reza Rahimi\\
+\author{Reza Rahimi, PhD\\
   \small JazzX AI, Los Altos, CA, USA\\
   \small\texttt{reza.rahimi@jazzx.ai}}
 \date{Working draft --- July 2026}
@@ -57,8 +57,10 @@ mutate $\rightarrow$ rubric-bound judge) following the borderline-and-subtle des
 \citet{bowen2024mortgage}, with protected-class counterfactual minimal pairs reframed as a
 guard-\emph{invariance} gate. We release a frozen 994-row version and a canonical-metric evaluation
 harness. Baseline zero-shot instruction guards rank mortgage violations only \emph{moderately}
-(AP$\cdot$D 0.67--0.85; G and D are partially orthogonal), and protected-pair invariance varies
-sharply across guards --- while the fixed-threshold operating point is too unstable to report. We
+(AP$\cdot$D 0.67--0.85 against a 0.555 chance floor; G and D are partially orthogonal), while the
+fixed-threshold operating point is too unstable to report. The protected-pair invariance gate is a
+\emph{negative methodological result}: what looked like sharp variation across guards is an artifact
+of a saturating probability scale and one non-single-token pair, so on this split it orders nothing. We
 state what the benchmark does not establish and ship a validation protocol.
 \end{abstract}
 
@@ -113,7 +115,8 @@ methodology that grounds realistic, \emph{borderline} scenarios in real loan rec
 policy violations \emph{subtle and deniable}; (3) protected-class counterfactual minimal pairs used
 as a guard-invariance gate; and (4) a reproducible evaluation harness with baseline results showing
 that zero-shot general guards only \emph{partially} separate the G0/D1 stratum and miss most of it
-at a deployable threshold, with sharply varying protected-pair invariance. It does \emph{not} claim
+at a deployable threshold, and that the protected-pair gate does not order the guards on this split.
+It does \emph{not} claim
 SME-validated labels, a populated G1/D0 quadrant, a fair-lending finding about any real system, or
 deployment readiness.
 
@@ -256,13 +259,21 @@ unresolved by ranking alone. We deliberately do \textbf{not} report a fixed-thre
 dev-calibrated threshold sits on a knife-edge and its G0/D1 catch count is \emph{not reproducible}
 (it swung by $>50$ rows between library versions of the quantile routine) --- itself a finding:
 \textbf{naive threshold transfer is unreliable} for these guards, so we report ranking (AP) and
-invariance ($\Delta_{\mathrm{context}}$). Behavior is heterogeneous: \textbf{Qwen3-4B} ranks best
-(AP$\cdot$D 0.85) \emph{and} is invariant on the protected pairs ($\Delta_{\mathrm{context}}\approx0$),
-while \textbf{Qwen2.5-1.5B} shows a large protected-attribute gap ($\Delta_{\mathrm{context}}=0.18$,
-max $0.51$) --- the minimal-pair gate discriminates guards that AP alone does not. AP$\cdot$G rests on
+invariance ($\Delta_{\mathrm{context}}$). Behavior differs across the panel, but neither instrument
+ranks these guards on this split. \textbf{Qwen3-4B} is \emph{numerically} the highest-ranking guard
+(AP$\cdot$D $0.85$), yet five of the six pairwise AP$\cdot$D confidence intervals overlap --- only
+Qwen3-4B versus SmolLM2-1.7B separates --- and the range sits only $0.12$--$0.30$ above this split's
+$0.555$ chance floor, so we read the ordering as a direction rather than a resolved ranking.
+The protected-pair gate is a \emph{negative methodological result} and does not rank guards either.
+Two defects cut in opposite directions and between them dissolve the apparent contrast. Qwen3-4B's
+$\Delta_{\mathrm{context}}=0.000$ is \textbf{saturation, not invariance}: its probabilities sit near
+$10^{-6}$, and on the scale-free raw margin the same gap becomes $0.80$, the second largest on the
+panel. And \textbf{Qwen2.5-1.5B}'s headline $0.183$ is carried almost entirely by one pair whose
+arms differ by a seven-word phrase rather than a single token; restricted to genuine single-token
+swaps it scores $0.020$, nominally the most invariant guard. AP$\cdot$G rests on
 only 6 G1 positives here and is noisy. These are small-sample, LLM-judge-labeled, single-split
 diagnostics (3 protected pairs): the benchmark \emph{surfaces} these behaviors, it does not certify
-any number as a fair-lending fact.
+any number as a fair-lending fact, and on this split it does not order the guards.
 
 \section{What this benchmark does \emph{not} establish}
 \label{sec:not}

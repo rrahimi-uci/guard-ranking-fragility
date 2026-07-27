@@ -5,7 +5,7 @@
 Normative source: [`studies/registry.yaml`](registry.yaml), validated by
 [`registry.schema.json`](registry.schema.json). Run `make check-registry`.
 
-Registry `guard_ranking_fragility_studies_v1` last verified at `849085d` on 2026-07-26 (dirty tree).
+Registry `guard_ranking_fragility_studies_v1` last verified at `c030cbd` on 2026-07-27 (dirty tree).
 
 ## State
 
@@ -23,6 +23,7 @@ Registry `guard_ranking_fragility_studies_v1` last verified at `849085d` on 2026
 | `paper_c_specialize_align_mortgage_v1` | stopped | development only | no | protocol candidate | expected fail |
 | `paper_c_sta_study_package_v1` | stopped | development only | no | protocol candidate | expected fail |
 | `unified_report` | released | retrospective estimation | **yes** | live release | expected pass |
+| `paper_d_policy_to_guard_v1` | protocol candidate | none | no | protocol candidate | expected pass |
 
 ## Declared verification failures
 
@@ -66,3 +67,4 @@ No source is currently approved for `publish_text`.
 - `paper_c_reference_centering` — local only
 - `paper_c_specialize_align_mortgage_v1` — local only
 - `paper_c_sta_study_package_v1` — local only
+- `paper_d_policy_to_guard_v1` — unresolved

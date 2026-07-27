@@ -4,11 +4,23 @@
 **Written:** 2026-07-26
 **Last audited:** 2026-07-26 against Git `17b7ad7648946d54c6c2deac42e25467a42386d0`
 with a 63-entry dirty worktree and active GCS transfers
-**Execution state:** unblocked on 2026-07-26 — Paper C was stopped and its GCS
-transfers finished, clearing the concurrency freeze. See
+**Execution state:** unblocked on 2026-07-26 — Paper C was stopped, clearing the
+concurrency freeze. See
 [Implementation status](#implementation-status) for exactly what was applied, what was
 deviated from, and what remains. **The distribution gate is still open**: no source is
 approved for verbatim redistribution, so no public text build is authorized.
+
+**Correction, 2026-07-27:** this header previously read "its GCS transfers finished." They
+did not. Sixty `gsutil` processes are still alive, the oldest running over 28 hours, and 59
+of them are copying into `…/guard-ranking-fragility/papers/paper_c/…` — the path this
+repository occupied *before* the rename to `safety-guard-dynamics`, which no longer exists.
+They sit at 0% CPU holding roughly 1,500 file descriptors and 0.2 GB, so they block nothing
+and did not cause the freeze to persist; the freeze was correctly cleared by stopping Paper C.
+But "transfers finished" was a claim about state that was never checked, and the honest
+statement is that they are stranded, not complete. They can be ended with
+`pkill -f "gs://jazzx-gcp-poc-1-paper-c"`, and the artifacts they were fetching remain
+restorable from the bucket per
+`studies/paper-c-specialize-align-mortgage-v1/provenance/EXTERNAL_OBJECT_MANIFEST.json`.
 
 This plan separates reusable code, executable studies, benchmarks, publications,
 immutable evidence, local data, and transient runs without invalidating the

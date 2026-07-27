@@ -15,9 +15,9 @@ schema_version: 1
 registry_id: guard_ranking_fragility_studies_v1
 
 last_verified:
-  git_revision: "849085d"
+  git_revision: "c030cbd"
   dirty_tree: true
-  date: "2026-07-26"
+  date: "2026-07-27"
 
 studies:
   # ─────────────────────────────────────────────────────────── released / consumed
@@ -356,3 +356,34 @@ studies:
     notes: >
       reproduce-check mutates canonical figure/intermediate files; it is excluded from
       read-only verification tiers until refactored to temporary output roots.
+
+  # ───────────────────────────────────────────────────────────── protocol proposals
+  - study_id: paper_d_policy_to_guard_v1
+    title: "From Policy Documents to Guardrail Decisions"
+    question: >
+      Between source document, extracted rule representation, retrieval layer, and final
+      guard decision, where does reliability come from and where does it fail?
+    study_state: protocol_candidate
+    evidence_state: none
+    publication_state: none
+    distribution_state: unresolved
+    test_exposure: none
+    evidence_tier: "none; protocol only, no experiment has run and no result is claimed"
+    claim_authorization: false
+    contract_type: protocol_candidate
+    verification_mode: authority_archive
+    verification_command: "test -f papers/paper_d/PLAN.md"
+    expected_verification_status: expected_pass
+    code_root: papers/paper_d/
+    protocol_paths: [papers/paper_d/PLAN.md]
+    lock_bound_paths: false
+    notes: >
+      Registered at the moment the plan landed rather than after P0, so the study is governed
+      from its first byte. claim_authorization is false and stays false until the P6 design
+      lock and P8 seal are documented; PLAN.md Section 19.1 records the flip condition.
+      Depends on the neighbouring policy-to-knowledge repository through a read-only import
+      of stage artifacts; that dependency is not a claim that upstream output is verified or
+      authoritative. The plan's own Section 2.3 records the citation-audit verdict (NARROWS)
+      and the two halves of the kill rule that remain open. verification_command is a
+      presence check only, which is all a protocol proposal can honestly assert; it becomes a
+      real command when papers/paper_d/tests/ exists.
