@@ -6,9 +6,11 @@ was authorized by a `.gitignore` comment. So the gate is checked here the same w
 generator is -- by what the workflow would actually do, not by whether someone wrote the word
 "gate" in it.
 
-Two of these tests assert the *current* policy state (refused). If a licensing decision is
-made they will fail, which is the intended behaviour: the decision should be accompanied by a
-deliberate update to these expectations, not silently absorbed.
+Several of these tests assert the *current* policy state. That state has now changed twice --
+v1_hmda2022 went from unresolved to withheld-by-redaction to licensed CC BY 4.0 -- and each
+transition was caught by one of these tests failing, never by someone noticing. That is the
+intended behaviour: a policy change should have to be accompanied by a deliberate update here,
+not silently absorbed. Expect to edit this file when a licence changes.
 
 One limit, stated plainly: this covers the workflow. It cannot see GitHub's repository
 Settings, where "Deploy from a branch" would serve the tree with no gate at all. That path is
@@ -41,14 +43,15 @@ def workflow() -> dict:
 FIXTURE_UNAPPROVED = "tests/fixtures/pages_artifact_unapproved"
 
 
-def test_the_gate_authorizes_the_page_because_it_carries_no_restricted_text():
-    """Authorized on an empty dependency set -- not because a source was approved.
+def test_the_gate_authorizes_the_page_on_a_recorded_licence():
+    """Authorized because the source it depends on is licensed -- the gate's real job.
 
-    The page used to require `mortgage_benchmark_v1_hmda2022`, whose DATA_CARD still reads
-    "LICENSE NOT YET SELECTED". That requirement was removed by withholding the quotation,
-    which is why this passes while the ledger is untouched. If someone re-adds restricted
-    text, PUBLICATION_REQUIREMENTS.json has to name the source again and this flips back to
-    a refusal.
+    This has now asserted three different states, and each transition was forced by a test
+    failing rather than noticed by luck: REFUSED while v1_hmda2022 was unresolved; AUTHORIZED
+    on an empty dependency set once the quotation was withheld; and now AUTHORIZED on the
+    licence itself, with the dependency declared again and satisfied on its merits. The
+    invariant across all three is that the gate never authorizes silently -- the reason is
+    always recorded and always checked.
     """
     r = subprocess.run([sys.executable, str(GATE), "--artifact", ARTIFACT],
                        cwd=_ROOT, capture_output=True, text=True)
@@ -56,14 +59,16 @@ def test_the_gate_authorizes_the_page_because_it_carries_no_restricted_text():
         f"the page is no longer authorized for publication.\n{r.stdout}\n{r.stderr}"
     )
     assert "AUTHORIZED" in r.stdout
+    assert "mortgage_benchmark_v1_hmda2022" in r.stdout, (
+        "the gate authorized without naming the source it relied on; an unexplained yes is "
+        "the failure mode this gate exists to prevent"
+    )
 
     req = json.loads(REQUIREMENTS.read_text())
-    assert req["requires_publication_approval_for"] == [], (
-        "the artifact now requires a source approval, so publication must be re-reviewed"
+    assert req["requires_publication_approval_for"] == ["mortgage_benchmark_v1_hmda2022"], (
+        "the declared dependency changed; publication must be re-reviewed"
     )
-    assert len(req.get("no_approval_required_because", "").split()) >= 25, (
-        "an empty requirement list must carry a substantive justification"
-    )
+    assert req.get("history"), "the requirement's history must record what it replaced"
 
 
 def test_the_gate_still_refuses_an_artifact_that_needs_an_unapproved_source():
@@ -81,18 +86,56 @@ def test_the_gate_still_refuses_an_artifact_that_needs_an_unapproved_source():
     assert "mortgage_guard_bench_2k_v0_1_0" in r.stdout
 
 
-def test_the_ledger_hold_on_the_mortgage_benchmark_is_untouched():
-    """Publishing the page must not have quietly relaxed the source's own decision."""
+def test_the_mortgage_benchmark_licence_is_completely_recorded():
+    """The licence decision must be complete, and the artifact must agree with the ledger.
+
+    This replaces a test that asserted the source was still `local_only`. That assertion did
+    its job: it failed the moment the decision changed, which forced the change to be made
+    deliberately rather than absorbed. What matters now is the opposite risk -- a decision
+    recorded in fragments, with a licence but no reviewer, or a ledger that says CC BY 4.0
+    while the shipped data card still says no licence was selected. Both are worse than the
+    original hold, because a redistributor reads the card.
+    """
     ledger = yaml.safe_load((_ROOT / "benchmarks/registry/distribution.yaml").read_text())
     src = next(s for s in ledger["sources"]
                if s["source_id"] == "mortgage_benchmark_v1_hmda2022")
-    assert src["redistribution_decision"] == "local_only", (
-        "mortgage_benchmark_v1_hmda2022 is no longer local_only. If that is a real "
-        "licensing decision, its DATA_CARD.md still says 'LICENSE NOT YET SELECTED' and "
-        "names an FFIEC/CFPB terms-of-use precondition -- resolve both, and name a "
-        "reviewer, in the same commit."
+
+    assert src["redistribution_decision"] == "publish_text"
+    assert src["license"]["permits_redistribution"] is True
+    assert src["license"]["spdx_or_name"] == "CC-BY-4.0"
+    assert src["reviewer"] != "unassigned", "an approved source needs a named reviewer"
+    assert src["attribution_notice"], "CC BY 4.0 requires an attribution notice to pass on"
+
+    # The data card ships with the data, so it is what a redistributor actually reads.
+    card = (_ROOT / "mortgage-benchmark/benchmark/v1_hmda2022/DATA_CARD.md").read_text()
+    assert "LICENSE NOT YET SELECTED" not in card, (
+        "the ledger approves redistribution but the shipped DATA_CARD.md still says no "
+        "licence was selected -- the artifact and the record must not disagree"
     )
-    assert src["license"]["permits_redistribution"] is not True
+    assert "CC BY 4.0" in card, "DATA_CARD.md does not state the licence it is released under"
+    for caveat in ("not SME-adjudicated", "release bytes only"):
+        assert caveat in card, (
+            f"DATA_CARD.md dropped the {caveat!r} boundary; it survives the licence and has "
+            "to travel with every redistribution"
+        )
+
+
+def test_the_release_checksums_still_cover_every_shipped_file():
+    """Re-freezing the card's digest must not have disturbed the frozen data."""
+    import hashlib
+    d = _ROOT / "mortgage-benchmark/benchmark/v1_hmda2022"
+    lines = [l.split(None, 1) for l in (d / "CHECKSUMS.txt").read_text().splitlines() if l.strip()]
+    assert len(lines) >= 8, "CHECKSUMS.txt lost entries"
+    bad = []
+    for want, name in lines:
+        f = d / name.strip().lstrip("./")
+        if not f.is_file():
+            bad.append(f"{name.strip()} missing")
+            continue
+        got = hashlib.sha256(f.read_bytes()).hexdigest()
+        if got != want:
+            bad.append(f"{name.strip()} {want[:12]} != {got[:12]}")
+    assert not bad, "release checksums do not verify: " + "; ".join(bad)
 
 
 def test_the_gate_refuses_rather_than_crashes_on_a_broken_declaration():
@@ -165,26 +208,35 @@ VERBATIM_RUNS = (
 )
 
 
-def test_the_committed_page_is_the_redacted_edition():
-    """Assert the artifact's property directly, not that a build was run correctly.
+def test_the_committed_page_carries_the_rows_and_the_licence_together():
+    """The rows and their attribution are one unit. Either both are present, or neither.
 
-    The workflow publishes these committed bytes, so this is the check that stands between
-    the repository and serving a row of an unlicensed benchmark. It deliberately does not
-    depend on build.py having run, or on which pandoc produced the markup.
+    This replaces a test that required the withholding notice. That requirement was correct
+    while v1_hmda2022 was unresolved and it failed the moment the redaction was lifted, which
+    is what forced this rewrite instead of a silent divergence. The rule that replaces it is
+    the one CC BY 4.0 actually imposes: a page may publish the rows, or withhold them, but it
+    may not publish them stripped of the notice.
+
+    Deliberately reads the committed artifact rather than trusting that build.py ran, and does
+    not depend on which pandoc produced the markup.
     """
     assert PAGE.is_file(), "the published artifact is missing"
     page = PAGE.read_text(encoding="utf-8", errors="replace")
-    assert WITHHELD_MARKER in page, (
-        "the committed page carries no withholding notice, so it was probably built with "
-        "--with-restricted-text. That edition is for local reading and must not be committed "
-        "or served while the ledger is unresolved."
+
+    quotes_rows = any(s in page for s in VERBATIM_RUNS)
+    withheld = WITHHELD_MARKER in page
+    assert quotes_rows != withheld, (
+        "the page must either quote the case-study rows or carry the withholding notice, "
+        f"not both and not neither (quotes_rows={quotes_rows}, withheld={withheld})"
     )
-    leaked = [s for s in VERBATIM_RUNS if s in page]
-    assert not leaked, (
-        f"verbatim benchmark row text is present in the page that gets served: {leaked}. "
-        "Rebuild without --with-restricted-text, and check redact_restricted_rows() still "
-        "matches the case study."
-    )
+
+    if quotes_rows:
+        for token in ("MortgageGuardBench", "CC BY 4.0"):
+            assert token in page, (
+                f"the page publishes v1_hmda2022 rows verbatim but is missing {token!r}. "
+                "CC BY 4.0 permits redistribution on the condition of attribution; dropping "
+                "the notice breaches the licence the ledger records."
+            )
 
 
 # href/src values, without needing an HTML parser: the root suite runs in a CI environment
@@ -293,6 +345,29 @@ def test_the_pdf_is_not_staged_into_the_site(workflow):
         "the workflow copies the PDF into the published site. It carries the withheld "
         "case-study row, and no text probe can see inside a PDF."
     )
+
+
+def test_the_page_carries_the_attribution_its_licence_requires():
+    """CC BY 4.0 is permissive but conditional; publishing rows without the notice breaches it.
+
+    The notice is a build output rather than a manual step precisely so it cannot be forgotten
+    on a rebuild, and this asserts that the build actually emitted it.
+    """
+    req = json.loads(REQUIREMENTS.read_text())
+    attr = req.get("attribution_required")
+    assert attr, "the artifact declares no attribution requirement"
+    page = PAGE.read_text(encoding="utf-8", errors="replace")
+    for token in ("MortgageGuardBench", "CC BY 4.0", "creativecommons.org/licenses/by/4.0"):
+        assert token in page, (
+            f"the published page is missing {token!r}. It redistributes v1_hmda2022 rows under "
+            "CC BY 4.0, whose attribution condition is not optional."
+        )
+    # The caveats that survive the licence must travel with the rows.
+    for caveat in ("not\n      SME-adjudicated", "SME-adjudicated"):
+        if caveat in page:
+            break
+    else:
+        raise AssertionError("the attribution dropped the not-SME-adjudicated boundary")
 
 
 def test_the_artifact_declares_what_it_needs_approved():

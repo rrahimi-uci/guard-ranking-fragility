@@ -182,7 +182,7 @@ studies:
     study_state: released
     evidence_state: retrospective_estimation
     publication_state: current
-    distribution_state: unresolved
+    distribution_state: publish_text
     test_exposure: check_fast
     evidence_tier: "LLM-judge and policy-card-consistent; not SME-adjudicated"
     claim_authorization: true
@@ -195,8 +195,11 @@ studies:
     manuscript_paths: [papers/mortgage-guardrail-benchmark/, papers/unified-report/]
     lock_bound_paths: false
     notes: >
-      Checksums cover release bytes only, not the generator, judge, configuration, or
-      code. distribution_state is unresolved: see benchmarks/registry/distribution.yaml.
+      Licensed CC BY 4.0 on 2026-07-27; the first source in this repository approved for
+      verbatim redistribution. Two boundaries survive the licence: checksums cover release
+      bytes only, not the generator, judge, configuration, or code; and the labels are
+      LLM-judge and policy-card-consistent, so this supports measurement, not a fair-lending
+      finding. See benchmarks/registry/distribution.yaml.
 
   # ───────────────────────────────────────────────────────────── Paper C surfaces
   - study_id: paper_c_matched_dpo_scaffold

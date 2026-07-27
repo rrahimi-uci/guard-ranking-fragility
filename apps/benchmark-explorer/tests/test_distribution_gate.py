@@ -22,13 +22,32 @@ from build import (  # noqa: E402
 FIXTURES = json.loads((APP / "fixtures/sources.json").read_text())
 
 
-def test_no_source_is_currently_publishable():
-    """The ledger's present state: nothing is approved for verbatim text."""
-    assert publishable(load_ledger()) == set()
+def test_exactly_the_reviewed_sources_are_publishable():
+    """Pin the approved set. This asserted `== set()` until 2026-07-27 and failed when the
+    first licence landed, which is how the change was forced to be deliberate. Pinning keeps
+    the property that a second approval cannot slip in as a side effect of another edit."""
+    assert publishable(load_ledger()) == {"mortgage_benchmark_v1_hmda2022"}, (
+        "the publishable set changed. A new approval needs its own licence decision with a "
+        "named reviewer and a data card that states the licence -- update this expectation in "
+        "the same commit, and check what the public explorer build would now emit."
+    )
 
 
-def test_public_build_emits_no_source_text():
+def test_public_build_emits_no_text_for_sources_that_are_not_approved():
+    """The fixtures name no approved source, so a public build must still be entirely text-free.
+
+    This is narrower than it looks and deliberately so: it proves the allowlist withholds text
+    for closed sources. It does NOT prove the allowlist would emit text for an approved one --
+    that path is unexercised while no fixture names an approved source, and the assertion below
+    would legitimately fail if one ever did.
+    """
     ledger = load_ledger()
+    approved = publishable(ledger)
+    assert not (set(FIXTURES) & approved), (
+        "a fixture now names an approved source, so a public build may legitimately emit its "
+        "text and the text-free assertion below no longer expresses the intent -- split the "
+        "fixtures into approved and closed sets instead of loosening the check"
+    )
     built = gather(FIXTURES, ledger, target="public")
     blob = json.dumps(built)
     assert "SYNTHETIC FIXTURE" not in blob, "public build leaked row text"

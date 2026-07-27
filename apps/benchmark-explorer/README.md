@@ -31,6 +31,7 @@ entry is `publish_text` **and** whose license affirmatively permits redistributi
 other source contributes counts and label distributions with text replaced by content
 hashes. A source absent from the ledger is a build failure, not a default-permit.
 
-**No source is currently approved.** A passing fixture build proves the allowlist works;
-it does not authorize publication. That decision lives in
+**Exactly one source is approved:** `mortgage_benchmark_v1_hmda2022` under CC BY 4.0, so a
+public build may emit its text with attribution. A passing fixture build still proves only that
+the allowlist works, not that any particular release is authorized. Decisions live in
 [`benchmarks/registry/distribution.yaml`](../../benchmarks/registry/distribution.yaml).

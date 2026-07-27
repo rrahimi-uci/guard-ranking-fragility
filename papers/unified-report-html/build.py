@@ -177,14 +177,15 @@ class RedactionError(RuntimeError):
 def redact_restricted_rows(tex: str) -> str:
     r"""Withhold the two verbatim benchmark rows the case study quotes.
 
-    Publishing this page serves whatever it contains. Its only restricted content is two
-    rows of the frozen v1_hmda2022 benchmark -- one quoted in full, one in part -- and that
-    source is `local_only` with `permits_redistribution: unknown`, because its own DATA_CARD
-    still reads "LICENSE NOT YET SELECTED" and names an FFIEC/CFPB terms-of-use check as a
-    precondition. Rather than assert a licensing conclusion nobody has reached, the web
-    edition withholds the prompt text and keeps everything that is ours: the row id, the
-    gold labels, the cited policy cards, the per-guard scores and the ranks that carry the
-    claim. The PDF edition and a local build are unaffected.
+    OPT-IN as of 2026-07-27, and off by default. v1_hmda2022 is now licensed CC BY 4.0 with
+    `redistribution_decision: publish_text`, so the published page carries the full case study
+    and this function is not applied. It is kept, and kept tested, because the situation it
+    handles will recur: the next source whose licence is unresolved needs exactly this, and
+    rebuilding it under time pressure is how prompt text ends up published by accident.
+
+    When applied, it withholds the two verbatim benchmark rows and keeps everything else --
+    the row id, the gold labels, the cited policy cards, the per-guard scores, and the ranks
+    that carry the claim.
 
     Fails loudly rather than silently passing text through: if either anchor stops matching
     -- because the case study was regenerated or reworded -- the build stops, because a
@@ -686,16 +687,17 @@ an empty feasible set is a deliberate no-ship, not a relaxed cutoff.</figcaption
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--with-restricted-text", action="store_true",
-                    help="include the two verbatim benchmark rows (local reading only; the "
-                         "result is NOT publishable while the ledger is unresolved)")
+    ap.add_argument("--redact-case-study", action="store_true",
+                    help="withhold the two verbatim v1_hmda2022 rows. No longer needed: that "
+                         "source is CC BY 4.0 as of 2026-07-27 and redistribution is approved. "
+                         "Retained for any future source whose licence is unresolved.")
     ap.add_argument("--check", action="store_true",
                     help="fail if the rebuild differs from the committed index.html")
     args = ap.parse_args(argv)
 
     print("Building the HTML edition from ../unified-report ...")
     print(f"  figures converted/copied: {figures()}")
-    tex, meta = flatten(redact=not args.with_restricted_text)
+    tex, meta = flatten(redact=args.redact_case_study)
     frag = pandoc(tex)
     body, toc, bib, counts = postprocess(frag, meta)
     print(f"  floats numbered: {counts['tables']} tables, {counts['figures']} figures")

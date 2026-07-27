@@ -25,7 +25,30 @@ grounding uses aggregate/de-identified fields only.
 - `private_test` (sealed, not distributed): 95 rows
 
 ## License
-LICENSE NOT YET SELECTED. HMDA public data are a U.S. Government work (17 U.S.C. §105, no U.S. copyright); confirm no separate FFIEC/CFPB terms-of-use restriction before redistributing generated prompts.
+**CC BY 4.0**, selected 2026-07-27 by Reza Rahimi, PhD (JazzX AI). Redistribution — including
+verbatim rows — is permitted with attribution:
+
+> MortgageGuardBench v1_hmda2022, Reza Rahimi, PhD (JazzX AI), licensed CC BY 4.0.
+
+The factual grounding is the public HMDA 2022 loan-level snapshot, a U.S. Government work
+carrying no U.S. copyright (17 U.S.C. §105). The FFIEC/CFPB terms-of-use question this card
+previously named as a precondition was checked on 2026-07-27 and no separate restriction was
+found. The normative record is `benchmarks/registry/distribution.yaml`.
+
+Three limits survive the licence and travel with any redistribution. The prompts are
+**synthetic** and the labels are **LLM-judge and policy-card-consistent, not SME-adjudicated**,
+so the data supports measurement and not a fair-lending or compliance finding about any lender,
+model, or population. `CHECKSUMS.txt` covers **release bytes only** — not the generator, judge,
+configuration, or code. And the prompts **solicit violations by design**, so a redistributor
+should still handle them as harmful-content samples (`sensitive_text_class: synthetic_harmful`).
+
+*Licence-change record.* Before 2026-07-27 this section stated that no licence had yet been
+selected. Changing it altered this file's digest, so `CHECKSUMS.txt` was re-frozen for
+`DATA_CARD.md` alone:
+`c235e00e59e05619966baed1035c39375e7dfe4abee0a37fe02c85579f18bd18` → the value now recorded
+there. **No data file changed**: `dev.jsonl`, `public_test.jsonl`, `private_test.jsonl`,
+`train.jsonl`, `MANIFEST.json`, `SOURCES.json`, and `public_index.json` all keep their original
+digests, so the frozen benchmark itself is untouched and every published number still stands.
 
 ## Reproduce
 See the folder README. `make all` rebuilds the whole benchmark from the frozen design + seed.

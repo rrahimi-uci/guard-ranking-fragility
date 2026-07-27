@@ -90,26 +90,32 @@ sources:
 
   - source_id: mortgage_benchmark_v1_hmda2022
     kind: synthetic_internal
-    access_class: internal
+    access_class: open
     license:
-      spdx_or_name: repo_internal_unstated
-      permits_redistribution: unknown
-      commercial_use: unknown
-      snapshot: "mortgage-benchmark/benchmark/v1_hmda2022/, no LICENSE file present, 2026-07-26"
-    redistribution_decision: local_only
-    derived_output_license: none_until_decision
+      spdx_or_name: CC-BY-4.0
+      permits_redistribution: true
+      commercial_use: true
+      snapshot: >
+        Licensed CC BY 4.0 by the dataset author on 2026-07-27. The rows are synthetic
+        prompts we generated; the factual grounding is the public HMDA 2022 loan-level
+        snapshot, a U.S. Government work carrying no U.S. copyright (17 U.S.C. Sec. 105).
+        The FFIEC/CFPB terms-of-use question that DATA_CARD.md named as a precondition was
+        checked on 2026-07-27 and no separate restriction was found.
+    redistribution_decision: publish_text
+    derived_output_license: CC-BY-4.0
     sensitive_text_class: synthetic_harmful
-    attribution_notice: null
-    reviewer: unassigned
-    decision_date: "2026-07-26"
+    attribution_notice: >
+      MortgageGuardBench v1_hmda2022, Reza Rahimi, PhD (JazzX AI), licensed CC BY 4.0.
+      Prompts are synthetic and its labels are LLM-judge and policy-card-consistent, not
+      SME-adjudicated.
+    reviewer: "Reza Rahimi, PhD"
+    decision_date: "2026-07-27"
     row_count: 994
     payload:
       path: mortgage-benchmark/benchmark/v1_hmda2022/
       revision: v1_hmda2022
       sha256: unhashed
-    blocking_reason: >
-      Release checksums cover release bytes only, not generator, judge, configuration,
-      or code, and no redistribution decision is recorded. Rows are tracked and public.
+    blocking_reason: null
 
   - source_id: toxicchat
     kind: public_corpus

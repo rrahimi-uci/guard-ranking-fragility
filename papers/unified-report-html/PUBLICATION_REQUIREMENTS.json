@@ -1,32 +1,49 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "artifact": "papers/unified-report-html/index.html",
   "artifact_kind": "authored_web_page",
-  "requires_publication_approval_for": [],
-  "no_approval_required_because": "The page carries no verbatim text from any restricted source. Its prose, figures and tables are original content under the repository's Apache-2.0 licence, and the report is text-free with respect to third-party corpora -- it redistributes row hashes and scores, never prompts. The one dependency it used to have is now withheld: build.py's redact_restricted_rows() holds back the v1_hmda2022 prompt text that the worked G0/D1 case study quoted, keeping the row id, gold labels, cited policy cards, per-guard scores and ranks, all of which are ours. Verified absent from the built page: the full MGB-UD-00020 prompt, the MGB-FL-00028 fragment, and every other verbatim run of either row. The two-word phrases 'market fit' and 'resale stability' remain in our own analytic prose describing what the row does, which is not redistribution of the row.",
+  "requires_publication_approval_for": [
+    "mortgage_benchmark_v1_hmda2022"
+  ],
+  "rationale": "The page's prose, figures and tables are original content, and the report is text-free with respect to third-party corpora -- it redistributes row hashes and scores, never prompts. One dependency is real and is now satisfied: the worked G0/D1 case study quotes two rows of the frozen v1_hmda2022 mortgage benchmark verbatim, and that source was licensed CC BY 4.0 on 2026-07-27 with redistribution_decision publish_text. The gate therefore authorizes publication on the licence, not on the absence of a dependency.",
+  "attribution_required": {
+    "source_id": "mortgage_benchmark_v1_hmda2022",
+    "licence": "CC-BY-4.0",
+    "notice": "MortgageGuardBench v1_hmda2022, Reza Rahimi, PhD (JazzX AI), licensed CC BY 4.0.",
+    "carried_in": "the page colophon, rendered from papers/unified-report-html/template.html",
+    "why": "CC BY 4.0 is permissive but conditional. Publishing the rows without the notice would breach the licence the ledger records, so the notice is a build output rather than a manual step."
+  },
   "history": [
     {
       "schema_version": 1,
       "required": ["mortgage_benchmark_v1_hmda2022"],
-      "why_it_no_longer_applies": "The requirement was real: the case study quoted one row of that source verbatim, and the source is local_only with permits_redistribution unknown. It was removed by withholding the quotation, NOT by approving the source. The source's own DATA_CARD.md still reads 'LICENSE NOT YET SELECTED' and names an FFIEC/CFPB terms-of-use check as a precondition; that check has not been done and no reviewer is on record. Nothing here relaxes that -- the ledger entry is untouched."
+      "state": "REFUSED",
+      "why": "The source was local_only with permits_redistribution unknown, its DATA_CARD stated that no licence had been selected, and no reviewer was on record. Publication was blocked."
+    },
+    {
+      "schema_version": 2,
+      "required": [],
+      "state": "AUTHORIZED by removing the dependency",
+      "why_it_no_longer_applies": "The requirement was dissolved rather than met: build.py withheld the two quoted rows so the page carried no restricted text. That was the honest route while the licence question was open, and it is now superseded -- the dependency is declared again and satisfied on its merits."
     }
   ],
   "redaction": {
     "implemented_by": "papers/unified-report-html/build.py::redact_restricted_rows",
-    "default": "on",
-    "escape_hatch": "python build.py --with-restricted-text produces the full-text edition for local reading; that output is NOT publishable while the ledger is unresolved.",
-    "fails_closed": "The function raises RedactionError if either quotation anchor stops matching, so a regenerated or reworded case study stops the build instead of silently publishing the prompt."
+    "default": "off",
+    "flag": "python build.py --redact-case-study",
+    "status": "Retained, not deleted. It is unnecessary for v1_hmda2022 now, but the situation recurs whenever a source's licence is unresolved, and rebuilding this under time pressure is how prompt text gets published by accident. Still fails closed with RedactionError if either quotation anchor stops matching."
   },
   "quotation_budget": {
     "declared_in": "tests/test_no_unlicensed_publication.py",
     "key": "AUTHORED_QUOTATION_BUDGET['papers/unified-report-html/index.html']",
-    "note": "The budget bounds how much restricted vocabulary this page may carry and fails the build if it grows. It is a change detector, not an authorization; this file records the authorization requirement, which is now none."
+    "value": 11,
+    "note": "Re-baselined 8 -> 11 when the redaction was turned off. Kept because mortgage_guard_bench_2k_v0_1_0 is still local_only with permits_redistribution false, so the probes still catch 2K draft text reaching a published page."
   },
   "gate": {
     "checked_by": "tools/pages_authorized.py",
     "enforced_by": ".github/workflows/pages.yml",
     "tested_by": "tests/test_pages_gate.py",
     "current_state": "AUTHORIZED",
-    "current_reason": "The artifact declares no source dependencies, because it carries no restricted text. The refusal path stays under test via tests/fixtures/pages_artifact_unapproved/."
+    "current_reason": "mortgage_benchmark_v1_hmda2022 is approved for publish_text under CC BY 4.0, reviewed by Reza Rahimi, PhD on 2026-07-27. The refusal path stays under test via tests/fixtures/pages_artifact_unapproved/, which names a source that is still closed."
   }
 }

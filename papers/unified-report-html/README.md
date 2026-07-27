@@ -84,47 +84,51 @@ against numbering derived from document order, rather than being hand-maintained
 - Page-dependent constructs — page breaks at every section, running heads, float placement —
   have no HTML meaning and are dropped.
 
-## What this edition withholds, and why
+## Licence and attribution
 
-**This is the published edition, and it is not the whole paper.** The worked G0/D1 case study
-in the PDF quotes two rows of the frozen `v1_hmda2022` benchmark — one in full, one in part.
-This edition holds that prompt text back and keeps everything that is ours: the row id, the
-gold labels, the cited policy cards, the per-guard scores, and the ranks that carry the claim.
+This edition publishes the worked G0/D1 case study **in full**, including the two quoted rows of
+the frozen `v1_hmda2022` benchmark. That source was licensed **CC BY 4.0** on 2026-07-27, so the
+page carries the required notice in its colophon:
 
-The reason is not caution for its own sake. That source is `local_only` with
-`permits_redistribution: unknown`; its own
-[`DATA_CARD.md`](../../mortgage-benchmark/benchmark/v1_hmda2022/DATA_CARD.md) reads *"LICENSE
-NOT YET SELECTED"* and names an FFIEC/CFPB terms-of-use check as a precondition; no reviewer is
-on record; and the data card is checksum-frozen. Approving the source in order to publish the
-page would have meant writing a licensing conclusion nobody reached into the provenance record.
-Removing the dependency was the honest route, so the ledger entry is untouched.
+> MortgageGuardBench `v1_hmda2022`, Reza Rahimi, PhD (JazzX AI), licensed CC BY 4.0.
 
-For the full text, read [the PDF](../unified-report/unified_report.pdf) or build locally:
+The notice is emitted by the build rather than added by hand, and a test fails if the page ever
+quotes the rows without it — CC BY 4.0 is permissive but conditional.
+
+Three boundaries survive the licence and travel with the rows: the prompts are synthetic and the
+labels are LLM-judge and policy-card-consistent, **not SME-adjudicated**; the release checksums
+cover **release bytes only**, not the generator, judge, configuration, or code; and the prompts
+solicit violations by design, so reuse should treat them as harmful-content samples.
+
+**Before the licence, this edition withheld those rows.** `redact_restricted_rows()` held back the
+prompt text and kept the row id, gold labels, cited policy cards, scores, and ranks. That
+machinery is retained and still fails closed — it is now opt-in:
 
 ```bash
-python build.py --with-restricted-text    # full text; NOT publishable
+python build.py --redact-case-study    # withhold the rows again
 ```
 
-`redact_restricted_rows()` raises `RedactionError` if either quotation anchor stops matching, so
-a regenerated case study stops the build rather than quietly publishing the prompt.
+It was kept rather than deleted because the situation recurs with the next source whose licence is
+unresolved, and rebuilding it under time pressure is how prompt text ends up published by accident.
 
 ## Distribution gate
 
 The page sits inside
 [`tests/test_no_unlicensed_publication.py`](../../tests/test_no_unlicensed_publication.py) with
-a **declared quotation budget** of 8 restricted-vocabulary hits, down from 11 before the
-redaction. What remains is the paper's own policy vocabulary — a background box defining
-"underwriting" and "adverse-action notice" — plus prose describing what the withheld row does.
-No verbatim run of either row survives; that is checked, not assumed. **The build fails if the
-count grows**, which makes the budget the tripwire on a redaction that stops working. For
+a **declared quotation budget** of 11 restricted-vocabulary hits, re-baselined from 8 when the
+redaction was lifted. The budget is kept rather than retired because the probes are mortgage
+vocabulary and one mortgage source is still closed — `mortgage_guard_bench_2k_v0_1_0` remains
+`local_only` — so it still catches 2K draft text reaching a published page. **The build fails if
+the count grows.** For
 calibration: a restricted benchmark row carries ≈2.7 hits, so the withdrawn 2,000-row export
 carried on the order of 5,400.
 
-[`PUBLICATION_REQUIREMENTS.json`](PUBLICATION_REQUIREMENTS.json) declares that the page now
-needs **no** source approved, and records what the requirement used to be and why it went — so
-"needs nothing approved" cannot be asserted from a blank slate. `make pages-authorized` exits 0
-on that basis, and [a fixture](../../tests/fixtures/pages_artifact_unapproved/) keeps the
-refusal path under test.
+[`PUBLICATION_REQUIREMENTS.json`](PUBLICATION_REQUIREMENTS.json) declares the one source this
+page depends on and records all three states it has passed through: refused while unresolved,
+authorized on an empty dependency set while the rows were withheld, and now authorized on the
+licence itself. `make pages-authorized` exits 0 and names the source, and
+[a fixture](../../tests/fixtures/pages_artifact_unapproved/) naming a still-closed source keeps
+the refusal path under test.
 
 Do not enable Pages through GitHub's Settings UI instead: "Deploy from a branch" bypasses the
 gate and would serve the un-redacted sources.

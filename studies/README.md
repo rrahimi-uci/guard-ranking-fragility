@@ -58,11 +58,15 @@ is how a real regression stops hiding behind a known one.
 
 Every source's redistribution decision lives in
 [`benchmarks/registry/distribution.yaml`](../benchmarks/registry/distribution.yaml).
-No source is currently approved for `publish_text`.
+
+Approved for verbatim redistribution (`publish_text`):
+
+- `mortgage_benchmark_v1_hmda2022`
+
+Not approved:
 
 - `paper_a_sft_v1_historical` — local only
 - `expguard_external` — local only
-- `mortgage_benchmark_v1_hmda2022` — unresolved
 - `paper_c_matched_dpo_scaffold` — local only
 - `paper_c_reference_centering` — local only
 - `paper_c_specialize_align_mortgage_v1` — local only

@@ -77,10 +77,20 @@ def studies_index(reg) -> str:
         if edges:
             lines.append(f"- `{s['study_id']}` — {'; '.join(edges)}")
 
+    # Derive the approved set rather than asserting it. This line previously hardcoded "No
+    # source is currently approved for publish_text", which went stale the moment one was --
+    # a generated view must not carry a claim about the file it summarizes.
+    approved = [s["study_id"] for s in reg["studies"]
+                if s["distribution_state"] == "publish_text"]
     lines += ["", "## Distribution", "",
               "Every source's redistribution decision lives in",
-              "[`benchmarks/registry/distribution.yaml`](../benchmarks/registry/distribution.yaml).",
-              "No source is currently approved for `publish_text`.", ""]
+              "[`benchmarks/registry/distribution.yaml`](../benchmarks/registry/distribution.yaml)."]
+    if approved:
+        lines += ["", "Approved for verbatim redistribution (`publish_text`):", ""]
+        lines += [f"- `{a}`" for a in approved]
+        lines += ["", "Not approved:", ""]
+    else:
+        lines += ["No source is currently approved for `publish_text`.", ""]
     for s in reg["studies"]:
         if s["distribution_state"] in ("unresolved", "local_only"):
             lines.append(f"- `{s['study_id']}` — {s['distribution_state'].replace('_', ' ')}")

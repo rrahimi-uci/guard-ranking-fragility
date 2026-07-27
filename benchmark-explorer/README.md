@@ -34,8 +34,10 @@ build refuses to run on an unknown source id. Eight negative tests in
 [`tests/test_no_unlicensed_publication.py`](../tests/test_no_unlicensed_publication.py)
 fails the root suite if a bulk artifact like this one is ever tracked again.
 
-**As of the current ledger, no source is approved for verbatim redistribution**, so a
-public build carries counts and labels but no source text at all.
+**As of the current ledger, exactly one source is approved for verbatim redistribution:**
+`mortgage_benchmark_v1_hmda2022`, CC BY 4.0. A public build may therefore emit its text with
+the required attribution; every other source still contributes counts and labels only, with
+text replaced by content hashes.
 
 ## Still open — needs a human decision
 

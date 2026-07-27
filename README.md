@@ -271,7 +271,8 @@ overwrites canonical figures and intermediates. Run it in a disposable worktree.
 
 ## Distribution status
 
-**No benchmark source is currently approved for verbatim public redistribution.**
+**One benchmark source is now approved for verbatim public redistribution: `v1_hmda2022`,
+licensed CC BY 4.0 on 2026-07-27.** The other ten sources remain closed.
 [`benchmarks/registry/distribution.yaml`](benchmarks/registry/distribution.yaml) records a
 per-source decision — license, access class, sensitive-text class, reviewer, and payload
 hash — and fails closed: a source absent from the ledger defaults to `local_only`, and the
@@ -336,49 +337,52 @@ Two limits worth stating plainly: **a rewrite is not a retraction** — anything
 fetched is out, and GitHub may serve unreferenced objects by SHA until it garbage-collects
 (ask GitHub Support to force it; the repository has no forks, which is the main reason this
 was worth doing at all) — and every pre-rewrite commit SHA is void, so old links break.
-**No source is approved for verbatim redistribution, so no release or shard build is
-authorized.** The one thing that *is* published — the HTML edition on Pages — is published
-because it carries no restricted text, not because the hold was lifted.
+**Ten of the eleven sources remain closed, so no release or shard build over them is
+authorized.** The exception is `v1_hmda2022`, licensed CC BY 4.0 on 2026-07-27 — the first
+source in this ledger approved for verbatim redistribution.
 
-### GitHub Pages: published by removing the dependency, not by approving the source
+### GitHub Pages: now published on the licence
 
 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) deploys
-[`papers/unified-report-html/`](papers/unified-report-html/). Getting there did not involve a
-licensing decision, and that was the point.
+[`papers/unified-report-html/`](papers/unified-report-html/), and the gate has now authorized it
+two different ways — which is the clearest evidence it is doing real work rather than rubber-stamping.
 
-The page's only restricted content was two rows of the frozen `v1_hmda2022` benchmark quoted
-by the worked G0/D1 case study. Approving that source was not available: its own
-[`DATA_CARD.md`](mortgage-benchmark/benchmark/v1_hmda2022/DATA_CARD.md) still reads
-*"LICENSE NOT YET SELECTED"* and names an FFIEC/CFPB terms-of-use check as a precondition,
-no reviewer is on record, and the data card is checksum-frozen — so writing
-`permits_redistribution: true` would have asserted a conclusion nobody reached, in the
-provenance record, which is the original sin this repository was restructured to prevent.
+The page quotes two rows of the frozen `v1_hmda2022` benchmark in its worked G0/D1 case study.
+While that source was unresolved, approving it was not available: its data card said no licence
+had been selected, no reviewer was on record, and the card is checksum-frozen, so writing
+`permits_redistribution: true` would have asserted a conclusion nobody had reached. The build
+therefore **withheld the two rows**, the artifact declared no dependency, and the gate opened on
+an empty requirement set. That was the honest route with the question open.
 
-So the build **withholds the two rows instead.** `redact_restricted_rows()` holds back the
-prompt text and keeps everything that is ours — row id, gold labels, cited policy cards,
-per-guard scores, and the ranks that carry the claim. The ledger entry is untouched;
-`make pages-authorized` now passes on an *empty* dependency set, recorded with its history in
-[`PUBLICATION_REQUIREMENTS.json`](papers/unified-report-html/PUBLICATION_REQUIREMENTS.json).
+On **2026-07-27 the licence was decided: CC BY 4.0**, reviewed and dated, with the FFIEC/CFPB
+terms-of-use precondition checked. So the redaction is off, the full case study is published, the
+artifact declares its dependency again, and the gate authorizes it **on the licence** — naming the
+source in its output rather than merely returning zero:
 
 ```bash
-make pages-authorized                                   # exit 0: no source dependencies
-python papers/unified-report-html/build.py --with-restricted-text   # full text, local only
+make pages-authorized       # exit 0: mortgage_benchmark_v1_hmda2022 approved for publish_text
+python papers/unified-report-html/build.py --redact-case-study   # withhold again, if ever needed
 ```
 
 What keeps this honest rather than merely convenient:
 
-- **The redaction fails closed.** If either quotation anchor stops matching — a regenerated or
-  reworded case study — the build raises `RedactionError` and writes nothing, rather than
-  silently publishing the prompt. Verified by moving the anchor.
+- **CC BY 4.0's condition is enforced, not remembered.** The page publishes the rows, so it must
+  carry the attribution notice; that notice is a build output and a test fails if the page
+  quotes the rows without it. A licence with conditions is not a licence to drop them.
+- **The redaction was kept, not deleted.** It is opt-in now and still fails closed with
+  `RedactionError` if a quotation anchor moves. The situation recurs with the next unresolved
+  source, and rebuilding it under pressure is how prompt text gets published by accident.
 - **The refusal path stays tested** against [a fixture](tests/fixtures/pages_artifact_unapproved/)
-  that names an unapproved source, so the gate cannot rot into always-yes once the real
-  artifact needs nothing.
-- **A test asserts the hold is still in place** — if `mortgage_benchmark_v1_hmda2022` ever
-  stops being `local_only`, it fails and names the two preconditions.
-- **The quotation budget dropped 11 → 8** and is the tripwire on a redaction that stops working.
-- Removing `needs: authorize`, gutting the authorize job, or adding a `push` trigger each fail
-  the build — all three verified by trying them. The workflow is `workflow_dispatch`-only, so
-  publication is never a side effect of merging.
+  naming `mortgage_guard_bench_2k_v0_1_0`, which is still closed — so the gate cannot rot into
+  always-yes now that the real artifact is approved.
+- **Three tests had to be rewritten to land this change**, because each asserted the previous
+  state and failed the moment it changed. That is the mechanism working: a licence decision
+  cannot be absorbed silently.
+- **The quotation budget was re-baselined 8 → 11**, and kept — the probes are mortgage
+  vocabulary and the 2K draft is still `local_only`, so it still catches that text reaching a
+  published page.
+- **The generated index derives the approved set** instead of asserting "no source is approved,"
+  which is how that sentence went stale in the first place.
 
 **One limit no test can cover:** GitHub's repository *Settings* → "Deploy from a branch" would
 serve the whole tree with the gate bypassed entirely, and would put the un-redacted sources one
