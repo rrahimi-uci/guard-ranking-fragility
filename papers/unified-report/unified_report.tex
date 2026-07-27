@@ -88,6 +88,7 @@
 \input{generated/klsft_macros}       % KL-SFT anti-forgetting control: \KL* (placeholder until run completes)
 \input{generated/adaptation_macros}  % Starting-type adaptation study: \Ada* (H values + LCBs + verdicts)
 \input{generated/ensembling_macros}  % Ensembling appendix: \Ens* (point estimates + bootstrap + committee)
+\input{generated/matched_fpr_macros} % Act I matched-FPR operating point: \Matched*
 \input{generated/teaser_macros}      % Figure 1 caption: 2-dp \Teaser* forms of the panel deltas
 
 \title{\textbf{The Safety-Guard Benchmark Chooses the Winner:}\\[3pt]
@@ -114,8 +115,11 @@ pre-tuning base on identical rows, separating \emph{represented} (trained-on) fr
 (held-out) sources. Four findings on one fixed panel of compact checkpoints: (i)~fine-tuning
 \emph{specializes} --- it lifts represented ranking to a shared ceiling ($\RepDelta$ macro-AP) but changes
 transfer by only $\TransferDelta$ on average, pooling opposing per-checkpoint effects ($+0.04$ to $-0.15$),
-and, at a calibrated threshold, more than \emph{triples} the pooled
-false-alarm rate on unseen traffic while dropping hard-attack recall; (ii)~a retraining-free
+and, at a calibrated threshold, nearly \emph{quadruples} the pooled
+false-alarm rate on unseen traffic ($4.3\%\!\rightarrow\!17.0\%$) --- and when it is given the
+\emph{same} alarm budget as its own base, it catches barely half as much off-source (transfer recall
+$\MatchedTransferBase\!\rightarrow\!\MatchedTransferSft$, \code{HarmBench} recall
+$\MatchedHarmBase\!\rightarrow\!\MatchedHarmSft$, worse on all four checkpoints); (ii)~a retraining-free
 base$+$adapter \emph{composition} recovers much of the lost transfer ($\PilotTransferDeltaSFT$ vs.\ the
 fine-tune) at one extra inference pass; (iii)~a \emph{preregistered confirmatory} study over ten
 checkpoints (including six released vendor guards) confirms the same specialization even for
@@ -131,13 +135,14 @@ fairness ranking.
 \smallskip
 \noindent The contribution is a measurement-and-decision \emph{workflow} for choosing guards in regulated
 products --- compare to your own base, gate on both represented and transfer, recalibrate, and treat
-repairs as gated candidates --- not a new winning model. Every claim-bearing table is regenerated from committed
-per-row scores by one command that reports what it could and could not verify, and the dual-labeled
+repairs as gated candidates --- not a new winning model. One command regenerates and byte-checks 12 of the 24
+generated artifacts from committed per-row scores and prints the coverage it did \emph{not} achieve
+(4 need the lock-pinned environment; 8 are committed outputs of their own locked analyses), and the dual-labeled
 mortgage benchmark ships frozen and checksummed.
 \end{abstract}
 
 \begin{center}\small
-\href{https://github.com/rrahimi-uci/guard-ranking-fragility}{\code{github.com/rrahimi-uci/guard-ranking-fragility}}
+\href{https://github.com/rrahimi-uci/safety-guard-dynamics}{\code{github.com/rrahimi-uci/safety-guard-dynamics}}
 ~~$\cdot$~~ \code{make reproduce} regenerates and byte-checks the covered tables (\Cref{sec:repro})
 ~~$\cdot$~~ frozen benchmark: \code{v1\_hmda2022}, 994 rows
 \end{center}
@@ -173,7 +178,11 @@ domain-arm CIs (\Cref{tab:baseline,tab:expguard}): the claim is that the \emph{l
 moves}, not that the ordering is resolved.
 \textbf{(3)}~The worked G0/D1 row of \Cref{fig:casestudy} --- coded as ``market fit'' and neighborhood
 ``resale stability,'' every guard ranks the fair-lending violation below the median benign row of the
-same split; name the protected traits and three of four rank it above nearly all of them.}
+same split. The green bars are a \emph{different} row that names the protected traits outright, which
+three of four guards rank above nearly all benign rows. \textbf{These two rows are not a controlled
+pair} --- they differ in fact sheet, domain, cited cards and request type --- so read them as an
+illustration of a possible surface-form effect, not a measurement of one; v1 contains no protected pair
+on which a violation is scored, so no controlled test of it exists (\Cref{sec:actIV-mortgage-pairs}).}
 \label{fig:teaser}
 \end{figure}
 
@@ -294,7 +303,11 @@ paired data: scoring both guards on identical rows lets a paired bootstrap cance
 variance, and it resolves one vertical. SmolLM3-3B $-$ Qwen3-4B is $+0.017$ on \textbf{health} with a CI
 excluding zero, while finance ($+0.001$) and law ($+0.001$) are genuine ties (\Cref{tab:expguard}). The
 honest statement is therefore sharper than ``unresolved at this sample size'': the sample resolves health
-and shows the other two verticals are level. The smaller checkpoints trail (Qwen2.5-1.5B $0.921$,
+and shows the other two verticals are level. One caveat belongs with that word ``resolves.'' Four paired
+comparisons are reported (overall plus three verticals) with \emph{no} multiplicity adjustment, and the
+health interval clears zero only narrowly ($+0.0026$ at its lower end). Under a Bonferroni split across
+the three verticals it would not clear. We therefore treat health as the one vertical where the data
+\emph{lean} against a tie --- a direction worth a targeted replication, not a resolved ranking. The smaller checkpoints trail (Qwen2.5-1.5B $0.921$,
 SmolLM2-1.7B $0.883$) --- the ranking is \emph{not} monotone in parameter count.
 As external, expert-labeled evidence these numbers sit at a strictly stronger label tier than the mortgage
 LLM-judge, so they are reported \emph{beside}, and never pooled with, the mortgage or retrospective-panel
@@ -308,7 +321,9 @@ committed text-free per-row scores; the run was independently cross-checked on a
 \section{Synthesis: one lesson at three scales, and what to do about it}
 \label{sec:synthesis}
 The three acts are one lesson. A guard's benchmark score is co-produced by the benchmark: SFT buys
-represented-source ranking, not transfer (Act~I); keeping the base in an output-space average
+represented-source ranking, not transfer --- and at an equal false-alarm budget it does not even buy the
+recall it appears to, catching \MatchedTransferSft{} against its own base's \MatchedTransferBase{}
+off-source (Act~I); keeping the base in an output-space average
 \emph{recovers} some transfer without retraining (at a second inference pass), though not a threshold (Act~II); and a change of
 domain can hide the violation entirely, so regulated domains need domain-grounded evaluation and a
 fairness gate (Act~III) --- and building that gate taught us that the gate itself needs the same
@@ -344,9 +359,12 @@ over-refusal, and domain sets. \\
 \rowcolor{guidealt}
 \textbf{\textcolor{tkgreenedge}{2.}~Ordinary SFT buys represented-source ranking, not transfer.} &
 Represented AP $\RepDelta$ (LCB $\RepLCB$) vs.\ transfer $\TransferDelta$ (UCB $\TransferUCB$);
-specialization in \SpecializationSeedCount/\TotalSeedCount{} seeds (\Cref{tab:primary}). &
-Always compare a tune to its \emph{own} base on represented \emph{and} held-out sets --- a delta vs.\
-other models hides the transfer cost. \\
+specialization in \SpecializationSeedCount/\TotalSeedCount{} seeds (\Cref{tab:primary}). At an
+\emph{equal} false-alarm budget the tuned guard is worse on all four checkpoints: transfer recall
+\MatchedTransferDelta{}, \code{HarmBench} recall \MatchedHarmDelta{} (\Cref{tab:matchedfpr}). &
+Always compare a tune to its \emph{own} base on represented \emph{and} held-out sets, \emph{and at a
+matched false-alarm rate} --- a delta vs.\ other models hides the transfer cost, and a recall compared at
+unequal alarm rates hides its sign. \\
 \rowcolor{white}
 \textbf{\textcolor{tkgreenedge}{3.}~A base-anchored KL penalty buys back most of the transfer SFT gives up --- at a represented-source cost, no extra inference.} &
 KL-SFT ($\beta{=}0.5$): transfer \KLBetaHalfTransferDelta{} vs.\ SFT at a represented cost
@@ -475,11 +493,16 @@ regenerates the covered tables/figures from committed per-row scores by calling 
 Act~I specialization tables in a lock-pinned environment; the Act~II composition, mortgage, ExpGuard,
 SFT+SFT, latency and teaser artifacts in any environment), asserts byte-identity with the committed
 copies, and prints a verified/unverified/not-covered count. \textbf{Coverage is partial and the harness
-says so}: of the 22 generated artifacts the report \code{\textbackslash input}s, 10 are byte-checked here,
+says so}: of the 24 generated artifacts the report \code{\textbackslash input}s, 12 are byte-checked here,
 4 require the lock-pinned environment (the Act~I tables and the \code{\textbackslash Rep*}/
 \code{\textbackslash Transfer*} macros), and 8 --- the adaptation, KL-SFT, ensembling and mortgage-composition
 tables --- are committed outputs of their own locked analyses that are not yet wired into the byte-check.
-The command exits nonzero unless every covered artifact verifies.
+The command exits nonzero unless every covered artifact verifies, and it now asserts that these three
+counts \emph{partition} the inputs exactly: an earlier version printed ``11/22'' because the figures
+directory --- not one of the \code{\textbackslash input}ed \code{.tex} artifacts --- was being counted in
+a tally whose denominator excluded it. The matched-false-alarm-budget table (\Cref{tab:matchedfpr}) is one
+of the 12 covered artifacts: it is derived from the same committed \code{score\_raw}/\code{gold} columns
+as everything else here and needs no GPU.
 
 \paragraph{Three reproducibility tiers, kept distinct.} \textbf{(i) Analysis reproducibility} --- regenerating
 a table from the committed per-row scores --- is what \code{make reproduce} verifies byte-for-byte, with no
@@ -495,7 +518,7 @@ generation. Raw third-party rows are referenced by pinned identifier + revision 
 redistributed.
 
 \paragraph{Code and data availability.} \begin{sloppypar}All code, data manifests, generated tables, and
-the frozen benchmark are public at \url{https://github.com/rrahimi-uci/guard-ranking-fragility}. The
+the frozen benchmark are public at \url{https://github.com/rrahimi-uci/safety-guard-dynamics}. The
 one-command pipeline is \code{papers/unified-report/reproduce.py} (\code{make reproduce}); the frozen,
 dual-labeled mortgage benchmark ships at \code{mortgage-benchmark/benchmark/v1\_hmda2022/} (994 rows,
 SHA-256-checksummed, with a text-free index); the committed per-row guard scores that regenerate every

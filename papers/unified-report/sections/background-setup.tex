@@ -137,6 +137,24 @@ both measure (\Cref{sec:actI-op,sec:actIII-operating}).
 \subsection{Estimands, the fixed panel, and the paired hierarchical bootstrap}
 \label{sec:bg-estimand}
 
+\begin{background}{Three terms that appear in the verdicts, in plain words}
+\textbf{Lower confidence bound (LCB).} A one-sided version of an interval. Saying ``the gain is
+$+0.174$, LCB $+0.129$'' means: the estimate is $+0.174$, and under resampling the value stayed above
+$+0.129$ in $97.5\%$ of the redraws. A criterion of the form ``LCB $>0$'' is therefore a demand that even
+the pessimistic end of the range still be a gain. (UCB is the mirror image, used for quantities we want
+to bound from \emph{above}, such as a loss.)
+
+\textbf{Non-inferiority margin.} How much you are willing to lose on one axis to win on another, fixed
+\emph{before} looking. A margin of $-0.02$ says: a drop of up to two AP points is acceptable, more is
+not. This is stricter than ``did it get worse?'' --- it must be provably \emph{not much} worse, so a
+noisy result fails the test rather than passing it by default. \Cref{sec:adaptation} contains the one
+place in this report where a preregistered criterion of this kind is failed and reported as failed.
+
+\textbf{Bonferroni split.} When you test two things at once, each gets half the error budget
+($\alpha=0.05$ becomes $0.025$ each), so asking two questions cannot double your chance of a lucky
+answer. It is the cheapest, most conservative way to pay for multiplicity.
+\end{background}
+
 An \emph{estimand} is the exact quantity our numbers describe. Here it is the average
 before-versus-after change \emph{for the four specific checkpoints we study}, not for ``small guards''
 in general. Those four checkpoints are a \emph{fixed, purposively chosen panel} --- picked deliberately,

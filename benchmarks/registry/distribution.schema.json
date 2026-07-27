@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://guard-ranking-fragility/benchmarks/registry/distribution.schema.json",
+  "$id": "https://safety-guard-dynamics/benchmarks/registry/distribution.schema.json",
   "title": "Source-by-source distribution ledger",
   "description": "Canonical redistribution decision for every benchmark source whose text can reach a build. Fails closed: a source with no affirmative decision is local_only.",
   "type": "object",

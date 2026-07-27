@@ -385,6 +385,28 @@ def figures(results, check):
     r = _run([PYS, 'figures/make_figures.py'], cwd=HERE)
     results['figures'] = 'regenerated' if r.returncode == 0 else 'FAIL: ' + (r.stderr or '')[-80:]
 
+def matched_fpr(results, check):
+    """Matched false-alarm-budget operating point (see matched_fpr.py for the threshold rule)."""
+    sp = REPO / "artifacts/paper_a_sft_v2/scores/scores.parquet"
+    if not sp.exists():
+        results["tab_matched_fpr_gen.tex"] = "PENDING (scores.parquet missing)"
+        return
+    import pandas as pd
+
+    import matched_fpr as MF
+
+    df = pd.read_parquet(sp, columns=["split", "source", "gold", "model_key", "condition",
+                                      "seed", "score_raw", "prediction"])
+    for name, tex in (("tab_matched_fpr_gen.tex", MF.emit_table(df)),
+                      ("matched_fpr_macros.tex", MF.emit_macros(df))):
+        dst = GEN / name
+        if check and dst.exists():
+            results[name] = "OK (byte-identical)" if dst.read_text() == tex else "DRIFT!"
+        else:
+            dst.write_text(tex)
+            results[name] = "regenerated"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true", help="fail on drift vs committed generated/")
@@ -393,7 +415,8 @@ def main(argv=None) -> int:
 
     GEN.mkdir(exist_ok=True)
     results: dict[str, str] = {}
-    for fn in (paper_a, paper_b, mortgage, expguard, sftsft, latency, teaser_macros, figures):
+    for fn in (paper_a, paper_b, mortgage, expguard, sftsft, matched_fpr, latency,
+               teaser_macros, figures):
         try:
             fn(results, args.check)
         except Exception as e:  # keep going; report per-study
@@ -405,21 +428,27 @@ def main(argv=None) -> int:
     uncovered = [n for n in inputs if n not in covered]
 
     print("\n=== reproduce: per-table status ===")
-    verified, unverified, failed = [], [], []
+    verified, unverified, failed, side = [], [], [], []
     for k, v in sorted(results.items()):
         print(f"  {k:38s} {v}")
         if "DRIFT" in v or v.startswith(("FAIL", "ERROR")):
             failed.append(k)
         elif "byte-identical" in v or v == "regenerated":
-            verified.append(k)
+            # `figures` is a directory, not one of the generated/*.tex inputs. Counting it in a
+            # tally whose denominator is len(inputs) printed "11/22" for 10 verified .tex files.
+            (verified if k.split(":")[-1].endswith(".tex") else side).append(k)
         else:                                   # PINNED-ENV REQUIRED / PENDING / anything else
             unverified.append(k)
     if uncovered:
         print("\n  not covered by the harness (committed outputs of their own locked analyses):")
         for n in uncovered:
             print(f"    - {n}")
+    assert len(verified) + len(unverified) + len(uncovered) + len(failed) == len(inputs), (
+        "coverage accounting must partition the inputs exactly: "
+        f"{len(verified)}+{len(unverified)}+{len(uncovered)}+{len(failed)} != {len(inputs)}")
     print(f"\n  byte-checked {len(verified)}/{len(inputs)} inputs; "
-          f"{len(unverified)} unverified; {len(uncovered)} not covered; {len(failed)} failed")
+          f"{len(unverified)} unverified; {len(uncovered)} not covered; {len(failed)} failed"
+          + (f"  (+{len(side)} non-input artifact: {', '.join(side)})" if side else ""))
     if args.build:
         print("\n=== building PDF ===")
         b = _run(["tectonic", "--outdir", "build", "unified_report.tex"], cwd=HERE)

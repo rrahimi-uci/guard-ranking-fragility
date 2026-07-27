@@ -12,7 +12,7 @@ from .schema import Row
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(_HERE)          # the generator folder
-REPO_ROOT = os.path.dirname(ROOT)      # the parent guard-ranking-fragility repo
+REPO_ROOT = os.path.dirname(ROOT)      # the parent safety-guard-dynamics repo
 
 
 def load_dotenv(path: str | None = None) -> list[str]:

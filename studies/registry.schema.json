@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://guard-ranking-fragility/studies/registry.schema.json",
+  "$id": "https://safety-guard-dynamics/studies/registry.schema.json",
   "title": "Study registry",
   "description": "Normative machine-readable record of every study, its contract class, and how to verify it. README prose summarizes this file; it must not redefine study state.",
   "type": "object",

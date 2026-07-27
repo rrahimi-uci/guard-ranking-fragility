@@ -109,7 +109,7 @@ of a reproducibility contract.
 ## Target logical structure
 
 ```text
-guard-ranking-fragility/
+safety-guard-dynamics/
 ├── guard_research/                    # authoritative release-bound shared package
 ├── studies/
 │   ├── registry.yaml                 # normative machine-readable study registry

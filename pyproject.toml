@@ -44,7 +44,7 @@ dev = ["pytest>=8.0"]
 all = ["guard-research[train,dev]"]
 
 [project.urls]
-Repository = "https://github.com/rezarahimi/guard-ranking-fragility"
+Repository = "https://github.com/rrahimi-uci/safety-guard-dynamics"
 
 [tool.setuptools]
 packages = ["guard_research"]

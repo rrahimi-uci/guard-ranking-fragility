@@ -11,7 +11,7 @@ pyyaml>=6.0
 # --- provenance / metrics come from the parent repo's guard_research package ---
 # Install the parent repo editable so `import guard_research` works:
 #   pip install -e ..            # from this folder, or
-#   pip install -e /path/to/guard-ranking-fragility
+#   pip install -e /path/to/safety-guard-dynamics
 # A light fallback is used automatically if guard_research is unavailable.
 
 # --- optional: real LLM providers (online mode) ---

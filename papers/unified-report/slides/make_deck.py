@@ -57,7 +57,7 @@ BODY_TOP = Inches(1.72)
 BODY_BOT = Inches(6.70)
 
 TITLE_SHORT = "The Safety-Guard Benchmark Chooses the Winner"
-REPO = "github.com/rrahimi-uci/guard-ranking-fragility"
+REPO = "github.com/rrahimi-uci/safety-guard-dynamics"
 
 
 # -------------------------------------------------------------------- helpers

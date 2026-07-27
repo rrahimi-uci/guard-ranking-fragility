@@ -180,13 +180,26 @@ not transfer. Transfer recall rises only modestly (\TransferBaseTPRPct\% to \Tra
 nowhere near the represented jump --- and that rise is \emph{not} iso-FPR, which matters more than its
 size. The two recalls are realized at \TransferBaseFPRPct\% and \TransferSFTFPRPct\% macro FPR, so the
 tuned guard buys much of its extra recall by alarming roughly twice as often; a recall comparison at
-unequal false-alarm rates is not a comparison of discriminative power. Rethresholding each tuned guard so
-its transfer false-alarm rate matches its own base's reverses the sign of the change on three of the four
-checkpoints and in the panel mean, in both of the two thresholding reconstructions we tried. We report
-that as a direction rather than a locked row: reproducing the operating point exactly requires the
-lock-pinned analysis environment (\Cref{sec:repro}), and adding a matched-FPR row to
-\Cref{tab:sensitivity} is a stated next step. It cuts the same way as the rest of Act~I --- against the
-tuned guard.
+unequal false-alarm rates is not a comparison of discriminative power.
+
+\paragraph{The fair comparison: an equal false-alarm budget.} So we make the alarm budgets equal and
+re-read the same rows. \Cref{tab:matchedfpr} gives each tuned guard the threshold at which its pooled
+transfer false-alarm rate \emph{matches its own base's}, and then compares recalls. The modest apparent
+gain does not merely shrink --- it reverses, on \emph{all four} checkpoints and by a wide margin: transfer recall goes \MatchedTransferBase{}\,$\to$\,\MatchedTransferSft{}
+(\MatchedTransferDelta) and \texttt{HarmBench} recall \MatchedHarmBase{}\,$\to$\,\MatchedHarmSft{}
+(\MatchedHarmDelta). At an equal alarm budget the tuned guard catches \emph{less than half} of what its
+own untuned base catches off-source. The direction is stable across the three quantile conventions we
+tried (panel mean \MatchedStabilityLo{} to \MatchedStabilityHi).
+
+This is the honest form of the operating-point result, and it is the one the rest of Act~I predicts: the
+$+0.06$ recall gain in \Cref{tab:sensitivity} is an artifact of comparing at unequal alarm rates. It needs
+no GPU and no pinned environment --- matching false-alarm rates is ranking arithmetic on the same
+committed \code{score\_raw} and \code{gold} columns every other covered artifact uses, so it is
+regenerated and byte-checked by \code{make reproduce} (\Cref{sec:repro}); the emitter reproduces every
+published row of \Cref{tab:sensitivity} exactly before adding the matched column, which is how we know the
+two tables read the same underlying scores. Earlier drafts described this reconstruction as a
+\emph{direction} that required the lock-pinned environment. That was wrong on both counts, and the
+measured result is both larger and sharper than the hedge it replaces.
 
 The single-class stress sets make the cost concrete: on the hard
 \code{HarmBench} attacks the tuned guard's recall \emph{falls} from \HarmBenchBaseRecallPct\% to
@@ -196,6 +209,11 @@ Since \code{OR-Bench} is \emph{also} unseen data, ``off-distribution'' cannot be
 the extra false alarms are specific to the transfer suite's negatives, and we do not identify what
 separates them. What the flat OR-Bench line does rule out is a blanket increase in caution.
 
+Note that this \code{HarmBench} drop needs no threshold caveat at all: the tuned guard catches
+\emph{less} while alarming \emph{more} (\TransferSFTFPRPct\% vs \TransferBaseFPRPct\% macro transfer
+FPR), so it is dominated --- worse on both axes at once, not traded off. Equalising the budget only
+widens the gap, to \MatchedHarmSft{} against the base's \MatchedHarmBase{} (\Cref{tab:matchedfpr}).
+
 \begin{table}[htbp]\centering\small\setlength{\tabcolsep}{6pt}
 \caption{Act I --- per-benchmark paired deltas (upper) and the calibration-targeted $5\%$ FPR operating
 point plus single-class stress diagnostics (lower). Generated from the lock-bound scores.}
@@ -203,11 +221,18 @@ point plus single-class stress diagnostics (lower). Generated from the lock-boun
 \input{generated/tab_sensitivity_gen}
 \end{table}
 
+\input{generated/tab_matched_fpr_gen}
+
 \begin{takeaway}{The deployment cost behind the ranking story}
 Read together, the operating point says the specialized guard \emph{catches more of what it trained on,
 raises more false alarms on what it didn't, and misses more hard attacks}. A leaderboard number computed
-on represented sources would advertise only the first of these three. The threshold that looked safe in
-calibration is not the threshold you get in the field --- a theme Acts~II and~III return to.
+on represented sources would advertise only the first of these three.
+
+And the apparent consolation --- ``at least transfer recall went up'' --- does not survive a fair
+comparison. That $+0.06$ was bought with alarms. Give the tuned guard the same alarm budget as its own
+base and its transfer recall \emph{halves} (\MatchedTransferBase{} to \MatchedTransferSft{}) on all four
+checkpoints. The threshold that looked safe in calibration is not the threshold you get in the field ---
+a theme Acts~II and~III return to.
 \end{takeaway}
 
 \noindent On this four-checkpoint panel, post-SFT scores cluster near a benchmark-fixed endpoint, so ``stronger bases specialize more'' is largely arithmetic rather than skill; the full attractor analysis and \Cref{fig:attractor} are in \Cref{app:detail}.
@@ -240,6 +265,22 @@ KL-regularized SFT at each $\beta$. The anti-forgetting question is read from th
 vanilla SFT, KL at $\beta=0.5$ changes transfer macro-AP by \KLBetaHalfTransferDelta\ on average across the
 four checkpoints (at a represented cost of \KLBetaHalfRepDelta), and at $\beta=1.0$ by
 \KLBetaOneTransferDelta\ (represented cost \KLBetaOneRepDelta). \KLVerdictSentence
+
+\paragraph{An accidental noise floor, and why it bounds several claims in this report.} That
+same-environment $\beta=0$ arm is also the closest thing we have to a \emph{repeat} of Act~I: identical
+recipe, identical manifest, identical seeds, identical scorer --- only the execution environment differs.
+It does not land on the same number. Comparing the SFT transfer column of \Cref{tab:klsft} with
+\Cref{tab:primary} gives gaps of $0.014$, $0.009$, $0.009$ and $0.029$ (Qwen2.5, SmolLM2, SmolLM3,
+Qwen3-4B), i.e.\ a mean of $0.015$ and a worst case of $0.029$ macro-AP for a recipe we intended to be
+deterministic.
+
+We report this because it is a ceiling on what any small effect in this report can mean. Effects
+comfortably above it --- Act~I's represented gain ($+0.32$), the matched-budget recall collapse
+($\MatchedTransferDelta$), composition's recovery over SFT ($+0.076$) --- are not threatened by it.
+Effects at or below it should be read as unresolved: composition's $+0.017$ aggregate edge over the
+\emph{base}, and the $\beta=1.0$ transfer change for SmolLM2 ($+0.004$), are both inside this envelope.
+The bootstrap intervals elsewhere in the report resample evaluation rows and seeds; they do \emph{not}
+capture this environment term, so they are narrower than a full reproduction would be.
 
 \begin{takeaway}{What the recipe control shows}
 \KLTakeaway

@@ -35,7 +35,7 @@ Layout follows [`docs/architecture/repository-layout-v2.md`](docs/architecture/r
 Released, path-bound studies stay at their compatibility paths; new structure is prospective.
 
 ```text
-guard-ranking-fragility/
+safety-guard-dynamics/
 ├── studies/                             # registry.yaml = normative study state (+ schema, generated README)
 │   ├── composition/                     # ┐ navigation packages: generated README + `make verify`.
 │   ├── expguard/                        # │ Code stays at code_root — LOCK.json binds experiments/,

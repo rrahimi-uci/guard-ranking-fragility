@@ -74,8 +74,8 @@
     "declared_failure_detail": "ContractError: locked config bytes drifted -- the candidate lock binds live source bytes and the source tree has evolved. Declared expected_fail in studies/registry.yaml for both trees; `make check-locks` errors if it ever starts passing.",
     "identical_outcomes": true,
     "repo_root_resolution": {
-      "papers/paper_c/specialize_then_align": "guard-ranking-fragility",
-      "studies/paper-c-specialize-align-mortgage-v1": "guard-ranking-fragility"
+      "papers/paper_c/specialize_then_align": "safety-guard-dynamics",
+      "studies/paper-c-specialize-align-mortgage-v1": "safety-guard-dynamics"
     },
     "note_on_tallies": "Run pytest without adding -q: pyproject sets addopts=\"-q\" already, and a second -q suppresses the count line entirely. The first attempt at this verification read an absent count line rather than a real one.",
     "note_on_test_count": "70 passed, up from 66 at first migration: the four added tests cover the runs/ routing. Both trees must always report the same tally -- that identity is the equivalence evidence, and tests/test_migration_manifest.py in the repository root fails if the trees drift apart."
