@@ -330,7 +330,7 @@ for i, (v, c) in enumerate([("4 checkpoints × 5 seeds", "paired, same-manifest 
 
 tf = tbox(s, M, Inches(6.38), Inches(7.4), Inches(0.8))
 p = para(tf, first=True, space_after=2)
-run(p, "Reza Rahimi", size=16, bold=True, color=WHITE, font=SERIF)
+run(p, "Reza Rahimi, PhD", size=16, bold=True, color=WHITE, font=SERIF)
 p = para(tf, space_after=0)
 run(p, "JazzX AI, Los Altos, CA   ·   reza.rahimi@jazzx.ai", size=12, color=RULE)
 
