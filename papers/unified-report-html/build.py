@@ -124,6 +124,68 @@ def _strip_colspec_padding(tex: str) -> str:
     return re.sub(r"@\{[^{}]*\}", "", tex)
 
 
+class RedactionError(RuntimeError):
+    """The redaction anchors moved, so we cannot prove the page is text-free."""
+
+
+def redact_restricted_rows(tex: str) -> str:
+    r"""Withhold the two verbatim benchmark rows the case study quotes.
+
+    Publishing this page serves whatever it contains. Its only restricted content is two
+    rows of the frozen v1_hmda2022 benchmark -- one quoted in full, one in part -- and that
+    source is `local_only` with `permits_redistribution: unknown`, because its own DATA_CARD
+    still reads "LICENSE NOT YET SELECTED" and names an FFIEC/CFPB terms-of-use check as a
+    precondition. Rather than assert a licensing conclusion nobody has reached, the web
+    edition withholds the prompt text and keeps everything that is ours: the row id, the
+    gold labels, the cited policy cards, the per-guard scores and the ranks that carry the
+    claim. The PDF edition and a local build are unaffected.
+
+    Fails loudly rather than silently passing text through: if either anchor stops matching
+    -- because the case study was regenerated or reworded -- the build stops, because a
+    redaction that quietly does nothing is worse than no redaction.
+    """
+    notice = (
+        r"\begin{quote}\small\emph{The prompt text of this row is withheld from the web "
+        r"edition.} The row is \code{MGB-UD-00020} of the frozen \code{public\_test} split "
+        r"(udaap / deceptive, difficulty \emph{hard}, gold action \textsc{block}). Its "
+        r"labels, cited policy cards, per-guard scores and ranks are all reported below and "
+        r"are original content; only the generated prompt is held back, because the "
+        r"benchmark's redistribution decision is unresolved "
+        r"(\code{benchmarks/registry/distribution.yaml}). The full text is in the PDF "
+        r"edition and in a local build.\end{quote}"
+    )
+
+    # A. the block quotation: the paragraph ends "quoted verbatim:" and the quote follows.
+    pat_block = re.compile(
+        r"(quoted verbatim:\s*)\\begin\{quote\}.*?\\end\{quote\}", re.S)
+    tex, n_block = pat_block.subn(lambda m: m.group(1) + notice, tex, count=1)
+    if n_block != 1:
+        raise RedactionError(
+            "could not find the verbatim case-study quotation to withhold. The case study "
+            "may have been regenerated; re-check what this page would publish before "
+            "building, then update redact_restricted_rows().")
+
+    # B. the inline quotation from the second row.
+    pat_inline = re.compile(r"(MGB-FL-00028\}? asks whether )``.*?''", re.S)
+    tex, n_inline = pat_inline.subn(
+        lambda m: m.group(1) + "whether protected traits visible in a file may inform "
+                              "pricing discretion (text withheld)", tex, count=1)
+    if n_inline != 1:
+        raise RedactionError(
+            "could not find the second case-study quotation (MGB-FL-00028) to withhold.")
+
+    # C. the same fragment recurs once in the Act III narrative. Two- and three-word
+    #    characterizations of the row ("market fit", "resale stability") are our own analytic
+    #    prose and stay; this one is a seven-word run of the generated prompt, so it goes.
+    tex = tex.replace("(``surname, preferred language'')",
+                      "(protected traits named outright)")
+    if "surname, preferred language" in tex:
+        raise RedactionError(
+            "a quoted run of the MGB-FL-00028 prompt survives redaction; locate it before "
+            "publishing. Longer verbatim runs must be withheld, not paraphrased in place.")
+    return tex
+
+
 def _boxes(tex: str) -> str:
     """\\begin{takeaway}{Title} ... \\end{takeaway}  ->  sentinel-delimited quote block."""
     for env, kind in (("takeaway", "takeaway"), ("background", "background"),
@@ -180,7 +242,7 @@ def macro_shim() -> str:
     return "\n".join(out)
 
 
-def flatten() -> tuple[str, dict]:
+def flatten(redact: bool = True) -> tuple[str, dict]:
     root = (SRC / "unified_report.tex").read_text()
 
     meta = {
@@ -236,6 +298,8 @@ def flatten() -> tuple[str, dict]:
         return f"\n\n{EQ}{key}{CLOSE}\n\n\\[{inner}\\]\n\n"
     body = re.sub(r"\\begin\{equation\}(.*?)\\end\{equation\}", _eq, body, flags=re.S)
 
+    if redact:
+        body = redact_restricted_rows(body)
     body = _boxes(body)
 
     tex = (PREAMBLE_SHIM + macro_shim()
@@ -576,13 +640,16 @@ an empty feasible set is a deliberate no-ship, not a relaxed cutoff.</figcaption
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--with-restricted-text", action="store_true",
+                    help="include the two verbatim benchmark rows (local reading only; the "
+                         "result is NOT publishable while the ledger is unresolved)")
     ap.add_argument("--check", action="store_true",
                     help="fail if the rebuild differs from the committed index.html")
     args = ap.parse_args(argv)
 
     print("Building the HTML edition from ../unified-report ...")
     print(f"  figures converted/copied: {figures()}")
-    tex, meta = flatten()
+    tex, meta = flatten(redact=not args.with_restricted_text)
     frag = pandoc(tex)
     body, toc, bib, counts = postprocess(frag, meta)
     print(f"  floats numbered: {counts['tables']} tables, {counts['figures']} figures")

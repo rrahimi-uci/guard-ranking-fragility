@@ -37,17 +37,61 @@ def workflow() -> dict:
     return yaml.safe_load(WORKFLOW.read_text())
 
 
-def test_the_gate_currently_refuses_to_publish():
-    """The standing rule: no source is approved, so the page may not be served."""
+FIXTURE_UNAPPROVED = "tests/fixtures/pages_artifact_unapproved"
+
+
+def test_the_gate_authorizes_the_page_because_it_carries_no_restricted_text():
+    """Authorized on an empty dependency set -- not because a source was approved.
+
+    The page used to require `mortgage_benchmark_v1_hmda2022`, whose DATA_CARD still reads
+    "LICENSE NOT YET SELECTED". That requirement was removed by withholding the quotation,
+    which is why this passes while the ledger is untouched. If someone re-adds restricted
+    text, PUBLICATION_REQUIREMENTS.json has to name the source again and this flips back to
+    a refusal.
+    """
     r = subprocess.run([sys.executable, str(GATE), "--artifact", ARTIFACT],
                        cwd=_ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, (
+        f"the page is no longer authorized for publication.\n{r.stdout}\n{r.stderr}"
+    )
+    assert "AUTHORIZED" in r.stdout
+
+    req = json.loads(REQUIREMENTS.read_text())
+    assert req["requires_publication_approval_for"] == [], (
+        "the artifact now requires a source approval, so publication must be re-reviewed"
+    )
+    assert len(req.get("no_approval_required_because", "").split()) >= 25, (
+        "an empty requirement list must carry a substantive justification"
+    )
+
+
+def test_the_gate_still_refuses_an_artifact_that_needs_an_unapproved_source():
+    """The refusal path must stay tested once the real artifact stops needing approval.
+
+    Otherwise the only test of a refusal is the live policy state -- the one thing that
+    changes -- and the gate could rot into always-yes without any test noticing.
+    """
+    r = subprocess.run([sys.executable, str(GATE), "--artifact", FIXTURE_UNAPPROVED],
+                       cwd=_ROOT, capture_output=True, text=True)
     assert r.returncode == 1, (
-        "tools/pages_authorized.py no longer refuses publication "
-        f"(exit {r.returncode}).\n{r.stdout}\n{r.stderr}\n"
-        "If a licensing decision was genuinely made, update this test and the "
-        "'no Pages ... is authorized' sentence in README.md in the same commit."
+        f"the gate authorized an artifact needing an unapproved source.\n{r.stdout}"
     )
     assert "REFUSED" in r.stdout
+    assert "mortgage_guard_bench_2k_v0_1_0" in r.stdout
+
+
+def test_the_ledger_hold_on_the_mortgage_benchmark_is_untouched():
+    """Publishing the page must not have quietly relaxed the source's own decision."""
+    ledger = yaml.safe_load((_ROOT / "benchmarks/registry/distribution.yaml").read_text())
+    src = next(s for s in ledger["sources"]
+               if s["source_id"] == "mortgage_benchmark_v1_hmda2022")
+    assert src["redistribution_decision"] == "local_only", (
+        "mortgage_benchmark_v1_hmda2022 is no longer local_only. If that is a real "
+        "licensing decision, its DATA_CARD.md still says 'LICENSE NOT YET SELECTED' and "
+        "names an FFIEC/CFPB terms-of-use precondition -- resolve both, and name a "
+        "reviewer, in the same commit."
+    )
+    assert src["license"]["permits_redistribution"] is not True
 
 
 def test_the_gate_refuses_rather_than_crashes_on_a_broken_declaration():
@@ -114,14 +158,23 @@ def test_the_artifact_declares_what_it_needs_approved():
     req = json.loads(REQUIREMENTS.read_text())
     assert req["artifact"].startswith(ARTIFACT)
     required = req["requires_publication_approval_for"]
-    assert required, "the artifact claims to need no source approved; verify that is true"
-
     ledger = yaml.safe_load((_ROOT / "benchmarks/registry/distribution.yaml").read_text())
     known = {s["source_id"] for s in ledger["sources"]}
     unknown = [s for s in required if s not in known]
     assert not unknown, (
         f"the artifact requires approval for sources absent from the ledger: {unknown}"
     )
-    assert len(req.get("rationale", "").split()) >= 20, (
-        "record why these sources and not others; a bare list rots"
+    # An empty list is the strongest claim the file can make, so it needs the most support:
+    # a justification, and the record of what the requirement used to be and why it went.
+    justification = req.get("no_approval_required_because", "") if not required else \
+        req.get("rationale", "")
+    assert len(justification.split()) >= 20, (
+        "record why no source needs approval -- or why these and not others; a bare list rots"
     )
+    if not required:
+        history = req.get("history", [])
+        assert history and all(len(h.get("why_it_no_longer_applies", "").split()) >= 15
+                               for h in history), (
+            "an empty requirement list must record what it replaced and why, so that "
+            "'needs nothing approved' cannot be quietly asserted from the start"
+        )

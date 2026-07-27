@@ -253,7 +253,7 @@ any source reaches `publish_text` without an affirmatively redistributable licen
 `check-fast` is hermetic in the sense that it needs no network and no ignored corpora —
 but suites that load a real checkpoint **skip** rather than run: they set `HF_HUB_OFFLINE=1`
 by design and need a warm Hugging Face cache. With a warm cache the root suite reports
-**233 passed**; on a fresh clone with a cold one it reports **209 passed / 5 skipped**, those
+**235 passed**; on a fresh clone with a cold one it reports **211 passed / 5 skipped**, those
 five being module-level skips that stand for 24 individual tests. CI prints every skip reason
 (`-rs`) so the tier cannot quietly shrink. Warm the cache once to run them locally:
 `python -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('HuggingFaceTB/SmolLM2-135M-Instruct')"`.
@@ -336,38 +336,53 @@ Two limits worth stating plainly: **a rewrite is not a retraction** — anything
 fetched is out, and GitHub may serve unreferenced objects by SHA until it garbage-collects
 (ask GitHub Support to force it; the repository has no forks, which is the main reason this
 was worth doing at all) — and every pre-rewrite commit SHA is void, so old links break.
-Until a license is selected, no Pages, release, or shard build is authorized.
+**No source is approved for verbatim redistribution, so no release or shard build is
+authorized.** The one thing that *is* published — the HTML edition on Pages — is published
+because it carries no restricted text, not because the hold was lifted.
 
-### GitHub Pages: wired, tested, and refusing
+### GitHub Pages: published by removing the dependency, not by approving the source
 
-[`.github/workflows/pages.yml`](.github/workflows/pages.yml) can publish the HTML edition,
-and **currently will not.** Serving that page is verbatim public redistribution of the one
-`v1_hmda2022` row its case study quotes, and that source is still `local_only` with
-`permits_redistribution: unknown` — so the sentence above applies to it.
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml) deploys
+[`papers/unified-report-html/`](papers/unified-report-html/). Getting there did not involve a
+licensing decision, and that was the point.
+
+The page's only restricted content was two rows of the frozen `v1_hmda2022` benchmark quoted
+by the worked G0/D1 case study. Approving that source was not available: its own
+[`DATA_CARD.md`](mortgage-benchmark/benchmark/v1_hmda2022/DATA_CARD.md) still reads
+*"LICENSE NOT YET SELECTED"* and names an FFIEC/CFPB terms-of-use check as a precondition,
+no reviewer is on record, and the data card is checksum-frozen — so writing
+`permits_redistribution: true` would have asserted a conclusion nobody reached, in the
+provenance record, which is the original sin this repository was restructured to prevent.
+
+So the build **withholds the two rows instead.** `redact_restricted_rows()` holds back the
+prompt text and keeps everything that is ours — row id, gold labels, cited policy cards,
+per-guard scores, and the ranks that carry the claim. The ledger entry is untouched;
+`make pages-authorized` now passes on an *empty* dependency set, recorded with its history in
+[`PUBLICATION_REQUIREMENTS.json`](papers/unified-report-html/PUBLICATION_REQUIREMENTS.json).
 
 ```bash
-make pages-authorized     # asks the ledger; exit 1 today, with the reason
+make pages-authorized                                   # exit 0: no source dependencies
+python papers/unified-report-html/build.py --with-restricted-text   # full text, local only
 ```
 
-The artifact declares which sources it needs approved in
-[`PUBLICATION_REQUIREMENTS.json`](papers/unified-report-html/PUBLICATION_REQUIREMENTS.json) —
-per *source*, because per *file* is the mistake that cost a history rewrite — and
-[`tools/pages_authorized.py`](tools/pages_authorized.py) refuses on a missing declaration, an
-unknown source id, an unresolved decision, or a licence that is merely not-negative. A gate
-that cannot evaluate itself does not permit.
+What keeps this honest rather than merely convenient:
 
-**To publish:** record the licensing decision in
-[`benchmarks/registry/distribution.yaml`](benchmarks/registry/distribution.yaml) after the
-review it requires. The gate then opens by itself — verified by simulation — and
-[`tests/test_pages_gate.py`](tests/test_pages_gate.py) fails on that same change, so the
-decision has to be accompanied by a deliberate update to this section rather than absorbed
-silently. Nothing in the tooling decides the licence.
+- **The redaction fails closed.** If either quotation anchor stops matching — a regenerated or
+  reworded case study — the build raises `RedactionError` and writes nothing, rather than
+  silently publishing the prompt. Verified by moving the anchor.
+- **The refusal path stays tested** against [a fixture](tests/fixtures/pages_artifact_unapproved/)
+  that names an unapproved source, so the gate cannot rot into always-yes once the real
+  artifact needs nothing.
+- **A test asserts the hold is still in place** — if `mortgage_benchmark_v1_hmda2022` ever
+  stops being `local_only`, it fails and names the two preconditions.
+- **The quotation budget dropped 11 → 8** and is the tripwire on a redaction that stops working.
+- Removing `needs: authorize`, gutting the authorize job, or adding a `push` trigger each fail
+  the build — all three verified by trying them. The workflow is `workflow_dispatch`-only, so
+  publication is never a side effect of merging.
 
-Six tests hold the capability shut: removing `needs: authorize`, gutting the authorize job,
-or adding a `push` trigger each fail the build (all three verified by trying them). The
-workflow is `workflow_dispatch`-only so publication cannot be a side effect of merging. **One
-limit it cannot cover:** GitHub's repository *Settings* → "Deploy from a branch" would serve
-the tree with no gate at all. No test in a repository can see that switch — leave it off.
+**One limit no test can cover:** GitHub's repository *Settings* → "Deploy from a branch" would
+serve the whole tree with the gate bypassed entirely, and would put the un-redacted sources one
+Jekyll build away. Leave the source set to *GitHub Actions*.
 
 ## Status
 

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "artifact": "tests/fixtures/pages_artifact_unapproved/index.html",
+  "artifact_kind": "test_fixture",
+  "requires_publication_approval_for": ["mortgage_guard_bench_2k_v0_1_0"],
+  "rationale": "A fixture, not a real artifact. It names a source that is local_only with permits_redistribution false so the refusal path of tools/pages_authorized.py stays under test even after the real artifact stops needing any approval. Without this, the only test of a refusal would be the live policy state, which is exactly the thing that changes."
+}

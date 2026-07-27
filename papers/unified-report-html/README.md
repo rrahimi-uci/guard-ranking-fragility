@@ -74,42 +74,55 @@ against numbering derived from document order, rather than being hand-maintained
 - Page-dependent constructs — page breaks at every section, running heads, float placement —
   have no HTML meaning and are dropped.
 
-## Distribution gate
+## What this edition withholds, and why
 
-This file is a publishable web page, so it sits inside
-[`tests/test_no_unlicensed_publication.py`](../../tests/test_no_unlicensed_publication.py)
-with a **declared quotation budget** of 11 restricted-vocabulary hits — the paper's own policy
-vocabulary plus one worked G0/D1 row from the frozen `v1_hmda2022` benchmark, whose
-redistribution decision is still unresolved in the ledger. The content is identical to the
-committed PDF; the budget records the exposure rather than waving it through, and **the build
-fails if that count grows**, forcing a fresh review. For calibration: a restricted benchmark row
-carries ≈2.7 hits, so the withdrawn 2,000-row export carried on the order of 5,400.
+**This is the published edition, and it is not the whole paper.** The worked G0/D1 case study
+in the PDF quotes two rows of the frozen `v1_hmda2022` benchmark — one in full, one in part.
+This edition holds that prompt text back and keeps everything that is ours: the row id, the
+gold labels, the cited policy cards, the per-guard scores, and the ranks that carry the claim.
 
-Nothing here authorizes publication. Until a source is approved for `publish_text` in
-[`benchmarks/registry/distribution.yaml`](../../benchmarks/registry/distribution.yaml), no
-Pages or release build of this page is authorized.
+The reason is not caution for its own sake. That source is `local_only` with
+`permits_redistribution: unknown`; its own
+[`DATA_CARD.md`](../../mortgage-benchmark/benchmark/v1_hmda2022/DATA_CARD.md) reads *"LICENSE
+NOT YET SELECTED"* and names an FFIEC/CFPB terms-of-use check as a precondition; no reviewer is
+on record; and the data card is checksum-frozen. Approving the source in order to publish the
+page would have meant writing a licensing conclusion nobody reached into the provenance record.
+Removing the dependency was the honest route, so the ledger entry is untouched.
 
-### Publishing this page
-
-A GitHub Pages workflow exists and **refuses to deploy**:
+For the full text, read [the PDF](../unified-report/unified_report.pdf) or build locally:
 
 ```bash
-make pages-authorized    # exit 1 today, naming the source that blocks it
+python build.py --with-restricted-text    # full text; NOT publishable
 ```
 
-[`PUBLICATION_REQUIREMENTS.json`](PUBLICATION_REQUIREMENTS.json) declares the one source this
-page needs approved — `mortgage_benchmark_v1_hmda2022`, because the worked G0/D1 case study
-quotes a row of it. The other eight restricted sources are *not* required: the report carries
-their row hashes and scores, never their text, so publishing it redistributes none of them.
+`redact_restricted_rows()` raises `RedactionError` if either quotation anchor stops matching, so
+a regenerated case study stops the build rather than quietly publishing the prompt.
 
-Record the licensing decision in the ledger and the gate opens on its own; see
-[the root README](../../README.md#github-pages-wired-tested-and-refusing) for what that
-involves. Do not enable Pages through GitHub's Settings UI instead — "Deploy from a branch"
-bypasses the gate entirely.
+## Distribution gate
+
+The page sits inside
+[`tests/test_no_unlicensed_publication.py`](../../tests/test_no_unlicensed_publication.py) with
+a **declared quotation budget** of 8 restricted-vocabulary hits, down from 11 before the
+redaction. What remains is the paper's own policy vocabulary — a background box defining
+"underwriting" and "adverse-action notice" — plus prose describing what the withheld row does.
+No verbatim run of either row survives; that is checked, not assumed. **The build fails if the
+count grows**, which makes the budget the tripwire on a redaction that stops working. For
+calibration: a restricted benchmark row carries ≈2.7 hits, so the withdrawn 2,000-row export
+carried on the order of 5,400.
+
+[`PUBLICATION_REQUIREMENTS.json`](PUBLICATION_REQUIREMENTS.json) declares that the page now
+needs **no** source approved, and records what the requirement used to be and why it went — so
+"needs nothing approved" cannot be asserted from a blank slate. `make pages-authorized` exits 0
+on that basis, and [a fixture](../../tests/fixtures/pages_artifact_unapproved/) keeps the
+refusal path under test.
+
+Do not enable Pages through GitHub's Settings UI instead: "Deploy from a branch" bypasses the
+gate and would serve the un-redacted sources.
 
 ## Scope
 
 Same scope and same caveats as the PDF: Acts I–II are retrospective estimation on a fixed
 four-checkpoint panel, the adaptation study is the one analysis-preregistered piece, ExpGuard is
 the one expert-annotated tier, and the mortgage labels are LLM-judge, not SME-adjudicated. This
-edition changes the typography, not the evidence.
+edition changes the typography and withholds one quoted benchmark row (above); it changes no
+number, interval, or verdict.
