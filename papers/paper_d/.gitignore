@@ -1,0 +1,23 @@
+# Paper D is an isolated workspace. Nothing here is committable until its rights decision is
+# recorded in benchmarks/registry/distribution.yaml.
+#
+# inputs/ will hold authoritative Fannie Mae and federal source bytes plus imported
+# policy-to-knowledge stage artifacts. artifacts/ will hold generated development output. Both
+# are ignored BEFORE the first import, because this repository has already had to purge two
+# corpora from every commit after tracked bytes preceded the decision that should have stopped
+# them.
+#
+# Note the `*` forms. `inputs/` and `artifacts/` would exclude the directories themselves, and
+# git cannot re-include a file whose parent directory is excluded -- which silently defeats the
+# !.gitkeep negations below. That asymmetry is recorded in
+# studies/paper-c-specialize-align-mortgage-v1/provenance/MIGRATION_MANIFEST.json.
+inputs/*
+!inputs/.gitkeep
+artifacts/*
+!artifacts/.gitkeep
+
+build/
+.env
+.pytest_cache/
+__pycache__/
+*.py[cod]
