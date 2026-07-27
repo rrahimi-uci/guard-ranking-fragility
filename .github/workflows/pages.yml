@@ -66,9 +66,22 @@ jobs:
       - name: The bytes to be served must be the redacted edition, within budget
         run: python -m pytest tests/test_no_unlicensed_publication.py tests/test_pages_gate.py -q
 
+      # Stage the site, not the source directory. Uploading papers/unified-report-html/
+      # wholesale also served build.py, template.html, README.md and
+      # PUBLICATION_REQUIREMENTS.json at the site root -- repository artifacts, not site
+      # content. The PDF is deliberately NOT staged: it carries the case-study row this
+      # edition withholds, and a link to the repository copy is not the same as the site
+      # serving it.
+      - name: Stage only the site files
+        run: |
+          mkdir -p _site
+          cp papers/unified-report-html/index.html _site/
+          cp -r papers/unified-report-html/assets _site/assets
+          find _site -type f | sort
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: papers/unified-report-html
+          path: _site
 
   deploy:
     needs: build

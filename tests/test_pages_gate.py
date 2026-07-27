@@ -17,6 +17,7 @@ outside anything a test in the repository can reach.
 
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -183,6 +184,65 @@ def test_the_committed_page_is_the_redacted_edition():
         f"verbatim benchmark row text is present in the page that gets served: {leaked}. "
         "Rebuild without --with-restricted-text, and check redact_restricted_rows() still "
         "matches the case study."
+    )
+
+
+# href/src values, without needing an HTML parser: the root suite runs in a CI environment
+# that installs no beautifulsoup4.
+_LINK = re.compile(r"""\b(?:href|src)\s*=\s*["']([^"']+)["']""")
+STAGED_PREFIX = "assets/"
+
+
+def test_every_relative_link_in_the_page_resolves_inside_the_published_site():
+    r"""A relative link that is right in the repo can still 404 on the site.
+
+    Pages serves papers/unified-report-html/ AS the site root, so `../unified-report/…` --
+    correct when browsing the repository -- resolved to
+    https://rrahimi-uci.github.io/unified-report/… and 404'd. The published page's only
+    relative links must therefore point at files that are actually staged, which is
+    index.html plus assets/.
+    """
+    page = PAGE.read_text(encoding="utf-8", errors="replace")
+    bad = []
+    for raw in _LINK.findall(page):
+        if raw.startswith(("#", "http://", "https://", "mailto:", "data:", "//")):
+            continue
+        if not raw.startswith(STAGED_PREFIX):
+            bad.append(f"{raw} (not under {STAGED_PREFIX}, so it is not staged for the site)")
+            continue
+        if not (PAGE.parent / raw.split("#")[0].split("?")[0]).is_file():
+            bad.append(f"{raw} (staged prefix but the file does not exist)")
+    assert not bad, (
+        "relative links in the published page do not resolve inside the site: "
+        + "; ".join(bad)
+        + ". Either stage the target under assets/, or make the link absolute -- a `../` "
+        "link escapes the Pages site root even though it is correct in the repository."
+    )
+
+
+def test_the_workflow_stages_the_site_rather_than_the_source_directory(workflow):
+    """Uploading the source directory also serves build.py, the README and the requirements."""
+    upload = [s for j in workflow["jobs"].values() for s in j.get("steps", [])
+              if "upload-pages-artifact" in str(s.get("uses", ""))]
+    assert upload, "no step uploads a Pages artifact"
+    paths = [str(s.get("with", {}).get("path", "")) for s in upload]
+    assert all(p.strip("./") not in ("papers/unified-report-html",) for p in paths), (
+        f"the Pages artifact is the source directory ({paths}); stage index.html and assets/ "
+        "into a separate directory so the build tooling is not served as site content"
+    )
+
+
+def test_the_pdf_is_not_staged_into_the_site(workflow):
+    """Linking to the repository copy is fine; serving it from the site is not.
+
+    The PDF contains the case-study row this edition withholds, and the text probes cannot
+    see inside it, so a staged PDF would be exposure the quotation budget could not catch.
+    """
+    staging = " ".join(str(s.get("run", "")) for j in workflow["jobs"].values()
+                       for s in j.get("steps", []))
+    assert "unified_report.pdf" not in staging, (
+        "the workflow copies the PDF into the published site. It carries the withheld "
+        "case-study row, and no text probe can see inside a PDF."
     )
 
 

@@ -253,7 +253,7 @@ any source reaches `publish_text` without an affirmatively redistributable licen
 `check-fast` is hermetic in the sense that it needs no network and no ignored corpora —
 but suites that load a real checkpoint **skip** rather than run: they set `HF_HUB_OFFLINE=1`
 by design and need a warm Hugging Face cache. With a warm cache the root suite reports
-**236 passed**; on a fresh clone with a cold one it reports **212 passed / 5 skipped**, those
+**239 passed**; on a fresh clone with a cold one it reports **215 passed / 5 skipped**, those
 five being module-level skips that stand for 24 individual tests. CI prints every skip reason
 (`-rs`) so the tier cannot quietly shrink. Warm the cache once to run them locally:
 `python -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('HuggingFaceTB/SmolLM2-135M-Instruct')"`.
