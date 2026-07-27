@@ -251,12 +251,21 @@ untracked, no bulk export is tracked under a publication path, no tracked public
 carries restricted-corpus prose, and the "nothing is approved for redistribution" claim
 fails loudly if a licensing decision ever changes.
 
-**Still outstanding, and needing a human with the authority to decide:** withdrawal stops
-distribution *from this repository* but does not remove the blob from Git history, and
-does not retract copies already pushed to the public remote. Purging history rewrites
-published commits and breaks every existing clone — a separate, irreversible migration
-that has not been performed. Until it is resolved, no Pages, release, or shard build is
-authorized.
+**Purged from history on 2026-07-26.** The explorer blob and
+`data/guard_benchmark_hard.jsonl` — 334 rows of prompt text that had been force-added past
+the `/data/` ignore rule and were public while absent from the ledger — were removed from
+every commit with `git filter-repo`, and `main` was force-pushed. All 317 commits are
+preserved; only the two blobs are gone, and the repository shrank from 116 MB to 40 MB.
+Purging by current path was not sufficient: one blob had lived at three paths across past
+reorganisations, and `git rev-list --objects` prints each object once, so removing one path
+merely revealed the next. Stripping by blob id is what actually finished it.
+
+Both files remain on local disk under ignored paths and are fully usable for development.
+Two limits worth stating plainly: **a rewrite is not a retraction** — anything already
+fetched is out, and GitHub may serve unreferenced objects by SHA until it garbage-collects
+(ask GitHub Support to force it; the repository has no forks, which is the main reason this
+was worth doing at all) — and every pre-rewrite commit SHA is void, so old links break.
+Until a license is selected, no Pages, release, or shard build is authorized.
 
 ## Status
 

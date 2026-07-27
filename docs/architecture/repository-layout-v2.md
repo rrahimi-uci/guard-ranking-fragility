@@ -2,7 +2,7 @@
 
 **Status:** partially executed — Phases 0, 1, 3 and 5 applied; 2 and 4 open
 **Written:** 2026-07-26
-**Last audited:** 2026-07-26 against Git `8f66f83b9ac0e24a090874ce5a8c5fbb5b060745`
+**Last audited:** 2026-07-26 against Git `17b7ad7648946d54c6c2deac42e25467a42386d0`
 with a 63-entry dirty worktree and active GCS transfers
 **Execution state:** unblocked on 2026-07-26 — Paper C was stopped and its GCS
 transfers finished, clearing the concurrency freeze. See
@@ -332,7 +332,7 @@ candidate filename. Its Make targets must accept a `LOCK` path and forward it to
 `lock-protocol --out $(LOCK)` and `validate-lock --path $(LOCK)`, so callers can run
 `make validate-lock LOCK=locks/<issued-name>.json`. Preserve
 `PROTOCOL_TAXONOMY_CANDIDATE.json`, introduced at Git
-`8d94d78dcd1bbb3fc4428c97929abe6e56dbdd1b`, as a named historical candidate;
+`e4fcc9274d59465a954014b9796aeb8e71dd216c`, as a named historical candidate;
 never overwrite it to make the evolved tree pass. Any new prospective candidate
 receives a new filename and is selected explicitly, but remains non-authorizing.
 Evidence-producing Make targets and entrypoints must use a distinct `AUTH_LOCK`
@@ -734,9 +734,9 @@ written** and are left unedited; this section is the record of what actually hap
 that a later reader can tell specification from state without re-deriving it from the log.
 
 Applied across seven commits, one per phase boundary, per the rollback rule:
-`12192b0` Phase 0 capture · `7fa0ef7` distribution ledger · `de93614` Phase 1 registry,
-validators, tiers · `55a15af` README · `f2d0b00` verification reconciliation + CI ·
-`421a836` Phase 3 explorer · `84eb61e` Phase 5 migration.
+`59f92ac` Phase 0 capture · `4f0073b` distribution ledger · `31aee98` Phase 1 registry,
+validators, tiers · `a79016d` README · `6119c2e` verification reconciliation + CI ·
+`cf57ab2` Phase 3 explorer · `c30d2b7` Phase 5 migration.
 
 ### What was applied
 
@@ -850,12 +850,42 @@ migrated tree so they stay byte-identical:
 - **The distribution gate.** No source is approved for verbatim redistribution, so
   `publishable()` returns empty and no public text build is authorized. The validator
   emits this as a standing warning on every run.
-- **`benchmark-explorer/index.public.html` in Git history and on the public remote.**
-  Withdrawn from tracking on 2026-07-26 along with its generator, and now guarded by
-  `tests/test_no_unlicensed_publication.py` — but withdrawal is not retraction. The blob
-  (55 MB, 16,146 rows, all 2,000 MGB2K rows) is still reachable in published history.
-  Purging it rewrites public commits and breaks every existing clone, so it remains a
-  separate irreversible migration requiring explicit approval and coordination.
+- ~~`benchmark-explorer/index.public.html` in Git history~~ — **purged 2026-07-26**
+  together with `data/guard_benchmark_hard.jsonl`, and `main` force-pushed. See
+  "History rewrite" below. What remains open is not technical: neither corpus has a
+  selected license, so neither may be republished, and `mortgage_benchmark_v1_hmda2022`
+  is still tracked and public with `permits_redistribution: unknown`.
 - **Phase 2**, per the reasoning above.
 - **The `paper_a_sft_v2` interpreter split** (3.12 release vs. 3.14 local) is declared and
   enforced, not resolved.
+
+### History rewrite, 2026-07-26
+
+Two blobs were removed from all 317 commits with `git filter-repo`, and `main` was
+force-pushed: `benchmark-explorer/index.public.html` (55 MB, 16,146 rows, including 2,000
+MGB2K rows under a NOT_SELECTED license) and `data/guard_benchmark_hard.jsonl` (334 rows of
+prompt text, force-added past the `/data/` ignore rule and public while absent from the
+distribution ledger). The repository shrank from 116 MB to 40 MB. No commit was dropped.
+
+Three things this exposed, recorded because a rewrite is the kind of operation that is
+attempted once:
+
+1. **Purging by current path is not enough.** One blob had lived at three paths across past
+   reorganisations (`notebooks/data/...`, `paper-html/explorer/sources/...`,
+   `data/...`). `git rev-list --objects` prints each object once with a single
+   representative path, so removing one path merely surfaced the next, and a naive loop
+   appeared to run without converging. `--strip-blobs-with-ids` removes the object
+   regardless of path and is what actually finished the job.
+2. **Every pre-rewrite commit SHA is void.** `studies/registry.yaml`, the migration
+   manifest and this document all cited commits; each was remapped through
+   `.git/filter-repo/commit-map`. HuggingFace model revisions were deliberately left
+   alone — they are not repository commits, and remapping them would have silently
+   repointed the pinned backbones.
+3. **A pre-existing gap, not caused by the rewrite:** `artifacts/paper_a_sft_v2/LOCK.json`
+   binds `git_sha: b5f491fc…`, which did not exist in this repository *before* the purge
+   either. The released lock's provenance pointer was already dangling; the rewrite is not
+   responsible and did not make it worse, but it should be reconciled.
+
+A rewrite is not a retraction. Anything already fetched is out, GitHub may serve
+unreferenced objects by SHA until it garbage-collects, and the operation is only as
+effective as the fork count — zero here, which is why it was worth doing.

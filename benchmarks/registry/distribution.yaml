@@ -34,7 +34,7 @@ notes: >
 sources:
   - source_id: guard_benchmark_hard
     kind: draft_unlicensed
-    access_class: unresolved
+    access_class: internal
     license:
       spdx_or_name: NOT_SELECTED
       permits_redistribution: false
@@ -52,16 +52,17 @@ sources:
     row_count: 334
     payload:
       path: data/guard_benchmark_hard.jsonl
-      revision: "3e30663"
+      revision: local_only_untracked
       sha256: "c17ff6eb2ef46db9dc6b48229bdcf4637165c8b9946fa6ff63f9df5ed4f0a2af"
     blocking_reason: >
-      ALREADY PUBLISHED, AND THE LEDGER DID NOT KNOW. This file is force-added past the
-      /data/ ignore rule, carries verbatim prompt text, and has been on the public remote
-      since 3e30663 -- while being absent from this ledger entirely. That is the gap the
-      ledger exists to close: gather() refuses an unknown source at build time, but nothing
-      checked corpora already tracked outside the explorer. Recorded as local_only to match
-      its in-house sibling; a human must decide whether to license it for publication or
-      withdraw it. Withdrawal would not retract the published copies.
+      WAS PUBLISHED WHILE ABSENT FROM THIS LEDGER; PURGED 2026-07-26. 334 rows of verbatim
+      prompt text, force-added past the /data/ ignore rule, sat on the public remote from
+      the initial import until the history rewrite of 2026-07-26 removed every copy --
+      three distinct paths across the repository's reorganisations, all carrying one blob.
+      The file remains on local disk under ignored data/ and is fully usable for
+      development; it is simply no longer redistributed. Publishing it again requires
+      selecting a license first. Note that a rewrite does not retract what third parties
+      already fetched.
 
   - source_id: mortgage_guard_bench_2k_v0_1_0
     kind: draft_unlicensed

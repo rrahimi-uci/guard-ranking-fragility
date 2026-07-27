@@ -5,7 +5,7 @@
 Normative source: [`studies/registry.yaml`](registry.yaml), validated by
 [`registry.schema.json`](registry.schema.json). Run `make check-registry`.
 
-Registry `guard_ranking_fragility_studies_v1` last verified at `9361982` on 2026-07-26 (dirty tree).
+Registry `guard_ranking_fragility_studies_v1` last verified at `849085d` on 2026-07-26 (dirty tree).
 
 ## State
 

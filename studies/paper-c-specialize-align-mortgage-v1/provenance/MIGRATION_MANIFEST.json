@@ -2,7 +2,7 @@
   "schema_version": 3,
   "manifest_id": "paper_c_sta_migration_v1",
   "migrated_on": "2026-07-26",
-  "git_revision": "421a836",
+  "git_revision": "cf57ab2",
   "study_id": "paper_c_specialize_align_mortgage_v1",
   "operation": "copy_not_move",
   "digest_tool": "tools/tree_digest.py",

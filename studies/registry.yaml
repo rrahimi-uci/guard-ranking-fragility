@@ -15,7 +15,7 @@ schema_version: 1
 registry_id: guard_ranking_fragility_studies_v1
 
 last_verified:
-  git_revision: "9361982"
+  git_revision: "849085d"
   dirty_tree: true
   date: "2026-07-26"
 
