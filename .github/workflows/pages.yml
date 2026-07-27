@@ -41,8 +41,14 @@ jobs:
       - name: The distribution ledger must authorize publication
         run: python tools/pages_authorized.py --artifact papers/unified-report-html
 
-  # ── Rebuild rather than trust the committed copy, so the published bytes are the ones the
-  #    current sources produce, and re-assert the quotation budget on what will be served.
+  # ── Publish the COMMITTED bytes, and check their properties. An earlier version rebuilt
+  #    here and then ran `build.py --check`, which was vacuous: the rebuild overwrote the
+  #    committed copy, so the check compared the file against itself. It also meant the
+  #    served page was CI-pandoc output rather than the reviewed artifact -- Ubuntu's pandoc
+  #    emits class="odd" on table rows where a newer one emits data-latex-placement, so the
+  #    two differ by ~2 KB of markup nobody had looked at. `make check-report-html` is the
+  #    place for build reproducibility (one pandoc, locally); what CI must enforce is that
+  #    the bytes about to be served are redacted and within budget.
   build:
     needs: authorize
     runs-on: ubuntu-latest
@@ -52,20 +58,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install the build toolchain
+      - name: "Install what the gate needs (no build toolchain, nothing is rebuilt here)"
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install pyyaml jsonschema beautifulsoup4
-          sudo apt-get update -qq && sudo apt-get install -y pandoc poppler-utils
+          python -m pip install pyyaml pytest
 
-      - name: Rebuild the HTML edition from source
-        run: python papers/unified-report-html/build.py
-
-      - name: The committed edition must match what the sources produce
-        run: python papers/unified-report-html/build.py --check
-
-      - name: Re-assert the publication gate on the built bytes
+      - name: The bytes to be served must be the redacted edition, within budget
         run: python -m pytest tests/test_no_unlicensed_publication.py tests/test_pages_gate.py -q
 
       - uses: actions/upload-pages-artifact@v3

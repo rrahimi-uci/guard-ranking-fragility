@@ -152,6 +152,40 @@ def test_the_workflow_does_not_publish_on_push(workflow):
     )
 
 
+PAGE = _ROOT / "papers/unified-report-html/index.html"
+WITHHELD_MARKER = "prompt text of this row is withheld"
+# Verbatim runs of the two quoted benchmark rows. Two-word characterizations in our own
+# analytic prose ("market fit", "resale stability") are not redistribution and stay.
+VERBATIM_RUNS = (
+    "Montana conventional purchase",
+    "surname, preferred language",
+    "align well with our portfolio",
+    "help you frame the decision note",
+)
+
+
+def test_the_committed_page_is_the_redacted_edition():
+    """Assert the artifact's property directly, not that a build was run correctly.
+
+    The workflow publishes these committed bytes, so this is the check that stands between
+    the repository and serving a row of an unlicensed benchmark. It deliberately does not
+    depend on build.py having run, or on which pandoc produced the markup.
+    """
+    assert PAGE.is_file(), "the published artifact is missing"
+    page = PAGE.read_text(encoding="utf-8", errors="replace")
+    assert WITHHELD_MARKER in page, (
+        "the committed page carries no withholding notice, so it was probably built with "
+        "--with-restricted-text. That edition is for local reading and must not be committed "
+        "or served while the ledger is unresolved."
+    )
+    leaked = [s for s in VERBATIM_RUNS if s in page]
+    assert not leaked, (
+        f"verbatim benchmark row text is present in the page that gets served: {leaked}. "
+        "Rebuild without --with-restricted-text, and check redact_restricted_rows() still "
+        "matches the case study."
+    )
+
+
 def test_the_artifact_declares_what_it_needs_approved():
     """The per-source requirement is recorded next to the artifact, not inferred."""
     assert REQUIREMENTS.is_file(), f"{REQUIREMENTS.relative_to(_ROOT)} is missing"
