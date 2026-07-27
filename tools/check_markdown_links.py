@@ -22,6 +22,7 @@ DEFAULT_TARGETS = [
     "docs/README.md",
     "docs/architecture/repository-layout-v2.md",
     "experiments/README.md",
+    "papers/unified-report-html/README.md",
 ]
 SKIP_PREFIXES = ("http://", "https://", "mailto:", "#", "data:")
 

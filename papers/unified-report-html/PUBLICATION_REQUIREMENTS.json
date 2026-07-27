@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "artifact": "papers/unified-report-html/index.html",
+  "artifact_kind": "authored_web_page",
+  "requires_publication_approval_for": [
+    "mortgage_benchmark_v1_hmda2022"
+  ],
+  "rationale": "The page's prose and figures are original content under the repository's Apache-2.0 licence, and the report is text-free with respect to third-party corpora -- it redistributes row hashes and scores, never prompts. One dependency is not ours to wave through: the worked G0/D1 case study quotes a single row of the frozen v1_hmda2022 mortgage benchmark, and that source's redistribution_decision is still local_only with permits_redistribution unknown. Serving this page on GitHub Pages is verbatim public redistribution of that row, so the source must be approved for publish_text before the deployment gate opens.",
+  "not_required_for": {
+    "text_free_only_sources": "toxicchat, beavertails, openai_moderation, safepyramid, jailbreakbench, jailbreak_classification, prompt_injections, xstest -- the report carries their row hashes and scores, not their text, so publishing it redistributes none of them.",
+    "mortgage_guard_bench_2k_v0_1_0": "the 2,000-row draft benchmark is not quoted by this page at all; it was the payload of the withdrawn explorer artifact."
+  },
+  "quotation_budget": {
+    "declared_in": "tests/test_no_unlicensed_publication.py",
+    "key": "AUTHORED_QUOTATION_BUDGET['papers/unified-report-html/index.html']",
+    "note": "The budget bounds how much restricted vocabulary this page may carry and fails the build if it grows. It is a change detector, not an authorization -- this file is what records the authorization requirement."
+  },
+  "gate": {
+    "checked_by": "tools/pages_authorized.py",
+    "enforced_by": ".github/workflows/pages.yml",
+    "tested_by": "tests/test_pages_gate.py",
+    "current_state": "REFUSED",
+    "current_reason": "mortgage_benchmark_v1_hmda2022 is local_only / permits_redistribution unknown; no source in the ledger is approved for publish_text."
+  }
+}

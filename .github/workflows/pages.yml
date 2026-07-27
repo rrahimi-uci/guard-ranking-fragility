@@ -1,0 +1,83 @@
+name: pages
+
+# GitHub Pages deployment for the HTML edition of the unified report.
+#
+# It is wired, tested, and CURRENTLY REFUSES TO DEPLOY. Serving this page publicly is
+# verbatim redistribution of the one v1_hmda2022 benchmark row its case study quotes, and
+# that source is still local_only with permits_redistribution unknown. The repository's rule
+# is per source, not per file -- the distinction that cost a full history rewrite -- so the
+# gate asks the ledger about the sources this artifact declares, and refuses on silence.
+#
+# To publish: record the licensing decision in benchmarks/registry/distribution.yaml after
+# the review it requires. The gate then opens by itself; nothing here needs editing, and
+# nothing here decides the licence.
+#
+# Deliberately `workflow_dispatch` only. A push trigger would paint every commit red for a
+# policy state that is expected, and would put a publication attempt one merge away.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ── Gate. Every later job needs this one, so a refusal stops the deployment.
+  authorize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pyyaml
+
+      - name: The distribution ledger must authorize publication
+        run: python tools/pages_authorized.py --artifact papers/unified-report-html
+
+  # ── Rebuild rather than trust the committed copy, so the published bytes are the ones the
+  #    current sources produce, and re-assert the quotation budget on what will be served.
+  build:
+    needs: authorize
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the build toolchain
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyyaml jsonschema beautifulsoup4
+          sudo apt-get update -qq && sudo apt-get install -y pandoc poppler-utils
+
+      - name: Rebuild the HTML edition from source
+        run: python papers/unified-report-html/build.py
+
+      - name: The committed edition must match what the sources produce
+        run: python papers/unified-report-html/build.py --check
+
+      - name: Re-assert the publication gate on the built bytes
+        run: python -m pytest tests/test_no_unlicensed_publication.py tests/test_pages_gate.py -q
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: papers/unified-report-html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

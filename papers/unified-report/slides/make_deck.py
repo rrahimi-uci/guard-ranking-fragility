@@ -338,7 +338,7 @@ tf = tbox(s, W - M - Inches(5.0), Inches(6.52), Inches(5.0), Inches(0.5))
 p = para(tf, first=True, align=PP_ALIGN.RIGHT, space_after=2)
 run(p, REPO, size=12, bold=True, color=WHITE)
 p = para(tf, align=PP_ALIGN.RIGHT, space_after=0)
-run(p, "make reproduce  ·  frozen benchmark v1_hmda2022", size=10.5, color=RULE)
+run(p, "make reproduce (covered tables)  ·  frozen benchmark v1_hmda2022", size=10.5, color=RULE)
 
 d.notes(s, """
 One-line thesis: a small guard's benchmark score is not a property of the guard —
@@ -387,8 +387,10 @@ The 17.0% is the POOLED transfer false-positive rate; the benchmark-macro rate g
 separate calibration split — so this is a threshold that did not transfer, not a
 threshold anyone tuned badly.
 
-Caveat to state out loud if asked: transfer recall does rise (51.7% -> 58.1%), but at
-roughly double the false-alarm rate, so it is not an iso-FPR comparison.
+If someone objects that transfer recall does rise (51.7% -> 58.1%), that is the right
+question and the answer is on slide 7: the rise is bought with alarms. Equalize the
+alarm budget and it reverses to 21.7% on all four checkpoints. Do not concede the
+point as a caveat — it is measured, and it is Table 4.
 """)
 
 # ------------------------------------------------------------- 3 · one figure
@@ -402,7 +404,8 @@ lab = [("Act I", "Fine-tuning specializes: +0.32 represented, −0.06 transfer, 
        ("Act II / III", "The same four bases rank differently on every arm — the "
                         "top-ranked mortgage guard is not the top-ranked finance/health/law guard.", GOLD),
        ("Act III", "Coded as a proxy, the fair-lending violation ranks below the "
-                   "benign median for all four; named outright, three of four rank it above nearly all.", GREEN)]
+                   "benign median for all four; named outright, three of four rank it above nearly "
+                   "all — two different rows, not a controlled pair.", GREEN)]
 cw = Inches(3.86)
 for i, (k, t, col) in enumerate(lab):
     x = M + (cw + Inches(0.29)) * i
@@ -563,7 +566,7 @@ time.
 s = d.blank()
 y = d.header(s, "Act I  ·  what it costs in production",
              "Ranking is threshold-free. Deployment is not.",
-             "Thresholds chosen on a separate calibration split for a 5% false-positive target, then read off the real traffic")
+             "Upper: each guard at its own 5%-FPR calibrated threshold.  Lower: the same rows re-read at an equal false-alarm budget")
 picture(s, "operating", M, y - Inches(0.10), Inches(8.05), Inches(4.24), align="left")
 
 rx = M + Inches(8.34)
@@ -574,8 +577,9 @@ callout(s, rx, y - Inches(0.04), rw, Inches(1.62), "The deployment cost",
         "on represented sources advertises only the first.", color=ACCENT, body_size=12)
 
 bullets(s, rx, y + Inches(1.80), rw, Inches(2.5), [
-    ("Not an iso-FPR win.", "Transfer recall rises +6.4 pts, but at 15.5% macro-FPR "
-     "against the base's 8.1% — the tuned guard buys recall by alarming twice as often."),
+    ("At an equal alarm budget, the gain reverses.", "The +6.4 pt rise is realized at 15.5% "
+     "macro-FPR against the base's 8.1%. Match the budget and transfer recall goes "
+     "51.7% → 21.7%, HarmBench 78.0% → 20.3% — worse on all four."),
     ("Off-distribution is not the explanation.", "OR-Bench is also unseen and stays flat "
      "at ~12%, so this is not a blanket increase in caution."),
     ("The threshold did not transfer.", "The cutoff that looked safe in calibration is "
@@ -583,12 +587,29 @@ bullets(s, rx, y + Inches(1.80), rw, Inches(2.5), [
 ], size=11.5, gap=10)
 
 d.notes(s, """
-Rethresholding each tuned guard so its transfer false-alarm rate matches its own base
-reverses the sign of the recall change on three of the four checkpoints, in both
-thresholding reconstructions we tried. We report that as a DIRECTION, not a locked row —
-reproducing the operating point exactly requires the lock-pinned analysis environment,
-and adding a matched-FPR row is a stated next step. It cuts the same way as the rest of
-Act I: against the tuned guard.
+The lower block of the chart is the fair comparison, and it is the one to spend time on.
+Recall measured at unequal false-alarm rates is not a comparison of discriminative power,
+so we rethreshold each SFT seed to its OWN base's pooled transfer false-alarm rate (the
+budget column of report Table 4) and re-read the same rows. The apparent gain does not
+merely shrink — it reverses, on all four checkpoints and on both instruments: transfer
+recall 0.517 -> 0.217, HarmBench recall 0.780 -> 0.203. At an equal budget the tuned
+guard catches LESS THAN HALF of what its own untuned base catches off-source.
+
+Two things to have ready. It needs no GPU and no pinned environment — matching false-alarm
+rates is ranking arithmetic on the same committed score_raw/gold columns — so it is
+regenerated and byte-checked by `make reproduce` like any other covered artifact. And the
+direction is stable across the three quantile conventions we tried (panel mean -0.300 to
+-0.290), so it is not an artifact of one tie-breaking rule.
+
+If asked why the paper reports both rows: Table 3 is what a practitioner who calibrated
+each guard separately would actually deploy, and Table 4 is what the comparison means.
+Earlier drafts called the matched version a "direction" that needed the pinned
+environment. That was wrong on both counts, and the measured result is stronger than the
+hedge it replaced.
+
+Note also that the HarmBench drop needs no threshold caveat at all: the tuned guard
+catches less while alarming more, so it is dominated — worse on both axes at once, not
+traded off.
 
 Also worth saying out loud: every AP on the previous slides is measured on a balanced or
 near-balanced pool. The next slide is what happens when you serve real traffic instead.
@@ -678,6 +699,18 @@ looks close to free. In the PREREGISTERED ten-checkpoint study it is not: the
 represented cost fails the margin that was fixed in advance. And on the two checkpoints
 that specialize hardest, KL-SFT still leaves held-out transfer below the unmodified
 base. Mitigation, not restoration.
+
+One more thing this control accidentally bought us, and it bounds several numbers in this
+deck. Because β = 0 IS the Act I recipe — same manifest, same seeds, same scorer, only a
+different execution environment — this arm is effectively a REPEAT of Act I. It does not
+land on the same number: transfer macro-AP differs by 0.014 / 0.009 / 0.009 / 0.029, a
+mean of 0.015 and a worst case of 0.029. That is a noise floor the report now states.
+Effects at or below it should be read as unresolved — composition's +0.017 edge over the
+BASE, and KL β=1.0's +0.004 for SmolLM2. The big effects are safe: +0.32 represented, the
+-0.300 matched-budget collapse, composition's +0.076 over SFT. The bootstrap intervals
+resample rows and seeds; they do NOT capture this environment term, so they are narrower
+than a full reproduction would be. Volunteer this if someone asks how repeatable the
+pipeline is — it is a stronger answer than a confidence interval.
 """)
 
 # ------------------------------------------------------- 10 · confirmatory study
@@ -734,6 +767,15 @@ of that discipline remains future work.
 
 Bonferroni-split across the two research questions, familywise alpha 0.05, 10,000-
 resample bootstrap over evaluation row families and training seeds.
+
+Three terms on this slide, in plain words, in case the room is not a stats room. LCB is a
+one-sided interval end: "+0.174, LCB +0.129" means the estimate is +0.174 and it stayed
+above +0.129 in 97.5% of the redraws, so "LCB > 0" demands that even the pessimistic end
+still be a gain. A NON-INFERIORITY MARGIN is how much you agreed IN ADVANCE to lose on one
+axis to win on another — here −0.02 — which is stricter than "did it get worse?", because
+a noisy result fails it rather than passing by default. A BONFERRONI SPLIT means two
+questions each get half the error budget (0.025 apiece), so asking two things cannot
+double your chance of a lucky answer.
 """)
 
 # ------------------------------------------------------------ 11 · Act II
@@ -982,7 +1024,7 @@ tf = tbox(s, M, y - Inches(0.04), cw, Inches(0.3))
 p = para(tf, first=True, space_after=0)
 run(p, "THE PROTECTED-PAIR GATE", size=11, bold=True, color=ACCENT, spc=110)
 picture(s, "fairness", M, y + Inches(0.30), cw, Inches(2.86), align="center")
-callout(s, M, y + Inches(3.28), cw, Inches(1.24), "A negative methodological result",
+callout(s, M, y + Inches(3.28), cw, Inches(1.44), "A negative methodological result",
         "The gap is defined on the probability scale, but Qwen3-4B's probabilities sit at "
         "p ≈ 3×10⁻⁶. Its 0.000 is saturation, not invariance — on the raw margin it is "
         "second-worst. Three pairs, one not a single-token swap. It cannot rank guards.",
@@ -993,10 +1035,11 @@ tf = tbox(s, rx, y - Inches(0.04), cw, Inches(0.3))
 p = para(tf, first=True, space_after=0)
 run(p, "EXTERNAL VALIDATION  ·  EXPGUARD", size=11, bold=True, color=GREEN, spc=110)
 picture(s, "expguard", rx, y + Inches(0.30), cw, Inches(2.86), align="center")
-callout(s, rx, y + Inches(3.28), cw, Inches(1.24), "The one expert-labeled tier",
-        "2,275 expert-annotated rows across finance / health / law. Ranking is not "
-        "monotone in model size, and a paired test resolves what marginal CIs cannot: "
-        "SmolLM3 − Qwen3 is +0.017 on health (CI excludes zero), a tie on finance and law.",
+callout(s, rx, y + Inches(3.28), cw, Inches(1.44), "The one expert-labeled tier",
+        "2,275 expert-annotated rows across finance / health / law. Ranking is not monotone "
+        "in model size. The paired test leans against a tie on health (+0.017) — but four "
+        "unadjusted comparisons, clearing zero by +0.0026: a direction, not a resolved "
+        "ranking. Finance and law: ties.",
         color=GREEN, body_size=11.5)
 
 d.notes(s, """
@@ -1011,9 +1054,17 @@ to genuine single-token pairs Qwen2.5 scores 0.020, nominally the MOST invariant
 Reporting the honest version cost us the cleanest-looking chart in the report.
 
 Right: this is the strictly stronger evidence tier — expert annotation, not LLM-judge —
-so we report it beside the mortgage numbers and never pool them. Note the reframe: an
-earlier draft said the top two were "unresolved at this sample size." That was wrong. It
-was an unrun analysis, not a sample-size limit; the paired test resolves health.
+so we report it beside the mortgage numbers and never pool them.
+
+Be careful with the word "resolves" here; an earlier draft of this deck overclaimed it.
+The pairing is a real gain — an earlier draft called the top two "unresolved at this
+sample size," which was wrong, because that was an unrun analysis rather than a
+sample-size limit. But the paired result is thinner than it first looks: FOUR paired
+comparisons are reported (overall plus three verticals) with NO multiplicity adjustment,
+and the health interval clears zero by only +0.0026 at its lower end. Under a Bonferroni
+split across the three verticals it would not clear. So health is the one vertical where
+the data LEAN against a tie — worth a targeted replication, not a resolved ranking. If
+you are asked to rank SmolLM3 against Qwen3 on this evidence, decline.
 """)
 
 # ------------------------------------------------ 16 · deployment economics
@@ -1109,8 +1160,9 @@ rw = CW - fw - Inches(0.50)
 bullets(s, rx, y - Inches(0.02), rw, Inches(3.3), [
     ("Never rank guards on a single leaderboard.", "Score your candidates on represented, "
      "held-out, over-refusal and domain sets."),
-    ("Always compare a tune to its own base.", "A delta against other models hides the "
-     "transfer cost."),
+    ("Always compare a tune to its own base — at a matched false-alarm rate.", "A delta "
+     "against other models hides the transfer cost; a recall compared at unequal alarm "
+     "rates hides its sign."),
     ("Treat KL-β as a dial, not a default.", "It buys transfer at a real represented cost "
      "that failed our preregistered margin."),
     ("Compose to repair, not to upgrade.", "If you already tuned and transfer regressed, "

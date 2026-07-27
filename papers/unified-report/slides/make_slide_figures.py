@@ -220,7 +220,10 @@ SHORT = {"Qwen2.5-1.5B": "Qwen2.5\n1.5B", "SmolLM2-1.7B": "SmolLM2\n1.7B",
 # =============================================================== FIGURE BUILDERS
 def fig_teaser():
     """Three panels: the split, the rank flip, the missed violation."""
-    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.1))
+    # 4.4in, not 4.1: panel 3 carries a footnote below its x-axis, and tight_layout would
+    # otherwise pay for it by shortening all three panels -- which pushed panel 2's "1st"
+    # row annotations up into its own title.
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.4))
 
     # -- panel 1: represented gain vs transfer change, with the 20 seeds ---------
     ax = axes[0]
@@ -305,6 +308,12 @@ def fig_teaser():
     ax.legend(loc="upper left", fontsize=11, ncols=1)
     ax.set_title("Coded, the violation ranks\nbelow the benign median", fontsize=13.5,
                  fontweight="bold", color=INK, pad=10)
+    # The two arms are DIFFERENT rows, not a controlled protected-trait swap: they differ in
+    # fact sheet, domain, cited cards and request type, and v1 contains no protected pair on
+    # which a violation is scored. Stated on the panel so the bars cannot be read as a
+    # measured surface-form effect.
+    ax.text(0.5, -0.205, "different rows — not a controlled pair", transform=ax.transAxes,
+            ha="center", va="top", fontsize=10, color=RED, style="italic")
     tidy(ax)
 
     fig.tight_layout(w_pad=2.4)
@@ -371,8 +380,16 @@ def fig_spec_plane():
 
 
 def fig_operating():
-    """Dumbbell: what the calibrated 5%-FPR operating point does, base -> SFT."""
+    """Dumbbell: what the calibrated 5%-FPR operating point does, base -> SFT.
+
+    Upper group is report Table 3 -- each guard read at its OWN calibrated threshold, where
+    the tuned guard alarms nearly four times as often, so the two recalls are not comparable.
+    Lower group is report Table 4: the same two recall instruments re-read at an EQUAL
+    false-alarm budget, where the apparent recall gain does not shrink but reverses.
+    Both groups are parsed from committed generated/*.tex, so neither can drift from the paper.
+    """
     mac = macros("results_macros_gen.tex")
+    mfp = macros("matched_fpr_macros.tex")
     items = [
         ("Represented recall (TPR)", float(mac["RepBaseTPRPct"]), float(mac["RepSFTTPRPct"]), True),
         ("Transfer recall (TPR)", float(mac["TransferBaseTPRPct"]), float(mac["TransferSFTTPRPct"]), True),
@@ -381,9 +398,20 @@ def fig_operating():
         ("Transfer false alarms (pooled)", float(mac["TransferBasePooledFPRPct"]), float(mac["TransferSFTPooledFPRPct"]), False),
         ("Hard-attack recall (HarmBench)", float(mac["HarmBenchBaseRecallPct"]), float(mac["HarmBenchSFTRecallPct"]), True),
     ]
-    fig, ax = plt.subplots(figsize=(7.35, 4.15))  # compact: rendered half-width on slide 7
-    ys = np.arange(len(items))[::-1]
-    for y, (label, b, s, higher_better) in zip(ys, items):
+    matched = [
+        ("Transfer recall", float(mfp["MatchedTransferBase"]) * 100,
+         float(mfp["MatchedTransferSft"]) * 100, True),
+        ("Hard-attack recall", float(mfp["MatchedHarmBase"]) * 100,
+         float(mfp["MatchedHarmSft"]) * 100, True),
+    ]
+    # 8 rows at a slide-7 aspect (~1.87) so picture() fills the 8.05x4.24in box without
+    # letterboxing; the two groups are separated by a rule rather than interleaved.
+    fig, ax = plt.subplots(figsize=(8.6, 4.6))
+    ys = list(np.arange(len(items))[::-1] + 2.35)         # 7.35 .. 2.35
+    ys_m = [0.60, -0.50]
+    divider = 1.62
+
+    def draw(y, b, s, higher_better):
         improved = (s > b) if higher_better else (s < b)
         flat = abs(s - b) < 0.5
         col = SLATE if flat else (GREEN if improved else RED)
@@ -403,16 +431,29 @@ def fig_operating():
         if flat:
             ax.text(s + 14.5, y, "(flat)", ha="left", va="center", fontsize=11,
                     color=SLATE, style="italic")
-    ax.set_yticks(ys)
-    ax.set_yticklabels([i[0] for i in items], fontsize=12.5)
-    ax.set_xlabel("rate at the calibrated 5%-FPR operating point   (%)")
+
+    for y, (_, b, s, hb) in zip(ys, items):
+        draw(y, b, s, hb)
+    ax.axhline(divider, color=RULE, lw=1.2, zorder=1)
+    for y, (_, b, s, hb) in zip(ys_m, matched):
+        draw(y, b, s, hb)
+
+    ax.set_yticks(ys + ys_m)
+    ax.set_yticklabels([i[0] for i in items] + [m[0] for m in matched], fontsize=12.5)
+    # Each group states its own threshold rule: the two blocks are NOT the same comparison,
+    # which is the whole point of the lower one.
+    ax.text(-3.4, 7.98, "at each guard's OWN calibrated 5%-FPR threshold",
+            fontsize=11, color=SLATE, style="italic", va="center", ha="left")
+    ax.text(-3.4, 1.12, "at an EQUAL false-alarm budget", fontsize=11.5, color=RED,
+            style="italic", fontweight="bold", va="center", ha="left")
+    ax.set_xlabel("recall / false-alarm rate   (%)")
     ax.set_xlim(-4, 92)
-    ax.set_ylim(-0.75, len(items) - 0.2)
+    ax.set_ylim(-1.15, 8.25)
     handles = [Line2D([], [], color="white", marker="o", ms=10, mec=SLATE, mew=2.2,
                       ls="none", label="untuned base"),
                Line2D([], [], color=GREEN, lw=3, label="SFT guard — improves"),
                Line2D([], [], color=RED, lw=3, label="SFT guard — regresses")]
-    ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(0.36, 0.60),
+    ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(0.36, 0.72),
               fontsize=11.5, labelspacing=0.6)
     tidy(ax, xgrid=True, ygrid=False)
     fig.tight_layout()

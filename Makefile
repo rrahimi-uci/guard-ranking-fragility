@@ -119,6 +119,7 @@ clean:      ## remove Python and paper build caches
 PY_ABS ?= $(CURDIR)/.venv/bin/python
 
 .PHONY: check-fast check-registry check-links check-locks check-papers check-data-local check-all
+.PHONY: report-html check-report-html pages-authorized
 .PHONY: explorer-public explorer-local
 
 explorer-public:  ## ledger-gated explorer build; emits text only for approved sources
@@ -154,6 +155,15 @@ check-locks:  ## contract-specific checks; expected_fail cases are declared in t
 check-papers:  ## isolated manuscript builds plus link checks
 	bash papers/paper_c/specialize_then_align/manuscript/build.sh
 	$(PY_ABS) tools/check_markdown_links.py
+
+report-html:  ## rebuild the HTML edition of the unified report from the same sources
+	$(PY_ABS) papers/unified-report-html/build.py
+
+check-report-html:  ## assert the committed HTML edition matches a fresh build
+	$(PY_ABS) papers/unified-report-html/build.py --check
+
+pages-authorized:  ## ask the ledger whether the HTML edition may be published (exit 1 = no)
+	$(PY_ABS) tools/pages_authorized.py --artifact papers/unified-report-html
 
 check-data-local:  ## inventories over ignored local data; explicitly not hermetic
 	@test -d data/benchmarks || { echo "data/benchmarks absent: local-only tier"; exit 1; }
