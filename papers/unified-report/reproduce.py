@@ -10,6 +10,7 @@ scores + the pinned analysis environment.
   Paper B (composition)          build_pilot_artifacts.py
   Mortgage (dual-label G x D)    tools/reeval_from_scores.py + emit_baseline_tex.py
   ExpGuard (finance/health/law)  eval_expguard_external.py --from-scores  -> emit table
+  Frontier vs local (ExpGuard)   frontier.py from committed per-row scores  -> emit tables
   Latency (guard P50/P90/P99)    from committed scores.parquet latency_ms   -> emit table
 
 Usage:  python reproduce.py [--check] [--build]
@@ -407,6 +408,37 @@ def matched_fpr(results, check):
             results[name] = "regenerated"
 
 
+def frontier(results, check):
+    """Frontier-vs-local ExpGuard comparison (see frontier.py for the threshold rule).
+
+    Reads only text-free per-row scores from artifacts/expguard_external/ -- the four base
+    checkpoints, the SFT in-env seeds, and the GPT configs -- so it needs no GPU, no
+    network, and no access to the gated ExpGuard text.
+    """
+    out = REPO / "artifacts/expguard_external"
+    needed = ["labels_index.json", "scores_gpt54_low.json"]
+    if not all((out / f).exists() for f in needed):
+        results["frontier_table.tex"] = "PENDING (frontier scores not committed)"
+        return
+    sys.path.insert(0, str(HERE))
+    import frontier as FR
+
+    data = FR.compute()
+    scale_tex = FR.emit_scale_table()
+    emits = [("frontier_table.tex", FR.emit_table(data)),
+             ("frontier_serving_table.tex", FR.emit_serving_table(data)),
+             ("frontier_macros.tex", FR.emit_macros(data))]
+    if scale_tex:
+        emits.append(("frontier_scale_table.tex", scale_tex))
+    for name, tex in emits:
+        dst = GEN / name
+        if check and dst.exists():
+            results[name] = "OK (byte-identical)" if dst.read_text() == tex else "DRIFT!"
+        else:
+            dst.write_text(tex)
+            results[name] = "regenerated"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true", help="fail on drift vs committed generated/")
@@ -415,7 +447,7 @@ def main(argv=None) -> int:
 
     GEN.mkdir(exist_ok=True)
     results: dict[str, str] = {}
-    for fn in (paper_a, paper_b, mortgage, expguard, sftsft, matched_fpr, latency,
+    for fn in (paper_a, paper_b, mortgage, expguard, frontier, sftsft, matched_fpr, latency,
                teaser_macros, figures):
         try:
             fn(results, args.check)

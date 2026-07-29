@@ -89,6 +89,7 @@
 \input{generated/adaptation_macros}  % Starting-type adaptation study: \Ada* (H values + LCBs + verdicts)
 \input{generated/ensembling_macros}  % Ensembling appendix: \Ens* (point estimates + bootstrap + committee)
 \input{generated/matched_fpr_macros} % Act I matched-FPR operating point: \Matched*
+\input{generated/frontier_macros}    % Act III frontier-vs-local ExpGuard comparison: \Frontier*
 \input{generated/teaser_macros}      % Figure 1 caption: 2-dp \Teaser* forms of the panel deltas
 
 \title{\textbf{The Safety-Guard Benchmark Chooses the Winner:}\\[3pt]
@@ -317,6 +318,138 @@ committed text-free per-row scores; the run was independently cross-checked on a
 (agreement to $3$--$4$ decimals).
 
 \input{generated/expguard_table}                % tab:expguard (4-guard result; from committed margins)
+
+\subsection{What a frontier guardrail buys, and what it costs}
+\label{sec:actIII-frontier}
+Every guard in this report is a small open-weights model the operator runs itself. The obvious
+question a practitioner asks next is whether that choice is costing them safety, and how much:
+if a hosted frontier model is simply a better guardrail, the engineering in Acts~I--II is
+solving a problem one API call makes disappear. ExpGuard is the one instrument here that can
+answer it cleanly. Its rows are external and expert-annotated, its task is the same prompt-only
+classification the local guards perform, and every guard --- local and hosted --- can be scored
+on \emph{identical} rows joined by row hash, so the comparison never crosses the label-tier
+boundary that \Cref{tab:ledger} forbids crossing.
+
+\Cref{tab:frontier} adds two families to the four base checkpoints: the same four checkpoints
+after ordinary SFT, and \code{gpt-5.4} and \code{gpt-5.4-mini} at three reasoning efforts. Two
+choices make the rows commensurable. First, the primary column is recall at a \emph{matched}
+$5\%$ false-alarm budget, not each model's own verdict --- the same discipline Act~I applies to
+base-vs-SFT (\Cref{tab:matchedfpr}), and it matters here because the frontier configs sit at a
+self-chosen $2.3$--$3.4\%$ FPR and would otherwise be compared at an operating point nobody
+selected. Second, the frontier ranking signal is a self-reported integer $0$--$100$ risk, the only
+graded output the Responses API exposes for reasoning models; it takes roughly $50$--$65$ distinct
+values over $2{,}275$ rows, and those ties cap how finely AP can resolve a ranking. That
+handicaps the hosted rows, so a frontier number \emph{above} a local one is conservative.
+
+\paragraph{The gain is real and it is large.} The best hosted configuration
+(\FrontierBestName) reaches \FrontierBestTpr{} recall at the matched budget against
+\FrontierBestBaseTpr{} for the strongest Act~I base checkpoint (\FrontierBestBaseName): a
+paired row bootstrap on identical rows puts the difference at \FrontierGainOverBase{}
+\FrontierGainOverBaseCI, an interval comfortably clear of zero. Roughly one unsafe prompt in
+ten that the best panel base guard waves through at a $5\%$ alarm budget, the frontier model
+catches. On evidence this is the largest single accuracy gap anywhere in this report, and it is
+measured on the strongest label tier we have.
+
+\paragraph{Neither tuning nor scale closes it.} Two obvious escapes suggest themselves ---
+tune the small guard, or buy a bigger one --- and the same 2{,}275 rows let us price both.
+
+\emph{Tuning does not.} Act~I's whole subject is what SFT buys, so the tuned arm belongs
+here, and its effect on this external set is not a small loss but a \textbf{sign split}:
+SFT changes matched-budget recall by \FrontierSftBestDelta{} on \FrontierSftBestName{} and
+\FrontierSftWorstDelta{} on \FrontierSftWorstName, hurting \FrontierSftNumHurt{} of
+\FrontierSftNumTotal{} checkpoints, for a panel mean of \FrontierSftMeanDelta{} that hides
+swings an order of magnitude larger than itself. The one checkpoint SFT clearly helps is the
+weakest base in the panel; the three stronger ones it degrades. That is Act~I's transfer
+finding --- ``a small average that hides opposite signs'' --- reproducing on \emph{external,
+expert-annotated} data rather than on the inspected panel, which is a considerably stronger
+test of it than Act~I could run. No tuned configuration comes near the hosted models: the
+best is \FrontierBestSftName{} at \FrontierBestSftTpr.
+
+\emph{Scale does not either.} Extending the ladder to Qwen3-8B and Qwen3-32B --- same family
+as Qwen3-4B, and verified to render the frozen guard prompt to the same
+\code{prompt\_template\_sha256} with the same single-token decision pair, so base size is the
+only quantity varying --- makes \FrontierBestOpenName{} the strongest open guard in this study
+at \FrontierBestOpenTpr. But the ladder is not clean and it does not arrive: 8B fails to
+improve on 4B at all (\FrontierEightBvsFourB{} \FrontierEightBvsFourBCI, an interval that
+includes zero, so we read this as ``no gain'', not as a loss), and the full
+$\FrontierScaleFactor\times$ step from 4B to 32B buys \FrontierScaleGain{}
+\FrontierScaleGainCI. Set that against the gap that remains to the hosted model even from
+\FrontierBestOpenName: \FrontierGainOverOpen{} \FrontierGainOverOpenCI. \textbf{Everything
+$\FrontierScaleFactor\times$ the parameters bought is about the size of the gap still left},
+so closing it by scale alone would take at least another order of magnitude --- and 32B is
+already far outside the deployment envelope that motivates a small guard.
+
+One provenance caveat governs every tuned row and is stated wherever they appear. The Act~I
+\emph{release} adapters were produced on an ephemeral runner whose bucket was deleted at
+cleanup and no longer exist, so the SFT rows here are the KL-SFT sweep's $\beta=0$ arm ---
+same LOCK contract, same train manifest sha256, same LoRA recipe, same pinned base revisions,
+but a distinct execution with different \code{adapter\_sha256} values. That is the
+\code{sft\_inenv} / \code{sft\_committed} distinction \code{klsft\_summary.json} already draws
+(the two agree to the third decimal on Act~I's own metrics), and these rows are labelled
+\textbf{SFT (in-env)} throughout. The scale-ladder rows sit outside Act~I's locked
+four-checkpoint panel by construction --- that panel is enforced in code, not merely recorded,
+so extending it is impossible without invalidating the release --- and are trained and scored
+through a sealed sidecar lock that copies the recipe, seeds and manifests verbatim. Act~I's
+headline numbers are untouched and are not restated from either run.
+
+\paragraph{And the accuracy is bought at two orders of magnitude.} \Cref{tab:frontier-serving}
+puts the price beside the gain. The best hosted configuration answers in \FrontierBestMedianMs{}\,ms
+at the median against \FrontierBestBaseName's $10$--$25$\,ms batched forward pass ---
+about \FrontierSlowdown$\times$ --- at roughly \$\FrontierBestCost{} per thousand prompts against
+the amortised cost of a GPU the operator already owns. For a guardrail that fires on every inbound
+request, that is a budget line and a latency budget, not a rounding error. Three further costs
+appear in no column of either table. Prompts leave the operator's infrastructure, which for the
+mortgage setting of \Cref{sec:actIV-mortgage} is a GLBA question before it is an engineering one.
+The operating point is only coarsely selectable: a continuous logit margin can be placed at any
+false-alarm budget exactly, while $50$--$65$ distinct integer scores can only land near one.
+And the provider's own input filter refused a subset of ExpGuard prompts outright, before the
+guard saw them --- \emph{non-deterministically}, with no row refused under all six configurations
+and most refused under four of six. A guardrail whose input filter intermittently declines to
+return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
+its own right.
+
+\paragraph{What this does and does not license.} It licenses one sentence: on external,
+expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
+accurate prompt-safety ranker than any small guard in this report, tuned or not, and the margin
+survives a paired test. It does \emph{not} license extending that to the mortgage construct of
+\Cref{sec:actIV-mortgage}: ExpGuard is single-label general prompt safety, not the dual
+$G\times D$ compliance judgement, and nothing here was measured on it. Nor does it retire the
+report's subject. Acts~I--II are about what happens \emph{when} you must run a small guard
+yourself --- for latency, cost, data residency, or auditability --- and this subsection prices
+that constraint rather than dissolving it. The honest reading is that the frontier number is the
+bar: it is what the specialization and composition machinery is trying to reach under
+constraints the hosted model does not have to satisfy.
+
+\paragraph{A by-product worth more than the comparison that produced it.} Scoring the ladder
+on Act~I's own two regimes (\Cref{tab:frontier-scale}) prices \emph{spending on parameters}
+against \emph{spending on tuning}, and the two are not equivalent. SFT lifts the panel's
+represented macro-AP from $0.658$ to $0.982$ and pays $-0.059$ transfer for it, with
+per-checkpoint losses reaching $-0.150$. Qwen3-32B, \emph{untuned}, reaches $0.953$
+represented --- within $0.029$ of the tuned panel mean --- while holding transfer at $0.962$
+against the tuned panel's $0.807$. A larger base recovers most of what SFT buys
+in-distribution without the transfer collapse Act~I identifies as SFT's characteristic cost.
+
+\paragraph{And the tax grows with the base.} Tuning the 8B checkpoint sharpens this into a
+trend rather than an anecdote. Across the five checkpoints we can now tune, SFT's represented
+gain \emph{shrinks} and its transfer cost \emph{grows} as the base gets stronger:
+$+0.354/-0.039$ on Qwen2.5-1.5B, $+0.313/-0.087$ on SmolLM3-3B, $+0.098/-0.150$ on Qwen3-4B,
+and $+0.076/-0.101$ on Qwen3-8B. The weakest base in the panel is the only one for which SFT
+is unambiguously good on both regimes. So the specialization tax Act~I measures is not a fixed
+overhead: it is the price of forcing a capable base onto a narrow distribution, and it rises
+with how capable that base already was. That also settles, by extrapolation rather than by
+measurement, the obvious objection to the previous paragraph --- that a tuned 32B might beat an
+untuned one. On this trend it would gain little represented AP and pay heavily in transfer;
+but we did not run it, so that remains the single most informative missing cell, and the
+adapter grid and scoring path for it already exist.
+
+One limit keeps the paragraph before this from being a recommendation: it is a
+deployment-choice contrast, not a controlled one. Qwen3-32B is $8$--$21\times$ the parameters
+of the panel checkpoints and costs accordingly, so the comparison is about \emph{where} to
+spend a fixed budget, not about SFT being inferior at equal size.
+
+\input{generated/frontier_table}                % tab:frontier (base vs SFT in-env vs frontier)
+\input{generated/frontier_scale_table}          % tab:frontier-scale (scale vs tuning, Act I regimes)
+\input{generated/frontier_serving_table}        % tab:frontier-serving (latency + $/1k)
 
 \section{Synthesis: one lesson at three scales, and what to do about it}
 \label{sec:synthesis}

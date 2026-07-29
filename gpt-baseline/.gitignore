@@ -1,0 +1,5 @@
+raw/
+raw_mock/
+result.mock.md
+summary.mock.json
+*.log
