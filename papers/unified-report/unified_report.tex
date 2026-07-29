@@ -429,23 +429,40 @@ represented --- within $0.029$ of the tuned panel mean --- while holding transfe
 against the tuned panel's $0.807$. A larger base recovers most of what SFT buys
 in-distribution without the transfer collapse Act~I identifies as SFT's characteristic cost.
 
-\paragraph{And the tax grows with the base.} Tuning the 8B checkpoint sharpens this into a
-trend rather than an anecdote. Across the five checkpoints we can now tune, SFT's represented
-gain \emph{shrinks} and its transfer cost \emph{grows} as the base gets stronger:
-$+0.354/-0.039$ on Qwen2.5-1.5B, $+0.313/-0.087$ on SmolLM3-3B, $+0.098/-0.150$ on Qwen3-4B,
-and $+0.076/-0.101$ on Qwen3-8B. The weakest base in the panel is the only one for which SFT
-is unambiguously good on both regimes. So the specialization tax Act~I measures is not a fixed
-overhead: it is the price of forcing a capable base onto a narrow distribution, and it rises
-with how capable that base already was. That also settles, by extrapolation rather than by
-measurement, the obvious objection to the previous paragraph --- that a tuned 32B might beat an
-untuned one. On this trend it would gain little represented AP and pay heavily in transfer;
-but we did not run it, so that remains the single most informative missing cell, and the
-adapter grid and scoring path for it already exist.
+\paragraph{And the tax grows with the base.} Tuning the ladder turns this into a trend rather
+than an anecdote. Ordered by how strong the base already was, SFT's represented gain
+\emph{decays monotonically} while its transfer cost \emph{grows}: $+0.528/{+}0.040$ on
+SmolLM2-1.7B (represented base AP $0.452$), $+0.354/-0.039$ on Qwen2.5-1.5B ($0.633$),
+$+0.313/-0.087$ on SmolLM3-3B ($0.662$), $+0.098/-0.150$ on Qwen3-4B ($0.885$),
+$+0.076/-0.101$ on Qwen3-8B ($0.905$), and
+$\FrontierScaleTunedRepGain/\FrontierScaleTunedTransferCost$ on
+\FrontierScaleTunedName{} ($0.953$). The weakest base is the only one for which SFT is
+unambiguously good on both regimes; by the strongest it buys almost nothing and still charges
+full price. The specialization tax Act~I measures is therefore not a fixed overhead. It is the
+price of forcing a capable base onto a narrow distribution, and it rises with how capable that
+base already was.
 
-One limit keeps the paragraph before this from being a recommendation: it is a
-deployment-choice contrast, not a controlled one. Qwen3-32B is $8$--$21\times$ the parameters
-of the panel checkpoints and costs accordingly, so the comparison is about \emph{where} to
-spend a fixed budget, not about SFT being inferior at equal size.
+\paragraph{Which answers the objection by measurement, not by extrapolation.} The obvious
+challenge to the paragraph before last is that a \emph{tuned} 32B might beat an untuned one, so
+we tuned it: five seeds, same recipe, same manifest. It does not.
+\FrontierScaleTunedName{} goes from
+$\FrontierScaleUntunedRep/\FrontierScaleUntunedTransfer$ untuned to
+$\FrontierScaleTunedRep/\FrontierScaleTunedTransfer$ tuned --- buying
+$\FrontierScaleTunedRepGain$ represented AP at a cost of
+$\FrontierScaleTunedTransferCost$ transfer --- and on ExpGuard tuning moves its matched-budget
+recall by $\FrontierScaleTunedExpguardDelta$, the wrong way. For a guardrail, whose entire
+purpose is the traffic nobody anticipated, that is a bad trade at any size. Across the six
+checkpoints we can now tune, SFT hurts \FrontierSftNumHurt{} of \FrontierSftNumTotal{} on
+external held-out prompts, and the best tuned configuration anywhere in this study
+(\FrontierBestSftName{} at \FrontierBestSftTpr) still sits well below the hosted model's
+\FrontierBestTpr.
+
+One limit keeps the untuned-32B result from being a recommendation: it is a deployment-choice
+contrast, not a controlled one. Qwen3-32B is $8$--$21\times$ the parameters of the panel
+checkpoints and costs accordingly, so the comparison is about \emph{where} to spend a fixed
+budget, not about SFT being inferior at equal size. What the tuned-32B cell does establish is
+narrower and still useful: at \emph{that} size, on \emph{this} recipe and data, tuning is not
+the way to spend the next increment.
 
 \input{generated/frontier_table}                % tab:frontier (base vs SFT in-env vs frontier)
 \input{generated/frontier_scale_table}          % tab:frontier-scale (scale vs tuning, Act I regimes)

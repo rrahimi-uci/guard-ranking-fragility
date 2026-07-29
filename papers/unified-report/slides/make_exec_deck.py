@@ -1,0 +1,650 @@
+#!/usr/bin/env python
+"""Build the executive deck: should we buy a hosted guardrail, or run our own?
+
+    python slides/make_exec_deck.py       (from papers/unified-report/)
+    -> slides/safety_guard_exec_deck.pptx  (16:9, ~10 slides, speaker notes)
+
+This is NOT a shortened research deck. `make_deck.py` answers "what did we measure and is
+it sound"; this answers "what should we do, what will it cost, and what are we still unsure
+about". Different question, so different structure: the recommendation is on slide 3 rather
+than slide 18, method appears only where it changes whether you believe a number, and every
+confidence interval lives in the speaker notes instead of the slide body.
+
+Numbers come from `frontier_numbers.load()`, which parses the same
+`generated/frontier_macros.tex` the report `\\input`s, so a slide figure cannot drift from
+the paper. Percentages are rounded for readability; the underlying decimals and intervals
+are in the notes so a challenge from the room can be answered exactly.
+
+Visual register is deliberately larger and emptier than the research deck: an executive
+audience reads a slide in about four seconds, so each one carries a single claim, and the
+claim is in the headline rather than in the body.
+"""
+# ruff: noqa: E741
+#   `l` as a left-coordinate parameter is the convention make_deck.py already uses across
+#   every geometry helper. Matching it keeps the two deck scripts readable side by side,
+#   which matters more here than the ambiguous-name rule.
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+from pptx import Presentation
+from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.util import Inches, Pt
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import frontier_numbers as FN  # noqa: E402
+
+OUT = HERE / "safety_guard_exec_deck.pptx"
+
+# ─────────────────────────────────────────────────────────── identity (shared palette)
+INK = RGBColor(0x12, 0x26, 0x3A)
+SLATE = RGBColor(0x5A, 0x6B, 0x7C)
+MUTED = RGBColor(0x8A, 0x97, 0xA5)
+RULE = RGBColor(0xD8, 0xDE, 0xE4)
+PAPER = RGBColor(0xF7, 0xF9, 0xFA)
+WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+ACCENT = RGBColor(0xA0, 0x21, 0x28)
+BLUE = RGBColor(0x25, 0x63, 0xEB)
+GREEN = RGBColor(0x15, 0x80, 0x3D)
+AMBER = RGBColor(0xB7, 0x79, 0x1F)
+TINT = {
+    ACCENT: RGBColor(0xFA, 0xF0, 0xF0), BLUE: RGBColor(0xEF, 0xF4, 0xFE),
+    GREEN: RGBColor(0xEF, 0xF7, 0xF1), AMBER: RGBColor(0xFD, 0xF7, 0xEC),
+    SLATE: RGBColor(0xF2, 0xF5, 0xF7),
+}
+SERIF, SANS = "Georgia", "Arial"
+W, H = Inches(13.333), Inches(7.5)
+M = Inches(0.85)
+CW = W - 2 * M
+TITLE_SHORT = "Guardrail sourcing · hosted frontier vs self-hosted small model"
+
+
+# ───────────────────────────────────────────────────────────────────────── primitives
+def _noshadow(shape):
+    spPr = shape.fill._xPr
+    for tag in ("a:effectLst", "a:effectDag"):
+        for el in spPr.findall(f"{{http://schemas.openxmlformats.org/drawingml/2006/main}}{tag}"):
+            spPr.remove(el)
+
+
+def rect(s, l, t, w, h, fill=None, line=None, lw=1.0, shape=MSO_SHAPE.RECTANGLE):
+    sh = s.shapes.add_shape(shape, int(l), int(t), int(w), int(h))
+    if fill is None:
+        sh.fill.background()
+    else:
+        sh.fill.solid()
+        sh.fill.fore_color.rgb = fill
+    if line is None:
+        sh.line.fill.background()
+    else:
+        sh.line.color.rgb = line
+        sh.line.width = Pt(lw)
+    sh.shadow.inherit = False
+    _noshadow(sh)
+    sh.text_frame.word_wrap = True
+    return sh
+
+
+def tbox(s, l, t, w, h, anchor=MSO_ANCHOR.TOP):
+    tb = s.shapes.add_textbox(int(l), int(t), int(w), int(h))
+    tf = tb.text_frame
+    tf.word_wrap = True
+    tf.vertical_anchor = anchor
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    return tf
+
+
+def para(tf, first=False, align=PP_ALIGN.LEFT, space_after=8, line_spacing=None):
+    p = tf.paragraphs[0] if first else tf.add_paragraph()
+    p.alignment = align
+    p.space_after = Pt(space_after)
+    if line_spacing:
+        p.line_spacing = line_spacing
+    return p
+
+
+def run(p, text, size=16, bold=False, color=INK, font=SANS, italic=False, spc=None):
+    r = p.add_run()
+    r.text = text
+    r.font.size = Pt(size)
+    r.font.bold = bold
+    r.font.italic = italic
+    r.font.color.rgb = color
+    r.font.name = font
+    if spc is not None:
+        # Letter-spacing has no python-pptx property; set the raw attribute, exactly as
+        # make_deck._spacing does. Note qn() is wrong here -- it expects a prefixed tag.
+        r.font._rPr.set("spc", str(int(spc)))
+    return r
+
+
+class Deck:
+    def __init__(self):
+        self.prs = Presentation()
+        self.prs.slide_width, self.prs.slide_height = W, H
+        self.n = 0
+
+    def blank(self, chrome=True):
+        s = self.prs.slides.add_slide(self.prs.slide_layouts[6])
+        rect(s, 0, 0, W, Inches(0.062), fill=ACCENT)
+        if chrome:
+            self.n += 1
+            tf = tbox(s, M, Inches(7.00), Inches(9.5), Inches(0.28))
+            p = para(tf, first=True, space_after=0)
+            run(p, TITLE_SHORT, size=9.5, color=MUTED)
+            tf2 = tbox(s, W - M - Inches(1.2), Inches(7.00), Inches(1.2), Inches(0.28))
+            p2 = para(tf2, first=True, align=PP_ALIGN.RIGHT, space_after=0)
+            run(p2, f"{self.n:02d}", size=10.5, bold=True, color=ACCENT, spc=60)
+        return s
+
+    def header(self, s, kicker, title, sub=None):
+        tf = tbox(s, M, Inches(0.42), CW, Inches(0.26))
+        p = para(tf, first=True, space_after=0)
+        run(p, kicker.upper(), size=10.5, bold=True, color=ACCENT, spc=140)
+        tf = tbox(s, M, Inches(0.78), CW, Inches(0.80))
+        p = para(tf, first=True, space_after=0, line_spacing=1.02)
+        run(p, title, size=30, bold=True, color=INK, font=SERIF)
+        y = Inches(1.66)
+        if sub:
+            tf = tbox(s, M, Inches(1.62), CW, Inches(0.40))
+            p = para(tf, first=True, space_after=0)
+            run(p, sub, size=15, color=SLATE)
+            y = Inches(2.10)
+        rect(s, M, y, CW, Pt(0.9), fill=RULE)
+        return y + Inches(0.26)
+
+    def notes(self, s, text):
+        s.notes_slide.notes_text_frame.text = text.strip()
+
+    def save(self):
+        self.prs.save(OUT)
+        return OUT
+
+
+def statcard(s, l, t, w, h, value, caption, color=ACCENT, value_size=40):
+    rect(s, l, t, w, h, fill=TINT[color])
+    rect(s, l, t, w, Inches(0.05), fill=color)
+    tf = tbox(s, l + Inches(0.24), t + Inches(0.26), w - Inches(0.48), h - Inches(0.5))
+    p = para(tf, first=True, space_after=4)
+    run(p, value, size=value_size, bold=True, color=color, font=SERIF)
+    p = para(tf, space_after=0)
+    run(p, caption, size=12, color=SLATE)
+
+
+def bullets(s, l, t, w, h, items, size=15, gap=12, mcolor=ACCENT):
+    tf = tbox(s, l, t, w, h)
+    for i, item in enumerate(items):
+        p = para(tf, first=(i == 0), space_after=gap)
+        run(p, "—  ", size=size, bold=True, color=mcolor)
+        if isinstance(item, tuple):
+            run(p, item[0], size=size, bold=True, color=INK)
+            run(p, item[1], size=size, color=SLATE)
+        else:
+            run(p, item, size=size, color=INK)
+
+
+def table(s, l, t, w, rows, col_w, row_h=Inches(0.46), header=True):
+    """Minimal table: first row is a header band, subsequent rows alternate paper/white."""
+    y = t
+    for ri, row in enumerate(rows):
+        fill = INK if (header and ri == 0) else (PAPER if ri % 2 else WHITE)
+        rect(s, l, y, w, row_h, fill=fill,
+             line=None if (header and ri == 0) else RULE, lw=0.5)
+        x = l
+        for ci, cell in enumerate(row):
+            cwid = int(w * col_w[ci])
+            tf = tbox(s, x + Inches(0.14), y, cwid - Inches(0.28), row_h,
+                      anchor=MSO_ANCHOR.MIDDLE)
+            p = para(tf, first=True, space_after=0,
+                     align=PP_ALIGN.LEFT if ci == 0 else PP_ALIGN.CENTER)
+            bold = (header and ri == 0) or ci == 0
+            col = WHITE if (header and ri == 0) else INK
+            txt, cc = (cell if isinstance(cell, tuple) else (cell, col))
+            run(p, str(txt), size=13, bold=bold, color=cc)
+            x += cwid
+        y += row_h
+    return y
+
+
+def callout(s, l, t, w, h, label, body, color=ACCENT):
+    rect(s, l, t, w, h, fill=TINT[color], shape=MSO_SHAPE.ROUNDED_RECTANGLE)
+    rect(s, l, t, Inches(0.055), h, fill=color)
+    tf = tbox(s, l + Inches(0.26), t + Inches(0.18), w - Inches(0.5), h - Inches(0.36))
+    p = para(tf, first=True, space_after=5)
+    run(p, label.upper(), size=11, bold=True, color=color, spc=110)
+    p = para(tf, space_after=0, line_spacing=1.06)
+    run(p, body, size=13.5, color=INK)
+
+
+# ═══════════════════════════════════════════════════════════════════════ build
+F = FN.load()
+d = Deck()
+
+# ─────────────────────────────────────────────────────────────── 1 · title
+s = d.blank(chrome=False)
+rect(s, 0, 0, W, H, fill=WHITE)
+rect(s, 0, 0, W, Inches(0.062), fill=ACCENT)
+tf = tbox(s, M, Inches(2.15), CW, Inches(0.30))
+p = para(tf, first=True, space_after=0)
+run(p, "GUARDRAIL SOURCING DECISION", size=12, bold=True, color=ACCENT, spc=180)
+tf = tbox(s, M, Inches(2.70), Inches(10.6), Inches(1.7))
+p = para(tf, first=True, space_after=0, line_spacing=1.03)
+run(p, "Do we buy a hosted guardrail,\nor run our own?", size=44, bold=True,
+    color=INK, font=SERIF)
+tf = tbox(s, M, Inches(4.62), Inches(10.2), Inches(0.9))
+p = para(tf, first=True, space_after=0, line_spacing=1.10)
+run(p, "Measured on 2,275 expert-annotated finance, healthcare and law prompts. "
+       "Eight guard configurations, identical rows, identical false-alarm budget.",
+    size=15.5, color=SLATE)
+rect(s, M, Inches(5.75), Inches(1.5), Pt(2.2), fill=ACCENT)
+tf = tbox(s, M, Inches(6.05), CW, Inches(0.6))
+p = para(tf, first=True, space_after=2)
+run(p, "Reza Rahimi, PhD", size=14, bold=True, color=INK)
+p = para(tf, space_after=0)
+run(p, "Full method, intervals and limitations: the technical report and research deck",
+    size=12, color=MUTED)
+d.notes(s, """
+Ninety seconds on this slide. The framing sentence is: we need a safety guardrail in front of
+every request our assistant handles, and there are two ways to get one -- call a hosted
+frontier model, or run a small open-weights model ourselves. This deck prices that choice.
+
+Say up front what makes the comparison trustworthy, because it is the thing that makes the rest
+land: every configuration is scored on the SAME rows, and every one is re-tuned to the SAME
+false-alarm rate before we compare catch rates. Without the second step you can make any guard
+look good by letting it cry wolf more often.
+
+Do not promise a single recommendation yet. Slide 3 gives it.
+""")
+
+# ────────────────────────────────────────────────────── 2 · why this is a decision
+s = d.blank()
+y = d.header(s, "the decision", "A guardrail runs on every request, so its cost is a"
+             " recurring line, not a one-off",
+             "Which means accuracy, latency, unit cost and data residency all bind at once")
+cw = (CW - Inches(0.4)) / 2
+bullets(s, M, y + Inches(0.06), cw, Inches(3.4), [
+    ("Accuracy. ", "A missed unsafe prompt is the incident. A false alarm is a blocked "
+     "customer. Both are real costs, so the guard must be judged at a fixed alarm rate."),
+    ("Latency. ", "It sits in the request path. Whatever it adds, every user pays on every "
+     "turn."),
+    ("Unit cost. ", "Priced per prompt, it scales with traffic, not with headcount."),
+    ("Residency. ", "In mortgage the prompt itself contains borrower information, so where "
+     "it travels is a compliance question before it is an engineering one."),
+], size=14.5)
+callout(s, M + cw + Inches(0.4), y + Inches(0.06), cw, Inches(1.80),
+        "why we could not just read the vendor benchmarks",
+        "Public guard leaderboards score general web-safety prompts. Our exposure is "
+        "regulated-domain advice, where the same words are safe or unsafe depending on who "
+        "is asking and what was promised.", color=BLUE)
+callout(s, M + cw + Inches(0.4), y + Inches(2.04), cw, Inches(1.80),
+        "so we measured on our own terms",
+        "Expert-annotated finance, healthcare and law prompts; every guard scored on "
+        "identical rows; catch rates compared only at a matched 5% false-alarm budget.",
+        color=GREEN)
+d.notes(s, """
+Purpose of this slide: establish that this is a sourcing decision with four binding
+constraints, not a model-quality question. If someone in the room only cares about accuracy,
+this is where you widen it.
+
+The residency bullet is the one that tends to change the conversation with legal. Our mortgage
+prompts contain borrower detail; sending them to a third party is a GLBA question. That is not
+a reason to refuse hosted models, but it is a reason the decision cannot be made by the ML team
+alone.
+
+If asked why not just trust published guard benchmarks: because they measure general web
+safety, and our failure mode is regulated-domain advice where context decides the label. We
+have direct evidence in the technical report that guard rankings reorder when the benchmark
+changes -- that is the report's title finding.
+""")
+
+# ──────────────────────────────────────────────────────── 3 · the recommendation
+s = d.blank()
+y = d.header(s, "recommendation", "Hosted is materially more accurate. Run it where the "
+             "prompt can leave, and a small model where it cannot",
+             "And do not expect to close the gap by tuning or by buying a bigger open model")
+gap = FN.points(F["GainOverOpen"])
+cw3 = (CW - Inches(0.6)) / 3
+statcard(s, M, y + Inches(0.06), cw3, Inches(1.62), gap.replace("+", "+") ,
+         f"more unsafe prompts caught by {F['BestName']} than by the best open model we "
+         f"tested, at the same false-alarm rate", color=GREEN)
+statcard(s, M + cw3 + Inches(0.3), y + Inches(0.06), cw3, Inches(1.62),
+         f"{F['Slowdown']}×", "slower per request than a small self-hosted guard",
+         color=ACCENT)
+statcard(s, M + 2 * (cw3 + Inches(0.3)), y + Inches(0.06), cw3, Inches(1.62),
+         f"${F['BestCost']}", "per 1,000 prompts, on top of the model call itself",
+         color=AMBER)
+bullets(s, M, y + Inches(1.95), CW, Inches(2.2), [
+    ("Use hosted where the prompt may lawfully leave. ", "The accuracy gain is real, it is "
+     "statistically solid, and on general safety traffic the latency is tolerable."),
+    ("Keep a self-hosted small guard on the regulated path. ", "Not because it is better -- "
+     "it is not -- but because it is the only option when the prompt cannot leave, and it "
+     "answers in milliseconds."),
+    ("Do not budget for closing the gap. ", "We tried the two obvious routes. Fine-tuning "
+     f"did not close it and hurt {F['SftNumHurt']} of {F['SftNumTotal']} models on "
+     f"unfamiliar traffic; {F['ScaleFactor']}× more parameters bought less than the gap "
+     "that remained."),
+], size=14.5)
+d.notes(s, f"""
+This is the slide to spend time on. Everything after it is evidence.
+
+The three numbers, precisely, for anyone who asks:
+  - catch-rate gap {F['GainOverOpen']} at a matched 5% false-alarm rate, 95% interval
+    {F['GainOverOpenCI']} -- the interval excludes zero, so this is not noise.
+  - {F['Slowdown']}x is median-to-median: about {F['BestMedianMs']} ms hosted against
+    10-25 ms for a small guard on our own GPU.
+  - ${F['BestCost']} per thousand prompts is billed tokens at public list prices, and it
+    excludes the GPU you already own on the self-hosted side. It is an estimate, not an
+    invoice.
+
+The recommendation is deliberately a split, not a winner. If pushed for one answer: hosted,
+because the accuracy difference is the largest single effect anywhere in this study. But the
+regulated path is exactly where we cannot take it, which is why the split is the honest answer
+rather than a hedge.
+
+Third bullet matters for planning. Someone will propose "just fine-tune ours" or "just use a
+bigger one". Both were tested. Neither worked. Slides 5 and 6.
+""")
+
+# ─────────────────────────────────────────────────────── 4 · what hosted buys
+s = d.blank()
+y = d.header(s, "what hosted buys", "At the same false-alarm rate, the hosted model catches "
+             "roughly one in ten of the prompts our own guards miss",
+             "Catch rate on expert-annotated finance / healthcare / law prompts, "
+             "all at a 5% false-alarm budget")
+rows = [["Guard", "Catch rate", "Where it runs"],
+        [F["BestName"], FN.pct(F["BestTpr"]), "hosted API"],
+        [f"{F['BestOpenName']} ({F['BestOpenParams']}B)", FN.pct(F["BestOpenTpr"]),
+         "self-hosted"],
+        [f"{F['BestBaseName']}, tuned", FN.pct(F["BestSftTpr"]), "self-hosted"],
+        [F["BestBaseName"], FN.pct(F["BestBaseTpr"]), "self-hosted"]]
+table(s, M, y + Inches(0.10), Inches(7.4), rows, [0.46, 0.27, 0.27])
+callout(s, M + Inches(7.8), y + Inches(0.10), CW - Inches(7.8), Inches(1.78),
+        "read this as a floor, not a ceiling",
+        "The hosted model reports only a coarse 0-100 confidence, which limits how finely we "
+        "can rank its answers. That handicaps it in this comparison, so the true gap is if "
+        "anything wider.", color=BLUE)
+callout(s, M + Inches(7.8), y + Inches(2.02), CW - Inches(7.8), Inches(1.78),
+        "why 'at the same false-alarm rate' matters",
+        "Any guard can raise its catch rate by alarming more often. Holding the alarm rate "
+        "fixed at 5% is what makes these four numbers comparable at all.", color=AMBER)
+d.notes(s, f"""
+One claim: hosted is better, by about ten points of catch rate, and the comparison is fair.
+
+Exact figures if challenged: {F['BestName']} {F['BestTpr']} against {F['BestOpenName']}
+{F['BestOpenTpr']}, difference {F['GainOverOpen']} with 95% interval {F['GainOverOpenCI']}.
+Against the strongest model in our locked research panel it is {F['GainOverBase']}
+{F['GainOverBaseCI']}. Both intervals exclude zero. These are paired comparisons on identical
+rows, which removes row-difficulty as an explanation.
+
+The coarse-confidence point is worth making unprompted, because it is the one place we
+disadvantaged the hosted model and it strengthens rather than weakens the conclusion.
+
+If asked about the labels: external, expert-annotated, and a stronger labelling tier than
+anything we produced ourselves. We did not grade our own homework here.
+""")
+
+# ────────────────────────────────────────────────── 5 · tuning did not close it
+s = d.blank()
+y = d.header(s, "route one: fine-tune ours", "Fine-tuning did not close the gap, and on "
+             "unfamiliar traffic it usually made things worse",
+             f"Change in catch rate after fine-tuning, across "
+             f"{F['SftNumTotal']} models · {F['NSeeds']} training runs each")
+cw = (CW - Inches(0.45)) / 2
+bullets(s, M, y + Inches(0.06), cw, Inches(2.9), [
+    (f"Best case {F['SftBestDelta']}. ", f"On {F['SftBestName']}, our weakest model, tuning "
+     "helped substantially."),
+    (f"Worst case {F['SftWorstDelta']}. ", f"On {F['SftWorstName']}, one of our strongest, "
+     "it took accuracy away."),
+    (f"{F['SftNumHurt']} of {F['SftNumTotal']} models got worse. ",
+     f"The average across all of them is {F['SftMeanDelta']} — close to zero, and it hides "
+     "swings ten times its own size."),
+    ("Best tuned result still loses. ", f"{F['BestSftName']} tuned reaches "
+     f"{FN.pct(F['BestSftTpr'])}, against {FN.pct(F['BestTpr'])} hosted."),
+], size=14.5)
+callout(s, M + cw + Inches(0.45), y + Inches(0.06), cw, Inches(1.80),
+        "the pattern behind it",
+        "Fine-tuning teaches a model the traffic you trained it on and costs it accuracy on "
+        "traffic you did not. The stronger the starting model, the less it gains and the more "
+        "it loses.", color=ACCENT)
+callout(s, M + cw + Inches(0.45), y + Inches(2.00), cw, Inches(1.80),
+        "planning consequence",
+        "Budgeting a tuning project to close a vendor gap is not supported by this evidence. "
+        "Tuning is worth doing to rescue a weak model, not to beat a strong one.",
+        color=AMBER)
+d.notes(s, f"""
+The headline is the sign split, not the average. If you quote only the mean change
+({F['SftMeanDelta']}) you will mislead the room -- it is a small number sitting on top of
+swings from {F['SftWorstDelta']} to {F['SftBestDelta']}.
+
+Mechanism, in plain terms: fine-tuning on a fixed set of sources specialises the model to
+those sources. It buys a lot of accuracy on traffic that looks like the training data and
+gives some back on traffic that does not. Our measurements say the trade gets worse as the
+starting model gets stronger -- the strongest model we tuned gained the least and lost the
+most.
+
+This is the central finding of the underlying research, reproduced here on external
+expert-annotated data rather than on our own panel, which is a harder test.
+
+If asked "did you tune it badly": five independent training runs per model, one recipe, and
+the same recipe that produces large gains on in-distribution traffic. The gains are real; they
+just do not transfer.
+""")
+
+# ─────────────────────────────────────────────── 6 · scale did not close it either
+s = d.blank()
+y = d.header(s, "route two: buy a bigger one", "Eight times the parameters bought less than "
+             "the gap that was left",
+             "Catch rate against model size, same family, same prompt, same rows")
+rows = [["Open model", "Size", "Catch rate"],
+        ["Qwen3-4B", "4B", "77%"],
+        ["Qwen3-8B", "8B", "75%"],
+        [f"{F['BestOpenName']}", f"{F['BestOpenParams']}B",
+         (FN.pct(F["BestOpenTpr"]), GREEN)],
+        [f"{F['BestName']} (hosted)", "—", (FN.pct(F["BestTpr"]), ACCENT)]]
+table(s, M, y + Inches(0.10), Inches(7.0), rows, [0.46, 0.24, 0.30])
+bullets(s, M + Inches(7.4), y + Inches(0.10), CW - Inches(7.4), Inches(3.0), [
+    (f"{F['ScaleFactor']}× the parameters bought "
+     f"{FN.points(F['ScaleGain'])}. ", "Going from 4B to 32B."),
+    (f"The gap left is {FN.points(F['GainOverOpen'])}. ",
+     "Slightly larger than everything that scaling bought."),
+    ("Going 4B to 8B bought nothing. ", "Size does not buy guard accuracy smoothly."),
+], size=14.5)
+callout(s, M, y + Inches(2.60), CW, Inches(1.0), "what this implies for a build plan",
+        f"Closing the remaining gap by size alone would take at least another order of "
+        f"magnitude -- and {F['BestOpenParams']}B is already past the point where a guard is "
+        f"cheap to run on every request, which was the reason to self-host in the first place.",
+        color=ACCENT)
+d.notes(s, f"""
+One claim: scale is not the escape hatch either.
+
+Exact numbers: 4B to 32B is {F['ScaleGain']}, interval {F['ScaleGainCI']}. The remaining gap
+to hosted from 32B is {F['GainOverOpen']}, interval {F['GainOverOpenCI']}. So an eightfold
+parameter increase bought slightly less than what was still missing.
+
+The 8B row is worth flagging honestly: it came out below 4B, but the interval
+({F['EightBvsFourBCI']}) includes zero, so the correct statement is "no gain", not "worse".
+Do not oversell it -- but do use it to make the point that size and guard quality are not
+tightly coupled.
+
+The build-plan consequence is the part an executive audience should leave with. A 32B guard on
+every inbound request is a serving cost close to the thing we were trying to avoid. If we are
+paying that, the hosted option deserves another look on cost grounds alone.
+""")
+
+# ──────────────────────────────────────────────────── 7 · what it costs to host
+s = d.blank()
+y = d.header(s, "what hosted costs", "The accuracy is real. So is the bill, the latency, and "
+             "the loss of control",
+             "Four costs, three of which do not appear on an invoice")
+cw = (CW - Inches(0.45)) / 2
+rows = [["", "Self-hosted small", "Hosted frontier"],
+        ["Median latency", "10–25 ms", f"~{F['BestMedianMs']} ms"],
+        ["Cost per 1k prompts", "GPU you own", f"${F['BestCost']}"],
+        ["Prompt leaves our network", "no", "yes"],
+        ["We choose the alarm rate", "exactly", "approximately"]]
+table(s, M, y + Inches(0.10), cw, rows, [0.44, 0.28, 0.28])
+callout(s, M + cw + Inches(0.45), y + Inches(0.10), cw, Inches(1.62),
+        "the one we did not expect",
+        "The provider refused to evaluate a subset of prompts outright, and did so "
+        "inconsistently — the same prompt was refused on some runs and not others. A "
+        "guardrail that intermittently declines to answer is itself an audit finding.",
+        color=ACCENT)
+callout(s, M + cw + Inches(0.45), y + Inches(1.86), cw, Inches(1.50),
+        "control over the alarm rate",
+        "Our own model exposes a continuous score, so we can set the false-alarm budget "
+        "precisely. The hosted model reports a coarse 0–100 value, so we can only land "
+        "near a target.", color=BLUE)
+callout(s, M, y + Inches(3.46), CW, Inches(1.06), "not a reason to refuse hosted",
+        "It is a reason to scope it: hosted on traffic where the prompt may leave and "
+        "latency is not critical; self-hosted on the regulated, latency-sensitive path.",
+        color=GREEN)
+d.notes(s, f"""
+Work down the table, then land on the two callouts, which are the non-obvious costs.
+
+Latency: {F['BestMedianMs']} ms median measured under load at high concurrency, so treat it as
+an upper bound for a single request; the small-model figure is a batched GPU measurement. Even
+allowing for that, the ratio is roughly {F['Slowdown']}x.
+
+Cost: billed tokens at public list prices. It excludes the amortised GPU on the self-hosted
+side, which is exactly why the comparison is about where to spend rather than a like-for-like
+price.
+
+The refusal finding is the one to say slowly. We saw a set of prompts refused by the provider's
+own input filter before the model ever saw them, and the refusals were not reproducible --
+different runs, different outcomes, no row refused every time. For a control that has to be
+auditable, "sometimes declines, for reasons we cannot inspect or appeal" is a compliance
+property, not a technical footnote.
+
+Close on the scoping sentence. The answer is a split, and this slide is why.
+""")
+
+# ─────────────────────────────────────────────── 8 · the useful surprise
+s = d.blank()
+y = d.header(s, "the useful finding", "If we must self-host, a bigger untuned model beats a "
+             "tuned small one",
+             "Because tuning's cost lands on exactly the traffic a guardrail exists to catch")
+cw = (CW - Inches(0.45)) / 2
+bullets(s, M, y + Inches(0.06), cw, Inches(2.9), [
+    ("Tuning a small model. ", "Large gain on familiar traffic, and it gives back accuracy "
+     "on unfamiliar traffic — which is where novel attacks arrive."),
+    ("A bigger untuned model. ", "Recovers most of that same gain on familiar traffic, and "
+     "holds its accuracy on unfamiliar traffic."),
+    ("So for a guardrail specifically. ", "Prefer spending on a stronger base model over "
+     "spending on a tuning programme."),
+], size=14.5)
+callout(s, M + cw + Inches(0.45), y + Inches(0.06), cw, Inches(1.70),
+        "why this is worth money",
+        "It reverses the intuitive plan. Tuning looks like the cheap, targeted option; "
+        "measured on held-out traffic it is the one that quietly costs you coverage.",
+        color=GREEN)
+callout(s, M + cw + Inches(0.45), y + Inches(1.92), cw, Inches(1.70),
+        "confidence level",
+        "This is a comparison between different model sizes, not a controlled experiment at "
+        "fixed size. Treat it as a strong steer on where to spend, not a proven law.",
+        color=AMBER)
+d.notes(s, """
+This slide did not exist in the plan. It fell out of the scale experiment and is probably the
+most commercially useful thing in the deck.
+
+The mechanism: fine-tuning specialises. It buys accuracy on the sources you trained on and
+withdraws it from sources you did not. A bigger base model arrives with broad competence
+already and does not have to trade any of it away. For a guardrail, the traffic you did not
+anticipate is precisely the traffic that matters, so a technique that trades away
+unfamiliar-traffic accuracy is badly matched to the job.
+
+Numbers are in the technical report; the honest caveat is on the slide. Comparing a 32B untuned
+model to a tuned 4B is a deployment-choice comparison, not a controlled one -- the 32B costs
+much more to serve. What we can say is that the tuning route did not close the vendor gap and
+made held-out accuracy worse on most models, while the size route at least moved in the right
+direction on both regimes.
+""")
+
+# ───────────────────────────────────────────────────── 9 · what we are unsure of
+s = d.blank()
+y = d.header(s, "confidence and limits", "What this does not tell you",
+             "Stated plainly, so the recommendation can be trusted where it does apply")
+bullets(s, M, y + Inches(0.06), CW, Inches(3.2), [
+    ("It is one benchmark. ", "Expert-annotated finance, healthcare and law prompt safety. "
+     "It is the strongest external evidence we have, and it is still a single instrument — "
+     "and our own research shows guard rankings reorder when the benchmark changes."),
+    ("It is prompt-only. ", "We judged incoming prompts, not the assistant's replies, and not "
+     "the harder mortgage-compliance question of whether a specific answer breaks a specific "
+     "rule."),
+    ("Vendor behaviour is a moving target. ", "Model versions change under you. The "
+     "self-hosted side is pinned to an exact revision and reproduces indefinitely; the hosted "
+     "side does not."),
+    ("Prices are list, not invoices. ", "Cost figures are billed tokens at public rates and "
+     "exclude the GPU cost on our own side."),
+], size=14.5)
+callout(s, M, y + Inches(3.35), CW, Inches(1.08), "what would change the recommendation",
+        "A regulated-domain benchmark that scores whole answers against specific rules, with "
+        "expert adjudication. That is the instrument we do not have, and building it is the "
+        "highest-value next step.", color=BLUE)
+d.notes(s, """
+Do not rush this slide, and do not apologise through it. Naming the limits is what makes the
+recommendation on slide 3 credible.
+
+The first bullet is the most important and the most self-undermining, which is why it belongs
+here: the underlying research finding is that guard rankings depend on the benchmark. We are
+handing you a recommendation derived from one benchmark. It is external and expert-annotated,
+which is the best tier available to us, but a different instrument could reorder the middle of
+the table. It is unlikely to reverse a ten-point gap.
+
+The pinning point matters more than it sounds. A hosted model can change under a fixed
+deployment; that is a change-control problem for a compliance control. Our own checkpoints are
+pinned to a content hash and will reproduce in a year.
+
+Close on the final callout: the thing worth funding is the measuring instrument for our actual
+domain, not more guard comparisons on general safety.
+""")
+
+# ──────────────────────────────────────────────────────────── 10 · what we would do
+s = d.blank()
+y = d.header(s, "proposal", "What we would do next",
+             "Sequenced so each step is cheap and the expensive one is last")
+cw = (CW - Inches(0.45)) / 2
+bullets(s, M, y + Inches(0.06), cw, Inches(3.3), [
+    ("Now · split the traffic. ", "Hosted guard where the prompt may lawfully leave; "
+     "the small self-hosted guard on the regulated path. No new build."),
+    ("Now · handle provider refusals explicitly. ", "Treat a provider refusal as "
+     "'needs review', never as 'safe'. It is a one-line policy change and today it is a "
+     "silent gap."),
+    ("Next · stop the tuning workstream as a gap-closer. ", "Keep it only for rescuing "
+     "weak models. Redirect the effort."),
+    ("Then · build the domain instrument. ", "A mortgage-compliance benchmark that scores "
+     "whole answers against specific rules, with expert adjudication."),
+], size=14.5)
+callout(s, M + cw + Inches(0.45), y + Inches(0.06), cw, Inches(1.55),
+        "the cheapest item is the refusal one",
+        "It costs a policy change, and it closes a case where an unsafe prompt currently "
+        "receives no verdict at all.", color=GREEN)
+callout(s, M + cw + Inches(0.45), y + Inches(1.79), cw, Inches(1.85),
+        "the one that needs a decision from this room",
+        "Whether borrower-bearing prompts may leave our network at all. That single answer "
+        "decides how much of our traffic can use the more accurate option, and it is a legal "
+        "call rather than a technical one.", color=ACCENT)
+d.notes(s, """
+Two minutes. The first two items need no budget. The third frees capacity. The fourth is the
+only one that asks for money.
+
+Push for a decision on the right-hand callout before the meeting ends -- whether prompts
+containing borrower information may go to a third-party API. Everything about the split
+architecture depends on that answer, and it is not ours to make.
+
+The refusal item is the one to insist on regardless of the rest. Today, when the provider
+declines to evaluate a prompt, our pipeline records no verdict. That is indistinguishable from
+a pass unless we say otherwise, and the prompts most likely to be refused are the ones most
+likely to be genuinely unsafe.
+
+If asked for the whole thing in one sentence: hosted is about ten points better at catching
+unsafe prompts and we should use it wherever the data is allowed to travel, we should stop
+expecting to close that gap ourselves, and the thing worth building is a benchmark for our own
+domain rather than another guard.
+""")
+
+path = d.save()
+print(f"wrote {path}  ({d.n + 1} slides)")

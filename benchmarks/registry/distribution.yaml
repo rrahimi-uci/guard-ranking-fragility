@@ -10,13 +10,14 @@
 #
 # STATUS: no source currently qualifies for publish_text. The tracked explorer blob
 # `benchmark-explorer/index.public.html` (53.0 MB, sha256 d7a67af5..., 16,146 rows
-# across the ten sources below) therefore has NO affirmative distribution decision
+# across ten of the sources below) therefore has NO affirmative distribution decision
 # and must not be republished, shard-built, or served from Pages until each source
-# below carries one.
+# below carries one. `expguard` was added later and is NOT in that blob: its text has
+# never been written to this repository at all, only text-free per-row scores.
 
 schema_version: 1
 ledger_id: guard_ranking_fragility_distribution_v1
-reviewed_on: "2026-07-26"
+reviewed_on: "2026-07-29"
 default_decision: local_only
 
 notes: >
@@ -180,6 +181,45 @@ sources:
       revision: null
       sha256: unhashed
     blocking_reason: License not verified at source.
+
+  - source_id: expguard
+    kind: third_party_gated
+    access_class: gated
+    license:
+      spdx_or_name: unverified
+      permits_redistribution: unknown
+      commercial_use: unknown
+      snapshot: >
+        Gated Hugging Face dataset (6rightjade/expguardmix, config expguardtest); access
+        requires an accepted request and HF_TOKEN. The dataset card's licence field was NOT
+        read or recorded at this audit, so nothing here asserts what it permits.
+    redistribution_decision: text_free_only
+    derived_output_license: none_until_decision
+    sensitive_text_class: unreviewed
+    attribution_notice: >
+      ExpGuard (6rightjade/expguardmix), expert-annotated finance / healthcare / law prompt
+      safety. Used as the external-validation instrument for Act III and for the
+      frontier-vs-local and scale-ladder comparisons.
+    reviewer: unassigned
+    decision_date: "2026-07-29"
+    row_count: 2275
+    payload:
+      path: hf://6rightjade/expguardmix/expguardtest.parquet
+      revision: null
+      sha256: unhashed
+    blocking_reason: >
+      LISTED RETROSPECTIVELY. ExpGuard was in use before it had an entry here, which is the
+      same hole `guard_benchmark_hard` fell through: the ledger's default_decision
+      (local_only) governed it, but no one had recorded a decision. Its prompt text has never
+      been written to this repository -- it is fetched from the Hub at run time and held in
+      memory only -- and the committed derivatives under artifacts/expguard_external/ and
+      artifacts/qwen3_scale_ext/expguard/ are text-free per-row scores keyed by
+      sha256(prompt)[:16] plus a {row_hash -> label, domain} index, which is what
+      text_free_only permits. Those derivatives are already on the public remote. What is
+      still missing is the affirmative part: the upstream licence has not been read, so
+      whether ExpGuard permits even text-free derivative publication is unverified, and
+      `derived_output_license` stays none_until_decision until a human reads the card and
+      signs this row.
 
   - source_id: safepyramid
     kind: public_corpus

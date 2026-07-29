@@ -26,6 +26,16 @@ HERE = Path(__file__).resolve().parent
 ASSETS = HERE / "assets"
 OUT = HERE / "safety_guard_benchmark_deck.pptx"
 
+import sys  # noqa: E402
+
+sys.path.insert(0, str(HERE))
+import frontier_numbers as FN  # noqa: E402
+
+# Frontier / scale-ladder figures, parsed from generated/frontier_macros.tex -- the same
+# file unified_report.tex \inputs. Slides that quote them therefore cannot drift from the
+# paper, and a missing figure fails the build instead of printing a stale number.
+F = FN.load()
+
 # ------------------------------------------------------------------- identity
 INK = RGBColor(0x12, 0x26, 0x3A)
 SLATE = RGBColor(0x5A, 0x6B, 0x7C)
@@ -1077,8 +1087,10 @@ picture(s, "latency", M, y - Inches(0.04), Inches(6.60), Inches(4.10), align="le
 rx = M + Inches(6.92)
 rw = CW - Inches(6.92)
 rows = [["", "Small self-hosted guard", "Frontier hosted API"],
-        ["Per-call latency", ("10–50 ms  measured", GREEN, True), "network round-trip, 10²–10³ ms"],
-        ["Marginal cost", ("amortized local compute", GREEN, True), "per-token fee on every request"],
+        ["Per-call latency", ("10–50 ms  measured", GREEN, True),
+         (f"{F['BestMedianMs']} ms P50  measured", ACCENT, True)],
+        ["Marginal cost", ("amortized local compute", GREEN, True),
+         (f"${F['BestCost']} / 1k prompts", ACCENT, True)],
         ["Data residency", ("prompts never leave", GREEN, True), "every prompt sent to a third party"],
         ["Operational coupling", ("pinned, versioned, auditable", GREEN, True), "rate limits, silent model updates"]]
 datatable(s, rx, y - Inches(0.02), rw, rows, [1.05, 1.32, 1.42], size=10.5, head_size=10,
@@ -1090,8 +1102,9 @@ bullets(s, rx, y + Inches(3.02), rw, Inches(1.0), [
 ], size=11, gap=7)
 
 callout(s, rx, y + Inches(3.86), rw, Inches(0.80), "Read these honestly",
-        "Batched per-row times at batch 16 on one A100 — throughput-latency, not a "
-        "batch-1 SLA. The right-hand column is an illustrative sketch, not our measurement.",
+        "Batched per-row times at batch 16 on one A100 — throughput-latency, not a batch-1 "
+        f"SLA. The hosted column is now measured too ({F['Slowdown']}× the median), at "
+        "concurrency 200 — also a throughput regime, so an upper bound per request.",
         color=SLATE, body_size=10.5)
 
 d.notes(s, """
@@ -1105,15 +1118,134 @@ Measured over the 79,392 committed Act I/II score rows: P50 10.4 ms (Qwen2.5-1.5
 
 Two caveats you must state, because the report does. These are BATCHED per-row times at
 batch 16 on one A100 — throughput-latency under load, not a single-request batch-1
-serving path, which carries a higher fixed per-call overhead. And the frontier-API column
-is an order-of-magnitude sketch from public characteristics as of mid-2026; we did not
-benchmark a hosted API here.
+serving path, which carries a higher fixed per-call overhead.
+
+The right-hand column USED to be an order-of-magnitude sketch. It no longer is: we measured
+gpt-5.4 on the same ExpGuard rows, and the numbers in the table are ours. The honest framing
+now is that both columns are throughput-regime measurements, so the ratio is sound but each
+is an upper bound on a single isolated request.
 
 Note also that Act II composition needs TWO passes, so the repair on the earlier slide
 roughly doubles these numbers. Still tens of milliseconds, still local.
 """)
 
-# ------------------------------------------------------ 17 · decision guide
+# ------------------------------------- 17 · frontier reference point (ExpGuard)
+s = d.blank()
+y = d.header(s, "External reference point",
+             "A hosted frontier model is a materially better ranker on the same rows",
+             "ExpGuard, 2,275 expert-annotated finance/health/law prompts · recall at a "
+             "matched 5% false-alarm budget")
+rows = [["Guard", "TPR@5%FPR", "AP", "Where it runs"],
+        [f"{F['BestName']}", (F["BestTpr"], ACCENT, True), F["BestAp"], "hosted API"],
+        [f"{F['BestOpenName']} base", (F["BestOpenTpr"], GREEN, True), ".9633", "self-hosted"],
+        [f"{F['BestSftName']} SFT", (F["BestSftTpr"], INK, True), ".9563", "self-hosted"],
+        [f"{F['BestBaseName']} base", (F["BestBaseTpr"], INK, True), ".9561", "self-hosted"]]
+datatable(s, M, y - Inches(0.02), Inches(6.5), rows, [1.30, 0.95, 0.80, 1.00],
+          size=11, head_size=10, row_h=Inches(0.50), head_h=Inches(0.40))
+
+rx = M + Inches(6.85)
+rw = CW - Inches(6.85)
+bullets(s, rx, y - Inches(0.02), rw, Inches(2.2), [
+    ("Paired, on identical rows.",
+     f"{F['GainOverOpen']} TPR {F['GainOverOpenCI']} against the strongest open guard; "
+     f"{F['GainOverBase']} {F['GainOverBaseCI']} against the strongest Act I base. Both "
+     "intervals exclude zero."),
+    ("Matched budget, not each model's own verdict.",
+     "The hosted configs sit at 2.3–3.4% FPR by themselves; comparing recall there would "
+     "flatter them for alarming less, not for discriminating better."),
+], size=11, gap=8)
+
+callout(s, rx, y + Inches(2.30), rw, Inches(1.30), "The gap is a floor, not a ceiling",
+        "The hosted score is a coarse integer 0–100 risk — 47–65 distinct values over 2,275 "
+        "rows. Heavy ties cap AP resolution, so this comparison handicaps the hosted model. "
+        "A frontier number above a local one is conservative.",
+        color=BLUE, body_size=10.5)
+
+d.notes(s, f"""
+This slide exists because a reader is entitled to ask whether the whole small-guard programme
+is solving a problem a hosted API makes disappear. On external expert-annotated rows, the
+honest answer is that the hosted model is better, and by the largest margin anywhere in this
+report.
+
+Exact figures: {F['BestName']} {F['BestTpr']} against {F['BestOpenName']} {F['BestOpenTpr']},
+paired difference {F['GainOverOpen']} with 95% interval {F['GainOverOpenCI']}. Against the
+strongest Act I panel base it is {F['GainOverBase']} {F['GainOverBaseCI']}. Paired row
+bootstrap on the rows both scored, so row difficulty cancels.
+
+Say the matched-budget point out loud; it is the same discipline as the Act I slide. And make
+the coarse-score concession unprompted -- it is the one place we disadvantaged the hosted
+model, and it makes the conclusion stronger rather than weaker.
+
+What this does NOT say: nothing about the mortgage dual-label construct, which is a different
+and harder task, and nothing about serving cost -- the previous slide has that.
+""")
+
+# ------------------------------------------- 18 · why you cannot close the gap
+s = d.blank()
+y = d.header(s, "Two routes that do not work",
+             "Tuning does not close it, and neither does scale",
+             "Both tested on the same rows, at the same matched false-alarm budget")
+cw = (CW - Inches(0.42)) / 2
+bullets(s, M, y - Inches(0.02), cw, Inches(2.5), [
+    (f"Tuning: {F['SftNumHurt']} of {F['SftNumTotal']} checkpoints got worse.",
+     f"{F['SftBestDelta']} on {F['SftBestName']}, the weakest base; "
+     f"{F['SftWorstDelta']} on {F['SftWorstName']}. Mean {F['SftMeanDelta']} — a small "
+     "number hiding swings ten times its size."),
+    (f"Scale: {F['ScaleFactor']}× the parameters bought {F['ScaleGain']}.",
+     f"4B → 32B, interval {F['ScaleGainCI']}. The gap still left to hosted is "
+     f"{F['GainOverOpen']} — about as much as scaling bought."),
+    ("4B → 8B bought nothing.",
+     f"{F['EightBvsFourB']} {F['EightBvsFourBCI']}; the interval includes zero, so read it "
+     "as no gain rather than a loss."),
+], size=11.5, gap=9)
+
+rx = M + cw + Inches(0.42)
+rows = [["Base (represented AP)", "Δ repr.", "Δ transfer"],
+        ["SmolLM2-1.7B  (.452)", "+0.528", ("+0.040", GREEN, True)],
+        ["Qwen2.5-1.5B  (.633)", "+0.354", "−0.039"],
+        ["SmolLM3-3B  (.662)", "+0.313", "−0.087"],
+        ["Qwen3-4B  (.885)", "+0.098", "−0.150"],
+        ["Qwen3-8B  (.905)", "+0.076", "−0.101"],
+        [f"{F['ScaleTunedName']}  (.953)", (F["ScaleTunedRepGain"], ACCENT, True),
+         (F["ScaleTunedTransferCost"], ACCENT, True)]]
+datatable(s, rx, y - Inches(0.02), CW - cw - Inches(0.42), rows,
+          [1.45, 0.72, 0.80], size=10.5, head_size=9.5, row_h=Inches(0.40),
+          head_h=Inches(0.38))
+
+callout(s, M, y + Inches(2.66), CW, Inches(0.94),
+        "The specialization tax scales with the base",
+        f"Ordered by base strength, SFT's represented gain decays monotonically while its "
+        f"transfer cost grows. Tuning {F['ScaleTunedName']} buys "
+        f"{F['ScaleTunedRepGain']} represented and costs "
+        f"{F['ScaleTunedTransferCost']} transfer — and moves its ExpGuard recall "
+        f"{F['ScaleTunedExpguardDelta']}, the wrong way. For a guardrail, whose job is the "
+        "traffic nobody anticipated, that is a bad trade at any size.",
+        color=ACCENT, body_size=10.5)
+
+d.notes(s, f"""
+This is the slide that turns Act I's specialization finding into a scaling law, and it is new
+evidence rather than a restatement.
+
+Left column: the two routes a reader will propose. Tuning helps only the weakest base and hurts
+{F['SftNumHurt']} of {F['SftNumTotal']} on external held-out prompts. Scale moves in the right
+direction but an eightfold parameter increase bought slightly less than the gap that remained.
+
+Right column is the important one. Order the panel by how strong the base already was and the
+represented gain decays monotonically -- .528, .354, .313, .098, .076,
+{F['ScaleTunedRepGain']} -- while the transfer cost grows and plateaus around minus .10 to
+minus .15. The tax is not fixed overhead; it is the price of forcing an already-capable base
+onto a narrow distribution.
+
+The 32B row was the objection we went and measured: someone will say a tuned big model beats an
+untuned one. It does not. Untuned {F['ScaleUntunedRep']}/{F['ScaleUntunedTransfer']} against
+tuned {F['ScaleTunedRep']}/{F['ScaleTunedTransfer']}.
+
+Caveat to state if pushed: comparing a 32B base to a tuned 4B is a deployment-choice contrast,
+not a controlled one at fixed size. What the tuned-32B cell establishes is narrower -- at that
+size, on this recipe and data, tuning is not where the next increment should go.
+""")
+
+# ------------------------------------------------------ 19 · decision guide
 s = d.blank()
 y = d.header(s, "What to do",
              "Gate candidates, not leaderboards")
@@ -1196,7 +1328,7 @@ Honest next step, straight from the conclusion: not a more confident headline, b
 prospectively locked evaluation on genuinely uninspected data.
 """)
 
-# ------------------------------------------------- 18 · contribution and next steps
+# ------------------------------------------------- 20 · contribution and next steps
 # The deck used to end on the decision guide, which is a good place to leave a room but
 # states no contribution and no next step. This is the conclusion slide.
 s = d.blank()

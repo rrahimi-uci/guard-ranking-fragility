@@ -2315,14 +2315,14 @@ tune the small guard, or buy a bigger one — and the same 2,275 rows let us pri
 <p><em>Tuning does not.</em> Act I’s whole subject is what SFT buys, so the tuned arm belongs
 here, and its effect on this external set is not a small loss but a <strong>sign split</strong>:
 SFT changes matched-budget recall by +0.122 on SmolLM2-1.7B and
--0.059 on SmolLM3-3B, hurting 3 of
-5 checkpoints, for a panel mean of +0.010 that hides
+-0.059 on SmolLM3-3B, hurting 4 of
+6 checkpoints, for a panel mean of +0.005 that hides
 swings an order of magnitude larger than itself. The one checkpoint SFT clearly helps is the
 weakest base in the panel; the three stronger ones it degrades. That is Act I’s transfer
 finding — “a small average that hides opposite signs” — reproducing on <em>external,
 expert-annotated</em> data rather than on the inspected panel, which is a considerably stronger
 test of it than Act I could run. No tuned configuration comes near the hosted models: the
-best is Qwen3-8B at .761.</p>
+best is Qwen3-32B at .809.</p>
 <p><em>Scale does not either.</em> Extending the ladder to Qwen3-8B and Qwen3-32B — same family
 as Qwen3-4B, and verified to render the frozen guard prompt to the same
 <code>prompt_template_sha256</code> with the same single-token decision pair, so base size is the
@@ -2386,22 +2386,39 @@ represented — within <span class="math inline">\(0.029\)</span> of the tuned p
 against the tuned panel’s <span class="math inline">\(0.807\)</span>. A larger base recovers most of what SFT buys
 in-distribution without the transfer collapse Act I identifies as SFT’s characteristic cost.</p>
 <h4 class="runin" id="and-the-tax-grows-with-the-base.">And the tax grows with the base.</h4>
-<p>Tuning the 8B checkpoint sharpens this into a
-trend rather than an anecdote. Across the five checkpoints we can now tune, SFT’s represented
-gain <em>shrinks</em> and its transfer cost <em>grows</em> as the base gets stronger:
-<span class="math inline">\(+0.354/-0.039\)</span> on Qwen2.5-1.5B, <span class="math inline">\(+0.313/-0.087\)</span> on SmolLM3-3B, <span class="math inline">\(+0.098/-0.150\)</span> on Qwen3-4B,
-and <span class="math inline">\(+0.076/-0.101\)</span> on Qwen3-8B. The weakest base in the panel is the only one for which SFT
-is unambiguously good on both regimes. So the specialization tax Act I measures is not a fixed
-overhead: it is the price of forcing a capable base onto a narrow distribution, and it rises
-with how capable that base already was. That also settles, by extrapolation rather than by
-measurement, the obvious objection to the previous paragraph — that a tuned 32B might beat an
-untuned one. On this trend it would gain little represented AP and pay heavily in transfer;
-but we did not run it, so that remains the single most informative missing cell, and the
-adapter grid and scoring path for it already exist.</p>
-<p>One limit keeps the paragraph before this from being a recommendation: it is a
-deployment-choice contrast, not a controlled one. Qwen3-32B is <span class="math inline">\(8\)</span>–<span class="math inline">\(21\times\)</span> the parameters
-of the panel checkpoints and costs accordingly, so the comparison is about <em>where</em> to
-spend a fixed budget, not about SFT being inferior at equal size.</p>
+<p>Tuning the ladder turns this into a trend rather
+than an anecdote. Ordered by how strong the base already was, SFT’s represented gain
+<em>decays monotonically</em> while its transfer cost <em>grows</em>: <span class="math inline">\(+0.528/{+}0.040\)</span> on
+SmolLM2-1.7B (represented base AP <span class="math inline">\(0.452\)</span>), <span class="math inline">\(+0.354/-0.039\)</span> on Qwen2.5-1.5B (<span class="math inline">\(0.633\)</span>),
+<span class="math inline">\(+0.313/-0.087\)</span> on SmolLM3-3B (<span class="math inline">\(0.662\)</span>), <span class="math inline">\(+0.098/-0.150\)</span> on Qwen3-4B (<span class="math inline">\(0.885\)</span>),
+<span class="math inline">\(+0.076/-0.101\)</span> on Qwen3-8B (<span class="math inline">\(0.905\)</span>), and
+<span class="math inline">\(+0.037/-0.117\)</span> on
+Qwen3-32B (<span class="math inline">\(0.953\)</span>). The weakest base is the only one for which SFT is
+unambiguously good on both regimes; by the strongest it buys almost nothing and still charges
+full price. The specialization tax Act I measures is therefore not a fixed overhead. It is the
+price of forcing a capable base onto a narrow distribution, and it rises with how capable that
+base already was.</p>
+<h4 class="runin" id="which-answers-the-objection-by-measurement-not-by-extrapolation.">Which answers the objection by measurement, not by extrapolation.</h4>
+<p>The obvious
+challenge to the paragraph before last is that a <em>tuned</em> 32B might beat an untuned one, so
+we tuned it: five seeds, same recipe, same manifest. It does not.
+Qwen3-32B goes from
+<span class="math inline">\(.9533/.9620\)</span> untuned to
+<span class="math inline">\(.9903/.8447\)</span> tuned — buying
+<span class="math inline">\(+0.037\)</span> represented AP at a cost of
+<span class="math inline">\(-0.117\)</span> transfer — and on ExpGuard tuning moves its matched-budget
+recall by <span class="math inline">\(-0.020\)</span>, the wrong way. For a guardrail, whose entire
+purpose is the traffic nobody anticipated, that is a bad trade at any size. Across the six
+checkpoints we can now tune, SFT hurts 4 of 6 on
+external held-out prompts, and the best tuned configuration anywhere in this study
+(Qwen3-32B at .809) still sits well below the hosted model’s
+.896.</p>
+<p>One limit keeps the untuned-32B result from being a recommendation: it is a deployment-choice
+contrast, not a controlled one. Qwen3-32B is <span class="math inline">\(8\)</span>–<span class="math inline">\(21\times\)</span> the parameters of the panel
+checkpoints and costs accordingly, so the comparison is about <em>where</em> to spend a fixed
+budget, not about SFT being inferior at equal size. What the tuned-32B cell does establish is
+narrower and still useful: at <em>that</em> size, on <em>this</em> recipe and data, tuning is not
+the way to spend the next increment.</p>
 <figure class="tablewrap" data-float="Table 14" id="tab:frontier"><figcaption><span class="floatnum">Table 14.</span> Frontier hosted guardrails against this report’s local guards on ExpGuard (2,275 expert-annotated finance/health/law prompts), joined by row hash so every guard is scored on identical rows. <strong>TPR@5%FPR</strong> is recall at a matched false-alarm budget — each guard is re-thresholded on these rows to a common <span class="math inline">\(5\%\)</span> FPR, because the models sit at very different self-chosen operating points (the frontier configs alarm on only <span class="math inline">\(2.3\)</span>–<span class="math inline">\(3.4\%\)</span> of negatives at their own verdict). Local guards rank by the raw margin <span class="math inline">\(z_{\text{unsafe}}-z_{\text{safe}}\)</span>; frontier guards by a self-reported integer risk, the only graded signal the Responses API exposes for reasoning models. SFT rows are the <em>in-env</em> beta<span class="math inline">\(=0\)</span> re-execution of the Act I recipe, not the Act I release adapters (different <code>adapter_sha256</code>); Act I’s numbers are unchanged and not restated here.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
@@ -2538,6 +2555,16 @@ spend a fixed budget, not about SFT being inferior at equal size.</p>
 <td style="text-align: right;">.9552</td>
 </tr>
 <tr>
+<td style="text-align: left;">Qwen3-32B (32B)</td>
+<td style="text-align: right;">2275</td>
+<td style="text-align: right;">.809</td>
+<td style="text-align: right;">.9563</td>
+<td style="text-align: right;">.9402</td>
+<td style="text-align: right;">.9646</td>
+<td style="text-align: right;">.9389</td>
+<td style="text-align: right;">.9714</td>
+</tr>
+<tr>
 <td colspan="8" style="text-align: left;"><em>Frontier, hosted API (zero-shot)</em></td>
 </tr>
 <tr>
@@ -2603,7 +2630,7 @@ spend a fixed budget, not about SFT being inferior at equal size.</p>
 </tbody>
 </table></div></figure>
 <p><br/>
-<span> <strong>Paired comparison</strong> (gpt-5.4 (low) <span class="math inline">\(-\)</span> Qwen3-32B base, the strongest open guard here, on the 2,275 rows both scored; 2,000-resample paired row bootstrap). <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(= +0.0661\)</span> <span class="math inline">\([+0.0428, +0.0893]\)</span>; <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(= +0.0140\)</span> <span class="math inline">\([+0.0098, +0.0188]\)</span>. Within the Qwen3 family, <span class="math inline">\(8\times\)</span> the parameters (4B <span class="math inline">\(\to\)</span> 32B) buys <span class="math inline">\(\Delta\)</span>TPR <span class="math inline">\(= +0.0621\)</span> <span class="math inline">\([+0.0395, +0.0842]\)</span> — about as much as the gap that remains. Against the strongest tuned guard (Qwen3-8B SFT in-env), averaged over its 5 seeds: <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(= +0.1350\)</span>, <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(= +0.0419\)</span>. The frontier score is a coarse integer 0–100 risk with heavy ties, which caps AP resolution, so these deltas are conservative.</span></p>
+<span> <strong>Paired comparison</strong> (gpt-5.4 (low) <span class="math inline">\(-\)</span> Qwen3-32B base, the strongest open guard here, on the 2,275 rows both scored; 2,000-resample paired row bootstrap). <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(= +0.0661\)</span> <span class="math inline">\([+0.0428, +0.0893]\)</span>; <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(= +0.0140\)</span> <span class="math inline">\([+0.0098, +0.0188]\)</span>. Within the Qwen3 family, <span class="math inline">\(8\times\)</span> the parameters (4B <span class="math inline">\(\to\)</span> 32B) buys <span class="math inline">\(\Delta\)</span>TPR <span class="math inline">\(= +0.0621\)</span> <span class="math inline">\([+0.0395, +0.0842]\)</span> — about as much as the gap that remains. Against the strongest tuned guard (Qwen3-32B SFT in-env), averaged over its 5 seeds: <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(= +0.0865\)</span>, <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(= +0.0210\)</span>. The frontier score is a coarse integer 0–100 risk with heavy ties, which caps AP resolution, so these deltas are conservative.</span></p>
 <figure class="tablewrap" data-float="Table 15" id="tab:frontier-scale"><figcaption><span class="floatnum">Table 15.</span> Scaling the base versus tuning a small one, on Act I’s own two regimes (macro-AP; represented <span class="math inline">\(=\)</span> in-distribution sources on <code>id_test</code>, transfer <span class="math inline">\(=\)</span> held-out sources on <code>transfer_test</code>). The convention here reproduces Act I’s committed <code>base_represented</code> and <code>base_transfer</code> to four decimals for all four panel checkpoints, which is what licenses placing extension rows beside them. SFT buys represented AP and pays for it in transfer; a larger <em>untuned</em> base buys much of the same represented AP and keeps its transfer. These are inspected-panel numbers and are reported apart from — never pooled with — the external ExpGuard numbers in <a class="xref" href="#tab:frontier">Table 14</a>. The scale rows are a deployment-choice contrast, not a controlled one: Qwen3-32B is <span class="math inline">\(8\)</span>–<span class="math inline">\(21\times\)</span> the parameters of the panel checkpoints and costs accordingly.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
@@ -2672,6 +2699,12 @@ spend a fixed budget, not about SFT being inferior at equal size.</p>
 <td style="text-align: right;">8</td>
 <td style="text-align: right;">.9814</td>
 <td style="text-align: right;">.8398 <span class="math inline">\((+0.076,\,-0.101)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Qwen3-32B, SFT</td>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">.9903</td>
+<td style="text-align: right;">.8447 <span class="math inline">\((+0.037,\,-0.117)\)</span></td>
 </tr>
 </tbody>
 </table></div></figure>

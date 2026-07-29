@@ -581,6 +581,24 @@ def emit_macros(data: dict | None = None) -> str:
         mac("SftBestDelta", f"{deltas[best]:+.3f}")
         mac("SftNumHurt", sum(1 for v in deltas.values() if v < 0))
         mac("SftNumTotal", len(deltas))
+    # Tuning the *largest* ladder checkpoint: the cell that turns the specialization-tax
+    # trend from an extrapolation into a measurement, so the prose can stop hedging.
+    reg = compute_scale_regimes()
+    if reg and reg.get("ladder_sft"):
+        biggest = max(reg["ladder_sft"], key=lambda k: PARAMS_B.get(k, 0))
+        b, s_ = reg["ladder"].get(biggest), reg["ladder_sft"][biggest]
+        if b:
+            mac("ScaleTunedName", (SCALE_PRETTY | PRETTY)[biggest])
+            mac("ScaleTunedParams", f"{PARAMS_B[biggest]:g}")
+            mac("ScaleTunedRepGain", f"{s_['represented'] - b['represented']:+.3f}")
+            mac("ScaleTunedTransferCost", f"{s_['transfer'] - b['transfer']:+.3f}")
+            mac("ScaleTunedRep", _f(s_["represented"], 4))
+            mac("ScaleTunedTransfer", _f(s_["transfer"], 4))
+            mac("ScaleUntunedRep", _f(b["represented"], 4))
+            mac("ScaleUntunedTransfer", _f(b["transfer"], 4))
+        if biggest in r["scale"] and biggest in r["scale_sft"]:
+            d = r["scale_sft"][biggest]["tpr"] - r["scale"][biggest]["tpr"]
+            mac("ScaleTunedExpguardDelta", f"{d:+.3f}")
     if bf:
         p50, _p99, usd = FRONTIER_SERVING[bf[0]]
         slow = p50 / LOCAL_LATENCY_MS[bb[0]] if bb else float("nan")
