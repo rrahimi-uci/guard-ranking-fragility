@@ -35,6 +35,7 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 HERE = Path(__file__).resolve().parent
+ASSETS = HERE / "assets"
 sys.path.insert(0, str(HERE))
 import frontier_numbers as FN  # noqa: E402
 
@@ -210,6 +211,30 @@ def table(s, l, t, w, rows, col_w, row_h=Inches(0.46), header=True):
     return y
 
 
+def picture(s, name, l, t, w, h, align="center"):
+    """Place a figure inside an (l,t,w,h) box, preserving aspect ratio.
+
+    The figures are generated at their own aspect by make_exec_figures.py, so fitting
+    them to a fixed box would stretch them. Scale to fit, then align within the box.
+    """
+    from PIL import Image
+    path = ASSETS / f"{name}.png"
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"{path} missing -- run `python slides/make_exec_figures.py` first")
+    iw, ih = Image.open(path).size
+    scale = min(w / iw, h / ih)
+    dw, dh = int(iw * scale), int(ih * scale)
+    if align == "left":
+        x = l
+    elif align == "right":
+        x = l + w - dw
+    else:
+        x = l + (w - dw) // 2
+    y = t + (h - dh) // 2
+    return s.shapes.add_picture(str(path), int(x), int(y), dw, dh)
+
+
 def callout(s, l, t, w, h, label, body, color=ACCENT):
     rect(s, l, t, w, h, fill=TINT[color], shape=MSO_SHAPE.ROUNDED_RECTANGLE)
     rect(s, l, t, Inches(0.055), h, fill=color)
@@ -355,22 +380,16 @@ y = d.header(s, "what hosted buys", "At the same false-alarm rate, the hosted mo
              "roughly one in ten of the prompts our own guards miss",
              "Catch rate on expert-annotated finance / healthcare / law prompts, "
              "all at a 5% false-alarm budget")
-rows = [["Guard", "Catch rate", "Where it runs"],
-        [F["BestName"], FN.pct(F["BestTpr"]), "hosted API"],
-        [f"{F['BestOpenName']} ({F['BestOpenParams']}B)", FN.pct(F["BestOpenTpr"]),
-         "self-hosted"],
-        [f"{F['BestBaseName']}, tuned", FN.pct(F["BestSftTpr"]), "self-hosted"],
-        [F["BestBaseName"], FN.pct(F["BestBaseTpr"]), "self-hosted"]]
-table(s, M, y + Inches(0.10), Inches(7.4), rows, [0.46, 0.27, 0.27])
-callout(s, M + Inches(7.8), y + Inches(0.10), CW - Inches(7.8), Inches(1.78),
+picture(s, "exec_gap", M, y - Inches(0.06), Inches(8.05), Inches(4.30), align="left")
+callout(s, M + Inches(8.35), y + Inches(0.02), CW - Inches(8.35), Inches(1.86),
         "read this as a floor, not a ceiling",
         "The hosted model reports only a coarse 0-100 confidence, which limits how finely we "
         "can rank its answers. That handicaps it in this comparison, so the true gap is if "
         "anything wider.", color=BLUE)
-callout(s, M + Inches(7.8), y + Inches(2.02), CW - Inches(7.8), Inches(1.78),
+callout(s, M + Inches(8.35), y + Inches(2.06), CW - Inches(8.35), Inches(1.86),
         "why 'at the same false-alarm rate' matters",
         "Any guard can raise its catch rate by alarming more often. Holding the alarm rate "
-        "fixed at 5% is what makes these four numbers comparable at all.", color=AMBER)
+        "fixed at 5% is what makes every bar here comparable at all.", color=AMBER)
 d.notes(s, f"""
 One claim: hosted is better, by about ten points of catch rate, and the comparison is fair.
 
@@ -393,28 +412,17 @@ y = d.header(s, "route one: fine-tune ours", "Fine-tuning did not close the gap,
              "unfamiliar traffic it usually made things worse",
              f"Change in catch rate after fine-tuning, across "
              f"{F['SftNumTotal']} models · {F['NSeeds']} training runs each")
-cw = (CW - Inches(0.45)) / 2
-bullets(s, M, y + Inches(0.06), cw, Inches(2.9), [
-    (f"Best case {F['SftBestDelta']}. ", f"On {F['SftBestName']}, our weakest model, tuning "
-     "helped substantially."),
-    (f"Worst case {F['SftWorstDelta']}. ", f"On {F['SftWorstName']}, one of our strongest, "
-     "it took accuracy away."),
-    (f"{F['SftNumHurt']} of {F['SftNumTotal']} models got worse. ",
-     f"The average across all of them is {F['SftMeanDelta']} — close to zero, and it hides "
-     "swings ten times its own size."),
-    ("Best tuned result still loses. ", f"{F['BestSftName']} tuned reaches "
-     f"{FN.pct(F['BestSftTpr'])}, against {FN.pct(F['BestTpr'])} hosted."),
-], size=14.5)
-callout(s, M + cw + Inches(0.45), y + Inches(0.06), cw, Inches(1.80),
+picture(s, "exec_tax", M, y - Inches(0.06), Inches(8.15), Inches(4.20), align="left")
+callout(s, M + Inches(8.45), y + Inches(0.02), CW - Inches(8.45), Inches(2.00),
         "the pattern behind it",
         "Fine-tuning teaches a model the traffic you trained it on and costs it accuracy on "
-        "traffic you did not. The stronger the starting model, the less it gains and the more "
-        "it loses.", color=ACCENT)
-callout(s, M + cw + Inches(0.45), y + Inches(2.00), cw, Inches(1.80),
+        "traffic you did not. Read the chart downward: the blue gain shrinks and the red cost "
+        "grows as the starting model gets stronger.", color=ACCENT)
+callout(s, M + Inches(8.45), y + Inches(2.20), CW - Inches(8.45), Inches(1.72),
         "planning consequence",
-        "Budgeting a tuning project to close a vendor gap is not supported by this evidence. "
-        "Tuning is worth doing to rescue a weak model, not to beat a strong one.",
-        color=AMBER)
+        f"Budgeting a tuning project to close a vendor gap is not supported here. The best "
+        f"tuned result anywhere ({FN.pct(F['BestSftTpr'])}) still loses to hosted "
+        f"({FN.pct(F['BestTpr'])}).", color=AMBER)
 d.notes(s, f"""
 The headline is the sign split, not the average. If you quote only the mean change
 ({F['SftMeanDelta']}) you will mislead the room -- it is a small number sitting on top of
@@ -439,23 +447,17 @@ s = d.blank()
 y = d.header(s, "route two: buy a bigger one", "Eight times the parameters bought less than "
              "the gap that was left",
              "Catch rate against model size, same family, same prompt, same rows")
-rows = [["Open model", "Size", "Catch rate"],
-        ["Qwen3-4B", "4B", "77%"],
-        ["Qwen3-8B", "8B", "75%"],
-        [f"{F['BestOpenName']}", f"{F['BestOpenParams']}B",
-         (FN.pct(F["BestOpenTpr"]), GREEN)],
-        [f"{F['BestName']} (hosted)", "—", (FN.pct(F["BestTpr"]), ACCENT)]]
-table(s, M, y + Inches(0.10), Inches(7.0), rows, [0.46, 0.24, 0.30])
-bullets(s, M + Inches(7.4), y + Inches(0.10), CW - Inches(7.4), Inches(3.0), [
+picture(s, "exec_scale", M, y - Inches(0.10), Inches(8.10), Inches(3.05), align="left")
+bullets(s, M + Inches(8.40), y + Inches(0.04), CW - Inches(8.40), Inches(3.0), [
     (f"{F['ScaleFactor']}× the parameters bought "
      f"{FN.points(F['ScaleGain'])}. ", "Going from 4B to 32B."),
     (f"The gap left is {FN.points(F['GainOverOpen'])}. ",
      "Slightly larger than everything that scaling bought."),
-    ("Going 4B to 8B bought nothing. ", "Size does not buy guard accuracy smoothly."),
-], size=14.5)
-callout(s, M, y + Inches(2.60), CW, Inches(1.0), "what this implies for a build plan",
+    ("4B to 8B bought nothing. ", "Size does not buy guard accuracy smoothly."),
+], size=13.5, gap=11)
+callout(s, M, y + Inches(3.10), CW, Inches(0.98), "what this implies for a build plan",
         f"Closing the remaining gap by size alone would take at least another order of "
-        f"magnitude -- and {F['BestOpenParams']}B is already past the point where a guard is "
+        f"magnitude — and {F['BestOpenParams']}B is already past the point where a guard is "
         f"cheap to run on every request, which was the reason to self-host in the first place.",
         color=ACCENT)
 d.notes(s, f"""
