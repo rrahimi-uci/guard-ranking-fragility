@@ -90,6 +90,7 @@
 \input{generated/ensembling_macros}  % Ensembling appendix: \Ens* (point estimates + bootstrap + committee)
 \input{generated/matched_fpr_macros} % Act I matched-FPR operating point: \Matched*
 \input{generated/frontier_macros}    % Act III frontier-vs-local ExpGuard comparison: \Frontier*
+\input{generated/h2h_macros}         % Act III represented-vs-transfer head-to-head: \Htwo*
 \input{generated/teaser_macros}      % Figure 1 caption: 2-dp \Teaser* forms of the panel deltas
 
 \title{\textbf{The Safety-Guard Benchmark Chooses the Winner:}\\[3pt]
@@ -557,6 +558,56 @@ the way to spend the next increment.
 \input{generated/frontier_table}                % tab:frontier (base vs SFT in-env vs frontier)
 \input{generated/frontier_scale_table}          % tab:frontier-scale (scale vs tuning, Act I regimes)
 \input{generated/frontier_serving_table}        % tab:frontier-serving (latency + $/1k)
+
+\subsection{The frontier gap is a property of the regime, not of the model}
+\label{sec:actIII-h2h}
+Everything above measures the gap on ExpGuard, and that choice does more work than it looks
+like. ExpGuard is an \emph{external breadth probe}: no guard in this report was trained on it,
+which is exactly what makes it a clean instrument --- and also means it reports the
+\emph{transfer} regime and nothing else. The $\FrontierGainOverBase$ figure is therefore the
+transfer gap, not the gap.
+
+Five of the general-safety corpora the GPT baseline scored are also scored by the Act~I panel,
+and those rows can be joined: the two runs simply hash their row identities differently
+(\code{sha256(text)[:16]} against \code{content\_sha256}, which normalizes first), so
+re-deriving both digests from the local corpus recovers the mapping for $100\%$ of the panel's
+rows. The regime split is then read from Act~I's own manifest rather than asserted ---
+\code{train.jsonl} is exactly \HtwoRepSources{} --- so \code{id\_test} rows are held-out
+\emph{rows} from a \emph{represented} source, while \code{transfer\_test} sources are held out
+at the source level.
+
+\Cref{tab:h2h} is the result, at the same matched \HtwoBudget{} budget. It reverses direction
+across the split. On represented sources the panel's small tuned guards \emph{beat} the frontier
+reference: \HtwoBestName{} --- a \emph{1.5B} model --- reaches \HtwoBestTpr{} on
+\HtwoBestSource{} against the reference's \HtwoRefTpr, a paired difference of
+\HtwoBestDeltaTpr{} \HtwoBestDeltaTprCI{}, and it is a \emph{ranking} win rather than a
+threshold placement (AUROC \HtwoBestAuroc{} against \HtwoRefAuroc). \HtwoNSig{} of
+\HtwoNSftCells{} panel-SFT cells on represented sources clear zero at the $95\%$ level. On
+transfer sources the ordering flips back, the reference leads (\HtwoTransRefTpr{} on
+\code{xstest} against \HtwoTransBestLocalName{}'s \HtwoTransBestLocalTpr), and tuning is what
+costs the guard its position --- the strongest transfer guard in the panel is an \emph{untuned}
+base.
+
+\input{generated/tab_h2h_gen}                   % tab:h2h (represented vs transfer, both regimes)
+
+Four limits bound this, and they matter more than the headline. Per-source $n$ is $67$--$451$,
+so the intervals are wide and no per-cell ordering is a ranking. The evidence is
+\textbf{retrospective and estimation-only} --- these rows and this panel were inspected during
+development --- so it sits at the same flavor as Acts~I--II in \Cref{tab:ledger} and is never
+pooled with the ExpGuard numbers above despite appearing beside them. A represented-source win
+is not a claim about novel traffic: it says a guard beats the frontier on distributions an
+operator can enumerate in training, which is a deployment property and not a capability claim.
+And \code{id\_test} is held out by \emph{row}, not by content --- the overlap audit
+(\Cref{sec:decontamination}) puts $1.6\%$--$5.0\%$ of each represented split within
+Jaccard~$0.70$ of a training row, which qualifies these margins rather than overturning them,
+most of all on \code{jailbreak\_classification}.
+
+What survives all four is a statement about \emph{where} the frontier earns its price. It is not
+buying a uniformly better guard; it is buying the regime a small guard is worst at. That
+reframes the practical question from ``can a small guard match the frontier'' to ``how much of
+your traffic resembles something you can put in a training manifest'' --- and it is the
+measurement behind the routing rule in \Cref{sec:practitioner}, which escalates on
+unfamiliarity rather than on score margin.
 
 \section{Synthesis: one lesson at three scales, and what to do about it}
 \label{sec:synthesis}

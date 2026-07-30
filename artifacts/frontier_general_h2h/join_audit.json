@@ -1,0 +1,82 @@
+{
+  "jailbreak_classification": {
+    "corpus_rows_labelled": 262,
+    "joined": {
+      "gpt-5.4-mini__high": 159,
+      "gpt-5.4-mini__low": 159,
+      "gpt-5.4-mini__medium": 159,
+      "gpt-5.4__high": 159,
+      "gpt-5.4__low": 159,
+      "gpt-5.4__medium": 159
+    },
+    "panel_rows": 159,
+    "panel_splits": [
+      "id_test"
+    ],
+    "prevalence": 0.4968553459119497
+  },
+  "jailbreakbench": {
+    "corpus_rows_labelled": 200,
+    "joined": {
+      "gpt-5.4-mini__high": 120,
+      "gpt-5.4-mini__low": 120,
+      "gpt-5.4-mini__medium": 120,
+      "gpt-5.4__high": 120,
+      "gpt-5.4__low": 120,
+      "gpt-5.4__medium": 120
+    },
+    "panel_rows": 120,
+    "panel_splits": [
+      "transfer_test"
+    ],
+    "prevalence": 0.5
+  },
+  "prompt_injections": {
+    "corpus_rows_labelled": 116,
+    "joined": {
+      "gpt-5.4-mini__high": 67,
+      "gpt-5.4-mini__low": 67,
+      "gpt-5.4-mini__medium": 67,
+      "gpt-5.4__high": 67,
+      "gpt-5.4__low": 67,
+      "gpt-5.4__medium": 67
+    },
+    "panel_rows": 67,
+    "panel_splits": [
+      "id_test"
+    ],
+    "prevalence": 0.40298507462686567
+  },
+  "toxicchat": {
+    "corpus_rows_labelled": 4972,
+    "joined": {
+      "gpt-5.4-mini__high": 451,
+      "gpt-5.4-mini__low": 451,
+      "gpt-5.4-mini__medium": 451,
+      "gpt-5.4__high": 451,
+      "gpt-5.4__low": 451,
+      "gpt-5.4__medium": 451
+    },
+    "panel_rows": 451,
+    "panel_splits": [
+      "id_test"
+    ],
+    "prevalence": 0.458980044345898
+  },
+  "xstest": {
+    "corpus_rows_labelled": 450,
+    "joined": {
+      "gpt-5.4-mini__high": 240,
+      "gpt-5.4-mini__low": 240,
+      "gpt-5.4-mini__medium": 240,
+      "gpt-5.4__high": 240,
+      "gpt-5.4__low": 240,
+      "gpt-5.4__medium": 240
+    },
+    "panel_rows": 240,
+    "panel_splits": [
+      "transfer_test"
+    ],
+    "prevalence": 0.5
+  }
+}
