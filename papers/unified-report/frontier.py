@@ -62,6 +62,21 @@ SCALE_PRETTY = {"qwen3_8b": "Qwen3-8B", "qwen3_32b": "Qwen3-32B"}
 PARAMS_B = {"qwen25_15b": 1.5, "smollm2_17b": 1.7, "smollm3_3b": 3.0,
             "qwen3_4b": 4.0, "qwen3_8b": 8.0, "qwen3_32b": 32.0}
 
+# Released purpose-built guards, scored on ExpGuard through their own native verdict
+# contracts (experiments/eval_expguard_guards.py). ExpGuard is neutral ground for all of
+# them -- unlike the Act I panel, which contains WildGuard's own benchmark -- so no
+# home-field advantage needs discounting here.
+GUARD_ORDER = ["qwen3guard_gen_06b", "llama_guard_3_1b", "granite_guardian_31_2b",
+               "shieldgemma_2b", "qwen3guard_gen_4b", "wildguard_7b"]
+GUARD_PRETTY = {
+    "qwen3guard_gen_06b": "Qwen3Guard-Gen-0.6B", "qwen3guard_gen_4b": "Qwen3Guard-Gen-4B",
+    "llama_guard_3_1b": "Llama-Guard-3-1B", "granite_guardian_31_2b": "Granite-Guardian-3.1-2B",
+    "shieldgemma_2b": "ShieldGemma-2B", "wildguard_7b": "WildGuard-7B",
+}
+GUARD_PARAMS_B = {"qwen3guard_gen_06b": 0.6, "llama_guard_3_1b": 1.0,
+                  "granite_guardian_31_2b": 2.0, "shieldgemma_2b": 2.0,
+                  "qwen3guard_gen_4b": 4.0, "wildguard_7b": 7.0}
+
 FRONTIER_ORDER = ["gpt54_low", "gpt54_medium", "gpt54_high",
                   "gpt54mini_low", "gpt54mini_medium", "gpt54mini_high"]
 FRONTIER_PRETTY = {
@@ -209,6 +224,19 @@ def compute() -> dict:
         seeds = sft_seed_files(key)
         if seeds:
             rows["scale_sft"][key] = mean_over_seeds(seeds, labels)
+    rows["guard"] = {}
+    for key in GUARD_ORDER:
+        d = _read(f"scores_guard_{key}.json")
+        if not d:
+            continue
+        m = metrics(d, labels)
+        # Refuse to report a collapsed score column as a model result. Llama Guard shipped
+        # exactly this in the starting-type study: one unique value over 36,388 rows, from an
+        # empty-conversation render plus a read at the newline before the verdict. A number
+        # derived from a constant is a harness artifact, and printing it would libel the model.
+        m["unique_scores"] = len(set(d.values()))
+        m["degenerate"] = m["unique_scores"] <= max(3, int(0.01 * max(1, m["n"])))
+        rows["guard"][key] = m
     for key in FRONTIER_ORDER:
         d = _read(f"scores_{key}.json")
         if d:
@@ -401,6 +429,21 @@ def emit_table(data: dict | None = None) -> str:
         parts.append(f"\\multicolumn{{8}}{{l}}{{\\emph{{Scale-ladder extension, SFT (in-env), "
                      f"mean of {n_seeds} seeds}}}} \\\\")
         parts += [line(pname(k), r["scale_sft"][k]) for k in SCALE_ORDER if k in r["scale_sft"]]
+    if r.get("guard"):
+        parts.append("\\midrule")
+        parts.append("\\multicolumn{8}{l}{\\emph{Released purpose-built guards (native verdict "
+                     "contract, zero-shot)}} \\\\")
+        for k in GUARD_ORDER:
+            if k not in r["guard"]:
+                continue
+            m = r["guard"][k]
+            nm = f"{GUARD_PRETTY[k]} ({GUARD_PARAMS_B[k]:g}B)"
+            if m.get("degenerate"):
+                parts.append(f"{nm} & {m['n']} & \\multicolumn{{6}}{{l}}{{\\emph{{score column "
+                             f"collapsed to {m['unique_scores']} distinct values --- harness "
+                             f"artifact, not reported}}}} \\\\")
+            else:
+                parts.append(line(nm, m))
     parts.append("\\midrule")
     parts.append("\\multicolumn{8}{l}{\\emph{Frontier, hosted API (zero-shot)}} \\\\")
     parts += [line(FRONTIER_PRETTY[k], r["frontier"][k], bold=True)

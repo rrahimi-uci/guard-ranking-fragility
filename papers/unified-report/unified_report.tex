@@ -420,6 +420,45 @@ that constraint rather than dissolving it. The honest reading is that the fronti
 bar: it is what the specialization and composition machinery is trying to reach under
 constraints the hosted model does not have to satisfy.
 
+\paragraph{And a released guard is not the shortcut either.} The first thing a practitioner
+asks is why not simply run a purpose-built guard, so \Cref{tab:frontier} carries six of them:
+Qwen3Guard-Gen at 0.6B and 4B, Llama-Guard-3-1B, Granite-Guardian-3.1-2B, ShieldGemma-2B and
+WildGuard-7B. Each is scored through \emph{its own} native verdict contract --- ShieldGemma's
+policy-conditioned Yes/No, Granite's risk-definition Yes/No, WildGuard's
+\code{Harmful request:} slot, Qwen3Guard's top-level \code{Safety:} label, Llama Guard's
+\code{\textbackslash n\textbackslash nsafe}/\code{unsafe} --- because forcing our frozen prompt
+on a guard would measure our prompt rather than their model. ExpGuard is also unusually fair
+ground for them: none was trained on it, so unlike the Act~I panel (which contains WildGuard's
+own benchmark) there is no home-field advantage to discount.
+
+None of the six reaches the best untuned open checkpoint. The strongest,
+Qwen3Guard-Gen-4B at $0.777$ and WildGuard-7B at $0.771$, sit below
+\FrontierBestOpenName's \FrontierBestOpenTpr{} and well below the hosted
+\FrontierBestTpr. Two land far lower --- ShieldGemma-2B at $0.458$ and Llama-Guard-3-1B at
+$0.334$ --- and the reason is instructive rather than a simple lack of skill: their
+\emph{ranking} is respectable (AUROC $0.865$ and $0.809$), but their negatives carry a heavy
+right tail on this material. Llama Guard's 95th-percentile benign score, $+3.75$, sits
+\emph{above} its median harmful score, $+2.50$, so a strict $5\%$ false-alarm budget discards
+most of its recall. A guard tuned to a general web-safety taxonomy over-flags a subset of
+ordinary regulated-domain questions, and that is precisely the failure a mortgage deployment
+cannot absorb. It is also this report's thesis arriving from a new direction: the instrument
+chooses the winner, and on regulated-domain prompts the purpose-built ordering is not the
+ordering their own benchmarks report.
+
+One correction belongs here, because it concerns a number this repository already published.
+The starting-type study's \code{llama\_guard\_3\_1b} cell is degenerate --- one unique score
+across all $36{,}388$ rows --- and \Cref{sec:adaptation} describes it as such. The cause
+was not the pruned output head its preflight caveat anticipated; that head is intact, and both
+decision tokens carry full-norm rows. It was two independent harness bugs: under
+\code{transformers}~5.x the native template rendered
+\code{<BEGIN CONVERSATION>}\,\code{<END CONVERSATION>} with the user turn \emph{missing} while
+still satisfying every wrapper marker, and the verdict was read at the last prompt position,
+which for this contract carries the distribution over the two-newline prefix rather than over
+\code{safe}/\code{unsafe}. Both are fixed (the render must now be shown to carry the payload,
+and each contract's verdict prefix is teacher-forced), which is why Llama Guard scores at all
+here. The published degenerate cell should be read as a harness artifact, not as a measurement
+of that model.
+
 \paragraph{A by-product worth more than the comparison that produced it.} Scoring the ladder
 on Act~I's own two regimes (\Cref{tab:frontier-scale}) prices \emph{spending on parameters}
 against \emph{spending on tuning}, and the two are not equivalent. SFT lifts the panel's

@@ -1,0 +1,16 @@
+{
+  "contract": "llama_guard_toplevel",
+  "model_id": "meta-llama/Llama-Guard-3-1B",
+  "n_rows": 2275,
+  "payload_carried": 2275,
+  "render_modes": {
+    "native_chat_template": 2275
+  },
+  "safe_token_id": 19193,
+  "safe_word": "safe",
+  "seconds": 17.6,
+  "unique_scores": 146,
+  "unsafe_token_id": 39257,
+  "unsafe_word": "unsafe",
+  "verdict_prefix": "\n\n"
+}

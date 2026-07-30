@@ -1,0 +1,16 @@
+{
+  "contract": "qwen3guard_toplevel",
+  "model_id": "Qwen/Qwen3Guard-Gen-0.6B",
+  "n_rows": 2275,
+  "payload_carried": 2275,
+  "render_modes": {
+    "native_chat_template": 2275
+  },
+  "safe_token_id": 22291,
+  "safe_word": " Safe",
+  "seconds": 20.2,
+  "unique_scores": 148,
+  "unsafe_token_id": 73067,
+  "unsafe_word": " Unsafe",
+  "verdict_prefix": "Safety:"
+}

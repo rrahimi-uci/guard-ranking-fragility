@@ -83,24 +83,37 @@ def _finish(ax):
 
 # ── figure 1 · the gap (emphasis) ───────────────────────────────────────────────
 def fig_gap(rows):
-    both = {**FR.PRETTY, **FR.SCALE_PRETTY}
+    """Every guard we measured, on one axis, with the hosted model emphasised.
+
+    Purpose-built guards are included because "why not just run Llama Guard?" is the first
+    question asked, and the answer belongs in the same picture rather than a footnote. A
+    guard whose score column collapsed is skipped outright -- plotting a constant as a bar
+    would present a harness artifact as a model result.
+    """
+    both = {**FR.PRETTY, **FR.SCALE_PRETTY, **FR.GUARD_PRETTY}
     items = []
     for grp, suffix in (("base", ""), ("scale", ""), ("sft", " tuned"),
                         ("scale_sft", " tuned")):
         for k, m in rows[grp].items():
             items.append((both[k] + suffix, m["tpr"], "open"))
+    for k, m in rows.get("guard", {}).items():
+        if not m.get("degenerate"):
+            items.append((both[k], m["tpr"], "guard"))
     best_hosted = max(rows["frontier"], key=lambda k: rows["frontier"][k]["tpr"])
     items.append((FR.FRONTIER_PRETTY[best_hosted].replace(" (low)", ""),
                   rows["frontier"][best_hosted]["tpr"], "hosted"))
     items.sort(key=lambda t: t[1])
-    best_open = max((t for t in items if t[2] == "open"), key=lambda t: t[1])
+    best_open = max((t for t in items if t[2] in ("open", "guard")),
+                    key=lambda t: t[1])
 
-    fig, ax = plt.subplots(figsize=(7.6, 4.5))
+    fig, ax = plt.subplots(figsize=(7.6, 6.0))
     for i, (name, val, kind) in enumerate(items):
         if kind == "hosted":
             c, tc, w = ACCENT, ACCENT, "bold"
         elif name == best_open[0]:
             c, tc, w = GREEN, GREEN, "bold"
+        elif kind == "guard":
+            c, tc, w = BLUE, BLUE, "normal"     # released purpose-built guards
         else:
             c, tc, w = GRAY, SECOND, "normal"
         ax.barh(i, val, height=0.62, color=c, zorder=3)
@@ -118,12 +131,24 @@ def fig_gap(rows):
         elif n == best_open[0]:
             lbl.set_color(GREEN)
             lbl.set_fontweight("bold")
+        elif kind == "guard":
+            lbl.set_color(BLUE)
         else:
             lbl.set_color(SECOND)
     ax.set_xlim(0, 1.02)
     ax.set_xticks([])
     ax.set_xlabel("Share of unsafe prompts caught, at a matched 5% false-alarm rate",
                   fontsize=10, color=SECOND, labelpad=10)
+    # Three colours now carry family identity, so a legend is mandatory -- the colour-coded
+    # row labels are secondary encoding, not a substitute for saying what blue means.
+    from matplotlib.patches import Patch
+    ax.legend(handles=[
+        Patch(facecolor=ACCENT, label="hosted frontier"),
+        Patch(facecolor=BLUE, label="released purpose-built guard"),
+        Patch(facecolor=GRAY, label="general open-weights model (ours)"),
+    ], loc="lower right", frameon=False, fontsize=10,
+        labelcolor=[ACCENT, BLUE, SECOND], handlelength=1.1, handleheight=1.1,
+        borderpad=0.2, labelspacing=0.45, bbox_to_anchor=(1.0, -0.015))
     _finish(ax)
     ax.spines["bottom"].set_visible(False)
     fig.tight_layout()

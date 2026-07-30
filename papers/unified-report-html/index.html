@@ -2376,6 +2376,43 @@ yourself — for latency, cost, data residency, or auditability — and this sub
 that constraint rather than dissolving it. The honest reading is that the frontier number is the
 bar: it is what the specialization and composition machinery is trying to reach under
 constraints the hosted model does not have to satisfy.</p>
+<h4 class="runin" id="and-a-released-guard-is-not-the-shortcut-either.">And a released guard is not the shortcut either.</h4>
+<p>The first thing a practitioner
+asks is why not simply run a purpose-built guard, so <a class="xref" href="#tab:frontier">Table 14</a> carries six of them:
+Qwen3Guard-Gen at 0.6B and 4B, Llama-Guard-3-1B, Granite-Guardian-3.1-2B, ShieldGemma-2B and
+WildGuard-7B. Each is scored through <em>its own</em> native verdict contract — ShieldGemma’s
+policy-conditioned Yes/No, Granite’s risk-definition Yes/No, WildGuard’s
+<code>Harmful request:</code> slot, Qwen3Guard’s top-level <code>Safety:</code> label, Llama Guard’s
+<code>\n\nsafe</code>/<code>unsafe</code> — because forcing our frozen prompt
+on a guard would measure our prompt rather than their model. ExpGuard is also unusually fair
+ground for them: none was trained on it, so unlike the Act I panel (which contains WildGuard’s
+own benchmark) there is no home-field advantage to discount.</p>
+<p>None of the six reaches the best untuned open checkpoint. The strongest,
+Qwen3Guard-Gen-4B at <span class="math inline">\(0.777\)</span> and WildGuard-7B at <span class="math inline">\(0.771\)</span>, sit below
+Qwen3-32B’s .830 and well below the hosted
+.896. Two land far lower — ShieldGemma-2B at <span class="math inline">\(0.458\)</span> and Llama-Guard-3-1B at
+<span class="math inline">\(0.334\)</span> — and the reason is instructive rather than a simple lack of skill: their
+<em>ranking</em> is respectable (AUROC <span class="math inline">\(0.865\)</span> and <span class="math inline">\(0.809\)</span>), but their negatives carry a heavy
+right tail on this material. Llama Guard’s 95th-percentile benign score, <span class="math inline">\(+3.75\)</span>, sits
+<em>above</em> its median harmful score, <span class="math inline">\(+2.50\)</span>, so a strict <span class="math inline">\(5\%\)</span> false-alarm budget discards
+most of its recall. A guard tuned to a general web-safety taxonomy over-flags a subset of
+ordinary regulated-domain questions, and that is precisely the failure a mortgage deployment
+cannot absorb. It is also this report’s thesis arriving from a new direction: the instrument
+chooses the winner, and on regulated-domain prompts the purpose-built ordering is not the
+ordering their own benchmarks report.</p>
+<p>One correction belongs here, because it concerns a number this repository already published.
+The starting-type study’s <code>llama_guard_3_1b</code> cell is degenerate — one unique score
+across all 36,388 rows — and <a class="xref" href="#sec:adaptation">Section 4</a> describes it as such. The cause
+was not the pruned output head its preflight caveat anticipated; that head is intact, and both
+decision tokens carry full-norm rows. It was two independent harness bugs: under
+<code>transformers</code> 5.x the native template rendered
+<code>&lt;BEGIN CONVERSATION&gt;</code> <code>&lt;END CONVERSATION&gt;</code> with the user turn <em>missing</em> while
+still satisfying every wrapper marker, and the verdict was read at the last prompt position,
+which for this contract carries the distribution over the two-newline prefix rather than over
+<code>safe</code>/<code>unsafe</code>. Both are fixed (the render must now be shown to carry the payload,
+and each contract’s verdict prefix is teacher-forced), which is why Llama Guard scores at all
+here. The published degenerate cell should be read as a harness artifact, not as a measurement
+of that model.</p>
 <h4 class="runin" id="a-by-product-worth-more-than-the-comparison-that-produced-it.">A by-product worth more than the comparison that produced it.</h4>
 <p>Scoring the ladder
 on Act I’s own two regimes (<a class="xref" href="#tab:frontier-scale">Table 15</a>) prices <em>spending on parameters</em>
@@ -2563,6 +2600,69 @@ the way to spend the next increment.</p>
 <td style="text-align: right;">.9646</td>
 <td style="text-align: right;">.9389</td>
 <td style="text-align: right;">.9714</td>
+</tr>
+<tr>
+<td colspan="8" style="text-align: left;"><em>Released purpose-built guards (native verdict contract, zero-shot)</em></td>
+</tr>
+<tr>
+<td style="text-align: left;">Qwen3Guard-Gen-0.6B (0.6B)</td>
+<td style="text-align: right;">2275</td>
+<td style="text-align: right;">.672</td>
+<td style="text-align: right;">.9166</td>
+<td style="text-align: right;">.8769</td>
+<td style="text-align: right;">.9292</td>
+<td style="text-align: right;">.9017</td>
+<td style="text-align: right;">.9150</td>
+</tr>
+<tr>
+<td style="text-align: left;">Llama-Guard-3-1B (1B)</td>
+<td style="text-align: right;">2275</td>
+<td style="text-align: right;">.334</td>
+<td style="text-align: right;">.8261</td>
+<td style="text-align: right;">.8086</td>
+<td style="text-align: right;">.8865</td>
+<td style="text-align: right;">.7394</td>
+<td style="text-align: right;">.8723</td>
+</tr>
+<tr>
+<td style="text-align: left;">Granite-Guardian-3.1-2B (2B)</td>
+<td style="text-align: right;">2275</td>
+<td style="text-align: right;">.765</td>
+<td style="text-align: right;">.9536</td>
+<td style="text-align: right;">.9365</td>
+<td style="text-align: right;">.9576</td>
+<td style="text-align: right;">.9480</td>
+<td style="text-align: right;">.9611</td>
+</tr>
+<tr>
+<td style="text-align: left;">ShieldGemma-2B (2B)</td>
+<td style="text-align: right;">2275</td>
+<td style="text-align: right;">.458</td>
+<td style="text-align: right;">.8762</td>
+<td style="text-align: right;">.8654</td>
+<td style="text-align: right;">.8993</td>
+<td style="text-align: right;">.9125</td>
+<td style="text-align: right;">.8558</td>
+</tr>
+<tr>
+<td style="text-align: left;">Qwen3Guard-Gen-4B (4B)</td>
+<td style="text-align: right;">2275</td>
+<td style="text-align: right;">.777</td>
+<td style="text-align: right;">.9336</td>
+<td style="text-align: right;">.8918</td>
+<td style="text-align: right;">.9415</td>
+<td style="text-align: right;">.9237</td>
+<td style="text-align: right;">.9321</td>
+</tr>
+<tr>
+<td style="text-align: left;">WildGuard-7B (7B)</td>
+<td style="text-align: right;">2275</td>
+<td style="text-align: right;">.771</td>
+<td style="text-align: right;">.9554</td>
+<td style="text-align: right;">.9329</td>
+<td style="text-align: right;">.9637</td>
+<td style="text-align: right;">.9390</td>
+<td style="text-align: right;">.9616</td>
 </tr>
 <tr>
 <td colspan="8" style="text-align: left;"><em>Frontier, hosted API (zero-shot)</em></td>

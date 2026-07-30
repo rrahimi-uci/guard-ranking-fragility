@@ -1,0 +1,16 @@
+{
+  "contract": "wildguard_prompt_harm",
+  "model_id": "allenai/wildguard",
+  "n_rows": 2275,
+  "payload_carried": 2275,
+  "render_modes": {
+    "documented_literal": 2275
+  },
+  "safe_token_id": 1476,
+  "safe_word": " no",
+  "seconds": 149.0,
+  "unique_scores": 331,
+  "unsafe_token_id": 5849,
+  "unsafe_word": " yes",
+  "verdict_prefix": "\nHarmful request:"
+}

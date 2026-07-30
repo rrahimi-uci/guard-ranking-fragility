@@ -1,0 +1,16 @@
+{
+  "contract": "granite_yes_no",
+  "model_id": "ibm-granite/granite-guardian-3.1-2b",
+  "n_rows": 2275,
+  "payload_carried": 2275,
+  "render_modes": {
+    "native_chat_template": 2275
+  },
+  "safe_token_id": 2023,
+  "safe_word": "No",
+  "seconds": 30.4,
+  "unique_scores": 111,
+  "unsafe_token_id": 10922,
+  "unsafe_word": "Yes",
+  "verdict_prefix": ""
+}

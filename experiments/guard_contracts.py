@@ -97,13 +97,36 @@ class _GuardContract(VerdictContract):
         None. Never raises: a missing template/kwarg degrades to the documented fallback."""
         return None
 
+    @staticmethod
+    def _carries(rendered: str, user_text: str) -> bool:
+        """Did the render actually keep the user's text?
+
+        Guards against a template that produces a perfectly-formed wrapper around an empty
+        conversation. Compares on a leading slice rather than the whole string because a
+        faithful render may normalise whitespace inside the payload; an empty-conversation
+        render fails on any non-trivial slice. Empty input is vacuously carried, which keeps
+        the overhead probe in `render()` (which builds with "") working.
+        """
+        probe = " ".join(str(user_text).split())[:48]
+        if not probe:
+            return True
+        norm = " ".join(rendered.split())
+        return probe in norm
+
     def _build(self, tok, user_text: str) -> tuple[str, str]:
         native = None
         try:
             native = self._try_native(tok, user_text)
         except Exception:
             native = None
-        if native and all(m in native for m in self.MARKERS):
+        # The MARKERS check validates the WRAPPER only. It is not sufficient: a chat template
+        # can render every marker faithfully and still drop the payload, which is exactly what
+        # Llama-Guard-3-1B did under transformers 5.x -- it emitted
+        # "<BEGIN CONVERSATION>\n\n<END CONVERSATION>" with the user turn missing, passed all
+        # five markers, and scored 36,388 rows of an identical empty prompt (one unique score,
+        # chance-level AP). So the render must also be shown to CONTAIN the payload before it
+        # can be preferred over the documented literal.
+        if native and all(m in native for m in self.MARKERS) and self._carries(native, user_text):
             return native, "native_chat_template"
         mode = ("documented_literal" if self.SPEC_STATUS == "fully_spec_implemented"
                 else "fallback_literal")
@@ -414,8 +437,21 @@ class LlamaGuardTopLevel(_GuardContract):
         )
 
     def _try_native(self, tok, user_text: str):
-        msgs = [{"role": "user", "content": str(user_text)}]
-        return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+        # transformers 5.x renders Llama-Guard-3's template with an EMPTY conversation when
+        # `content` is a bare string -- every marker survives, the user turn does not. Passing
+        # structured content parts keeps it. Try that first, then the bare-string form for
+        # older stacks; `_build`'s `_carries` check rejects whichever one loses the payload,
+        # so a future template change degrades to the documented literal instead of silently
+        # scoring an empty prompt.
+        for content in ([{"type": "text", "text": str(user_text)}], str(user_text)):
+            try:
+                out = tok.apply_chat_template([{"role": "user", "content": content}],
+                                              tokenize=False, add_generation_prompt=True)
+            except Exception:
+                continue
+            if out and self._carries(out, user_text):
+                return out
+        return None
 
     def _completion_string(self, gold: int) -> str:
         # Two-newline prefix then the top-level verdict; hazard IDs (unsafe case) are NOT supervised.
