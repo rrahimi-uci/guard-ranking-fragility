@@ -1,4 +1,4 @@
-\section{Adapting released guards: a confirmatory starting-type study}
+\section{Interlude (Act~I, confirmed): adapting released guards --- a preregistered starting-type study}
 \label{sec:adaptation}
 
 Acts~I--II characterize what fine-tuning does to \emph{general} instruction checkpoints, and Act~III ranks
@@ -18,7 +18,9 @@ the \emph{data}; the uninspected-cohort half of that discipline remains future w
 guards, and (RQ2) is KL-SFT --- which recovered transfer for general checkpoints (\Cref{sec:actI-klsft})
 --- a \emph{free} improvement, i.e.\ does it retain transfer at no represented-source cost?
 
-\paragraph{Design.} A $2\times 3$ blocked grid: $\{$four general instruction checkpoints, six released
+\subsection{Design: a $2\times3$ blocked grid over ten checkpoints}
+\label{sec:adaptation-design}
+\noindent A $2\times 3$ blocked grid: $\{$four general instruction checkpoints, six released
 purpose-built guards$\}\times\{$unmodified $U$, $+$SFT, $+$KL-SFT$\}$, over \AdaNCheckpoints{}
 checkpoints spanning \AdaNFamilies{} model families (gemma, granite, llama, mistral, qwen, smollm), five
 seeds, primary $\beta{=}\AdaPrimaryBeta$. Every guard keeps its \emph{native} top-level verdict
@@ -56,7 +58,9 @@ LoRA-resistance.}
 \label{fig:adaptation-plane}
 \end{figure}
 
-\paragraph{RQ1 --- ordinary SFT specializes released guards too (supported).}
+\subsection{RQ1: ordinary SFT specializes released guards too (supported)}
+\label{sec:adaptation-rq1}
+\noindent
 Across the panel, our SFT protocol raised represented-source macro-AP by \AdaHGain{} (equal-family mean;
 LCB $\AdaHGainLCB>0$) while the gain was concentrated relative to held-out transfer (H\_conc \AdaHConc,
 LCB $\AdaHConcLCB>0$), with the preregistered criterion $\text{LCB}(\text{H\_gain})>0$ and
@@ -66,7 +70,9 @@ $+0.212$, Granite-Guard-2B $+0.139$) at a held-out cost (equal-family held-out c
 \AdaHheldSFT). Fine-tuning a released guard on your data specializes it toward your sources, at a
 bound-confirmed transfer cost, exactly as it does a general checkpoint.
 
-\paragraph{RQ2 --- KL-SFT retains transfer but is \emph{not} a free improvement (not supported).}
+\subsection{RQ2: KL-SFT retains transfer, but is \emph{not} a free improvement (not supported)}
+\label{sec:adaptation-rq2}
+\noindent
 KL-SFT did preserve held-out transfer relative to SFT (H\_preserve \AdaHPreserve, LCB $\AdaHPreserveLCB>0$):
 in \Cref{tab:adaptation} every KL-SFT held-out delta on the nine \emph{informative} checkpoints is less
 negative (or more positive) than its SFT counterpart; on the degenerate Llama-Guard-3-1B cell both are
@@ -78,7 +84,9 @@ cautious verdict than the general-checkpoint KL control of \Cref{sec:actI-klsft}
 cost was smaller), and the confirmatory design reports it as such rather than reading the favorable
 direction as a win.
 
-\paragraph{What this does and does not license.}
+\subsection{What this does and does not license}
+\label{sec:adaptation-license}
+\noindent
 The within-checkpoint deltas are causal only for \emph{this recipe on this checkpoint}; the
 general-vs-purpose contrast is a \emph{descriptive} blocked comparison (checkpoints are not randomly
 assigned to a starting type), not a causal claim about starting type. The bounds are conditional on the

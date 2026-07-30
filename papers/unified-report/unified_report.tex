@@ -6,6 +6,7 @@
 \usepackage{amssymb}
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{booktabs}
+\usepackage{longtable}   % tab:guidelines outgrew one page at 8 rows
 \usepackage{array}
 \usepackage{float}
 \usepackage{graphicx}
@@ -320,7 +321,7 @@ committed text-free per-row scores; the run was independently cross-checked on a
 
 \input{generated/expguard_table}                % tab:expguard (4-guard result; from committed margins)
 
-\subsection{What a frontier guardrail buys, and what it costs}
+\section{What a frontier guardrail buys, and what it costs}
 \label{sec:actIII-frontier}
 Every guard in this report is a small open-weights model the operator runs itself. The obvious
 question a practitioner asks next is whether that choice is costing them safety, and how much:
@@ -342,6 +343,9 @@ graded output the Responses API exposes for reasoning models; it takes roughly $
 values over $2{,}275$ rows, and those ties cap how finely AP can resolve a ranking. That
 handicaps the hosted rows, so a frontier number \emph{above} a local one is conservative.
 
+
+\subsection{How large the gap is, and what buying it costs}
+\label{sec:frontier-size}
 \paragraph{The gain is real and it is large.} The best hosted configuration
 (\FrontierBestName) reaches \FrontierBestTpr{} recall at the matched budget against
 \FrontierBestBaseTpr{} for the strongest Act~I base checkpoint (\FrontierBestBaseName): a
@@ -351,6 +355,25 @@ ten that the best panel base guard waves through at a $5\%$ alarm budget, the fr
 catches. On evidence this is the largest single accuracy gap anywhere in this report, and it is
 measured on the strongest label tier we have.
 
+\paragraph{And the accuracy is bought at two orders of magnitude.} \Cref{tab:frontier-serving}
+puts the price beside the gain. The best hosted configuration answers in \FrontierBestMedianMs{}\,ms
+at the median against \FrontierBestBaseName's $10$--$25$\,ms batched forward pass ---
+about \FrontierSlowdown$\times$ --- at roughly \$\FrontierBestCost{} per thousand prompts against
+the amortised cost of a GPU the operator already owns. For a guardrail that fires on every inbound
+request, that is a budget line and a latency budget, not a rounding error. Three further costs
+appear in no column of either table. Prompts leave the operator's infrastructure, which for the
+mortgage setting of \Cref{sec:actIV-mortgage} is a GLBA question before it is an engineering one.
+The operating point is only coarsely selectable: a continuous logit margin can be placed at any
+false-alarm budget exactly, while $50$--$65$ distinct integer scores can only land near one.
+And the provider's own input filter refused a subset of ExpGuard prompts outright, before the
+guard saw them --- \emph{non-deterministically}, with no row refused under all six configurations
+and most refused under four of six. A guardrail whose input filter intermittently declines to
+return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
+its own right.
+
+
+\subsection{Routes that do not close it: tuning, scale, ensembling, purpose-built guards}
+\label{sec:frontier-routes}
 \paragraph{Neither tuning nor scale closes it.} Two obvious escapes suggest themselves ---
 tune the small guard, or buy a bigger one --- and the same 2{,}275 rows let us price both.
 
@@ -393,22 +416,6 @@ so extending it is impossible without invalidating the release --- and are train
 through a sealed sidecar lock that copies the recipe, seeds and manifests verbatim. Act~I's
 headline numbers are untouched and are not restated from either run.
 
-\paragraph{And the accuracy is bought at two orders of magnitude.} \Cref{tab:frontier-serving}
-puts the price beside the gain. The best hosted configuration answers in \FrontierBestMedianMs{}\,ms
-at the median against \FrontierBestBaseName's $10$--$25$\,ms batched forward pass ---
-about \FrontierSlowdown$\times$ --- at roughly \$\FrontierBestCost{} per thousand prompts against
-the amortised cost of a GPU the operator already owns. For a guardrail that fires on every inbound
-request, that is a budget line and a latency budget, not a rounding error. Three further costs
-appear in no column of either table. Prompts leave the operator's infrastructure, which for the
-mortgage setting of \Cref{sec:actIV-mortgage} is a GLBA question before it is an engineering one.
-The operating point is only coarsely selectable: a continuous logit margin can be placed at any
-false-alarm budget exactly, while $50$--$65$ distinct integer scores can only land near one.
-And the provider's own input filter refused a subset of ExpGuard prompts outright, before the
-guard saw them --- \emph{non-deterministically}, with no row refused under all six configurations
-and most refused under four of six. A guardrail whose input filter intermittently declines to
-return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
-its own right.
-
 \paragraph{Nor does combining what we already have.} The other instinctive response to a
 vendor gap is an ensemble: we hold \FrontierEnsMembers{} open guards with ExpGuard scores ---
 bases, SFT seed-ensembles, released purpose-built guards --- so combining them costs no new
@@ -440,37 +447,6 @@ So the answer is no: ensembling small guards does not beat the hosted model, and
 version of it (equal weights) is worse than picking the best member. It earns its place in one
 situation --- when nothing may leave the network at all, seed ensembling plus stacking is the
 in-house ceiling, and it is roughly a quarter of the way to what the hosted model would give.
-
-\paragraph{The deployment question is not which guard, but which requests.} Everything above
-compares whole guards, which frames the choice as self-host \emph{or} outsource. That framing
-is wrong, and the per-row scores show why. Run the small guard inline on every request, rank
-requests by how near they fall to its own decision line, and re-score only that uncertain band
-with the hosted model, holding one global $5\%$ false-alarm budget across the whole
-construction. Escalating the least-confident $10\%$ of ExpGuard raises matched-budget recall
-from $0.787$ to $0.819$; $20\%$ reaches $0.842$, which is \emph{half} the distance to the
-hosted model's \FrontierBestTpr; $30\%$ reaches $0.856$. The curve is steep early because the
-first requests escalated are the ones a second opinion can actually change, and it is smooth,
-so the escalated share is a dial set by whatever the data-residency and cost constraints
-allow rather than an architecture to be chosen once. Two implementation notes, since the
-construction is easy to get wrong: the two guards are fused on \emph{rank}, because a logit
-margin and a self-reported integer risk are not on a common scale; and a per-band threshold
-was tried first and rejected, because with a small escalated slice there are too few deferred
-negatives to place a stable quantile, which made the curve non-monotone for purely numerical
-reasons. This is a retrospective analysis on committed scores, not a deployed system: it
-assumes the escalated subset may lawfully leave, which for the mortgage traffic of
-\Cref{sec:actIV-mortgage} is exactly the question that has to be answered first.
-
-\paragraph{What this does and does not license.} It licenses one sentence: on external,
-expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
-accurate prompt-safety ranker than any small guard in this report, tuned or not, and the margin
-survives a paired test. It does \emph{not} license extending that to the mortgage construct of
-\Cref{sec:actIV-mortgage}: ExpGuard is single-label general prompt safety, not the dual
-$G\times D$ compliance judgement, and nothing here was measured on it. Nor does it retire the
-report's subject. Acts~I--II are about what happens \emph{when} you must run a small guard
-yourself --- for latency, cost, data residency, or auditability --- and this subsection prices
-that constraint rather than dissolving it. The honest reading is that the frontier number is the
-bar: it is what the specialization and composition machinery is trying to reach under
-constraints the hosted model does not have to satisfy.
 
 \paragraph{And a released guard is not the shortcut either.} The first thing a practitioner
 asks is why not simply run a purpose-built guard, so \Cref{tab:frontier} carries six of them:
@@ -511,6 +487,9 @@ and each contract's verdict prefix is teacher-forced), which is why Llama Guard 
 here. The published degenerate cell should be read as a harness artifact, not as a measurement
 of that model.
 
+
+\subsection{What scoring the ladder taught us about the specialization tax}
+\label{sec:frontier-ladder}
 \paragraph{A by-product worth more than the comparison that produced it.} Scoring the ladder
 on Act~I's own two regimes (\Cref{tab:frontier-scale}) prices \emph{spending on parameters}
 against \emph{spending on tuning}, and the two are not equivalent. SFT lifts the panel's
@@ -554,6 +533,7 @@ checkpoints and costs accordingly, so the comparison is about \emph{where} to sp
 budget, not about SFT being inferior at equal size. What the tuned-32B cell does establish is
 narrower and still useful: at \emph{that} size, on \emph{this} recipe and data, tuning is not
 the way to spend the next increment.
+
 
 \input{generated/frontier_table}                % tab:frontier (base vs SFT in-env vs frontier)
 \input{generated/frontier_scale_table}          % tab:frontier-scale (scale vs tuning, Act I regimes)
@@ -609,6 +589,40 @@ your traffic resembles something you can put in a training manifest'' --- and it
 measurement behind the routing rule in \Cref{sec:practitioner}, which escalates on
 unfamiliarity rather than on score margin.
 
+\subsection{Which requests, and what this licenses}
+\label{sec:frontier-licenses}
+\paragraph{The deployment question is not which guard, but which requests.} Everything above
+compares whole guards, which frames the choice as self-host \emph{or} outsource. That framing
+is wrong, and the per-row scores show why. Run the small guard inline on every request, rank
+requests by how near they fall to its own decision line, and re-score only that uncertain band
+with the hosted model, holding one global $5\%$ false-alarm budget across the whole
+construction. Escalating the least-confident $10\%$ of ExpGuard raises matched-budget recall
+from $0.787$ to $0.819$; $20\%$ reaches $0.842$, which is \emph{half} the distance to the
+hosted model's \FrontierBestTpr; $30\%$ reaches $0.856$. The curve is steep early because the
+first requests escalated are the ones a second opinion can actually change, and it is smooth,
+so the escalated share is a dial set by whatever the data-residency and cost constraints
+allow rather than an architecture to be chosen once. Two implementation notes, since the
+construction is easy to get wrong: the two guards are fused on \emph{rank}, because a logit
+margin and a self-reported integer risk are not on a common scale; and a per-band threshold
+was tried first and rejected, because with a small escalated slice there are too few deferred
+negatives to place a stable quantile, which made the curve non-monotone for purely numerical
+reasons. This is a retrospective analysis on committed scores, not a deployed system: it
+assumes the escalated subset may lawfully leave, which for the mortgage traffic of
+\Cref{sec:actIV-mortgage} is exactly the question that has to be answered first.
+
+\paragraph{What this does and does not license.} It licenses one sentence: on external,
+expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
+accurate prompt-safety ranker than any small guard in this report, tuned or not, and the margin
+survives a paired test. It does \emph{not} license extending that to the mortgage construct of
+\Cref{sec:actIV-mortgage}: ExpGuard is single-label general prompt safety, not the dual
+$G\times D$ compliance judgement, and nothing here was measured on it. Nor does it retire the
+report's subject. Acts~I--II are about what happens \emph{when} you must run a small guard
+yourself --- for latency, cost, data residency, or auditability --- and this subsection prices
+that constraint rather than dissolving it. The honest reading is that the frontier number is the
+bar: it is what the specialization and composition machinery is trying to reach under
+constraints the hosted model does not have to satisfy.
+
+
 \section{Synthesis: one lesson at three scales, and what to do about it}
 \label{sec:synthesis}
 The three acts are one lesson. A guard's benchmark score is co-produced by the benchmark: SFT buys
@@ -623,22 +637,37 @@ The recurring cast makes it concrete: Qwen3-4B, the strongest base, specializes 
 is the one composition hurts, yet is \emph{numerically} the best-ranking zero-shot mortgage
 guard (on a small split, so read as a direction) --- the ranking flips with the benchmark.
 
+The frontier comparison (\Cref{sec:actIII-frontier}) then turns the same lesson outward, and this is
+where it becomes a deployment rule rather than a caution. A hosted model is the more accurate ranker on
+\emph{unfamiliar} prompts, but on sources an operator can enumerate in a training manifest the ordering
+inverts and a \HtwoBestName{} guard beats it outright (\HtwoBestDeltaTpr{} \HtwoBestDeltaTprCI{};
+\Cref{sec:actIII-h2h}). So the gap is not a capability ceiling to be closed by a larger student --- it is
+the price of the regime, and the practical question is not \emph{which guard} but \emph{what share of
+your traffic you can characterise in advance}. That reframes routing: escalate on \emph{unfamiliarity},
+not on score margin, since margin-based routing spends its hosted budget precisely where the local guard
+is already right.
+
 \Cref{tab:guidelines} distills the whole study into the guideline each finding implies: what we
 learned, the evidence for it here, and what a practitioner should therefore \emph{do}. Every row is
 anchored to a result in this report; where a finding is directional (small split) or fixed-panel, the
 guideline is qualified accordingly.
 
-\begin{table}[htbp]\centering\small
+\begingroup\small
+\renewcommand{\arraystretch}{1.4}
+\setlength{\extrarowheight}{2.5pt}
+\arrayrulecolor{guiderule}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.235\linewidth} >{\raggedright\arraybackslash}p{0.335\linewidth} >{\raggedright\arraybackslash}p{0.35\linewidth}@{}}
 \caption{What this study establishes, and the professional guideline each finding implies. Numbers are
 macro-AP deltas from the fixed panel (represented $=$ in-distribution sources, transfer $=$ held-out
 sources); CIs/LCBs are one-sided bootstrap bounds. Acts~I--II are retrospective estimation on an
 inspected panel (\emph{not} preregistered/confirmatory --- see limitations); only the adaptation
 study is preregistered. Read directional rows (marked) as a direction, not a verdict.}
-\label{tab:guidelines}
-\renewcommand{\arraystretch}{1.4}
-\setlength{\extrarowheight}{2.5pt}
-\arrayrulecolor{guiderule}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.235\linewidth} >{\raggedright\arraybackslash}p{0.335\linewidth} >{\raggedright\arraybackslash}p{0.35\linewidth}@{}}
+\label{tab:guidelines}\\
+\endfirsthead
+\multicolumn{3}{@{}l}{\small\itshape \Cref{tab:guidelines}, continued}\\
+\toprule
+\endhead
+
 \rowcolor{tkgreenedge}
 {\color{white}\bfseries What we learned} & {\color{white}\bfseries Evidence (this study)} & {\color{white}\bfseries Guideline: what to do} \\
 \rowcolor{white}
@@ -689,9 +718,20 @@ bound-confirmed transfer loss; KL-SFT preserves transfer (LCB \AdaHPreserveLCB{}
 cost (LCB \AdaHCostLCB{}) fails the $-\AdaMargin$ non-inferiority margin (\Cref{sec:adaptation}). &
 Adapting a purpose-built guard is not exempt from the tradeoff; use KL-SFT as a tradeoff dial, not a
 free upgrade, and re-measure both splits on your own data. \\
+\rowcolor{guidealt}
+\textbf{\textcolor{tkgreenedge}{8.}~The frontier gap is a property of the \emph{regime}, not of model size: a 1.5B guard beats a hosted frontier model on sources it represents, and loses on sources it does not.} &
+On five corpora scored by both, at a matched \HtwoBudget{} alarm budget: \HtwoBestName{} SFT reaches
+\HtwoBestTpr{} on \HtwoBestSource{} against \HtwoRef{}'s \HtwoRefTpr{} (\HtwoBestDeltaTpr{}
+\HtwoBestDeltaTprCI{}, AUROC \HtwoBestAuroc{} vs.\ \HtwoRefAuroc{}), \HtwoNSig{} of \HtwoNSftCells{}
+represented cells clearing zero; on transfer sources the hosted model leads and the best local guard is
+an \emph{untuned} base (\Cref{sec:actIII-h2h}). Retrospective, inspected panel. &
+Do not ask ``can a small guard match the frontier'' --- ask what share of your traffic you can enumerate
+in a training manifest. Self-host the enumerable share, and escalate on \emph{unfamiliarity} rather than
+on score margin, because margin-based routing spends its budget where the local guard is already right. \\
 \arrayrulecolor{black}\bottomrule
-\end{tabular}
-\end{table}
+\end{longtable}
+\endgroup
+
 
 \subsection{The decision guide: gate candidates, not leaderboards}
 \label{sec:practitioner}
