@@ -1,0 +1,2029 @@
+{
+  "meta": {
+    "checks": {
+      "exact": "sha256 of raw bytes",
+      "lineage": "family_id / upstream_family_id collisions",
+      "ngram_containment": "word 5-gram containment against the reference corpus as a whole",
+      "normalized": "NFC + casefold + punctuation strip + whitespace collapse",
+      "shingle_jaccard": "max character 5-gram Jaccard against any single reference row"
+    },
+    "closes": [
+      "unified-report roadmap item 2 (v2 decontamination audit)",
+      "proposal.md Section 20.17 Phase A overlap and lineage audit"
+    ],
+    "expguard_not_covered": "ExpGuard text is gated and never written to disk, so it is absent from this audit. Its disjointness from the teacher pool must be established separately under HF_TOKEN before any teacher training.",
+    "not_implemented": {
+      "embedding_overlap": "Section 20.6 also requires an embedding-space check. It needs a pinned encoder whose identity must enter the lock, so it belongs to the Phase A schema review, not to this script. This audit is therefore necessary but not sufficient for the Phase A gate."
+    },
+    "roles": {
+      "act1_calibration": 451,
+      "act1_id_test": 677,
+      "act1_train": 1200,
+      "act1_transfer_test": 1580,
+      "teacher_pool": 4188
+    },
+    "text_free": "offending rows are identified by content_sha256 only",
+    "thresholds": {
+      "containment": [
+        0.3,
+        0.5,
+        0.8,
+        1.0
+      ],
+      "jaccard": [
+        0.5,
+        0.7,
+        0.9
+      ]
+    }
+  },
+  "pairs": {
+    "act1_id_test__vs__act1_train": {
+      "digest": {
+        "exact_digests": [],
+        "exact_n": 0,
+        "normalized_beyond_exact_n": 0,
+        "normalized_digests": [],
+        "normalized_n": 0
+      },
+      "fuzzy": {
+        "by_source": {
+          "jailbreak_classification": {
+            "containment_at_least": {
+              "0.30": 31,
+              "0.50": 19,
+              "0.80": 8,
+              "1.00": 1
+            },
+            "jaccard_at_least": {
+              "0.50": 18,
+              "0.70": 8,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 8,
+              "jaccard_at_least_0.70": 8,
+              "n": 154
+            },
+            "max_jaccard": 0.8546,
+            "n": 159,
+            "n_short_rows_excluded_from_long": 5
+          },
+          "prompt_injections": {
+            "containment_at_least": {
+              "0.30": 8,
+              "0.50": 6,
+              "0.80": 2,
+              "1.00": 2
+            },
+            "jaccard_at_least": {
+              "0.50": 6,
+              "0.70": 2,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 1,
+              "jaccard_at_least_0.70": 1,
+              "n": 44
+            },
+            "max_jaccard": 0.7778,
+            "n": 67,
+            "n_short_rows_excluded_from_long": 23
+          },
+          "toxicchat": {
+            "containment_at_least": {
+              "0.30": 41,
+              "0.50": 33,
+              "0.80": 19,
+              "1.00": 7
+            },
+            "jaccard_at_least": {
+              "0.50": 22,
+              "0.70": 7,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 17,
+              "jaccard_at_least_0.70": 7,
+              "n": 292
+            },
+            "max_jaccard": 0.8216,
+            "n": 451,
+            "n_short_rows_excluded_from_long": 159
+          }
+        },
+        "containment_at_least": {
+          "0.30": 80,
+          "0.50": 58,
+          "0.80": 29,
+          "1.00": 10
+        },
+        "jaccard_at_least": {
+          "0.50": 46,
+          "0.70": 17,
+          "0.90": 0
+        },
+        "max_containment": 1.0,
+        "max_jaccard": 0.8546,
+        "n_probe": 677,
+        "n_ref": 1200,
+        "n_unmeasurable_by_ngram": 0,
+        "worst_rows": [
+          {
+            "best_jaccard": 0.8546,
+            "containment": 1.0,
+            "digest": "f8b5cfd621df1f57cd15e96dac97004e128e08ea262ac5f9180f85228b8a4ee1",
+            "n_words": 271,
+            "nearest_ref_digest": "4266fc39a95cebc4f0daed65f17a67ab730a67f431eadbbd7b30e63d956fded3",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.8298,
+            "containment": 0.8344,
+            "digest": "8d7dee3235d10722ae0b1dfba5863102f6d13081718384075b62a6fe0c8ae083",
+            "n_words": 320,
+            "nearest_ref_digest": "5ef2cdc97fcce2d505909ee655dd882e4ccae27cced8b0428e9998ca79fd0278",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.8216,
+            "containment": 0.7632,
+            "digest": "533486c8df75976c710a98badbd9ff9b6c282b9b39b8b3365de928a2641492b1",
+            "n_words": 42,
+            "nearest_ref_digest": "ca7fae2259487fca2ee99984526ff04b4c7b0812aa2843fc141ca5eb46036cdf",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7893,
+            "containment": 1.0,
+            "digest": "3480cebeba43d25421995161a631945c5577819cbc365424d4e0859ee9fd3ab6",
+            "n_words": 92,
+            "nearest_ref_digest": "3c1a72a1090148e06abd8674b63cce9830d488f050edf7c2e9804d99c046e64b",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7887,
+            "containment": 0.6899,
+            "digest": "5ecaa2011ea2c4a2304ad47557535a2ba19dd2a9bc5f744fdd19896eba9300d4",
+            "n_words": 502,
+            "nearest_ref_digest": "e9f3cf4c31515842879a376a56aaabd3cc6e70a35a68bcbfa0babd56995587de",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.7829,
+            "containment": 0.9672,
+            "digest": "3ba3161a0016b70f573bbb30824685eaa6113866bb4bed6a1bb762f53483fc34",
+            "n_words": 126,
+            "nearest_ref_digest": "7c9447cc68650408b4a076005f2248bab56eba147b2edcd905bcd1ae0cf3c387",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7778,
+            "containment": 1.0,
+            "digest": "401e3fadb1164e56f2d057f2e6dd4db0c37d732692be9f4fe97dff892e11a2a1",
+            "n_words": 6,
+            "nearest_ref_digest": "c473207df7f4cce72bd332c97394337df5b775b7111fff1caf5dd4b54b963302",
+            "nearest_ref_source": "prompt_injections",
+            "source": "prompt_injections"
+          },
+          {
+            "best_jaccard": 0.7647,
+            "containment": 0.9886,
+            "digest": "98a19e09dd90d6c6caf441f9c46ed7e0660dcae5f9a33f44d60169d97aa4e8b6",
+            "n_words": 92,
+            "nearest_ref_digest": "3c1a72a1090148e06abd8674b63cce9830d488f050edf7c2e9804d99c046e64b",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7495,
+            "containment": 0.8137,
+            "digest": "a49b471a66dfa8de3456fad3a65c1ecfaca0993e0e2ea75c6f9d951e3dc7bea8",
+            "n_words": 106,
+            "nearest_ref_digest": "d46f7cf4c785a9417bcafca5b8733b2ffe5edbe9a735044b3681ed1820bfd337",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7309,
+            "containment": 0.9336,
+            "digest": "189a7c63a26a319c2152f6955abef2e488e53819765ffb63f5c2394cc2ad3064",
+            "n_words": 305,
+            "nearest_ref_digest": "11e116f4d45cbfbb3ad1300bfc79b91f13a4523cbd100eac71d1bb5b0ea62661",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.7276,
+            "containment": 0.989,
+            "digest": "6ee8e7d05a7274b3340adfbd5defb508dedfb702aa0792aff99320b44bc91a29",
+            "n_words": 277,
+            "nearest_ref_digest": "11e116f4d45cbfbb3ad1300bfc79b91f13a4523cbd100eac71d1bb5b0ea62661",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.7252,
+            "containment": 0.7913,
+            "digest": "bc1a8eee6cf8654db94f83bd9de71b6d21cc6eb8c8a9a21aef4663ba6e820913",
+            "n_words": 642,
+            "nearest_ref_digest": "f7832bd7384a633d8d7c436fe525ec887bcaac5fc89f14e7ead26bfb1d7156b0",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.7238,
+            "containment": 1.0,
+            "digest": "3d8c769b0fa8e2ec33d793d647d12980353fd824ef45221acd64f5cfc2165125",
+            "n_words": 169,
+            "nearest_ref_digest": "70f5813056c08e66f044651c27fe052a385aa44feb2c1f2325f5df610af94b4a",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7221,
+            "containment": 0.72,
+            "digest": "22b2c3912d62fb8248909e4abe17c52847d1c1efcb1694dd924baa4b257a4532",
+            "n_words": 682,
+            "nearest_ref_digest": "6201363020eff9af3a0f6152234a939937ad1f3c0af3d4790933eb3746140168",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.7215,
+            "containment": 0.7593,
+            "digest": "f62e1efe1af18621a46a5b4a5e7f172dd71dd406f39ec25e2942a4e4b766fc48",
+            "n_words": 58,
+            "nearest_ref_digest": "ef02a9f388ae4319a302b568d937a71eec9e3b080b59fe9a253614fc1163e544",
+            "nearest_ref_source": "prompt_injections",
+            "source": "prompt_injections"
+          },
+          {
+            "best_jaccard": 0.7072,
+            "containment": 1.0,
+            "digest": "c84d7b397dc79789c813f59d6d85b8350240648681a60bd1aa8a2c7690d6efb5",
+            "n_words": 48,
+            "nearest_ref_digest": "b9cb5e92d9496d7227d74fa497a99f944ba5b9451115d9aa238ecf98242f0e49",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7002,
+            "containment": 0.8105,
+            "digest": "f34488761d8a7d54c51662ba1d46af7f236d7310fcdeefc09dfb197f501fffbe",
+            "n_words": 99,
+            "nearest_ref_digest": "51c1c084bd90f626ab8295e69729ad2e9dcb14ca3fa740c04a372d2f98470719",
+            "nearest_ref_source": "toxicchat",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.6915,
+            "containment": 1.0,
+            "digest": "d156ddeeb2a07ffbf90f0602a6cc06ebecacae1b6d4a4f3667b4517d412ec3b2",
+            "n_words": 163,
+            "nearest_ref_digest": "90369fcebe6ae3bd24aa8e9bf36b4134d04ae3f36c1f0f29804d1db9b02b1128",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.6911,
+            "containment": 0.8297,
+            "digest": "fa1f41315150ebbe01f5c5fb5726958a917ded25ac08274eda1e4b83854110d4",
+            "n_words": 235,
+            "nearest_ref_digest": "fa287168f1bf7fb344b7a9296feef89369ca04419ea669fc14adefc0ae6028e0",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.6816,
+            "containment": 0.8925,
+            "digest": "47f8c23fc4cb4528148e7dd48756bdba332a255fee6f3aaa38a058c7edcf181f",
+            "n_words": 190,
+            "nearest_ref_digest": "70f5813056c08e66f044651c27fe052a385aa44feb2c1f2325f5df610af94b4a",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.6793,
+            "containment": 0.9939,
+            "digest": "2c42f0d27671501cccb826c10d8e5197d7aa393429c5b6aab60262706a014e61",
+            "n_words": 169,
+            "nearest_ref_digest": "90369fcebe6ae3bd24aa8e9bf36b4134d04ae3f36c1f0f29804d1db9b02b1128",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.6647,
+            "containment": 0.7934,
+            "digest": "c942581df6bae1907699beea98ab64c5f258851be83c17d63430074367a0ad50",
+            "n_words": 600,
+            "nearest_ref_digest": "f7832bd7384a633d8d7c436fe525ec887bcaac5fc89f14e7ead26bfb1d7156b0",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.6575,
+            "containment": 0.7584,
+            "digest": "4a51292f0946ec300d6f558150992f04530709a26c0e9d14df45c202ce6594c5",
+            "n_words": 740,
+            "nearest_ref_digest": "f7832bd7384a633d8d7c436fe525ec887bcaac5fc89f14e7ead26bfb1d7156b0",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.6523,
+            "containment": 1.0,
+            "digest": "95cf2458e8c24eee919ad9d7c1173220b5d79434c15b54dbc7a50484835ba13f",
+            "n_words": 56,
+            "nearest_ref_digest": "59f433e67bab06d38dc7d8a7f732a834a6c7dfa81938289e623220a6a1766dff",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.637,
+            "containment": 0.7763,
+            "digest": "d248604cc861b7b35ba5736bce4cdfb670cc17a168eff73df6cd882500a46950",
+            "n_words": 945,
+            "nearest_ref_digest": "6bbba06cde74367a3f655413d8e1de68dc8e6836683c750f2462a05ff5bec7ff",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          }
+        ]
+      },
+      "lineage": {
+        "family_id_collisions": 0,
+        "family_id_examples": [],
+        "measurable": true,
+        "upstream_examples": [],
+        "upstream_family_id_collisions": 0
+      },
+      "why": "id_test is a held-out-ROWS split of represented sources, so some lineage overlap is expected by construction; verbatim row reuse is not."
+    },
+    "act1_id_test__vs__teacher_pool": {
+      "digest": {
+        "exact_digests": [],
+        "exact_n": 0,
+        "normalized_beyond_exact_n": 1,
+        "normalized_digests": [
+          "bf81b4af3eb245df10adbd134cd5bf74e4aaaad802c109cc9dd4ce26fcc8cdb9"
+        ],
+        "normalized_n": 1
+      },
+      "fuzzy": {
+        "by_source": {
+          "jailbreak_classification": {
+            "containment_at_least": {
+              "0.30": 0,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 154
+            },
+            "max_jaccard": 0.0709,
+            "n": 159,
+            "n_short_rows_excluded_from_long": 5
+          },
+          "prompt_injections": {
+            "containment_at_least": {
+              "0.30": 0,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 44
+            },
+            "max_jaccard": 0.0517,
+            "n": 67,
+            "n_short_rows_excluded_from_long": 23
+          },
+          "toxicchat": {
+            "containment_at_least": {
+              "0.30": 8,
+              "0.50": 5,
+              "0.80": 1,
+              "1.00": 1
+            },
+            "jaccard_at_least": {
+              "0.50": 2,
+              "0.70": 2,
+              "0.90": 1
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 292
+            },
+            "max_jaccard": 1.0,
+            "n": 451,
+            "n_short_rows_excluded_from_long": 159
+          }
+        },
+        "containment_at_least": {
+          "0.30": 8,
+          "0.50": 5,
+          "0.80": 1,
+          "1.00": 1
+        },
+        "jaccard_at_least": {
+          "0.50": 2,
+          "0.70": 2,
+          "0.90": 1
+        },
+        "max_containment": 1.0,
+        "max_jaccard": 1.0,
+        "n_probe": 677,
+        "n_ref": 4188,
+        "n_unmeasurable_by_ngram": 0,
+        "worst_rows": [
+          {
+            "best_jaccard": 1.0,
+            "containment": 1.0,
+            "digest": "bf81b4af3eb245df10adbd134cd5bf74e4aaaad802c109cc9dd4ce26fcc8cdb9",
+            "n_words": 4,
+            "nearest_ref_digest": "bf81b4af3eb245df10adbd134cd5bf74e4aaaad802c109cc9dd4ce26fcc8cdb9",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7059,
+            "containment": 0.6667,
+            "digest": "c39f5881d69e0567243ec7fbfdb59d796a5a1f6093c9aec6eef87dad237d5368",
+            "n_words": 7,
+            "nearest_ref_digest": "9ed2178d3fbf4f5254c287729e88337c75fc10a48c45bc0391e59ff8b2fc3b56",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.48,
+            "containment": 0.5,
+            "digest": "138358d581e37798e7387ecf38130e4d18d46a68236c05d36a48dfae0a73ba54",
+            "n_words": 6,
+            "nearest_ref_digest": "5f550e1a0eb0029cbd774977869e7174c863f0aa730238e03dc0f4d6b50abf53",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.3704,
+            "containment": 0.6667,
+            "digest": "3ebd9e54f35fe58ddb029938147fba80a35455ea62be9f263994a8e4466e48c2",
+            "n_words": 7,
+            "nearest_ref_digest": "859befbc4fa718adacb7af7940770ed064e1e457914d22c5cfeda91c17bc86e4",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.359,
+            "containment": 0.4,
+            "digest": "7b49132850c5eb01c1ba8e68e0f2bbe1424c40145d002ecd03e8fdbbcf86f6ab",
+            "n_words": 9,
+            "nearest_ref_digest": "62364185d4d512bcdb4efd787a8813bb11f7835e34ce1e6fb7f0cd6b62e305d5",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.32,
+            "containment": 0.3333,
+            "digest": "fdc8bc3f4f5b00a8c3a42b58546f260258e499578d3b9f75f1495ee1432ba2db",
+            "n_words": 7,
+            "nearest_ref_digest": "211e0aa3f6f5503f9fe09264257a31b5539c568d69df043a398534be6ba5386b",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.303,
+            "containment": 0.2,
+            "digest": "b93819d27c3a6372b9efe5a030897e63a1386170a2445742db9a83b89e3f52b1",
+            "n_words": 9,
+            "nearest_ref_digest": "859befbc4fa718adacb7af7940770ed064e1e457914d22c5cfeda91c17bc86e4",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.2955,
+            "containment": 0.3333,
+            "digest": "8b2fccbe8113630829cf7ee855b358f4939e0bedb897f29838c5c526923bf7bb",
+            "n_words": 7,
+            "nearest_ref_digest": "f7bcac8f2c521a5e4b96de9e618ea01320636518180888f55995139fe994e690",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.2321,
+            "containment": 0.1429,
+            "digest": "ec9d9a89ef67b46117d69218fc6a83ebd405eb6f19c0d26ec656e8785c0ece54",
+            "n_words": 11,
+            "nearest_ref_digest": "4f3e62aa66a8d4f6953bab55b0e7820fd1a00810a177594a5dfd1cb25db5c3ae",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.2031,
+            "containment": 0.5,
+            "digest": "532864ea04e19333281f9bd5d267a15d9f74ab6dd97e8444cb09045934ee01c2",
+            "n_words": 6,
+            "nearest_ref_digest": "b26f1df3e1e58f4f33429e0ba21150bb1c8fc129df289e3f43eccbef44cb8f2c",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.2,
+            "containment": 0.2857,
+            "digest": "fb0165eef819c7bf674c8301ee770e3afdf3346448c361c5ad27fe3c29f46507",
+            "n_words": 11,
+            "nearest_ref_digest": "1e9bb0f126c2a5c82e2d4a07643857c5747443304040d6ae35d64f5ba904a12c",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.1967,
+            "containment": 0.2,
+            "digest": "5caddee5b3d60087bb5717d9202845f04cb7b989281af3a9224a2b752dbaf467",
+            "n_words": 9,
+            "nearest_ref_digest": "598aefc11af9f0da34aa257191774d49bb767a0bf302347ef4fa59649d1e46e5",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.1852,
+            "containment": 0.1429,
+            "digest": "bd4eef9c1de82bfb5a62c45e1d4fcf7753f650e3ca3d59512a7c33a06f2ea53a",
+            "n_words": 18,
+            "nearest_ref_digest": "8f749945c31f76d8d5791689b33078ebbeeb8d7458aa12442d2a0434e27e86f5",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.1633,
+            "containment": 0.1,
+            "digest": "0d7c484ae2d2c47e8455857e49dbbb927b6a9f92855b513b2d8354fe6a3ba014",
+            "n_words": 14,
+            "nearest_ref_digest": "211e0aa3f6f5503f9fe09264257a31b5539c568d69df043a398534be6ba5386b",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.1628,
+            "containment": 0.2,
+            "digest": "f41045ddb8bd02bcf8b567046d8e733b3060ce11e5f924d1ba35c55b6a521957",
+            "n_words": 9,
+            "nearest_ref_digest": "e1690dcf60c8b2ac05dbb404d5d485f1e1534523702589d038afe3b451dec0b6",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.1493,
+            "containment": 0.1429,
+            "digest": "fa60a9ce64820da9fa2a6854374e350f349dceda55922c4901554b252d2d2d13",
+            "n_words": 11,
+            "nearest_ref_digest": "ac1ff6185f23a0df867caec0eaa2aafd286f9f3b63c4d11bfde8b32197273bc3",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.0886,
+            "containment": 0.0714,
+            "digest": "9c5381a28b5a9051970fca3171ed53357c97cd302bc1890004b0d99f5170f7a6",
+            "n_words": 46,
+            "nearest_ref_digest": "85300692c03dc2c80df5ee6a02a1e05533a7562b18237e12d2754222cb745774",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.0809,
+            "containment": 0.0312,
+            "digest": "bd55a7aa29dfeefe9758187b5de91ba84530a2d115757d4e5a4be0e079fe84c2",
+            "n_words": 36,
+            "nearest_ref_digest": "a17b0b2184a6e894c295b27137e2863f7b9b973c435257fdd83403fde68b3128",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.0789,
+            "containment": 0.1667,
+            "digest": "cdb8f47715e6e81fcf89f420e563b858c4399f79d86dd55a6f1fb791989134e5",
+            "n_words": 10,
+            "nearest_ref_digest": "dce0c5620b95db3d2840d842846dc8417164d6a78df778382c9f128d0b5bbbf2",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.0729,
+            "containment": 0.0476,
+            "digest": "f06015110cf2a140627cb338e27fdb8df7ed3cca0e4f68012a813785ccc2d997",
+            "n_words": 46,
+            "nearest_ref_digest": "62364185d4d512bcdb4efd787a8813bb11f7835e34ce1e6fb7f0cd6b62e305d5",
+            "nearest_ref_source": "beavertails",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.0709,
+            "containment": 0.0213,
+            "digest": "8b59569d90601d8885ff044d71482279c4aeef5dc11497e930b307dd5514ba85",
+            "n_words": 51,
+            "nearest_ref_digest": "45669698f3429d3a9c3a390c32656cb10460d5118e27544d2fc7dfa9a277f62a",
+            "nearest_ref_source": "openai_moderation",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.0517,
+            "containment": 0.027,
+            "digest": "bdc4a2c08bb286dec02d233e3c76c2e5f2944040a3c6d972833dffe5553e6b8f",
+            "n_words": 41,
+            "nearest_ref_digest": "0435429ad0d003f1c040c7a105a310192767781eb3aed2455b27b09c49287d28",
+            "nearest_ref_source": "beavertails",
+            "source": "prompt_injections"
+          },
+          {
+            "best_jaccard": 0.0516,
+            "containment": 0.006,
+            "digest": "a173d8c707c2cb555ff9ce34a33f374e1ca1f279bfa838a23ce3f32da2ab707f",
+            "n_words": 685,
+            "nearest_ref_digest": "8af056a3336333ba3cc79c4a5e13bd4b75fb26795571bbb5d5e6bd567f559daa",
+            "nearest_ref_source": "openai_moderation",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.0501,
+            "containment": 0.0055,
+            "digest": "d248604cc861b7b35ba5736bce4cdfb670cc17a168eff73df6cd882500a46950",
+            "n_words": 945,
+            "nearest_ref_digest": "8af056a3336333ba3cc79c4a5e13bd4b75fb26795571bbb5d5e6bd567f559daa",
+            "nearest_ref_source": "openai_moderation",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.0485,
+            "containment": 0.0028,
+            "digest": "30fe007b33759b2c13ccfbc207017b08f28a2c4f5caf69dcd72c7c73e3a86b01",
+            "n_words": 1075,
+            "nearest_ref_digest": "2efc93d7838706aec9b237022285750c012efae9aacf4cb363b0b4e279c07826",
+            "nearest_ref_source": "openai_moderation",
+            "source": "jailbreak_classification"
+          }
+        ]
+      },
+      "lineage": {
+        "family_id_collisions": 0,
+        "family_id_examples": [],
+        "measurable": false,
+        "upstream_examples": [],
+        "upstream_family_id_collisions": 0
+      },
+      "why": "Phase A: pool vs the represented evaluation split."
+    },
+    "act1_train__vs__act1_calibration": {
+      "digest": {
+        "exact_digests": [],
+        "exact_n": 0,
+        "normalized_beyond_exact_n": 0,
+        "normalized_digests": [],
+        "normalized_n": 0
+      },
+      "fuzzy": {
+        "by_source": {
+          "jailbreak_classification": {
+            "containment_at_least": {
+              "0.30": 39,
+              "0.50": 22,
+              "0.80": 5,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 16,
+              "0.70": 4,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 5,
+              "jaccard_at_least_0.70": 4,
+              "n": 389
+            },
+            "max_jaccard": 0.78,
+            "n": 400,
+            "n_short_rows_excluded_from_long": 11
+          },
+          "prompt_injections": {
+            "containment_at_least": {
+              "0.30": 6,
+              "0.50": 2,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 1,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 243
+            },
+            "max_jaccard": 0.5829,
+            "n": 400,
+            "n_short_rows_excluded_from_long": 157
+          },
+          "toxicchat": {
+            "containment_at_least": {
+              "0.30": 25,
+              "0.50": 16,
+              "0.80": 1,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 11,
+              "0.70": 2,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 1,
+              "jaccard_at_least_0.70": 2,
+              "n": 277
+            },
+            "max_jaccard": 0.7795,
+            "n": 400,
+            "n_short_rows_excluded_from_long": 123
+          }
+        },
+        "containment_at_least": {
+          "0.30": 70,
+          "0.50": 40,
+          "0.80": 6,
+          "1.00": 0
+        },
+        "jaccard_at_least": {
+          "0.50": 28,
+          "0.70": 6,
+          "0.90": 0
+        },
+        "max_containment": 0.9283,
+        "max_jaccard": 0.78,
+        "n_probe": 1200,
+        "n_ref": 451,
+        "n_unmeasurable_by_ngram": 0,
+        "worst_rows": [
+          {
+            "best_jaccard": 0.78,
+            "containment": 0.7669,
+            "digest": "6bbba06cde74367a3f655413d8e1de68dc8e6836683c750f2462a05ff5bec7ff",
+            "n_words": 1231,
+            "nearest_ref_digest": "8b173701e0cdc63057ad99610c43c74aa996f70b170ec6880b34708ab8a36b45",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.7798,
+            "containment": 0.7746,
+            "digest": "0fb6b950f429619b289ad1ec9fc41ba91202ba8bc370a412dff2ae7806c7c400",
+            "n_words": 218,
+            "nearest_ref_digest": "042062d2887ab4c0ee02f14dfcfcc72be237e48d61adc965cf59fedbf58d7b35",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.7795,
+            "containment": 0.7703,
+            "digest": "04fb886629ce13ebfae5b544e3b91e64eff904300508e1f5b517a289d8cc88c1",
+            "n_words": 78,
+            "nearest_ref_digest": "295b68cc596d9a8391e38728c62c9c894bc1a53d94a5e1f18a83d04ec5591972",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7794,
+            "containment": 0.7826,
+            "digest": "fb11bc742301de75295a25ccd13accfb9ced4503c093954e454259cdaebcbf91",
+            "n_words": 96,
+            "nearest_ref_digest": "9321ad84dfc11dc2a622921b2799113f62ec0828edc5eeec6237fd644952aa71",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.7174,
+            "containment": 0.724,
+            "digest": "353b85d1c94043460573fcf9ba7ce30010ee91e441faf40b63c24c0d2575f388",
+            "n_words": 477,
+            "nearest_ref_digest": "323e5b50349f4aa6f07b41c4a1029aa71a25afa992642e93ff2d961fe4c321a7",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.7022,
+            "containment": 0.7214,
+            "digest": "7a0ef98a91b3651a1d9099de9e1d1300d1a401a47af59280230a617f48510817",
+            "n_words": 689,
+            "nearest_ref_digest": "8b173701e0cdc63057ad99610c43c74aa996f70b170ec6880b34708ab8a36b45",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.6842,
+            "containment": 0.9283,
+            "digest": "033320418db5a2a84d764e36bdda755dad8afe03fbb76b5c05d76ed8d8201b92",
+            "n_words": 508,
+            "nearest_ref_digest": "609b59b4decee2abbea559a83c82384992ec001777f2bd0c4d3d279cc7f1e250",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.6674,
+            "containment": 0.5983,
+            "digest": "6201363020eff9af3a0f6152234a939937ad1f3c0af3d4790933eb3746140168",
+            "n_words": 519,
+            "nearest_ref_digest": "0a682073647a1d8bf4291f2a26e178617a9b09ca4a1c7567a15d1ef190d47b1d",
+            "nearest_ref_source": "toxicchat",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.6625,
+            "containment": 0.5508,
+            "digest": "c9674096ca1ac4c50631ce79049136a23be860dedcbad6cfa139d566674ab29f",
+            "n_words": 388,
+            "nearest_ref_digest": "44d385a23f084ab8dc36c6c99efd8bd298ef306ad4f552bfa5581f0dbea3af3d",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.6498,
+            "containment": 0.5357,
+            "digest": "6f5d2cb839d8f1a466e0ce309f5359c602b6b82778f558aa8527926fd2e956cf",
+            "n_words": 60,
+            "nearest_ref_digest": "26815b6d8fe7cb20b3f2d32e1dbc5cf2435c7cd128a7534d9432d7e62de8fdff",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.6464,
+            "containment": 0.8101,
+            "digest": "e2b54273fa5bdf33652f44232b23b169420fca32da2d6d81de7b75f0239c6422",
+            "n_words": 85,
+            "nearest_ref_digest": "e3c88c86e5fc9c511a69bfb0839fc5dc4bc9bb34fa57b0dc21ab3356f035c2ed",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.6128,
+            "containment": 0.6176,
+            "digest": "008e714e0252439a9f41190f4bc278f00981d3930a1c8c1b0c6c571c39d644d2",
+            "n_words": 244,
+            "nearest_ref_digest": "545381bc3eed7bd93d3d6ad1e7395306071d31cbceb0b7e02d9c3cdce8d6de5a",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.6125,
+            "containment": 0.7143,
+            "digest": "94517cb6c05b9951acfd6c2f7c0c36b75b184aca8173edce25c41bd11ee671bd",
+            "n_words": 18,
+            "nearest_ref_digest": "77afb4f2b90f412bb30a2f2268b7e022e07d9f4d2970bcfb5ebb5a949c21386b",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.6054,
+            "containment": 0.5674,
+            "digest": "da20c2051be7951928f853b95532c8ee14bd41ea2250c1127f83e9237561d92d",
+            "n_words": 182,
+            "nearest_ref_digest": "84f230c19b79025acbfb91458b78b313dd78ea90ae41b29987da9aecbb919e15",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.6023,
+            "containment": 0.5713,
+            "digest": "a74df0de65d2ca00eb5b8f995ae4993ba4f56bb44f3db0fb81420770bc8aa7e2",
+            "n_words": 899,
+            "nearest_ref_digest": "9677977b1b4b81990e86253ecceeaf53b4aa32ebd5dc618c3c0bba7fabd9db96",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.5871,
+            "containment": 0.5263,
+            "digest": "d46f7cf4c785a9417bcafca5b8733b2ffe5edbe9a735044b3681ed1820bfd337",
+            "n_words": 124,
+            "nearest_ref_digest": "52950882b006b4ac33839e436fc1dab48b64e07d691a82494f9dced37aee3db0",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.5829,
+            "containment": 0.4222,
+            "digest": "0f282c570020a52de8c1a8ab96213af193635f548b1a69af37c25dab7063dbcc",
+            "n_words": 49,
+            "nearest_ref_digest": "6f48a0334b679e859f5dc0b79c28295b5bb44d881ef8bf1076bc0263c5e85a80",
+            "nearest_ref_source": "prompt_injections",
+            "source": "prompt_injections"
+          },
+          {
+            "best_jaccard": 0.5764,
+            "containment": 0.8827,
+            "digest": "beaf5e6f4bb544c00e9884f1a0585ac77c1427e52dbcfe5257b0f83f11ad9e3a",
+            "n_words": 321,
+            "nearest_ref_digest": "44d385a23f084ab8dc36c6c99efd8bd298ef306ad4f552bfa5581f0dbea3af3d",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.5761,
+            "containment": 0.8701,
+            "digest": "7c9f284e23315dd69855ee131bfb20850ca6157ac35c2fb209e67c18e3af5975",
+            "n_words": 322,
+            "nearest_ref_digest": "44d385a23f084ab8dc36c6c99efd8bd298ef306ad4f552bfa5581f0dbea3af3d",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.568,
+            "containment": 0.7037,
+            "digest": "27f686779349969af812553ca986cbcf0b84e99b758d6ad79d9a73c7d45f421e",
+            "n_words": 31,
+            "nearest_ref_digest": "04b9d2893d69c5de28885ecd0fbc6749bbb6228aa9c186a086659ce84d8dbfea",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.5657,
+            "containment": 0.71,
+            "digest": "d5ddcf8828b7ec988ea34800de8cf8b62206e3cc30b194ab3eaab242c146862e",
+            "n_words": 276,
+            "nearest_ref_digest": "07a71d3840ab6281c7f1c44dae66e446f28e155f8a7b2a7ad5cf682d9f91124d",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.559,
+            "containment": 0.5203,
+            "digest": "fae89fcea4815125c1c4b484cefceef721a55c9e1d230f4eaf40828d7eec468c",
+            "n_words": 847,
+            "nearest_ref_digest": "47c8bfbe3eb696fca2b1dd058c95998c08c85c2bc8445f7598f3df2cf07ca8d9",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.5565,
+            "containment": 0.5217,
+            "digest": "b818f4d65d5bb145053d816593c376a32177ca3264c0bb3081f7f31fb1a2ef79",
+            "n_words": 50,
+            "nearest_ref_digest": "26815b6d8fe7cb20b3f2d32e1dbc5cf2435c7cd128a7534d9432d7e62de8fdff",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          },
+          {
+            "best_jaccard": 0.5515,
+            "containment": 0.4448,
+            "digest": "696452941a4e15624887db269c7fa638b50310e30dec89434fe218a67d70acf8",
+            "n_words": 307,
+            "nearest_ref_digest": "545381bc3eed7bd93d3d6ad1e7395306071d31cbceb0b7e02d9c3cdce8d6de5a",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "jailbreak_classification"
+          },
+          {
+            "best_jaccard": 0.5455,
+            "containment": 0.5,
+            "digest": "cd6194fb7b67954ecddc2fc249288f59bd95fdb931323082ef009618b2057cd1",
+            "n_words": 6,
+            "nearest_ref_digest": "34a929e742a5cc28893b7d657484920036df4c406ca55ea0bc2bb1a271dabab7",
+            "nearest_ref_source": "toxicchat",
+            "source": "toxicchat"
+          }
+        ]
+      },
+      "lineage": {
+        "family_id_collisions": 0,
+        "family_id_examples": [],
+        "measurable": true,
+        "upstream_examples": [],
+        "upstream_family_id_collisions": 0
+      },
+      "why": "control: train and calibration are both represented-source splits and should be row-disjoint, which makes this pair a check on the audit itself."
+    },
+    "act1_transfer_test__vs__act1_train": {
+      "digest": {
+        "exact_digests": [],
+        "exact_n": 0,
+        "normalized_beyond_exact_n": 0,
+        "normalized_digests": [],
+        "normalized_n": 0
+      },
+      "fuzzy": {
+        "by_source": {
+          "jailbreakbench": {
+            "containment_at_least": {
+              "0.30": 1,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 103
+            },
+            "max_jaccard": 0.1389,
+            "n": 120,
+            "n_short_rows_excluded_from_long": 17
+          },
+          "wildguardtest": {
+            "containment_at_least": {
+              "0.30": 2,
+              "0.50": 1,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 1,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 759
+            },
+            "max_jaccard": 0.5385,
+            "n": 800,
+            "n_short_rows_excluded_from_long": 41
+          },
+          "wildjailbreak": {
+            "containment_at_least": {
+              "0.30": 0,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 420
+            },
+            "max_jaccard": 0.1006,
+            "n": 420,
+            "n_short_rows_excluded_from_long": 0
+          },
+          "xstest": {
+            "containment_at_least": {
+              "0.30": 0,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 77
+            },
+            "max_jaccard": 0.2143,
+            "n": 240,
+            "n_short_rows_excluded_from_long": 163
+          }
+        },
+        "containment_at_least": {
+          "0.30": 3,
+          "0.50": 1,
+          "0.80": 0,
+          "1.00": 0
+        },
+        "jaccard_at_least": {
+          "0.50": 1,
+          "0.70": 0,
+          "0.90": 0
+        },
+        "max_containment": 0.5,
+        "max_jaccard": 0.5385,
+        "n_probe": 1580,
+        "n_ref": 1200,
+        "n_unmeasurable_by_ngram": 0,
+        "worst_rows": [
+          {
+            "best_jaccard": 0.5385,
+            "containment": 0.5,
+            "digest": "c1c7099b5a21f653dbeaca116c2e6e60a1b8f751b73d09c1bffa728ed2dcd21e",
+            "n_words": 6,
+            "nearest_ref_digest": "e8924cd03e17aea8d75ff757c665d1f80a72f1e9d554740a8de83228b5e0ab03",
+            "nearest_ref_source": "prompt_injections",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.2414,
+            "containment": 0.1429,
+            "digest": "0a82b573bd49dd34adae7e9576ca79c6c86b67bf267f731c3621cdae6f0c1d7f",
+            "n_words": 11,
+            "nearest_ref_digest": "e8924cd03e17aea8d75ff757c665d1f80a72f1e9d554740a8de83228b5e0ab03",
+            "nearest_ref_source": "prompt_injections",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.2143,
+            "containment": 0.1111,
+            "digest": "2d6c6ee345bffb0950d03268aad90162c6c9edf835e04e88bca82a63bc36627d",
+            "n_words": 13,
+            "nearest_ref_digest": "07c70a1837acf1ff832681885daf48fbf275c302c65939bcfbd01e07927bb099",
+            "nearest_ref_source": "toxicchat",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.1556,
+            "containment": 0.2,
+            "digest": "8dbd35ae05ca5b3cbc8a4cfd8dddf0401f6979c35be8531adcb5e51d5accad4a",
+            "n_words": 9,
+            "nearest_ref_digest": "499d465b55bde9d8d2a08e299cbe54c4af2e25c5a3c030e3fa12972814117e39",
+            "nearest_ref_source": "toxicchat",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.1429,
+            "containment": 0.0769,
+            "digest": "4cc3829728182303b418069ef86ad6444ced0fbbd9bd8f7c60fce9f458e5dccf",
+            "n_words": 17,
+            "nearest_ref_digest": "07c70a1837acf1ff832681885daf48fbf275c302c65939bcfbd01e07927bb099",
+            "nearest_ref_source": "toxicchat",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.1389,
+            "containment": 0.4,
+            "digest": "ccf78fb03ce173fac1359555f1a987c128f6831fa8655ecf9996b7f51e1dfc38",
+            "n_words": 9,
+            "nearest_ref_digest": "94517cb6c05b9951acfd6c2f7c0c36b75b184aca8173edce25c41bd11ee671bd",
+            "nearest_ref_source": "toxicchat",
+            "source": "jailbreakbench"
+          },
+          {
+            "best_jaccard": 0.1012,
+            "containment": 0.0769,
+            "digest": "0cea28cb7f5c130b70de3179dc25814b15230ab4ee87962561cc9bad09ab06e5",
+            "n_words": 17,
+            "nearest_ref_digest": "29cd9b5917fb531a8c880cadece2747f711ad4f60b548b932dacdf5404d07c98",
+            "nearest_ref_source": "toxicchat",
+            "source": "jailbreakbench"
+          },
+          {
+            "best_jaccard": 0.1006,
+            "containment": 0.0146,
+            "digest": "91ae3f0d09cd78776229d0078e80930ee348c2030d9e84c762bfcc4ea57c5029",
+            "n_words": 415,
+            "nearest_ref_digest": "ca30988bf17588f6a680b294b77b474471413cf98ad152b33b8564e81edbf529",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0985,
+            "containment": 0.0721,
+            "digest": "323bd8933a8482d5a47e926837373d605b1826fa14b1b5e649a7c90c766d40dc",
+            "n_words": 226,
+            "nearest_ref_digest": "6dba4a3a1d53b3b016b17c08caa0ace4f1fda891c7462bf0a5df966402e299df",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0952,
+            "containment": 0.1,
+            "digest": "e78e590372cf1f913dece5f1126470b9668bc0d8b8fc8329a53defe20d5553ab",
+            "n_words": 14,
+            "nearest_ref_digest": "979b790181bef336eac4baf92e35fab37602be36c29ab7e9a340b634a74637a5",
+            "nearest_ref_source": "toxicchat",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.0632,
+            "containment": 0.0345,
+            "digest": "eec54224c57e4af091483ccff61aa57597ae919e6a74c0ad45429d2c36fc5e3a",
+            "n_words": 120,
+            "nearest_ref_digest": "8a66f39de0d5b51a43389bcac442c70217161e7cb3e935d23e89924f6a5c1481",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.0629,
+            "containment": 0.0063,
+            "digest": "e30373c45e05486e94c129eb0009f327288bd25bc0aafbcf2457cf26ff9d4201",
+            "n_words": 498,
+            "nearest_ref_digest": "0f733d54f15e9ef1b5e10e8542e460e5a1e8f9b17e42b159b9ca8ba8c0d0b664",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0596,
+            "containment": 0.0071,
+            "digest": "9558245f35ff261a559691deb84e230d197ef96551dde370f3dadaa46ca9d1f1",
+            "n_words": 145,
+            "nearest_ref_digest": "71f1324ff6f9a574bf940f019f51ae8d66eb47e8fe1a0189a1554dfe0645f024",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.0594,
+            "containment": 0.039,
+            "digest": "6bc9b767dd272c9f8e72845096b87fd0c8d115c4b569757d21b5fe93376e552f",
+            "n_words": 81,
+            "nearest_ref_digest": "76c9f4830ee97ccc2ba7732dd20cefa6c67e2a06dc2434bd5b59bb50573b4e7d",
+            "nearest_ref_source": "toxicchat",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0584,
+            "containment": 0.2,
+            "digest": "de823a93ef6b0d844494037bc517d7d814ca31f6e2620ef92ab84bddc9641183",
+            "n_words": 9,
+            "nearest_ref_digest": "21952f6d761b9231155ad6f61435975d9349ec803dc1524452e42406ab5941d1",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.0553,
+            "containment": 0.0033,
+            "digest": "a69da73b5b626069eca596ee158655c99f5431b37ad7ef3aed81d52bdd833ea7",
+            "n_words": 304,
+            "nearest_ref_digest": "3b723c189fb5790afb25522787ecdb078601bcbc34a04820ed3c6249845044ef",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0548,
+            "containment": 0.0034,
+            "digest": "a90fa9c1dd9324452fa3ae947c272095419cdf226021a5a5034fa6d5f3d6d3da",
+            "n_words": 301,
+            "nearest_ref_digest": "07b05013d28de94d3dacd019bee1051a9eeb84caee8bdb050baee5144ba501e1",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0546,
+            "containment": 0.0189,
+            "digest": "538ff72c01eb3fbf6bba25696958e69f3f670814709da919c2b29309fe6fb846",
+            "n_words": 381,
+            "nearest_ref_digest": "008f6e37dc09c0c3b7663c4fa19fea96c86e7ddc0bd4365d10aaadce81cc4283",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.0535,
+            "containment": 0.0119,
+            "digest": "2c67d1d617d09a91e6372a5a264e84a07cc00b075e135ac72fd862be2798f080",
+            "n_words": 257,
+            "nearest_ref_digest": "9676e83d8043ce832d6e8ab054c5d4a7430bab34ea911af3ccc7ee5127a9bc8b",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.0535,
+            "containment": 0.0093,
+            "digest": "2661a9a5af518c9ff432606d1a399c8f254da8bb03075c9f65679266b55f6998",
+            "n_words": 111,
+            "nearest_ref_digest": "1400f68f92b4ba59621aa37c03cfec4862ea24a35f6a6da766323bf47dd1cb1d",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0533,
+            "containment": 0.0049,
+            "digest": "321f64df999280f4bf40fafd9864cc44218bee0f56ed1b7350690961eb3e3d81",
+            "n_words": 208,
+            "nearest_ref_digest": "f7832bd7384a633d8d7c436fe525ec887bcaac5fc89f14e7ead26bfb1d7156b0",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.0529,
+            "containment": 0.0136,
+            "digest": "cbb5657c53e83c2df0c8196410afa91f4436829f9d5b2a5733d020b56ef7bb35",
+            "n_words": 298,
+            "nearest_ref_digest": "97ea927d9d5c692dc59379ddc2df9c2b7f4a93830af951297bc6ec77f83e2aac",
+            "nearest_ref_source": "toxicchat",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0527,
+            "containment": 0.009,
+            "digest": "33326782069e90e005a650a74232cfea4448ce34190442d3a80883cf8226bf2e",
+            "n_words": 451,
+            "nearest_ref_digest": "6bbba06cde74367a3f655413d8e1de68dc8e6836683c750f2462a05ff5bec7ff",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0524,
+            "containment": 0.0051,
+            "digest": "ced24d2fa3a909b4937c92df12167d3b168b66c99fdd2b5c69b87652a075b52f",
+            "n_words": 202,
+            "nearest_ref_digest": "1d3c07dd2056f15aa25f5521bc8e918ea0a26918877db631600c9313d641083f",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildjailbreak"
+          },
+          {
+            "best_jaccard": 0.0521,
+            "containment": 0.0087,
+            "digest": "c6fbaae99c0789d74511b468334475c70c805b34464b541e74f59ca1f0734617",
+            "n_words": 354,
+            "nearest_ref_digest": "9676e83d8043ce832d6e8ab054c5d4a7430bab34ea911af3ccc7ee5127a9bc8b",
+            "nearest_ref_source": "jailbreak_classification",
+            "source": "wildguardtest"
+          }
+        ]
+      },
+      "lineage": {
+        "family_id_collisions": 0,
+        "family_id_examples": [],
+        "measurable": true,
+        "upstream_examples": [],
+        "upstream_family_id_collisions": 0
+      },
+      "why": "roadmap item 2: the pending v2 decontamination audit. Leakage here would inflate measured transfer and make specialization look milder than it is."
+    },
+    "act1_transfer_test__vs__teacher_pool": {
+      "digest": {
+        "exact_digests": [],
+        "exact_n": 0,
+        "normalized_beyond_exact_n": 0,
+        "normalized_digests": [],
+        "normalized_n": 0
+      },
+      "fuzzy": {
+        "by_source": {
+          "jailbreakbench": {
+            "containment_at_least": {
+              "0.30": 0,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 103
+            },
+            "max_jaccard": 0.2703,
+            "n": 120,
+            "n_short_rows_excluded_from_long": 17
+          },
+          "wildguardtest": {
+            "containment_at_least": {
+              "0.30": 1,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 759
+            },
+            "max_jaccard": 0.2955,
+            "n": 800,
+            "n_short_rows_excluded_from_long": 41
+          },
+          "wildjailbreak": {
+            "containment_at_least": {
+              "0.30": 0,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 420
+            },
+            "max_jaccard": 0.0609,
+            "n": 420,
+            "n_short_rows_excluded_from_long": 0
+          },
+          "xstest": {
+            "containment_at_least": {
+              "0.30": 14,
+              "0.50": 5,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 3,
+              "0.70": 1,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 77
+            },
+            "max_jaccard": 0.72,
+            "n": 240,
+            "n_short_rows_excluded_from_long": 163
+          }
+        },
+        "containment_at_least": {
+          "0.30": 15,
+          "0.50": 5,
+          "0.80": 0,
+          "1.00": 0
+        },
+        "jaccard_at_least": {
+          "0.50": 3,
+          "0.70": 1,
+          "0.90": 0
+        },
+        "max_containment": 0.6667,
+        "max_jaccard": 0.72,
+        "n_probe": 1580,
+        "n_ref": 4188,
+        "n_unmeasurable_by_ngram": 0,
+        "worst_rows": [
+          {
+            "best_jaccard": 0.72,
+            "containment": 0.5,
+            "digest": "531dd03a8080b4131bb56656b56278da734e96351edf11615daf2f121a6e4fb2",
+            "n_words": 6,
+            "nearest_ref_digest": "d5e616badd6fd26529880adad169289a9d1fc89ab2674fe545823958f05810d9",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.5385,
+            "containment": 0.6667,
+            "digest": "4c76481b8751456012df7d3d73e3c63efde2f3d9b6749f01255f68281a458d24",
+            "n_words": 7,
+            "nearest_ref_digest": "caf7f95c4993ceee8c0005d9c4d8df9d005acb40949dd0f8a8d173517e09edff",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.5333,
+            "containment": 0.6667,
+            "digest": "414acbad3e0cd80e8f6ad58465c0d9a1f589b4a139b88b41e70a7b3d35e13921",
+            "n_words": 7,
+            "nearest_ref_digest": "9922158a4dabe67867261b408547b5b956207fa461c1d8fcd740e87a9e950dd7",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.4545,
+            "containment": 0.4,
+            "digest": "117c469bb0aca4668de996c24bd85657806ff07ea91f4e795f57649d9e819191",
+            "n_words": 9,
+            "nearest_ref_digest": "a3790b55195d54c7ae115f2b190f31d6db0b1d281baa0199f6ec4ac24c5d29ea",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.4483,
+            "containment": 0.4,
+            "digest": "0ed9a5ea3217e0a1229799ecce7fdf2712afe8031de43607b60352b5108b9dcc",
+            "n_words": 9,
+            "nearest_ref_digest": "9d3f0b0d3659293a450a7664f42461aeec815d6aa0d266a4267c7a4ca130a3af",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.4333,
+            "containment": 0.4,
+            "digest": "421389c2caf33346fb3aa3d02859f8904fe385fab312a85e9f31c32ba99033f9",
+            "n_words": 9,
+            "nearest_ref_digest": "9d3f0b0d3659293a450a7664f42461aeec815d6aa0d266a4267c7a4ca130a3af",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.4242,
+            "containment": 0.5,
+            "digest": "584d056b19a731257418d3253e53a4e0e0a21511a9add9098363075f69997980",
+            "n_words": 8,
+            "nearest_ref_digest": "96ee06ddcc533bd16893849b86b99d7969d9000b8fb87fef2ee1d7ce169c3be3",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.4048,
+            "containment": 0.3333,
+            "digest": "6854a689cfd76f6aa910f77c10ad85896d0e713d3fe415d4c41ad29b66d3d184",
+            "n_words": 10,
+            "nearest_ref_digest": "d23ade2eba8941bb89d2b97c8998eb7f0e893147bb8c088a420c4af8d54b8ae2",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.3898,
+            "containment": 0.3333,
+            "digest": "51525100e3ba2061c7c9a2753caad18a3c6182e43410346bbd1f77403b95db53",
+            "n_words": 10,
+            "nearest_ref_digest": "f549bd3354e02c5ebd4da31402acefbdcf22499074ee0148af2f91d316a620c6",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.3269,
+            "containment": 0.3333,
+            "digest": "5e3c81270be1e9142529e23d04bd771cc1197516e88cb8b330f15e973b161940",
+            "n_words": 10,
+            "nearest_ref_digest": "2fd623e0041154355f3d20cb95e63d7c3d5282cdba1592fbbcf82c4b0b61575f",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.3191,
+            "containment": 0.3333,
+            "digest": "73f7280efacb5da8ec6d75f1fe0a5ef10a38c3b208a39870cf8587776b808b84",
+            "n_words": 10,
+            "nearest_ref_digest": "a3790b55195d54c7ae115f2b190f31d6db0b1d281baa0199f6ec4ac24c5d29ea",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.3182,
+            "containment": 0.2857,
+            "digest": "4cab8f7c835b08144632bfe239951988625722f58046a4cddc450e173c2a6d3b",
+            "n_words": 11,
+            "nearest_ref_digest": "9d3f0b0d3659293a450a7664f42461aeec815d6aa0d266a4267c7a4ca130a3af",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.3143,
+            "containment": 0.2,
+            "digest": "e671df810ef2a1575d2238da6ce64512a2e1f4d940853dfef2f2b7902caa6122",
+            "n_words": 9,
+            "nearest_ref_digest": "9d3f0b0d3659293a450a7664f42461aeec815d6aa0d266a4267c7a4ca130a3af",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.3023,
+            "containment": 0.1667,
+            "digest": "96f24426e8379acc99a3093fb0fd2aec81778c2971953aa05f3e0ad9f4ac5bc9",
+            "n_words": 10,
+            "nearest_ref_digest": "d6a6640859d33f5f150162b0d400a4739f0ed1a4989672242c779dbfe78d9085",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.2955,
+            "containment": 0.2857,
+            "digest": "36962d8baed608313b02cf3b989f4a43c05c5d213bc6961ee611113beffe18e7",
+            "n_words": 11,
+            "nearest_ref_digest": "9d3f0b0d3659293a450a7664f42461aeec815d6aa0d266a4267c7a4ca130a3af",
+            "nearest_ref_source": "beavertails",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.28,
+            "containment": 0.2,
+            "digest": "2f25ed1c7e2be572ff31d768e40c8757b95911fe574d9dccd1bb6c32b2b6f67b",
+            "n_words": 9,
+            "nearest_ref_digest": "e9aac419cf51f4dd51361714c0640fe3733299a35a8f45d71cc83cc92fe341a7",
+            "nearest_ref_source": "beavertails",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.2712,
+            "containment": 0.2,
+            "digest": "a5a097ae36be83d98457f1dc4f5f61d17b83bd54fe128002a5b2c04a2f10b2e6",
+            "n_words": 14,
+            "nearest_ref_digest": "b41df8456df884743ad203e9313f10cd6bf978d9fb1aea896bf46111e0b5fd55",
+            "nearest_ref_source": "beavertails",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.2712,
+            "containment": 0.2,
+            "digest": "f53784d598e9885d480e6367d35d8c60a362972b4184869541d43c1c3b35e010",
+            "n_words": 9,
+            "nearest_ref_digest": "502611fa52b831b959dc1310cac84788c15ae7785ac86217cba90a79b21a09f4",
+            "nearest_ref_source": "beavertails",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.2703,
+            "containment": 0.2,
+            "digest": "ccf78fb03ce173fac1359555f1a987c128f6831fa8655ecf9996b7f51e1dfc38",
+            "n_words": 9,
+            "nearest_ref_digest": "859befbc4fa718adacb7af7940770ed064e1e457914d22c5cfeda91c17bc86e4",
+            "nearest_ref_source": "beavertails",
+            "source": "jailbreakbench"
+          },
+          {
+            "best_jaccard": 0.2683,
+            "containment": 0.125,
+            "digest": "279203b5ded47b73312e4d70e0198cb1fea528c965b6526336d0b96716c85221",
+            "n_words": 12,
+            "nearest_ref_digest": "9d3f0b0d3659293a450a7664f42461aeec815d6aa0d266a4267c7a4ca130a3af",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.2619,
+            "containment": 0.1429,
+            "digest": "87f578126baa56d9613dca690b34ce1064114bea4e8d9a077e15136e398df0e6",
+            "n_words": 11,
+            "nearest_ref_digest": "9d3f0b0d3659293a450a7664f42461aeec815d6aa0d266a4267c7a4ca130a3af",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.2558,
+            "containment": 0.125,
+            "digest": "062bd6678c953bd3b3604dae1560f691df193f4f33a1e0502e71cff5bb799cd3",
+            "n_words": 12,
+            "nearest_ref_digest": "9d3f0b0d3659293a450a7664f42461aeec815d6aa0d266a4267c7a4ca130a3af",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.25,
+            "containment": 0.2,
+            "digest": "7b94dbde936d7a240e4b32b471558dc409b940150c84125f3b44d41e7d003325",
+            "n_words": 9,
+            "nearest_ref_digest": "f12606cd6299de776af00f6da2b4ccf01db86ec4a03f750a6d19b0971195315c",
+            "nearest_ref_source": "beavertails",
+            "source": "wildguardtest"
+          },
+          {
+            "best_jaccard": 0.2439,
+            "containment": 0.2,
+            "digest": "8624ba57b846e268954d578aa6f8b72244f4141b6b9fed95d8df4b2f945ecf81",
+            "n_words": 9,
+            "nearest_ref_digest": "8b10da15448b6167d03917afc01bf5f86fb9c72b8622dcd992cbd37daf3a1d0c",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          },
+          {
+            "best_jaccard": 0.2414,
+            "containment": 0.3333,
+            "digest": "250a132d6cb1ce84d478a9d108887110781c7c40ce6fdd8700387844bd722748",
+            "n_words": 10,
+            "nearest_ref_digest": "65e056baa855b6fd0deeb5802cfca2d7792f76cf51d5de1ddb822e8a0d297621",
+            "nearest_ref_source": "beavertails",
+            "source": "xstest"
+          }
+        ]
+      },
+      "lineage": {
+        "family_id_collisions": 0,
+        "family_id_examples": [],
+        "measurable": false,
+        "upstream_examples": [],
+        "upstream_family_id_collisions": 0
+      },
+      "why": "Phase A: the candidate teacher pool must not contaminate Act I's transfer suite."
+    },
+    "teacher_pool__vs__act1_train": {
+      "digest": {
+        "exact_digests": [],
+        "exact_n": 0,
+        "normalized_beyond_exact_n": 1,
+        "normalized_digests": [
+          "d555ba9eaae020fe26f886a7083952e11621948be48942431e37c4db706828ca"
+        ],
+        "normalized_n": 1
+      },
+      "fuzzy": {
+        "by_source": {
+          "beavertails": {
+            "containment_at_least": {
+              "0.30": 25,
+              "0.50": 8,
+              "0.80": 2,
+              "1.00": 2
+            },
+            "jaccard_at_least": {
+              "0.50": 2,
+              "0.70": 1,
+              "0.90": 1
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 1510
+            },
+            "max_jaccard": 1.0,
+            "n": 2525,
+            "n_short_rows_excluded_from_long": 1015
+          },
+          "openai_moderation": {
+            "containment_at_least": {
+              "0.30": 0,
+              "0.50": 0,
+              "0.80": 0,
+              "1.00": 0
+            },
+            "jaccard_at_least": {
+              "0.50": 0,
+              "0.70": 0,
+              "0.90": 0
+            },
+            "long_rows_only": {
+              "containment_at_least_0.80": 0,
+              "jaccard_at_least_0.70": 0,
+              "n": 1619
+            },
+            "max_jaccard": 0.092,
+            "n": 1663,
+            "n_short_rows_excluded_from_long": 44
+          }
+        },
+        "containment_at_least": {
+          "0.30": 25,
+          "0.50": 8,
+          "0.80": 2,
+          "1.00": 2
+        },
+        "jaccard_at_least": {
+          "0.50": 2,
+          "0.70": 1,
+          "0.90": 1
+        },
+        "max_containment": 1.0,
+        "max_jaccard": 1.0,
+        "n_probe": 4188,
+        "n_ref": 1200,
+        "n_unmeasurable_by_ngram": 0,
+        "worst_rows": [
+          {
+            "best_jaccard": 1.0,
+            "containment": 1.0,
+            "digest": "d555ba9eaae020fe26f886a7083952e11621948be48942431e37c4db706828ca",
+            "n_words": 7,
+            "nearest_ref_digest": "d555ba9eaae020fe26f886a7083952e11621948be48942431e37c4db706828ca",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.5,
+            "containment": 0.3333,
+            "digest": "5f550e1a0eb0029cbd774977869e7174c863f0aa730238e03dc0f4d6b50abf53",
+            "n_words": 7,
+            "nearest_ref_digest": "cd6194fb7b67954ecddc2fc249288f59bd95fdb931323082ef009618b2057cd1",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.4,
+            "containment": 1.0,
+            "digest": "9ed2178d3fbf4f5254c287729e88337c75fc10a48c45bc0391e59ff8b2fc3b56",
+            "n_words": 6,
+            "nearest_ref_digest": "1a2038ea74b51588f30990fa90f7f12eca173bf5e0750e9472ea7e384d53a018",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.381,
+            "containment": 0.3333,
+            "digest": "211e0aa3f6f5503f9fe09264257a31b5539c568d69df043a398534be6ba5386b",
+            "n_words": 7,
+            "nearest_ref_digest": "16accee3371d0d48d386ada41d11ff8f4a11825cb6644e8b632a7b46fa596c10",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.3696,
+            "containment": 0.4,
+            "digest": "9ca24d87541edbff7ac86e96f15b21cb7ba1b8d621f88133bcdb4fefba3cdb67",
+            "n_words": 9,
+            "nearest_ref_digest": "9dfc11a6f056b3a0a85499aa728e08e1b8ae421d778fbcd4350f15bb606fe861",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.3636,
+            "containment": 0.3333,
+            "digest": "34ab862899f9455cdc0a3877e24db9b7868da0c1bc4487cba662f71c71d56180",
+            "n_words": 7,
+            "nearest_ref_digest": "07c70a1837acf1ff832681885daf48fbf275c302c65939bcfbd01e07927bb099",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.36,
+            "containment": 0.1429,
+            "digest": "7013016dc5281afbfb274a8539015da112ac42d9a88c80ec3fa5ca03bb17cf85",
+            "n_words": 18,
+            "nearest_ref_digest": "07c70a1837acf1ff832681885daf48fbf275c302c65939bcfbd01e07927bb099",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.3269,
+            "containment": 0.3333,
+            "digest": "377fe4d4c2e0f5f277f08faaa1e569acd2cd0950c3ae4be8b65a5697422fa554",
+            "n_words": 10,
+            "nearest_ref_digest": "9dfc11a6f056b3a0a85499aa728e08e1b8ae421d778fbcd4350f15bb606fe861",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.3051,
+            "containment": 0.1667,
+            "digest": "5fdea8faf60ee49db96864d952028c70342d1d1a7fdbee1296b4a907551921e1",
+            "n_words": 16,
+            "nearest_ref_digest": "07c70a1837acf1ff832681885daf48fbf275c302c65939bcfbd01e07927bb099",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2927,
+            "containment": 0.5,
+            "digest": "26db440d4be16242b50c4c23d0288946cdb242a8ae600bd8a6b9afb3d45371a5",
+            "n_words": 6,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2927,
+            "containment": 0.5,
+            "digest": "58fabaa014dc41ff69f93676a111b78efe3e40816bb0e56b49f468d178f100dc",
+            "n_words": 6,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2881,
+            "containment": 0.4,
+            "digest": "d2248b9aca9a4779978db233112308056b9c3a673040042518ee7f3a275d80b8",
+            "n_words": 9,
+            "nearest_ref_digest": "9dfc11a6f056b3a0a85499aa728e08e1b8ae421d778fbcd4350f15bb606fe861",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2778,
+            "containment": 0.1429,
+            "digest": "5f54c45c69e2a91051fb6c093337c319e953be9954511e5c386c3b8088289bd5",
+            "n_words": 11,
+            "nearest_ref_digest": "05180e640f7cab1cd4b5793db28b07f9d24a81d73ed1c390baf5e0b0056f83e8",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2727,
+            "containment": 0.1429,
+            "digest": "5bc1a4a5ad75254f73d2fa7bb45c9f169801f8b92d7c9c2d7520dd33ca0038d2",
+            "n_words": 11,
+            "nearest_ref_digest": "499d465b55bde9d8d2a08e299cbe54c4af2e25c5a3c030e3fa12972814117e39",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2667,
+            "containment": 0.5,
+            "digest": "df28356185eea9fc409dc843a11aa0a43678d68eb6670506ff7fc234e303bc20",
+            "n_words": 6,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2667,
+            "containment": 0.5,
+            "digest": "723ac96368c00a6925b97519b3c8b9782b925d4c49869c6e79a1336e6c339324",
+            "n_words": 6,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2667,
+            "containment": 0.3333,
+            "digest": "2dbdeff9431e2391790e896ca69cdb7caee4443d63eea2f1cae7fb57e6470bc2",
+            "n_words": 7,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2667,
+            "containment": 0.3333,
+            "digest": "fd87e82698be22c303809c3a1759f4e881465b882344344fae3fe583d589b0cc",
+            "n_words": 7,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2667,
+            "containment": 0.3333,
+            "digest": "7f4bee61948c4023691c2d04ab93188682cd5a7200906453135835a8bf63f726",
+            "n_words": 7,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2667,
+            "containment": 0.3333,
+            "digest": "212ea85891aa22a4bef1e3080c512c083be8be9e34f79aaa7a053566fca27d33",
+            "n_words": 7,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2609,
+            "containment": 0.1429,
+            "digest": "f99d6b7706ab12909df1d6a3adcba8cd086547f62de2f580dda3e8cb14ce80e4",
+            "n_words": 11,
+            "nearest_ref_digest": "499d465b55bde9d8d2a08e299cbe54c4af2e25c5a3c030e3fa12972814117e39",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2553,
+            "containment": 0.5,
+            "digest": "7c8892440f330012d214757f2d8b862fd28859a354bbb6e16095aa84abeff63a",
+            "n_words": 6,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.2553,
+            "containment": 0.3333,
+            "digest": "0789cc9efdffcb116ee4e147dddb1200149b24ef95cb430123b783a49187a9c3",
+            "n_words": 7,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.25,
+            "containment": 0.3333,
+            "digest": "910f4d89ec77e2b4f246266bcc8be5bf1e3b39daaf3525b53bdc93a3df795b05",
+            "n_words": 7,
+            "nearest_ref_digest": "69a9a8ccceea4148463532170bd4af0072d3d419d4eb6c89d8d3b731a8841023",
+            "nearest_ref_source": "prompt_injections",
+            "source": "beavertails"
+          },
+          {
+            "best_jaccard": 0.25,
+            "containment": 0.1667,
+            "digest": "f7bcac8f2c521a5e4b96de9e618ea01320636518180888f55995139fe994e690",
+            "n_words": 10,
+            "nearest_ref_digest": "143c053ed2aaa40cc8c6f77f212a8dbb7c694eae60cec9c9699fb2c6ea73508f",
+            "nearest_ref_source": "toxicchat",
+            "source": "beavertails"
+          }
+        ]
+      },
+      "lineage": {
+        "family_id_collisions": 0,
+        "family_id_examples": [],
+        "measurable": false,
+        "upstream_examples": [],
+        "upstream_family_id_collisions": 0
+      },
+      "why": "how much of the candidate teacher pool is already represented in Act I training."
+    }
+  }
+}
