@@ -532,7 +532,55 @@ the upper rule shows where full escalation lands.
 Cost is linear in the escalated share, so a fifth of the traffic is a fifth of the bill.
 """)
 
-# ──────────────────────────────────────────────────── 8 · what it costs to host
+# ────────────────────── 8 · if nothing may leave: combining what we already have
+s = d.blank()
+y = d.header(s, "if nothing may leave", "Combining our own guards helps a little. It does not "
+             "reach the hosted model",
+             f"Every option below priced against our strongest single in-house guard "
+             f"({FN.pct(F['EnsBestSingle'])}), with what each costs per request")
+rows = [["Option", "Catch rate", "Cost per request", "Verdict"],
+        ["Best single in-house guard", FN.pct(F["EnsBestSingle"]), "1 model call",
+         ("the baseline", SLATE)],
+        ["Average the 5 tuning runs of one guard",
+         f"{F['EnsSeedGain']} on top", "already paid for", ("worth doing", GREEN)],
+        [f"Average all {F['EnsMembers']} guards equally", FN.pct(F["EnsCommittee"]),
+         f"{F['EnsMembers']} model calls", ("worse than one", ACCENT)],
+        [f"Weighted blend of all {F['EnsMembers']}", FN.pct(F["EnsStack"]),
+         f"{F['EnsMembers']} calls + labelled data", ("best in-house", BLUE)],
+        ["Escalate the uncertain 20% instead", "87%", "1.2 model calls",
+         ("beats all of it", ACCENT)]]
+table(s, M, y + Inches(0.04), CW, rows, [0.34, 0.17, 0.26, 0.23], row_h=Inches(0.56))
+callout(s, M, y + Inches(3.44), CW, Inches(1.00), "the finding that matters for planning",
+        f"Escalating one request in five beats a {F['EnsMembers']}-model blend — at a sixteenth "
+        f"of the compute and with no labelled data to collect. Ensembling is the right answer "
+        f"only when nothing may leave at all; then it is worth about a quarter of the gap.",
+        color=AMBER)
+d.notes(s, f"""
+This slide exists because "just ensemble the small models" is the most common suggestion in the
+room, and it deserves a measured answer rather than an opinion.
+
+Row by row. Averaging the five tuning runs of a single guard is free -- the adapters already
+exist -- and it reliably adds about {F['EnsSeedGain']}. Do that regardless; it is also how the
+tuned 32B recovers what fine-tuning cost it.
+
+Averaging all {F['EnsMembers']} guards equally is WORSE than just using the best one
+({F['EnsCommittee']} against {F['EnsBestSingle']}). With members that differ this much in
+quality, equal weights dilute the strong ones. If someone proposes "ensemble everything", this
+is the row to show them.
+
+A fitted weighted blend does beat any single guard, reaching {F['EnsStack']}, about a quarter of
+the way to hosted. Two costs are easy to miss: {F['EnsMembers']} forward passes per request, and
+it needs LABELLED in-domain data to fit the weights -- which is usually the thing a team reaching
+for an ensemble does not have. We scored it {F['EnsFolds']}-fold out-of-fold so it is not
+grading its own homework, and its fitted weights include a negative coefficient on one guard,
+which means it is exploiting error structure that may not survive a change of traffic.
+
+The last row is the point: escalating the uncertain fifth reaches 87%, beating the whole blend
+at a fraction of the cost. So ensembling is not the route -- unless lane 1 applies and nothing
+may leave, in which case it is the in-house ceiling and worth building.
+""")
+
+# ──────────────────────────────────────────────────── 9 · what it costs to host
 s = d.blank()
 y = d.header(s, "what hosted costs", "The accuracy is real. So is the bill, the latency, and "
              "the loss of control",
@@ -579,7 +627,7 @@ property, not a technical footnote.
 Close on the scoping sentence. The answer is a split, and this slide is why.
 """)
 
-# ─────────────────────────────────────────────── 9 · the useful surprise
+# ────────────────────────────────────────────── 10 · the useful surprise
 s = d.blank()
 y = d.header(s, "the useful finding", "If we must self-host, a bigger untuned model beats a "
              "tuned small one",
@@ -620,7 +668,7 @@ made held-out accuracy worse on most models, while the size route at least moved
 direction on both regimes.
 """)
 
-# ──────────────────────────────────────────────────── 10 · what we are unsure of
+# ─────────────────────────────────────────────────── 11 · what we are unsure of
 s = d.blank()
 y = d.header(s, "confidence and limits", "What this does not tell you",
              "Stated plainly, so the recommendation can be trusted where it does apply")
@@ -659,7 +707,7 @@ Close on the final callout: the thing worth funding is the measuring instrument 
 domain, not more guard comparisons on general safety.
 """)
 
-# ─────────────────────────────────────────────────────────── 11 · what we would do
+# ────────────────────────────────────────────────────────── 12 · what we would do
 s = d.blank()
 y = d.header(s, "proposal", "What we would do next",
              "Sequenced so each step is cheap and the expensive one is last")

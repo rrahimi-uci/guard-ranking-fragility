@@ -2364,6 +2364,34 @@ guard saw them — <em>non-deterministically</em>, with no row refused under all
 and most refused under four of six. A guardrail whose input filter intermittently declines to
 return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
 its own right.</p>
+<h4 class="runin" id="nor-does-combining-what-we-already-have.">Nor does combining what we already have.</h4>
+<p>The other instinctive response to a
+vendor gap is an ensemble: we hold 18 open guards with ExpGuard scores —
+bases, SFT seed-ensembles, released purpose-built guards — so combining them costs no new
+training. Three combination rules, priced against the strongest single open guard
+(.834) and using the same rule the ensembling appendix fixes (margins average
+directly within a checkpoint, rank-percentile across them):</p>
+<p><em>Seed ensembling helps, reliably and almost for free.</em> Averaging the five SFT seeds of a
+checkpoint gains +0.026 matched-budget recall on average, positive for all six
+checkpoints, and the adapters already exist. It is also how the tuned 32B recovers what SFT cost
+it: the seed ensemble reaches .834 against <span class="math inline">\(0.830\)</span> for its own untuned base.</p>
+<p><em>An unweighted committee actively hurts.</em> Averaging all 18 ranks scores
+.791, <em>below</em> the best single member — <span class="math inline">\(-69\%\)</span> of
+the distance to hosted, i.e. backwards. With members this unequal in quality, equal weights
+dilute the strong ones; this is the <a class="xref" href="#tab:frontier">Table 14</a> spread doing exactly what one should
+expect.</p>
+<p><em>Even a fitted stack falls short.</em> A logistic stack over all 18 members,
+scored 5-fold out-of-fold so it cannot grade its own homework, reaches
+.850 — <span class="math inline">\(27\%\)</span> of the way to hosted. That is a real gain over
+any single open guard, but it costs 18 forward passes per request and, less
+obviously, it needs <em>labelled in-domain data</em> to fit the weights, which is the asset a team
+reaching for an ensemble usually does not have. Its largest weights also include a
+<em>negative</em> coefficient on one guard, so the fit is exploiting member-specific error
+structure that may not survive a change of traffic.</p>
+<p>So the answer is no: ensembling small guards does not beat the hosted model, and the cheap
+version of it (equal weights) is worse than picking the best member. It earns its place in one
+situation — when nothing may leave the network at all, seed ensembling plus stacking is the
+in-house ceiling, and it is roughly a quarter of the way to what the hosted model would give.</p>
 <h4 class="runin" id="the-deployment-question-is-not-which-guard-but-which-requests.">The deployment question is not which guard, but which requests.</h4>
 <p>Everything above
 compares whole guards, which frames the choice as self-host <em>or</em> outsource. That framing

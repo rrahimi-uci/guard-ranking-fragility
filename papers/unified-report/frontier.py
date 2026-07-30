@@ -382,6 +382,114 @@ def emit_scale_table(data: dict | None = None) -> str:
             f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n")
 
 
+# ─────────────────────────── can an ensemble of small guards beat the hosted one?
+#
+# The obvious response to a vendor gap is to combine what you already have. Three ways of
+# doing that are priced here against ONE baseline -- the best single open guard -- so the
+# options are comparable, together with what each costs in model calls.
+#
+# Combination rule follows experiments/ensembling_analysis.py: WITHIN a checkpoint the
+# margins share a scale and average directly; ACROSS checkpoints they do not, so members are
+# rank-percentile normalised first. A fitted stack is scored 5-fold out-of-fold, because a
+# stack evaluated on the rows that fitted it grades its own homework.
+ENSEMBLE_CV_FOLDS = 5
+ENSEMBLE_CV_SEED = 20260716
+
+
+def _member_matrix():
+    """Every open guard we hold ExpGuard scores for: bases, SFT seed-ensembles, released."""
+    import numpy as np
+    labels = load_labels()
+    ids = list(labels)
+    out = {}
+
+    def vec(sc):
+        return np.asarray([sc.get(i, np.nan) for i in ids], float)
+
+    for key in BASE_ORDER + SCALE_ORDER:
+        d = _read(f"scores_{key}_base.json")
+        if d:
+            out[key] = vec(d)
+        seeds = sft_seed_files(key)
+        if len(seeds) > 1:
+            # same checkpoint -> margins are directly averageable
+            out[f"sft_{key}"] = np.nanmean(np.vstack([vec(s) for s in seeds]), axis=0)
+    for key in GUARD_ORDER:
+        d = _read(f"scores_guard_{key}.json")
+        if d:
+            out[f"guard_{key}"] = vec(d)
+    y = np.asarray([labels[i]["label"] for i in ids], int)
+    return out, y
+
+
+def _tpr(scores, y, budget: float = FPR_BUDGET) -> float:
+    import numpy as np
+    ok = ~np.isnan(scores)
+    s, yy = scores[ok], y[ok]
+    thr = np.quantile(s[yy == 0], 1 - budget, method="higher")
+    return float((s[yy == 1] > thr).mean())
+
+
+def ensemble_options() -> dict:
+    """Price the combination strategies against the best single open guard."""
+    import numpy as np
+    from scipy.stats import rankdata
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import StratifiedKFold
+
+    members, y = _member_matrix()
+    if len(members) < 3:
+        return {}
+
+    def rank(s):
+        out = np.full(len(s), np.nan)
+        ok = ~np.isnan(s)
+        out[ok] = rankdata(s[ok]) / ok.sum()
+        return out
+
+    singles = {k: _tpr(v, y) for k, v in members.items()}
+    best_key = max(singles, key=singles.get)
+    R = np.vstack([rank(v) for v in members.values()]).T
+    R = np.nan_to_num(R, nan=0.5)
+
+    committee = _tpr(np.nanmean(R, axis=1), y)
+    oof = np.zeros(len(y))
+    skf = StratifiedKFold(ENSEMBLE_CV_FOLDS, shuffle=True, random_state=ENSEMBLE_CV_SEED)
+    for tr, te in skf.split(R, y):
+        lr = LogisticRegression(max_iter=2000).fit(R[tr], y[tr])
+        oof[te] = lr.predict_proba(R[te])[:, 1]
+    stack = _tpr(oof, y)
+
+    # Seed ensembling within a checkpoint, reported separately: it is the one combination
+    # that reliably helps, and it is nearly free (the seeds already exist).
+    seed_gains = {}
+    for key in BASE_ORDER + SCALE_ORDER:
+        seeds = sft_seed_files(key)
+        if len(seeds) < 2:
+            continue
+        labels = load_labels()
+        ids = list(labels)
+        mats = np.vstack([np.asarray([s.get(i, np.nan) for i in ids], float) for s in seeds])
+        per = float(np.mean([_tpr(m, y) for m in mats]))
+        ens = _tpr(np.nanmean(mats, axis=0), y)
+        seed_gains[key] = {"single_mean": per, "ensemble": ens, "gain": ens - per}
+
+    hosted = _tpr(np.asarray(list(_read("scores_gpt54_low.json").values())
+                             and [_read("scores_gpt54_low.json").get(i, np.nan)
+                                  for i in load_labels()], float), y)
+    return {
+        "n_members": len(members),
+        "best_single_key": best_key,
+        "best_single": singles[best_key],
+        "committee": committee,
+        "stack_oof": stack,
+        "hosted": hosted,
+        "seed_gains": seed_gains,
+        "mean_seed_gain": float(np.mean([v["gain"] for v in seed_gains.values()]))
+        if seed_gains else float("nan"),
+    }
+
+
 # ────────────────────────────────────────────────────────────────────────── LaTeX
 def _f(v, nd=3):
     if v is None or v != v:
@@ -648,4 +756,19 @@ def emit_macros(data: dict | None = None) -> str:
         mac("BestMedianMs", f"{p50:,}")
         mac("BestCost", f"{usd:.2f}")
         mac("Slowdown", f"{slow:.0f}")
+    # Can combining what we already have close the gap? Priced against one baseline.
+    try:
+        e = ensemble_options()
+    except Exception:  # noqa: BLE001 - a missing optional dep must not break the build
+        e = {}
+    if e:
+        span = e["hosted"] - e["best_single"]
+        mac("EnsMembers", e["n_members"])
+        mac("EnsBestSingle", _f(e["best_single"]))
+        mac("EnsCommittee", _f(e["committee"]))
+        mac("EnsStack", _f(e["stack_oof"]))
+        mac("EnsStackShare", f"{(e['stack_oof'] - e['best_single']) / span * 100:.0f}")
+        mac("EnsCommitteeShare", f"{(e['committee'] - e['best_single']) / span * 100:.0f}")
+        mac("EnsSeedGain", f"{e['mean_seed_gain']:+.3f}")
+        mac("EnsFolds", ENSEMBLE_CV_FOLDS)
     return "\n".join(out) + "\n"

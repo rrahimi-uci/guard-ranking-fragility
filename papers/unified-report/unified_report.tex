@@ -408,6 +408,38 @@ and most refused under four of six. A guardrail whose input filter intermittentl
 return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
 its own right.
 
+\paragraph{Nor does combining what we already have.} The other instinctive response to a
+vendor gap is an ensemble: we hold \FrontierEnsMembers{} open guards with ExpGuard scores ---
+bases, SFT seed-ensembles, released purpose-built guards --- so combining them costs no new
+training. Three combination rules, priced against the strongest single open guard
+(\FrontierEnsBestSingle) and using the same rule the ensembling appendix fixes (margins average
+directly within a checkpoint, rank-percentile across them):
+
+\emph{Seed ensembling helps, reliably and almost for free.} Averaging the five SFT seeds of a
+checkpoint gains \FrontierEnsSeedGain{} matched-budget recall on average, positive for all six
+checkpoints, and the adapters already exist. It is also how the tuned 32B recovers what SFT cost
+it: the seed ensemble reaches \FrontierEnsBestSingle{} against $0.830$ for its own untuned base.
+
+\emph{An unweighted committee actively hurts.} Averaging all \FrontierEnsMembers{} ranks scores
+\FrontierEnsCommittee, \emph{below} the best single member --- $\FrontierEnsCommitteeShare\%$ of
+the distance to hosted, i.e.\ backwards. With members this unequal in quality, equal weights
+dilute the strong ones; this is the \Cref{tab:frontier} spread doing exactly what one should
+expect.
+
+\emph{Even a fitted stack falls short.} A logistic stack over all \FrontierEnsMembers{} members,
+scored \FrontierEnsFolds-fold out-of-fold so it cannot grade its own homework, reaches
+\FrontierEnsStack{} --- $\FrontierEnsStackShare\%$ of the way to hosted. That is a real gain over
+any single open guard, but it costs \FrontierEnsMembers{} forward passes per request and, less
+obviously, it needs \emph{labelled in-domain data} to fit the weights, which is the asset a team
+reaching for an ensemble usually does not have. Its largest weights also include a
+\emph{negative} coefficient on one guard, so the fit is exploiting member-specific error
+structure that may not survive a change of traffic.
+
+So the answer is no: ensembling small guards does not beat the hosted model, and the cheap
+version of it (equal weights) is worse than picking the best member. It earns its place in one
+situation --- when nothing may leave the network at all, seed ensembling plus stacking is the
+in-house ceiling, and it is roughly a quarter of the way to what the hosted model would give.
+
 \paragraph{The deployment question is not which guard, but which requests.} Everything above
 compares whole guards, which frames the choice as self-host \emph{or} outsource. That framing
 is wrong, and the per-row scores show why. Run the small guard inline on every request, rank
