@@ -42,25 +42,40 @@ import frontier_numbers as FN  # noqa: E402
 OUT = HERE / "safety_guard_exec_deck.pptx"
 
 # ─────────────────────────────────────────────────────────── identity (shared palette)
-INK = RGBColor(0x12, 0x26, 0x3A)
-SLATE = RGBColor(0x5A, 0x6B, 0x7C)
-MUTED = RGBColor(0x8A, 0x97, 0xA5)
-RULE = RGBColor(0xD8, 0xDE, 0xE4)
-PAPER = RGBColor(0xF7, 0xF9, 0xFA)
-WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-ACCENT = RGBColor(0xA0, 0x21, 0x28)
-BLUE = RGBColor(0x25, 0x63, 0xEB)
-GREEN = RGBColor(0x15, 0x80, 0x3D)
-AMBER = RGBColor(0xB7, 0x79, 0x1F)
-TINT = {
-    ACCENT: RGBColor(0xFA, 0xF0, 0xF0), BLUE: RGBColor(0xEF, 0xF4, 0xFE),
-    GREEN: RGBColor(0xEF, 0xF7, 0xF1), AMBER: RGBColor(0xFD, 0xF7, 0xEC),
-    SLATE: RGBColor(0xF2, 0xF5, 0xF7),
-}
-SERIF, SANS = "Georgia", "Arial"
-W, H = Inches(13.333), Inches(7.5)
-M = Inches(0.85)
-CW = W - 2 * M
+# Tokens come from deck_theme, the same module the benchmark deck and both figure generators
+# use. The exec redesign was verified to use an identical palette and type scale; only its
+# geometry differs (a wider 0.85" margin and a 40pt hero), so those stay local below.
+import deck_theme as T  # noqa: E402
+
+INK = T.rgb(T.TEXT)
+SLATE = T.rgb(T.DIM)
+MUTED = T.rgb(T.BODY)
+RULE = T.rgb(T.CARD_LINE)
+PAPER = T.rgb(T.CARD)
+WHITE = T.rgb(T.TEXT)
+BG_TITLE = T.rgb(T.BG_TITLE)
+BG_SLIDE = T.rgb(T.BG_SLIDE)
+CARD_LINE = T.rgb(T.CARD_LINE)
+WARN_CARD = T.rgb(T.WARN_CARD)
+WARN_LINE = T.rgb(T.WARN_LINE)
+FAINT = T.rgb(T.FAINT)
+DATA = T.rgb(T.DATA)
+ACCENT = T.rgb(T.ACCENT)
+ACCENT_SOFT = T.rgb(T.ACCENT_SOFT)
+BLUE = T.rgb(T.DATA_REPRESENTED)
+GREEN = T.rgb(T.DATA_COMPOSITION)
+AMBER = T.rgb(T.DATA_GOLD)
+# On a dark surface a tint is a surface, not a wash: red-keyed panels take the warning
+# surface, everything else the standard card.
+TINT = {ACCENT: WARN_CARD, ACCENT_SOFT: WARN_CARD, BLUE: PAPER, GREEN: PAPER,
+        AMBER: PAPER, SLATE: PAPER}
+TINT_LINE = {ACCENT: WARN_LINE, ACCENT_SOFT: WARN_LINE, BLUE: CARD_LINE, GREEN: CARD_LINE,
+             AMBER: CARD_LINE, SLATE: CARD_LINE}
+LABEL_ON_CARD = {ACCENT: ACCENT_SOFT}   # red is too low-contrast as a label on the dark card
+SERIF, SANS = T.DISPLAY, T.UI
+W, H = Inches(T.SLIDE_W), Inches(T.SLIDE_H)
+M = Inches(0.85)                        # exec geometry: wider margin than the benchmark deck
+CW = W - 2 * M                          # 11.633
 TITLE_SHORT = "Guardrail sourcing · in-house inline, escalate the uncertain slice"
 
 
@@ -129,34 +144,40 @@ class Deck:
         self.prs.slide_width, self.prs.slide_height = W, H
         self.n = 0
 
-    def blank(self, chrome=True):
+    def _background(self, s, fill):
+        s.background.fill.solid()
+        s.background.fill.fore_color.rgb = fill
+
+    def blank(self, chrome=True, title_slide=False):
         s = self.prs.slides.add_slide(self.prs.slide_layouts[6])
-        rect(s, 0, 0, W, Inches(0.062), fill=ACCENT)
+        self._background(s, BG_TITLE if title_slide else BG_SLIDE)
+        # No top accent bar: the redesign removed it (deck_theme.HAS_TOP_BAR).
         if chrome:
             self.n += 1
-            tf = tbox(s, M, Inches(7.00), Inches(9.5), Inches(0.28))
+            tf = tbox(s, M, Inches(T.FOOTER_Y), Inches(9.5), Inches(0.28))
             p = para(tf, first=True, space_after=0)
-            run(p, TITLE_SHORT, size=9.5, color=MUTED)
-            tf2 = tbox(s, W - M - Inches(1.2), Inches(7.00), Inches(1.2), Inches(0.28))
+            run(p, TITLE_SHORT, size=T.SZ_FOOTER, color=FAINT)
+            tf2 = tbox(s, W - M - Inches(1.2), Inches(T.FOOTER_Y), Inches(1.2), Inches(0.28))
             p2 = para(tf2, first=True, align=PP_ALIGN.RIGHT, space_after=0)
-            run(p2, f"{self.n:02d}", size=10.5, bold=True, color=ACCENT, spc=60)
+            run(p2, f"{self.n:02d}", size=T.SZ_PAGENUM, bold=True, color=ACCENT, spc=60)
         return s
 
     def header(self, s, kicker, title, sub=None):
-        tf = tbox(s, M, Inches(0.42), CW, Inches(0.26))
+        tf = tbox(s, M, Inches(0.40), CW, Inches(0.28))
         p = para(tf, first=True, space_after=0)
         run(p, kicker.upper(), size=10.5, bold=True, color=ACCENT, spc=140)
-        tf = tbox(s, M, Inches(0.78), CW, Inches(0.80))
+        # 1.02" of title box holds two 25pt lines, which several exec titles need.
+        tf = tbox(s, M, Inches(0.72), CW, Inches(1.02))
         p = para(tf, first=True, space_after=0, line_spacing=1.02)
-        run(p, title, size=30, bold=True, color=INK, font=SERIF)
-        y = Inches(1.66)
+        run(p, title, size=T.SZ_TITLE, bold=True, color=INK, font=SERIF)
+        y = Inches(2.10)
         if sub:
-            tf = tbox(s, M, Inches(1.62), CW, Inches(0.40))
+            tf = tbox(s, M, Inches(1.86), CW, Inches(0.34))
             p = para(tf, first=True, space_after=0)
-            run(p, sub, size=15, color=SLATE)
-            y = Inches(2.10)
-        rect(s, M, y, CW, Pt(0.9), fill=RULE)
-        return y + Inches(0.26)
+            run(p, sub, size=12.5, color=SLATE)
+            y = Inches(2.45)
+        # No rule under the header: the redesign dropped it.
+        return y
 
     def notes(self, s, text):
         s.notes_slide.notes_text_frame.text = text.strip()
@@ -166,35 +187,36 @@ class Deck:
         return OUT
 
 
-def statcard(s, l, t, w, h, value, caption, color=ACCENT, value_size=40):
-    rect(s, l, t, w, h, fill=TINT[color])
-    rect(s, l, t, w, Inches(0.05), fill=color)
-    tf = tbox(s, l + Inches(0.24), t + Inches(0.26), w - Inches(0.48), h - Inches(0.5))
+def statcard(s, l, t, w, h, value, caption, color=ACCENT, value_size=None):
+    """Flat card with a display numeral. No top accent rule: the border carries the edge."""
+    value_size = T.SZ_STAT if value_size is None else value_size
+    rect(s, l, t, w, h, fill=TINT[color], line=TINT_LINE[color], lw=T.LW_CARD)
+    tf = tbox(s, l + Inches(0.26), t + Inches(0.16), w - Inches(0.52), h - Inches(0.32))
     p = para(tf, first=True, space_after=4)
     run(p, value, size=value_size, bold=True, color=color, font=SERIF)
     p = para(tf, space_after=0)
-    run(p, caption, size=12, color=SLATE)
+    run(p, caption, size=T.SZ_BODY, color=MUTED)
 
 
-def bullets(s, l, t, w, h, items, size=15, gap=12, mcolor=ACCENT):
+def bullets(s, l, t, w, h, items, size=None, gap=12, mcolor=ACCENT):
+    size = 11.0 if size is None else size      # exec body size in the redesign
     tf = tbox(s, l, t, w, h)
     for i, item in enumerate(items):
         p = para(tf, first=(i == 0), space_after=gap)
         run(p, "—  ", size=size, bold=True, color=mcolor)
         if isinstance(item, tuple):
             run(p, item[0], size=size, bold=True, color=INK)
-            run(p, item[1], size=size, color=SLATE)
+            run(p, item[1], size=size, color=MUTED)
         else:
-            run(p, item, size=size, color=INK)
+            run(p, item, size=size, color=MUTED)
 
 
 def table(s, l, t, w, rows, col_w, row_h=Inches(0.46), header=True):
     """Minimal table: first row is a header band, subsequent rows alternate paper/white."""
     y = t
     for ri, row in enumerate(rows):
-        fill = INK if (header and ri == 0) else (PAPER if ri % 2 else WHITE)
-        rect(s, l, y, w, row_h, fill=fill,
-             line=None if (header and ri == 0) else RULE, lw=0.5)
+        fill = PAPER if (header and ri == 0) else (BG_SLIDE if ri % 2 else PAPER)
+        rect(s, l, y, w, row_h, fill=fill, line=CARD_LINE, lw=T.LW_CARD)
         x = l
         for ci, cell in enumerate(row):
             cwid = int(w * col_w[ci])
@@ -203,9 +225,9 @@ def table(s, l, t, w, rows, col_w, row_h=Inches(0.46), header=True):
             p = para(tf, first=True, space_after=0,
                      align=PP_ALIGN.LEFT if ci == 0 else PP_ALIGN.CENTER)
             bold = (header and ri == 0) or ci == 0
-            col = WHITE if (header and ri == 0) else INK
+            col = DATA if (header and ri == 0) else MUTED
             txt, cc = (cell if isinstance(cell, tuple) else (cell, col))
-            run(p, str(txt), size=13, bold=bold, color=cc)
+            run(p, str(txt), size=T.SZ_KICKER_SM, bold=bold, color=cc)
             x += cwid
         y += row_h
     return y
@@ -236,13 +258,13 @@ def picture(s, name, l, t, w, h, align="center"):
 
 
 def callout(s, l, t, w, h, label, body, color=ACCENT):
-    rect(s, l, t, w, h, fill=TINT[color], shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-    rect(s, l, t, Inches(0.055), h, fill=color)
-    tf = tbox(s, l + Inches(0.26), t + Inches(0.18), w - Inches(0.5), h - Inches(0.36))
+    rect(s, l, t, w, h, fill=TINT[color], line=TINT_LINE[color], lw=T.LW_CARD)
+    tf = tbox(s, l + Inches(0.26), t + Inches(0.16), w - Inches(0.52), h - Inches(0.32))
     p = para(tf, first=True, space_after=5)
-    run(p, label.upper(), size=11, bold=True, color=color, spc=110)
+    run(p, label.upper(), size=T.SZ_BODY_SM, bold=True,
+        color=LABEL_ON_CARD.get(color, color), spc=110)
     p = para(tf, space_after=0, line_spacing=1.06)
-    run(p, body, size=13.5, color=INK)
+    run(p, body, size=11.0, color=MUTED)
 
 
 # ═══════════════════════════════════════════════════════════════════════ build
@@ -250,28 +272,37 @@ F = FN.load()
 d = Deck()
 
 # ─────────────────────────────────────────────────────────────── 1 · title
-s = d.blank(chrome=False)
-rect(s, 0, 0, W, H, fill=WHITE)
-rect(s, 0, 0, W, Inches(0.062), fill=ACCENT)
-tf = tbox(s, M, Inches(2.15), CW, Inches(0.30))
+s = d.blank(chrome=False, title_slide=True)
+
+# Concentric rings, right of the headline — the redesign's title motif, sized for the exec
+# deck's wider margin. Drawn first so the text layers sit above them.
+for cx, cy, dia, ln, lw in [(7.10, 1.30, 4.90, T.DECO_LINE, T.LW_DECO),
+                            (7.75, 1.95, 3.60, T.DECO_LINE, T.LW_DECO),
+                            (8.40, 2.60, 2.30, T.DECO_LINE_WARM, T.LW_ACCENT_THIN)]:
+    rect(s, Inches(cx), Inches(cy), Inches(dia), Inches(dia), fill=None,
+         line=T.rgb(ln), lw=lw, shape=MSO_SHAPE.OVAL)
+rect(s, Inches(9.41), Inches(3.61), Inches(0.28), Inches(0.28), fill=ACCENT,
+     shape=MSO_SHAPE.OVAL)
+
+tf = tbox(s, M, Inches(2.12), Inches(8.20), Inches(0.30))
 p = para(tf, first=True, space_after=0)
-run(p, "GUARDRAIL SOURCING DECISION", size=12, bold=True, color=ACCENT, spc=180)
-tf = tbox(s, M, Inches(2.70), Inches(10.6), Inches(1.7))
+run(p, "GUARDRAIL SOURCING DECISION", size=11.0, bold=True, color=ACCENT, spc=180)
+tf = tbox(s, M, Inches(2.56), Inches(8.60), Inches(1.90))
 p = para(tf, first=True, space_after=0, line_spacing=1.03)
-run(p, "Do we buy a hosted guardrail,\nor run our own?", size=44, bold=True,
+run(p, "Do we buy a hosted guardrail,\nor run our own?", size=40, bold=True,
     color=INK, font=SERIF)
-tf = tbox(s, M, Inches(4.62), Inches(10.2), Inches(0.9))
+tf = tbox(s, M, Inches(4.62), Inches(7.70), Inches(0.80))
 p = para(tf, first=True, space_after=0, line_spacing=1.10)
 run(p, "Measured on 2,275 expert-annotated finance, healthcare and law prompts. "
        "Eight guard configurations, identical rows, identical false-alarm budget.",
-    size=15.5, color=SLATE)
-rect(s, M, Inches(5.75), Inches(1.5), Pt(2.2), fill=ACCENT)
-tf = tbox(s, M, Inches(6.05), CW, Inches(0.6))
-p = para(tf, first=True, space_after=2)
-run(p, "Reza Rahimi, PhD", size=14, bold=True, color=INK)
-p = para(tf, space_after=0)
+    size=T.SZ_SUBTITLE, color=MUTED)
+tf = tbox(s, M, Inches(6.02), Inches(7.70), Inches(0.30))
+p = para(tf, first=True, space_after=0)
+run(p, "Reza Rahimi, PhD", size=12.5, bold=True, color=INK)
+tf = tbox(s, M, Inches(6.32), Inches(7.70), Inches(0.28))
+p = para(tf, first=True, space_after=0)
 run(p, "Full method, intervals and limitations: the technical report and research deck",
-    size=12, color=MUTED)
+    size=10.5, color=SLATE)
 d.notes(s, """
 Ninety seconds on this slide. The framing sentence is: we need a safety guardrail in front of
 every request our assistant handles, and there are two ways to get one -- call a hosted
@@ -708,7 +739,8 @@ domain, not more guard comparisons on general safety.
 """)
 
 # ────────────────────────────────────────────────────────── 12 · what we would do
-s = d.blank()
+# Closing slide shares the title slide's darker surface, bookending the deck.
+s = d.blank(title_slide=True)
 y = d.header(s, "proposal", "What we would do next",
              "Sequenced so each step is cheap and the expensive one is last")
 cw = (CW - Inches(0.45)) / 2

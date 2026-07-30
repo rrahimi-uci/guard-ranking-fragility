@@ -10,13 +10,16 @@ off this machine.
 Run:  python slides/make_deck.py       (from papers/unified-report/)
 Out:  slides/safety_guard_benchmark_deck.pptx   (16:9, 15 slides, speaker notes)
 """
+# ruff: noqa: E741
+#   `l` as a left-coordinate parameter is the convention used across every geometry helper
+#   here and in make_exec_deck.py. Matching it keeps the two deck scripts readable side by
+#   side, which matters more than the ambiguous-name rule.
 from __future__ import annotations
 
 from pathlib import Path
 
 from PIL import Image
 from pptx import Presentation
-from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.oxml.ns import qn
@@ -37,33 +40,53 @@ import frontier_numbers as FN  # noqa: E402
 F = FN.load()
 
 # ------------------------------------------------------------------- identity
-INK = RGBColor(0x12, 0x26, 0x3A)
-SLATE = RGBColor(0x5A, 0x6B, 0x7C)
-MUTED = RGBColor(0x8A, 0x97, 0xA5)
-RULE = RGBColor(0xD8, 0xDE, 0xE4)
-PAPER = RGBColor(0xF7, 0xF9, 0xFA)
-WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+# Every token comes from deck_theme, which was extracted from the redesigned decks. Do not
+# hand-write a colour or a point size in this file: add it to the theme instead, so the
+# benchmark deck, the exec deck and both figure generators cannot drift apart.
+import deck_theme as T  # noqa: E402
 
-ACCENT = RGBColor(0xA0, 0x21, 0x28)   # brick — matches the report's section heads
-BLUE = RGBColor(0x25, 0x63, 0xEB)     # represented-source
-ORANGE = RGBColor(0xEA, 0x58, 0x0C)   # held-out transfer
-GREEN = RGBColor(0x15, 0x80, 0x3D)    # composition / recovered
-PURPLE = RGBColor(0x6D, 0x28, 0xD9)   # KL-SFT
-GOLD = RGBColor(0xB7, 0x79, 0x1F)
+INK = T.rgb(T.TEXT)            # "ink" is now the light-on-dark heading colour
+SLATE = T.rgb(T.DIM)
+MUTED = T.rgb(T.BODY)
+RULE = T.rgb(T.CARD_LINE)
+PAPER = T.rgb(T.CARD)          # the raised surface, not a paper background
+WHITE = T.rgb(T.TEXT)
+BG_TITLE = T.rgb(T.BG_TITLE)
+BG_SLIDE = T.rgb(T.BG_SLIDE)
+CARD_LINE = T.rgb(T.CARD_LINE)
+WARN_CARD = T.rgb(T.WARN_CARD)
+WARN_LINE = T.rgb(T.WARN_LINE)
+FAINT = T.rgb(T.FAINT)
+DATA = T.rgb(T.DATA)
 
-TINT = {  # 6% tints used for callout fills
-    ACCENT: RGBColor(0xFA, 0xF0, 0xF0), BLUE: RGBColor(0xEF, 0xF4, 0xFE),
-    GREEN: RGBColor(0xEE, 0xF6, 0xF0), ORANGE: RGBColor(0xFE, 0xF3, 0xEC),
-    PURPLE: RGBColor(0xF4, 0xF0, 0xFD), SLATE: RGBColor(0xF2, 0xF4, 0xF6),
-    GOLD: RGBColor(0xFC, 0xF7, 0xEC),
+ACCENT = T.rgb(T.ACCENT)              # kickers, slide numbers, the single solid accent
+ACCENT_SOFT = T.rgb(T.ACCENT_SOFT)    # salmon: warning-panel labels, transfer series
+BLUE = T.rgb(T.DATA_REPRESENTED)      # represented-source
+ORANGE = T.rgb(T.DATA_TRANSFER)       # held-out transfer
+GREEN = T.rgb(T.DATA_COMPOSITION)     # composition / recovered
+PURPLE = T.rgb(T.DATA_KL)             # KL-SFT
+GOLD = T.rgb(T.DATA_GOLD)
+
+# Callout fills. On a dark surface a "6% tint" is meaningless, so a callout is the standard
+# card except where the accent is red — those become the warning panel.
+TINT = {
+    ACCENT: WARN_CARD, ACCENT_SOFT: WARN_CARD, ORANGE: WARN_CARD,
+    BLUE: PAPER, GREEN: PAPER, PURPLE: PAPER, SLATE: PAPER, GOLD: PAPER,
 }
+TINT_LINE = {
+    ACCENT: WARN_LINE, ACCENT_SOFT: WARN_LINE, ORANGE: WARN_LINE,
+    BLUE: CARD_LINE, GREEN: CARD_LINE, PURPLE: CARD_LINE, SLATE: CARD_LINE,
+    GOLD: CARD_LINE,
+}
+# Red on the dark card is too low-contrast for a label; the redesign uses salmon there.
+LABEL_ON_CARD = {ACCENT: ACCENT_SOFT, ORANGE: ACCENT_SOFT}
 
-SERIF, SANS = "Georgia", "Arial"
+SERIF, SANS = T.DISPLAY, T.UI
 
-W, H = Inches(13.333), Inches(7.5)
-M = Inches(0.62)                       # side margin
+W, H = Inches(T.SLIDE_W), Inches(T.SLIDE_H)
+M = Inches(T.MARGIN)                   # side margin
 CW = W - 2 * M                         # content width
-BODY_TOP = Inches(1.72)
+BODY_TOP = Inches(T.BODY_Y)
 BODY_BOT = Inches(6.70)
 
 TITLE_SHORT = "The Safety-Guard Benchmark Chooses the Winner"
@@ -159,41 +182,44 @@ class Deck:
         self.prs.slide_width, self.prs.slide_height = W, H
         self.n = 0
 
-    def blank(self, chrome=True):
+    def _background(self, s, fill):
+        """Paint the slide surface. The dark system needs this on every slide; a slide left
+        unpainted renders white and is immediately obvious against its neighbours."""
+        s.background.fill.solid()
+        s.background.fill.fore_color.rgb = fill
+
+    def blank(self, chrome=True, title_slide=False):
         s = self.prs.slides.add_slide(self.prs.slide_layouts[6])
-        rect(s, 0, 0, W, Inches(0.062), fill=ACCENT)
+        self._background(s, BG_TITLE if title_slide else BG_SLIDE)
+        # The redesign has no top accent bar (T.HAS_TOP_BAR) — the kicker carries separation.
         if chrome:
             self.n += 1
-            tf = tbox(s, M, Inches(6.98), Inches(9.0), Inches(0.28))
+            tf = tbox(s, M, Inches(T.FOOTER_Y), Inches(10.0), Inches(0.26))
             p = para(tf, first=True, space_after=0)
-            run(p, TITLE_SHORT, size=9.5, color=MUTED)
-            run(p, "     ·     ", size=9.5, color=RULE)
-            run(p, REPO, size=9.5, color=MUTED)
-            tf2 = tbox(s, W - M - Inches(1.2), Inches(6.98), Inches(1.2), Inches(0.28))
+            run(p, TITLE_SHORT, size=T.SZ_FOOTER, color=FAINT)
+            run(p, "     ·     ", size=T.SZ_FOOTER, color=FAINT)
+            run(p, REPO, size=T.SZ_FOOTER, color=FAINT)
+            tf2 = tbox(s, W - M - Inches(1.2), Inches(T.FOOTER_Y), Inches(1.2), Inches(0.26))
             p2 = para(tf2, first=True, align=PP_ALIGN.RIGHT, space_after=0)
-            # Arial, not Georgia: Georgia's old-style figures render "01" as "oı"
-            run(p2, f"{self.n:02d}", size=10.5, bold=True, color=ACCENT, spc=60)
+            # Calibri, not Cambria: Cambria's old-style figures render "01" as "oı"
+            run(p2, f"{self.n:02d}", size=T.SZ_PAGENUM, bold=True, color=ACCENT, spc=60)
         return s
 
     def header(self, s, kicker, title, sub=None):
-        tf = tbox(s, M, Inches(0.40), CW, Inches(0.26))
+        tf = tbox(s, M, Inches(T.KICKER_Y), CW, Inches(0.26))
         p = para(tf, first=True, space_after=0)
-        run(p, kicker.upper(), size=10.5, bold=True, color=ACCENT, spc=140)
+        run(p, kicker.upper(), size=T.SZ_KICKER, bold=True, color=ACCENT, spc=140)
 
-        th = Inches(0.62) if sub else Inches(0.72)
-        tf = tbox(s, M, Inches(0.74), CW, th)
+        tf = tbox(s, M, Inches(T.TITLE_Y), CW, Inches(0.56))
         p = para(tf, first=True, space_after=0, line_spacing=1.0)
-        run(p, title, size=27, bold=True, color=INK, font=SERIF)
+        run(p, title, size=T.SZ_TITLE, bold=True, color=INK, font=SERIF)
 
         if sub:
-            tf = tbox(s, M, Inches(1.30), CW, Inches(0.34))
+            tf = tbox(s, M, Inches(T.LEAD_Y), CW, Inches(0.30))
             p = para(tf, first=True, space_after=0)
-            run(p, sub, size=14.5, color=SLATE)
-            rule_y = Inches(1.70)
-        else:
-            rule_y = Inches(1.58)
-        rect(s, M, rule_y, CW, Pt(0.9), fill=RULE)
-        return rule_y + Inches(0.22)
+            run(p, sub, size=T.SZ_LEAD, color=SLATE)
+        # No rule under the header (T.HAS_HEADER_RULE): the redesign dropped it.
+        return Inches(T.BODY_Y)
 
     def notes(self, s, text):
         s.notes_slide.notes_text_frame.text = text.strip()
@@ -204,35 +230,41 @@ class Deck:
 
 
 # ------------------------------------------------------------ content widgets
-def callout(s, l, t, w, h, label, body, color=ACCENT, label_size=11.5, body_size=13):
-    box = rect(s, l, t, w, h, fill=TINT[color], radius=0.03,
-               shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-    rect(s, l, t, Inches(0.055), h, fill=color)
+def callout(s, l, t, w, h, label, body, color=ACCENT, label_size=None, body_size=None):
+    """A panel with an uppercase label. Red-keyed callouts use the warning surface; the
+    redesign has no left accent bar on these — the fill and border carry the colour."""
+    label_size = T.SZ_BODY_SM if label_size is None else label_size
+    body_size = T.SZ_LEAD if body_size is None else body_size
+    box = rect(s, l, t, w, h, fill=TINT.get(color, PAPER),
+               line=TINT_LINE.get(color, CARD_LINE), lw=T.LW_CARD)
     tf = box.text_frame
     tf.word_wrap = True
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    tf.margin_left, tf.margin_right = Inches(0.24), Inches(0.18)
+    tf.margin_left, tf.margin_right = Inches(T.CARD_INSET), Inches(0.20)
     tf.margin_top = tf.margin_bottom = Inches(0.10)
     p = para(tf, first=True, space_after=3)
-    run(p, label.upper(), size=label_size, bold=True, color=color, spc=90)
+    run(p, label.upper(), size=label_size, bold=True,
+        color=LABEL_ON_CARD.get(color, color), spc=90)
     p = para(tf, space_after=0)
-    run(p, body, size=body_size, color=INK)
+    run(p, body, size=body_size, color=MUTED)
     return box
 
 
-def statcard(s, l, t, w, h, value, caption, color=ACCENT, value_size=30):
-    rect(s, l, t, w, h, fill=WHITE, line=RULE, lw=1.0, radius=0.04,
-         shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-    rect(s, l, t, w, Inches(0.055), fill=color)
-    tf = tbox(s, l + Inches(0.24), t + Inches(0.30), w - Inches(0.44), h - Inches(0.44))
+def statcard(s, l, t, w, h, value, caption, color=ACCENT, value_size=None):
+    """Card with a large display numeral over a caption. Flat card, no top accent rule."""
+    value_size = T.SZ_STAT if value_size is None else value_size
+    rect(s, l, t, w, h, fill=PAPER, line=CARD_LINE, lw=T.LW_CARD)
+    tf = tbox(s, l + Inches(T.CARD_INSET), t + Inches(0.12),
+              w - 2 * Inches(T.CARD_INSET), h - Inches(0.24))
     p = para(tf, first=True, space_after=6, line_spacing=1.0)
     run(p, value, size=value_size, bold=True, color=color, font=SERIF)
     p = para(tf, space_after=0, line_spacing=1.18)
-    run(p, caption, size=12, color=SLATE)
+    run(p, caption, size=T.SZ_BODY, color=MUTED)
 
 
-def bullets(s, l, t, w, h, items, size=13.5, gap=9, marker="—", mcolor=ACCENT):
+def bullets(s, l, t, w, h, items, size=None, gap=9, marker="—", mcolor=ACCENT):
     """items: list of (lead, rest) — lead is bolded, rest is regular. rest may be ''."""
+    size = T.SZ_LEAD if size is None else size
     tf = tbox(s, l, t, w, h)
     for i, (lead, rest) in enumerate(items):
         p = para(tf, first=(i == 0), space_after=gap, line_spacing=1.20)
@@ -240,13 +272,30 @@ def bullets(s, l, t, w, h, items, size=13.5, gap=9, marker="—", mcolor=ACCENT)
         if lead:
             run(p, lead, size=size, bold=True, color=INK)
         if rest:
-            run(p, ("  " if lead else "") + rest, size=size, color=SLATE)
+            run(p, ("  " if lead else "") + rest, size=size, color=MUTED)
     return tf
 
 
-def datatable(s, l, t, w, rows, col_w, header_fill=INK, row_h=Inches(0.34),
-              head_h=Inches(0.38), size=12, head_size=11):
-    """rows[0] is the header. col_w are relative weights."""
+def pill(s, l, t, w, h, text, color=None):
+    """Centred label on a card — the redesign's question/summary row."""
+    rect(s, l, t, w, h, fill=PAPER, line=CARD_LINE, lw=T.LW_CARD)
+    tf = tbox(s, l + Inches(0.20), t, w - Inches(0.40), h, anchor=MSO_ANCHOR.MIDDLE)
+    p = para(tf, first=True, align=PP_ALIGN.CENTER, space_after=0, line_spacing=1.10)
+    run(p, text, size=T.SZ_LEAD, bold=True, color=color or DATA)
+
+
+def datatable(s, l, t, w, rows, col_w, header_fill=None, row_h=Inches(0.34),
+              head_h=Inches(0.38), size=None, head_size=None):
+    """rows[0] is the header. col_w are relative weights.
+
+    The redesign composes its tables from rectangles rather than PowerPoint tables. A real
+    table with matching fills, borders and type is visually equivalent and stays editable, so
+    the primitive is kept and only the styling is brought over: header on the raised card
+    surface with DATA-coloured type, body rows alternating card/background, hairline borders.
+    """
+    header_fill = PAPER if header_fill is None else header_fill
+    size = T.SZ_LABEL if size is None else size
+    head_size = T.SZ_TABLE_HEAD if head_size is None else head_size
     nrow, ncol = len(rows), len(rows[0])
     gf = s.shapes.add_table(nrow, ncol, l, t, w, head_h + row_h * (nrow - 1))
     tbl = gf.table
@@ -266,10 +315,10 @@ def datatable(s, l, t, w, rows, col_w, header_fill=INK, row_h=Inches(0.34),
             cell.margin_top = cell.margin_bottom = 0
             cell.fill.solid()
             cell.fill.fore_color.rgb = (header_fill if i == 0
-                                        else (WHITE if i % 2 else PAPER))
+                                        else (BG_SLIDE if i % 2 else PAPER))
             tf = cell.text_frame
             tf.word_wrap = True
-            txt, col, bold = val, INK, False
+            txt, col, bold = val, MUTED, False
             if isinstance(val, tuple):
                 txt, col, bold = val
             p = tf.paragraphs[0]
@@ -280,14 +329,16 @@ def datatable(s, l, t, w, rows, col_w, header_fill=INK, row_h=Inches(0.34),
             r_.font.size = Pt(head_size if i == 0 else size)
             r_.font.name = SANS
             r_.font.bold = True if i == 0 else bold
-            r_.font.color.rgb = WHITE if i == 0 else col
+            r_.font.color.rgb = DATA if i == 0 else col
     return tbl
 
 
-def flowbox(s, l, t, w, h, text, fill=PAPER, line=RULE, color=INK, size=11.5,
+def flowbox(s, l, t, w, h, text, fill=PAPER, line=None, color=None, size=None,
             bold=False):
-    sh = rect(s, l, t, w, h, fill=fill, line=line, lw=1.0, radius=0.06,
-              shape=MSO_SHAPE.ROUNDED_RECTANGLE)
+    line = CARD_LINE if line is None else line
+    color = DATA if color is None else color
+    size = T.SZ_LEAD if size is None else size
+    sh = rect(s, l, t, w, h, fill=fill, line=line, lw=T.LW_CARD)
     tf = sh.text_frame
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     tf.margin_left = tf.margin_right = Inches(0.10)
@@ -297,7 +348,7 @@ def flowbox(s, l, t, w, h, text, fill=PAPER, line=RULE, color=INK, size=11.5,
     return sh
 
 
-def arrow_down(s, cx, t, h, color=MUTED):
+def arrow_down(s, cx, t, h, color=SLATE):  # SLATE=DIM: structural, not a text token
     a = rect(s, Emu(int(cx - Inches(0.085))), t, Inches(0.17), h, fill=color,
              shape=MSO_SHAPE.DOWN_ARROW)
     return a
@@ -307,48 +358,60 @@ def arrow_down(s, cx, t, h, color=MUTED):
 d = Deck()
 
 # ---------------------------------------------------------------- 1 · title
-s = d.blank(chrome=False)
-rect(s, 0, Inches(6.05), W, Inches(1.45), fill=INK)
+s = d.blank(chrome=False, title_slide=True)
 
-tf = tbox(s, M, Inches(1.32), CW, Inches(0.3))
+# Decorative concentric rings, upper right: three outlined circles plus one solid accent dot.
+# Drawn first so every text layer sits above them.
+for cx, cy, dia, ln, lw in [(8.20, 0.20, 4.70, T.DECO_LINE, T.LW_DECO),
+                            (8.85, 0.85, 3.40, T.DECO_LINE, T.LW_DECO),
+                            (9.50, 1.50, 2.10, T.DECO_LINE_WARM, T.LW_ACCENT_THIN)]:
+    rect(s, Inches(cx), Inches(cy), Inches(dia), Inches(dia), fill=None,
+         line=T.rgb(ln), lw=lw, shape=MSO_SHAPE.OVAL)
+rect(s, Inches(10.41), Inches(2.41), Inches(0.28), Inches(0.28), fill=ACCENT,
+     shape=MSO_SHAPE.OVAL)
+
+tf = tbox(s, M, Inches(1.28), Inches(9.0), Inches(0.30))
 p = para(tf, first=True, space_after=0)
-run(p, "JAZZX AI   ·   RESEARCH REPORT   ·   JULY 2026", size=11.5, bold=True,
+run(p, "JAZZX AI   ·   RESEARCH REPORT   ·   JULY 2026", size=10.5, bold=True,
     color=ACCENT, spc=180)
 
-rect(s, M, Inches(1.82), Inches(1.5), Pt(3.2), fill=ACCENT)
-
-tf = tbox(s, M, Inches(2.14), Inches(11.4), Inches(1.6))
+tf = tbox(s, M, Inches(1.76), Inches(9.4), Inches(1.80))
 p = para(tf, first=True, space_after=0, line_spacing=1.02)
-run(p, "The Safety-Guard Benchmark\nChooses the Winner", size=46, bold=True,
-    color=INK, font=SERIF)
+run(p, "The Safety-Guard Benchmark\nChooses the Winner", size=T.SZ_TITLE_HERO,
+    bold=True, color=INK, font=SERIF)
 
-tf = tbox(s, M, Inches(3.86), Inches(10.4), Inches(0.9))
+tf = tbox(s, M, Inches(3.76), Inches(8.4), Inches(0.80))
 p = para(tf, first=True, space_after=0, line_spacing=1.24)
 run(p, "Measuring, tuning, and composing small safety guards\nin high-compliance "
-       "regulated domains", size=19, color=SLATE)
+       "regulated domains", size=T.SZ_SUBTITLE, color=MUTED)
 
+# Three stat cards, not accent bars: filled cards on the raised surface.
 for i, (v, c) in enumerate([("4 checkpoints × 5 seeds", "paired, same-manifest panel"),
                             ("994 rows", "frozen HMDA-grounded mortgage benchmark"),
                             ("2,275 rows", "expert-annotated external validation")]):
-    x = M + Inches(4.02) * i
-    rect(s, x, Inches(5.06), Pt(2.4), Inches(0.60), fill=ACCENT)
-    tf = tbox(s, x + Inches(0.16), Inches(5.06), Inches(3.7), Inches(0.62))
+    x = M + Inches(T.COL3_PITCH) * i
+    rect(s, x, Inches(4.90), Inches(T.COL3_W), Inches(0.86), fill=PAPER,
+         line=CARD_LINE, lw=T.LW_CARD)
+    tf = tbox(s, x + Inches(0.24), Inches(4.98), Inches(3.37), Inches(0.70))
     p = para(tf, first=True, space_after=1, line_spacing=1.0)
-    run(p, v, size=13.5, bold=True, color=INK)
+    run(p, v, size=12.0, bold=True, color=DATA)
     p = para(tf, space_after=0, line_spacing=1.0)
-    run(p, c, size=11, color=MUTED)
+    run(p, c, size=9.5, color=MUTED)
 
-tf = tbox(s, M, Inches(6.38), Inches(7.4), Inches(0.8))
-p = para(tf, first=True, space_after=2)
-run(p, "Reza Rahimi, PhD", size=16, bold=True, color=WHITE, font=SERIF)
-p = para(tf, space_after=0)
-run(p, "JazzX AI, Los Altos, CA   ·   reza.rahimi@jazzx.ai", size=12, color=RULE)
+tf = tbox(s, M, Inches(6.24), Inches(6.4), Inches(0.30))
+p = para(tf, first=True, space_after=0)
+run(p, "Reza Rahimi, PhD", size=12.5, bold=True, color=INK)
+tf = tbox(s, M, Inches(6.54), Inches(6.4), Inches(0.28))
+p = para(tf, first=True, space_after=0)
+run(p, "JazzX AI, Los Altos, CA   ·   reza.rahimi@jazzx.ai", size=10.5, color=SLATE)
 
-tf = tbox(s, W - M - Inches(5.0), Inches(6.52), Inches(5.0), Inches(0.5))
-p = para(tf, first=True, align=PP_ALIGN.RIGHT, space_after=2)
-run(p, REPO, size=12, bold=True, color=WHITE)
-p = para(tf, align=PP_ALIGN.RIGHT, space_after=0)
-run(p, "make reproduce (covered tables)  ·  frozen benchmark v1_hmda2022", size=10.5, color=RULE)
+tf = tbox(s, Inches(7.00), Inches(6.24), Inches(5.61), Inches(0.30))
+p = para(tf, first=True, align=PP_ALIGN.RIGHT, space_after=0)
+run(p, REPO, size=10.5, bold=True, color=DATA)
+tf = tbox(s, Inches(7.00), Inches(6.54), Inches(5.61), Inches(0.28))
+p = para(tf, first=True, align=PP_ALIGN.RIGHT, space_after=0)
+run(p, "make reproduce (covered tables)  ·  frozen benchmark v1_hmda2022",
+    size=9.5, color=SLATE)
 
 d.notes(s, """
 One-line thesis: a small guard's benchmark score is not a property of the guard —
@@ -383,9 +446,9 @@ tf = tbox(s, M, y + Inches(3.70), CW, Inches(0.5))
 p = para(tf, first=True, space_after=0)
 run(p, "Three questions on one fixed panel:   ", size=11.5, bold=True, color=INK)
 run(p, "Does fine-tuning transfer?", size=11.5, color=BLUE, bold=True)
-run(p, "   ·   ", size=11.5, color=RULE)
+run(p, "   ·   ", size=11.5, color=SLATE)  # RULE is a border token: invisible as text
 run(p, "Can we recover it without retraining?", size=11.5, color=GREEN, bold=True)
-run(p, "   ·   ", size=11.5, color=RULE)
+run(p, "   ·   ", size=11.5, color=SLATE)  # RULE is a border token: invisible as text
 run(p, "Does one score cover a regulated domain?", size=11.5, color=GOLD, bold=True)
 
 d.notes(s, """
@@ -890,10 +953,13 @@ y = d.header(s, "Act III  ·  regulated domains",
 
 qx, qy, qs = M, y + Inches(0.10), Inches(1.62)
 lblf = Inches(0.92)
-cells = [(0, 0, "G0 / D0", "450 rows", "benign — must not flag", GREEN, RGBColor(0xEE, 0xF6, 0xF0)),
-         (1, 0, "G1 / D0", "0 rows", "general harm only — empty", MUTED, RGBColor(0xF4, 0xF6, 0xF8)),
-         (0, 1, "G0 / D1", "502 rows", "reads safe, is a violation", ACCENT, RGBColor(0xFA, 0xEC, 0xEC)),
-         (1, 1, "G1 / D1", "42 rows", "bad on both counts", ORANGE, RGBColor(0xFE, 0xF3, 0xEC))]
+# Quadrant surfaces on the dark system: the two D1 (policy-violating) cells sit on the warning
+# surface, the benign cell on the standard card, and the structurally empty G1/D0 cell on the
+# slide background so it reads as recessed rather than as a fourth populated cell.
+cells = [(0, 0, "G0 / D0", "450 rows", "benign — must not flag", GREEN, PAPER),
+         (1, 0, "G1 / D0", "0 rows", "general harm only — empty", SLATE, BG_SLIDE),
+         (0, 1, "G0 / D1", "502 rows", "reads safe, is a violation", ACCENT_SOFT, WARN_CARD),
+         (1, 1, "G1 / D1", "42 rows", "bad on both counts", ORANGE, WARN_CARD)]
 for cx, cy, name, cnt, desc, col, fill in cells:
     x = qx + lblf + qs * cx
     ty = qy + qs * cy
@@ -922,9 +988,8 @@ for i, t in enumerate(["G = 0   looks safe", "G = 1   generally unsafe"]):
 rx = M + lblf + qs * 2 + Inches(0.42)
 rw = CW - (lblf + qs * 2 + Inches(0.42))
 
-box = rect(s, rx, y + Inches(0.04), rw, Inches(1.30), fill=TINT[GOLD], radius=0.04,
-           shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-rect(s, rx, y + Inches(0.04), Inches(0.055), Inches(1.30), fill=GOLD)
+box = rect(s, rx, y + Inches(0.04), rw, Inches(1.30), fill=TINT[GOLD], line=CARD_LINE,
+           lw=T.LW_CARD)
 tf = box.text_frame
 tf.vertical_anchor = MSO_ANCHOR.MIDDLE
 tf.margin_left, tf.margin_right = Inches(0.24), Inches(0.18)
@@ -968,9 +1033,8 @@ y = d.header(s, "Act III  ·  one row, end to end",
              "A polite request that no general-safety guard has a label for",
              "Row MGB-UD-00020 of the frozen public-test split  ·  gold G = safe,  D = intervene,  difficulty hard")
 
-box = rect(s, M, y - Inches(0.02), CW, Inches(1.46), fill=TINT[GOLD], radius=0.03,
-           shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-rect(s, M, y - Inches(0.02), Inches(0.055), Inches(1.46), fill=GOLD)
+box = rect(s, M, y - Inches(0.02), CW, Inches(1.46), fill=TINT[GOLD], line=CARD_LINE,
+           lw=T.LW_CARD)
 tf = box.text_frame
 tf.vertical_anchor = MSO_ANCHOR.MIDDLE
 tf.margin_left, tf.margin_right = Inches(0.26), Inches(0.22)
@@ -1331,7 +1395,8 @@ prospectively locked evaluation on genuinely uninspected data.
 # ------------------------------------------------- 20 · contribution and next steps
 # The deck used to end on the decision guide, which is a good place to leave a room but
 # states no contribution and no next step. This is the conclusion slide.
-s = d.blank()
+# It shares the title slide's darker surface, bookending the deck — as the redesign does.
+s = d.blank(title_slide=True)
 y = d.header(s, "What this contributes",
              "Four things we can defend, and what would make them evidence")
 

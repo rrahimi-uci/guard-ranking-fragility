@@ -23,11 +23,14 @@ FORM CHOICES, and why each is the form rather than a default:
 
   exec_scale  Magnitude across an ordered scale (4B -> 8B -> 32B) against a fixed
               reference. Columns for the ladder, a single hairline rule for the hosted
-              model: the gap is the white space between them, which is the point.
+              model: the gap is the empty space between them, which is the point.
 
-Palette is the report's own brand ink, validated with the dataviz skill's checker against
-a white slide surface (all six checks pass; the green-blue tritan pair sits in the 6-8
-floor band, which the direct labels on every mark satisfy as secondary encoding).
+Palette comes from `deck_theme`, shared with both decks, and the surface is the DARK
+content-slide background so a figure sits on the slide with no visible panel. The earlier
+contrast validation in this docstring was run against a white surface and no longer applies;
+the dark palette has not been re-run through the dataviz checker, so treat the colour choices
+as inherited from the redesign rather than independently validated. Direct labels on every
+mark remain the secondary encoding that carries the reading if a hue pair is hard to separate.
 Sans throughout -- no serif on a numeral.
 """
 from __future__ import annotations
@@ -50,24 +53,30 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 import frontier as FR  # noqa: E402
 
-# ── brand ink (validated) ───────────────────────────────────────────────────────
-ACCENT = "#A02128"   # hosted / the cost side
-BLUE = "#2563EB"     # the gain side
-GREEN = "#15803D"    # best open-weights
-INK = "#12263A"
-SECOND = "#5A6B7C"
-MUTED = "#8A97A5"
-GRID = "#E6EAEE"
-GRAY = "#C4CDD6"     # de-emphasis fill
-SURFACE = "#FFFFFF"
-SANS = ["Arial", "Helvetica Neue", "DejaVu Sans"]
+# ── brand ink (from deck_theme, shared with both decks) ─────────────────────────
+# SURFACE is the CONTENT-SLIDE background, so these figures sit on the slide with no visible
+# panel. savefig.facecolor is set explicitly: it does not inherit from figure.facecolor, and
+# omitting it is exactly how a dark figure ends up saved on a white canvas.
+import deck_theme as T  # noqa: E402
+
+ACCENT = T.hexc(T.ACCENT)              # hosted / the cost side
+BLUE = T.hexc(T.DATA_REPRESENTED)      # the gain side
+GREEN = T.hexc(T.DATA_COMPOSITION)     # best open-weights
+INK = T.hexc(T.TEXT)
+SECOND = T.hexc(T.BODY)
+MUTED = T.hexc(T.DIM)
+GRID = T.hexc(T.CARD_LINE)
+GRAY = T.hexc(T.PANEL_LINE)            # de-emphasis fill, readable on the dark surface
+SURFACE = T.hexc(T.BG_SLIDE)
+SANS = T.FIG_FONT_STACK
 
 plt.rcParams.update({
     "font.family": "sans-serif", "font.sans-serif": SANS,
     "figure.facecolor": SURFACE, "axes.facecolor": SURFACE,
-    "savefig.facecolor": SURFACE, "text.color": INK,
-    "axes.edgecolor": GRID, "axes.labelcolor": SECOND,
-    "xtick.color": MUTED, "ytick.color": INK,
+    "savefig.facecolor": SURFACE, "savefig.edgecolor": SURFACE, "text.color": INK,
+    "axes.edgecolor": GRID, "axes.labelcolor": SECOND, "axes.titlecolor": INK,
+    "xtick.color": MUTED, "ytick.color": SECOND,
+    "xtick.labelcolor": SECOND, "ytick.labelcolor": SECOND,
     "axes.spines.top": False, "axes.spines.right": False,
     "axes.grid": False, "figure.dpi": 220,
 })
