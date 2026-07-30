@@ -408,6 +408,25 @@ and most refused under four of six. A guardrail whose input filter intermittentl
 return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
 its own right.
 
+\paragraph{The deployment question is not which guard, but which requests.} Everything above
+compares whole guards, which frames the choice as self-host \emph{or} outsource. That framing
+is wrong, and the per-row scores show why. Run the small guard inline on every request, rank
+requests by how near they fall to its own decision line, and re-score only that uncertain band
+with the hosted model, holding one global $5\%$ false-alarm budget across the whole
+construction. Escalating the least-confident $10\%$ of ExpGuard raises matched-budget recall
+from $0.787$ to $0.819$; $20\%$ reaches $0.842$, which is \emph{half} the distance to the
+hosted model's \FrontierBestTpr; $30\%$ reaches $0.856$. The curve is steep early because the
+first requests escalated are the ones a second opinion can actually change, and it is smooth,
+so the escalated share is a dial set by whatever the data-residency and cost constraints
+allow rather than an architecture to be chosen once. Two implementation notes, since the
+construction is easy to get wrong: the two guards are fused on \emph{rank}, because a logit
+margin and a self-reported integer risk are not on a common scale; and a per-band threshold
+was tried first and rejected, because with a small escalated slice there are too few deferred
+negatives to place a stable quantile, which made the curve non-monotone for purely numerical
+reasons. This is a retrospective analysis on committed scores, not a deployed system: it
+assumes the escalated subset may lawfully leave, which for the mortgage traffic of
+\Cref{sec:actIV-mortgage} is exactly the question that has to be answered first.
+
 \paragraph{What this does and does not license.} It licenses one sentence: on external,
 expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
 accurate prompt-safety ranker than any small guard in this report, tuned or not, and the margin

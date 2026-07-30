@@ -287,10 +287,108 @@ def fig_scale(rows):
     return out
 
 
+# ── figure 4 · the cascade: you do not have to choose ───────────────────────────
+INHOUSE_KEY = "smollm3_3b"        # 3B, ~20 ms self-hosted: the realistic inline choice
+INHOUSE_NAME = "SmolLM3-3B"
+
+
+def cascade_curve(local_key: str = INHOUSE_KEY, budget: float = FR.FPR_BUDGET):
+    """Recall at a single global false-alarm budget as a function of escalated share.
+
+    The inline in-house guard scores every request. The least-confident slice -- the rows
+    nearest its own decision threshold -- is re-scored by the hosted model, and ONE global
+    threshold is then set on the fused ranking so the alarm budget is held fixed across the
+    whole comparison. Ranks rather than raw margins because the two guards' score scales are
+    unrelated (a logit margin against a self-reported 0-100 risk); fusing raw values would
+    let one scale dominate for reasons that have nothing to do with accuracy.
+
+    A per-band threshold was tried first and rejected: with a small deferred slice there are
+    too few deferred negatives to place a stable quantile, which made the curve non-monotone
+    (the 32B row fell between 0% and 10%) for purely numerical reasons.
+    """
+    import numpy as np
+    from scipy.stats import rankdata
+    labels = FR.load_labels()
+    loc = FR._read(f"scores_{local_key}_base.json")
+    hosted = FR._read("scores_gpt54_low.json")
+    ids = [i for i in labels if i in loc and i in hosted]
+    sl = np.asarray([loc[i] for i in ids], float)
+    sh = np.asarray([hosted[i] for i in ids], float)
+    y = np.asarray([labels[i]["label"] for i in ids], int)
+    n = len(ids)
+    rl, rh = rankdata(sl) / n, rankdata(sh) / n
+    thr_r = np.quantile(rl[y == 0], 1 - budget, method="higher")
+    order = np.argsort(np.abs(rl - thr_r))
+
+    def recall(frac):
+        fused = rl.copy()
+        k = int(round(frac * n))
+        if k:
+            fused[order[:k]] = rh[order[:k]]
+        t = np.quantile(fused[y == 0], 1 - budget, method="higher")
+        return float((fused[y == 1] > t).mean())
+
+    fracs = [i / 100 for i in range(0, 101, 5)]
+    return fracs, [recall(f) for f in fracs]
+
+
+def fig_cascade(rows):
+    fracs, rec = cascade_curve()
+    floor, ceil = rec[0], rec[-1]
+    # Plot the decision-relevant range. Past ~50% you have outsourced the majority of
+    # traffic, so the choice is no longer "in-house with escalation"; the ceiling line
+    # carries the full-escalation endpoint, so nothing is hidden by stopping here.
+    XMAX = 50
+    keep = [(f, r) for f, r in zip(fracs, rec) if f * 100 <= XMAX]
+    xs = [f * 100 for f, _ in keep]
+    ys = [r for _, r in keep]
+
+    fig, ax = plt.subplots(figsize=(8.2, 4.6))
+    ax.axhline(ceil, color=ACCENT, lw=1.5, zorder=2)
+    ax.axhline(floor, color=GREEN, lw=1.5, zorder=2)
+    ax.fill_between(xs, floor, ys, color=BLUE, alpha=0.10, zorder=1)
+    ax.plot(xs, ys, color=BLUE, lw=2.6, zorder=4)
+    # Labels sit ABOVE their rule, left-aligned inside the plot -- centring them on the line
+    # struck the text through.
+    ax.text(0.6, ceil + 0.004, f"send every request to the hosted model — {ceil*100:.0f}%",
+            fontsize=10.5, color=ACCENT, va="bottom", fontweight="bold")
+    # Right-hand side: near x=0 the curve leaves the green rule and would cross this label.
+    ax.text(XMAX - 0.6, floor + 0.004,
+            f"keep every request in-house — {floor*100:.0f}%",
+            fontsize=10.5, color=GREEN, va="bottom", ha="right", fontweight="bold")
+    # Annotations go BELOW-right, into the shaded area, which is empty. Placing them above
+    # the point puts them in the path of the rising curve, which strikes the text through.
+    for f in (0.10, 0.20, 0.30):
+        i = fracs.index(f)
+        share = (rec[i] - floor) / (ceil - floor)
+        ax.plot([f * 100], [rec[i]], "o", ms=11, color=BLUE, zorder=5,
+                markeredgecolor=SURFACE, markeredgewidth=2.2)
+        ax.annotate(f"{rec[i]*100:.0f}%\n{share*100:.0f}% of the gap closed",
+                    xy=(f * 100, rec[i]), xytext=(f * 100 + 1.4, rec[i] - 0.008),
+                    fontsize=10.5, color=BLUE, va="top", fontweight="bold",
+                    linespacing=1.35)
+    ax.set_xlim(-0.6, XMAX + 1)
+    ax.set_ylim(floor - 0.012, ceil + 0.020)
+    ax.set_xticks([0, 10, 20, 30, 40, 50])
+    ax.set_xticklabels(["0%", "10%", "20%", "30%", "40%", "50%"], fontsize=11, color=MUTED)
+    ax.set_yticks([])
+    ax.set_xlabel(f"Share of requests escalated to the hosted model\n"
+                  f"inline guard {INHOUSE_NAME} (~20 ms, self-hosted) · recall held at a "
+                  f"fixed 5% false-alarm budget throughout",
+                  fontsize=10, color=SECOND, labelpad=10)
+    _finish(ax)
+    ax.spines["left"].set_visible(False)
+    fig.tight_layout()
+    out = ASSETS / "exec_cascade.png"
+    fig.savefig(out, bbox_inches="tight", pad_inches=0.06)
+    plt.close(fig)
+    return out
+
+
 def main() -> int:
     ASSETS.mkdir(parents=True, exist_ok=True)
     rows = FR.compute()["rows"]
-    for fn in (fig_gap, fig_tax, fig_scale):
+    for fn in (fig_gap, fig_tax, fig_scale, fig_cascade):
         p = fn(rows)
         print(f"  wrote {p.relative_to(HERE)}  ({p.stat().st_size // 1024} KB)")
     return 0

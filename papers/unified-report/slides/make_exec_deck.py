@@ -61,7 +61,7 @@ SERIF, SANS = "Georgia", "Arial"
 W, H = Inches(13.333), Inches(7.5)
 M = Inches(0.85)
 CW = W - 2 * M
-TITLE_SHORT = "Guardrail sourcing · hosted frontier vs self-hosted small model"
+TITLE_SHORT = "Guardrail sourcing · in-house inline, escalate the uncertain slice"
 
 
 # ───────────────────────────────────────────────────────────────────────── primitives
@@ -328,31 +328,48 @@ changes -- that is the report's title finding.
 
 # ──────────────────────────────────────────────────────── 3 · the recommendation
 s = d.blank()
-y = d.header(s, "recommendation", "Hosted is materially more accurate. Run it where the "
-             "prompt can leave, and a small model where it cannot",
-             "And do not expect to close the gap by tuning or by buying a bigger open model")
-gap = FN.points(F["GainOverOpen"])
+y = d.header(s, "the answer", "Run the small guard in-house on every request. Send out only "
+             "the ones it is unsure about",
+             "One rule, three lanes. The question is not in-house OR outsource — it is which "
+             "requests go out")
+rows = [["Lane", "Which requests", "Guard", "Why"],
+        [("1  Regulated", INK), "prompt contains borrower or patient data",
+         ("in-house only", GREEN), "cannot lawfully leave"],
+        [("2  Uncertain", INK), "in-house guard is near its decision line",
+         ("escalate to hosted", ACCENT), "this is where the accuracy is won"],
+        [("3  Clear-cut", INK), "in-house guard is confident either way",
+         ("in-house only", GREEN), "hosted would not change the answer"]]
+table(s, M, y + Inches(0.04), CW, rows, [0.17, 0.34, 0.21, 0.28], row_h=Inches(0.62))
 cw3 = (CW - Inches(0.6)) / 3
-statcard(s, M, y + Inches(0.06), cw3, Inches(1.62), gap.replace("+", "+") ,
-         f"more unsafe prompts caught by {F['BestName']} than by the best open model we "
-         f"tested, at the same false-alarm rate", color=GREEN)
-statcard(s, M + cw3 + Inches(0.3), y + Inches(0.06), cw3, Inches(1.62),
-         f"{F['Slowdown']}×", "slower per request than a small self-hosted guard",
-         color=ACCENT)
-statcard(s, M + 2 * (cw3 + Inches(0.3)), y + Inches(0.06), cw3, Inches(1.62),
-         f"${F['BestCost']}", "per 1,000 prompts, on top of the model call itself",
-         color=AMBER)
-bullets(s, M, y + Inches(1.95), CW, Inches(2.2), [
-    ("Use hosted where the prompt may lawfully leave. ", "The accuracy gain is real, it is "
-     "statistically solid, and on general safety traffic the latency is tolerable."),
-    ("Keep a self-hosted small guard on the regulated path. ", "Not because it is better -- "
-     "it is not -- but because it is the only option when the prompt cannot leave, and it "
-     "answers in milliseconds."),
-    ("Do not budget for closing the gap. ", "We tried the two obvious routes. Fine-tuning "
-     f"did not close it and hurt {F['SftNumHurt']} of {F['SftNumTotal']} models on "
-     f"unfamiliar traffic; {F['ScaleFactor']}× more parameters bought less than the gap "
-     "that remained."),
-], size=14.5)
+statcard(s, M, y + Inches(2.72), cw3, Inches(1.50), "20%",
+         "of requests escalated — lane 2 only", color=ACCENT)
+statcard(s, M + cw3 + Inches(0.3), y + Inches(2.72), cw3, Inches(1.50), "51%",
+         "of the accuracy gap to hosted, closed", color=GREEN)
+statcard(s, M + 2 * (cw3 + Inches(0.3)), y + Inches(2.72), cw3, Inches(1.50), "80%",
+         "of prompts never leave our network", color=BLUE)
+d.notes(s, f"""
+This is the slide. If they remember one thing, it is that the question was posed wrongly: it
+is not in-house versus outsource, it is which requests go out.
+
+Walk the three lanes in order. Lane 1 is a legal constraint, not a technical choice -- if the
+prompt carries borrower or patient data it stays in, full stop. Lane 3 is the cheap majority:
+when the in-house guard is confident, a second opinion changes nothing, so paying for one is
+waste. Lane 2 is the whole game -- the band around the in-house guard's decision line, where it
+is genuinely unsure, and where the hosted model's advantage actually lives.
+
+The three numbers are one measurement, not three: escalating the least-confident 20% of traffic
+recovers 51% of the accuracy gap while 80% of prompts never leave. Slide 6 has the curve, and it
+is smooth -- you can dial the escalated share to whatever your legal and budget constraints
+allow rather than choosing an architecture.
+
+If asked "why not escalate everything": you would get the full {FN.pct(F['BestTpr'])}, and you
+would also send every borrower prompt to a third party, pay ${F['BestCost']} per thousand, and
+put {F['BestMedianMs']} ms on every request. Lane 1 forbids it anyway for the traffic we care
+most about.
+
+If asked "why not escalate nothing": that is the {FN.pct(F['BestOpenTpr'])} floor, and it means
+knowingly missing about one unsafe prompt in ten that we could have caught.
+""")
 d.notes(s, f"""
 This is the slide to spend time on. Everything after it is evidence.
 
@@ -477,7 +494,45 @@ every inbound request is a serving cost close to the thing we were trying to avo
 paying that, the hosted option deserves another look on cost grounds alone.
 """)
 
-# ──────────────────────────────────────────────────── 7 · what it costs to host
+# ─────────────────────────────────── 7 · the cascade: evidence for the rule
+s = d.blank()
+y = d.header(s, "why the rule works", "You do not have to choose. Escalating the uncertain "
+             "fifth buys half the difference",
+             "Recall against the share of requests sent out, at a fixed 5% false-alarm budget")
+picture(s, "exec_cascade", M, y - Inches(0.08), Inches(8.30), Inches(3.40), align="left")
+callout(s, M + Inches(8.60), y + Inches(0.00), CW - Inches(8.60), Inches(1.72),
+        "the curve is steep early",
+        "The first requests escalated are the ones the in-house guard is least sure about, so "
+        "they carry the most information. Value per escalated request falls as the share "
+        "rises — which is why a fifth buys half.", color=BLUE)
+callout(s, M + Inches(8.60), y + Inches(1.90), CW - Inches(8.60), Inches(1.50),
+        "it is a dial, not a switch",
+        "Legal sets the ceiling on what may leave; budget sets the rest. Pick a point on the "
+        "curve — the architecture does not change.", color=GREEN)
+callout(s, M, y + Inches(3.52), CW, Inches(0.92), "what this costs",
+        f"At a 20% escalated share: about ${float(F['BestCost'])*0.2:.2f} per thousand requests "
+        f"instead of ${F['BestCost']}, and the {F['BestMedianMs']} ms hosted round-trip lands "
+        f"on one request in five rather than on all of them.", color=AMBER)
+d.notes(s, """
+This is the evidence slide for the rule on slide 3. One claim: the relationship is smooth and
+steep early, so escalation is a dial rather than an architecture decision.
+
+Mechanism, and it is why this works at all: the requests chosen for escalation are the ones
+nearest the in-house guard's own decision line -- exactly the cases where a second opinion can
+change the answer. Escalating confident rows adds cost and no accuracy.
+
+Method, if challenged. One global false-alarm budget across the whole curve, so every point is
+comparable and we are not buying recall by alarming more. The two guards are fused on RANK, not
+raw score, because a logit margin and a self-reported 0-100 risk are not on the same scale. We
+tried a per-band threshold first and rejected it: with a small escalated slice there are too few
+deferred negatives to place a stable threshold, and the curve went non-monotone for purely
+numerical reasons. The figure stops at 50% because past that you have outsourced the majority;
+the upper rule shows where full escalation lands.
+
+Cost is linear in the escalated share, so a fifth of the traffic is a fifth of the bill.
+""")
+
+# ──────────────────────────────────────────────────── 8 · what it costs to host
 s = d.blank()
 y = d.header(s, "what hosted costs", "The accuracy is real. So is the bill, the latency, and "
              "the loss of control",
@@ -524,7 +579,7 @@ property, not a technical footnote.
 Close on the scoping sentence. The answer is a split, and this slide is why.
 """)
 
-# ─────────────────────────────────────────────── 8 · the useful surprise
+# ─────────────────────────────────────────────── 9 · the useful surprise
 s = d.blank()
 y = d.header(s, "the useful finding", "If we must self-host, a bigger untuned model beats a "
              "tuned small one",
@@ -565,7 +620,7 @@ made held-out accuracy worse on most models, while the size route at least moved
 direction on both regimes.
 """)
 
-# ───────────────────────────────────────────────────── 9 · what we are unsure of
+# ──────────────────────────────────────────────────── 10 · what we are unsure of
 s = d.blank()
 y = d.header(s, "confidence and limits", "What this does not tell you",
              "Stated plainly, so the recommendation can be trusted where it does apply")
@@ -604,22 +659,23 @@ Close on the final callout: the thing worth funding is the measuring instrument 
 domain, not more guard comparisons on general safety.
 """)
 
-# ──────────────────────────────────────────────────────────── 10 · what we would do
+# ─────────────────────────────────────────────────────────── 11 · what we would do
 s = d.blank()
 y = d.header(s, "proposal", "What we would do next",
              "Sequenced so each step is cheap and the expensive one is last")
 cw = (CW - Inches(0.45)) / 2
 bullets(s, M, y + Inches(0.06), cw, Inches(3.3), [
-    ("Now · split the traffic. ", "Hosted guard where the prompt may lawfully leave; "
-     "the small self-hosted guard on the regulated path. No new build."),
-    ("Now · handle provider refusals explicitly. ", "Treat a provider refusal as "
-     "'needs review', never as 'safe'. It is a one-line policy change and today it is a "
-     "silent gap."),
-    ("Next · stop the tuning workstream as a gap-closer. ", "Keep it only for rescuing "
-     "weak models. Redirect the effort."),
+    ("Now · keep the in-house guard inline on everything. ", "It already runs, it answers in "
+     "~20 ms, and it is the only lane available for regulated traffic. No new build."),
+    ("Now · add the escalation lane. ", "Route the least-confident band to the hosted model "
+     "where the data may lawfully leave. Start at 10–20% and read the curve."),
+    ("Now · treat a provider refusal as 'needs review'. ", "Never as 'safe'. A one-line "
+     "policy change, and today it is a silent gap."),
+    ("Next · stop the tuning workstream as a gap-closer. ", "Keep it only for rescuing weak "
+     "models. Redirect the effort."),
     ("Then · build the domain instrument. ", "A mortgage-compliance benchmark that scores "
      "whole answers against specific rules, with expert adjudication."),
-], size=14.5)
+], size=13.5, gap=10)
 callout(s, M + cw + Inches(0.45), y + Inches(0.06), cw, Inches(1.55),
         "the cheapest item is the refusal one",
         "It costs a policy change, and it closes a case where an unsafe prompt currently "

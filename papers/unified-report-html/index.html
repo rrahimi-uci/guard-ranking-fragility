@@ -2364,6 +2364,25 @@ guard saw them — <em>non-deterministically</em>, with no row refused under all
 and most refused under four of six. A guardrail whose input filter intermittently declines to
 return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
 its own right.</p>
+<h4 class="runin" id="the-deployment-question-is-not-which-guard-but-which-requests.">The deployment question is not which guard, but which requests.</h4>
+<p>Everything above
+compares whole guards, which frames the choice as self-host <em>or</em> outsource. That framing
+is wrong, and the per-row scores show why. Run the small guard inline on every request, rank
+requests by how near they fall to its own decision line, and re-score only that uncertain band
+with the hosted model, holding one global <span class="math inline">\(5\%\)</span> false-alarm budget across the whole
+construction. Escalating the least-confident <span class="math inline">\(10\%\)</span> of ExpGuard raises matched-budget recall
+from <span class="math inline">\(0.787\)</span> to <span class="math inline">\(0.819\)</span>; <span class="math inline">\(20\%\)</span> reaches <span class="math inline">\(0.842\)</span>, which is <em>half</em> the distance to the
+hosted model’s .896; <span class="math inline">\(30\%\)</span> reaches <span class="math inline">\(0.856\)</span>. The curve is steep early because the
+first requests escalated are the ones a second opinion can actually change, and it is smooth,
+so the escalated share is a dial set by whatever the data-residency and cost constraints
+allow rather than an architecture to be chosen once. Two implementation notes, since the
+construction is easy to get wrong: the two guards are fused on <em>rank</em>, because a logit
+margin and a self-reported integer risk are not on a common scale; and a per-band threshold
+was tried first and rejected, because with a small escalated slice there are too few deferred
+negatives to place a stable quantile, which made the curve non-monotone for purely numerical
+reasons. This is a retrospective analysis on committed scores, not a deployed system: it
+assumes the escalated subset may lawfully leave, which for the mortgage traffic of
+<span class="xref-missing">Section</span> is exactly the question that has to be answered first.</p>
 <h4 class="runin" id="what-this-does-and-does-not-license.-1">What this does and does not license.</h4>
 <p>It licenses one sentence: on external,
 expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
