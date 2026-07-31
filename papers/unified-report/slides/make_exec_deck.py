@@ -29,7 +29,6 @@ import sys
 from pathlib import Path
 
 from pptx import Presentation
-from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
@@ -269,6 +268,8 @@ def callout(s, l, t, w, h, label, body, color=ACCENT):
 
 # ═══════════════════════════════════════════════════════════════════════ build
 F = FN.load()
+HT = FN.load_h2h()
+b = FN.bare
 d = Deck()
 
 # ─────────────────────────────────────────────────────────────── 1 · title
@@ -452,6 +453,62 @@ disadvantaged the hosted model and it strengthens rather than weakens the conclu
 
 If asked about the labels: external, expert-annotated, and a stronger labelling tier than
 anything we produced ourselves. We did not grade our own homework here.
+""")
+
+# ────────────────────────── 4b · the gap is a regime, not a verdict on model size
+# The single most decision-relevant slide in this deck: it converts "hosted is better" into
+# "hosted is better on traffic we cannot anticipate", which is a sourcing rule rather than a
+# preference. Numbers come from h2h_macros.tex via frontier_numbers.load_h2h(), the same
+# anti-drift contract the rest of the frontier material uses.
+s = d.blank()
+y = d.header(s, "but better at what",
+             "On traffic we can describe in advance, our own guard already wins",
+             "Same five corpora, same " + b(HT['Budget']) + " false-alarm budget, "
+             "split by whether the source was in our training manifest")
+
+cw = (CW - Inches(0.40)) / 2
+statcard(s, M, y + Inches(0.10), cw, Inches(1.62),
+         b(HT['BestTpr']) + "  vs  " + b(HT['RefTpr']),
+         "Catch rate on " + b(HT['BestSource']) + " -- a " + b(HT['BestName']) + " guard "
+         "against the hosted model. Difference " + b(HT['BestDeltaTpr']) + " "
+         + b(HT['BestDeltaTprCI']) + ", and a ranking win, not a threshold trick.",
+         color=BLUE)
+statcard(s, M + cw + Inches(0.40), y + Inches(0.10), cw, Inches(1.62),
+         b(HT['TransRefTpr']) + "  vs  " + b(HT['TransBestLocalTpr']),
+         "The same comparison on a source we did NOT train on. Hosted leads, and our best "
+         "guard there is an UNTUNED base -- tuning is what costs us the position.",
+         color=ACCENT)
+
+callout(s, M, y + Inches(1.92), CW, Inches(1.20), "the sourcing rule this implies",
+        "The gap is not a ceiling a bigger local model would break through -- it is the price "
+        "of the regime. So the question is not “can a small guard match the frontier” but "
+        "“what share of our traffic can we describe in a training manifest”. Self-host that "
+        "share; escalate on UNFAMILIARITY, not on how unsure the local guard sounds, because "
+        "margin-based routing spends the hosted budget exactly where we are already right.",
+        color=GREEN)
+
+d.notes(s, f"""
+This is the slide that changes the recommendation, so do not rush it.
+
+Slide 4 said hosted is about ten points better. True -- on prompts nobody anticipated. This
+slide says that on sources we can enumerate in a training manifest the ordering inverts, and a
+{b(HT['BestName'])} model beats the hosted one outright: {b(HT['BestTpr'])} against
+{b(HT['RefTpr'])}, difference {b(HT['BestDeltaTpr'])} with 95% interval
+{b(HT['BestDeltaTprCI'])}. It is a ranking win, not a threshold placement -- AUROC
+{b(HT['BestAuroc'])} against {b(HT['RefAuroc'])} -- and {b(HT['NSig'])} of
+{b(HT['NSftCells'])} represented cells clear zero at the 95% level.
+
+Represented sources here are {b(HT['RepSources'])}. Held-out sources are the ones we never
+trained on, and there the hosted model leads.
+
+Two honest caveats, offered before they are asked. Per-source samples are small (67 to 451
+rows), so read the direction rather than the exact margin. And this is retrospective analysis
+on a panel we inspected while building the method -- it is a strong signal, not a sealed
+confirmatory result.
+
+The business consequence: we do not need to beat the frontier everywhere to stop paying per
+prompt. We need to know which slice of traffic we can characterise, self-host that, and buy
+hosted capacity only for the rest.
 """)
 
 # ────────────────────────────────────────────────── 5 · tuning did not close it

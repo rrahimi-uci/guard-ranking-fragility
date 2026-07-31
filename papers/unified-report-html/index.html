@@ -78,7 +78,7 @@
       <b>Reza Rahimi, PhD</b> · <span class="affil">JazzX AI, Los Altos, CA · reza.rahimi@jazzx.ai</span>
     </div>
     <div class="chips">
-      <span class="chip"><b>25</b> tables · <b>16</b> figures</span>
+      <span class="chip"><b>26</b> tables · <b>16</b> figures</span>
       <span class="chip">fixed panel: <b>4</b> checkpoints × <b>5</b> seeds</span>
       <span class="chip">frozen benchmark: <b>v1_hmda2022</b>, 994 rows</span>
       <!-- Absolute, to the copy in the repository. A relative ../ link is correct when
@@ -113,7 +113,11 @@
 <li class="toc-top"><a href="#sec:actI-op"><span class="toc-num">3.5</span><span>At a deployable operating point</span></a></li>
 <li class="toc-top"><a href="#sec:actI-klsft"><span class="toc-num">3.6</span><span>A recipe control: does anti-forgetting (KL-regularized) SFT preserve transfer?</span></a></li>
 <li class="toc-top"><a href="#sec:actI-prevalence"><span class="toc-num">3.7</span><span>The deployment base rate also chooses the winner</span></a></li>
-<li class="toc-top"><a href="#sec:adaptation"><span class="toc-num">4</span><span>Adapting released guards: a confirmatory starting-type study</span></a></li>
+<li class="toc-top"><a href="#sec:adaptation"><span class="toc-num">4</span><span>Interlude (Act I, confirmed): adapting released guards — a preregistered starting-type study</span></a></li>
+<li class="toc-top"><a href="#sec:adaptation-design"><span class="toc-num">4.1</span><span>Design: a \(2\times3\) blocked grid over ten checkpoints</span></a></li>
+<li class="toc-top"><a href="#sec:adaptation-rq1"><span class="toc-num">4.2</span><span>RQ1: ordinary SFT specializes released guards too (supported)</span></a></li>
+<li class="toc-top"><a href="#sec:adaptation-rq2"><span class="toc-num">4.3</span><span>RQ2: KL-SFT retains transfer, but is not a free improvement (not supported)</span></a></li>
+<li class="toc-top"><a href="#sec:adaptation-license"><span class="toc-num">4.4</span><span>What this does and does not license</span></a></li>
 <li class="toc-top"><a href="#sec:actIII"><span class="toc-num">5</span><span>Recover transfer without retraining: output-space composition (Act II)</span></a></li>
 <li class="toc-top"><a href="#sec:actIII-operator"><span class="toc-num">5.1</span><span>The fixed composition operator</span></a></li>
 <li class="toc-top"><a href="#sec:actIII-weightspace"><span class="toc-num">5.2</span><span>Output-space composition vs. weight-space merging (WiSE-FT, model soups)</span></a></li>
@@ -128,12 +132,17 @@
 <li class="toc-top"><a href="#sec:actIV-mortgage-composition"><span class="toc-num">6.2</span><span>The frozen composition (994 rows)</span></a></li>
 <li class="toc-top"><a href="#sec:actIV-mortgage-pairs"><span class="toc-num">6.3</span><span>Protected-class minimal pairs and the \(\Delta_{\mathrm{context}}\) fairness gate</span></a></li>
 <li class="toc-top"><a href="#sec:actIV-mortgage-results"><span class="toc-num">6.4</span><span>Evaluation protocol and zero-shot baseline results</span></a></li>
-<li class="toc-top"><a href="#sec:actIII-frontier"><span class="toc-num">6.5</span><span>What a frontier guardrail buys, and what it costs</span></a></li>
-<li class="toc-top"><a href="#sec:synthesis"><span class="toc-num">7</span><span>Synthesis: one lesson at three scales, and what to do about it</span></a></li>
-<li class="toc-top"><a href="#sec:practitioner"><span class="toc-num">7.1</span><span>The decision guide: gate candidates, not leaderboards</span></a></li>
-<li class="toc-top"><a href="#sec:practitioner-cost"><span class="toc-num">7.2</span><span>Latency and cost: the case for a small, self-hosted guard</span></a></li>
-<li class="toc-top"><a href="#sec:repro"><span class="toc-num">8</span><span>Reproducibility</span></a></li>
-<li class="toc-top"><a href="#sec:conclusion"><span class="toc-num">9</span><span>Conclusion</span></a></li>
+<li class="toc-top"><a href="#sec:actIII-frontier"><span class="toc-num">7</span><span>What a frontier guardrail buys, and what it costs</span></a></li>
+<li class="toc-top"><a href="#sec:frontier-size"><span class="toc-num">7.1</span><span>How large the gap is, and what buying it costs</span></a></li>
+<li class="toc-top"><a href="#sec:frontier-routes"><span class="toc-num">7.2</span><span>Routes that do not close it: tuning, scale, ensembling, purpose-built guards</span></a></li>
+<li class="toc-top"><a href="#sec:frontier-ladder"><span class="toc-num">7.3</span><span>What scoring the ladder taught us about the specialization tax</span></a></li>
+<li class="toc-top"><a href="#sec:actIII-h2h"><span class="toc-num">7.4</span><span>The frontier gap is a property of the regime, not of the model</span></a></li>
+<li class="toc-top"><a href="#sec:frontier-licenses"><span class="toc-num">7.5</span><span>Which requests, and what this licenses</span></a></li>
+<li class="toc-top"><a href="#sec:synthesis"><span class="toc-num">8</span><span>Synthesis: one lesson at three scales, and what to do about it</span></a></li>
+<li class="toc-top"><a href="#sec:practitioner"><span class="toc-num">8.1</span><span>The decision guide: gate candidates, not leaderboards</span></a></li>
+<li class="toc-top"><a href="#sec:practitioner-cost"><span class="toc-num">8.2</span><span>Latency and cost: the case for a small, self-hosted guard</span></a></li>
+<li class="toc-top"><a href="#sec:repro"><span class="toc-num">9</span><span>Reproducibility</span></a></li>
+<li class="toc-top"><a href="#sec:conclusion"><span class="toc-num">10</span><span>Conclusion</span></a></li>
 <li class="toc-top"><a href="#sec:related"><span class="toc-num">A</span><span>Related work</span></a></li>
 <li class="toc-top"><a href="#sec:related-guards"><span class="toc-num">A.1</span><span>Small LLM guard classifiers</span></a></li>
 <li class="toc-top"><a href="#sec:related-transfer"><span class="toc-num">A.2</span><span>Fine-tuning degradation and policy / benchmark transfer</span></a></li>
@@ -204,7 +213,7 @@ mortgage benchmark ships frozen and checksummed.</p>
 
     <div class="center">
 <p><a href="https://github.com/rrahimi-uci/safety-guard-dynamics"><code>github.com/rrahimi-uci/safety-guard-dynamics</code></a>
-  <span class="math inline">\(\cdot\)</span>   <code>make reproduce</code> regenerates and byte-checks the covered tables (<a class="xref" href="#sec:repro">Section 8</a>)
+  <span class="math inline">\(\cdot\)</span>   <code>make reproduce</code> regenerates and byte-checks the covered tables (<a class="xref" href="#sec:repro">Section 9</a>)
   <span class="math inline">\(\cdot\)</span>   frozen benchmark: <code>v1_hmda2022</code>, 994 rows</p>
 </div>
 <div class="center">
@@ -238,7 +247,7 @@ protected group differently — a compliance and fair-lending problem, not merel
 <a class="xref" href="#fig:casestudy">Figure 8</a> is that third failure in one concrete row: a routine-sounding underwriting
 question that solicits redlining-by-proxy, which all four guards rank <em>below</em> the median benign
 request in the same split. The three
-questions below, and the decision guide that follows from them (<a class="xref" href="#sec:practitioner">Section 7.1</a>), exist to catch
+questions below, and the decision guide that follows from them (<a class="xref" href="#sec:practitioner">Section 8.1</a>), exist to catch
 these failures <em>before</em> deployment: when to fine-tune, when to instead <em>compose</em>, and when a
 general guard is simply not enough for a regulated domain.</p>
 <p>Converting a general instruction model into a safety guard with a short parameter-efficient fine-tune
@@ -279,7 +288,7 @@ fairness-invariance gate, plus an external, expert-annotated finance/health/law 
 <li><p><strong>A reproduce-from-committed-scores pipeline</strong> (tooling, not a research claim): one entry
 point regenerates the Act I/II, mortgage, ExpGuard, SFT+SFT, latency and teaser artifacts from committed
 per-row scores and byte-checks them, reporting verified/unverified/uncovered counts rather than a single
-green (<a class="xref" href="#sec:repro">Section 8</a>).</p></li>
+green (<a class="xref" href="#sec:repro">Section 9</a>).</p></li>
 </ol>
 <p><em>What is <strong>not</strong> new:</em> we introduce no new model, metric, or training algorithm, and make no
 causal, universal, or deployment claim — the output is a reproducible, estimation-only characterization
@@ -440,7 +449,7 @@ inspected during development, and clean provenance does not make an inspected be
 <h2 data-num="2.7" id="sec:bg-objectives"><span class="secnum">2.7</span>Fine-tuning the guard: LoRA-SFT</h2>
 <p>We fine-tune each guard with <strong>SFT</strong> (supervised fine-tuning): a cross-entropy loss that directly
 raises the model’s log-probability of the single correct verdict token, applied as a parameter-efficient
-LoRA adapter (the exact recipe is <a class="xref" href="#tab:panel-recipe">Table 20</a>). SFT is the one training recipe used throughout;
+LoRA adapter (the exact recipe is <a class="xref" href="#tab:panel-recipe">Table 21</a>). SFT is the one training recipe used throughout;
 Act I measures what it changes, and Act II asks whether we can recover what it gives up <em>without</em>
 any further tuning.</p>
 <h2 data-num="2.8" id="sec:bg-composition"><span class="secnum">2.8</span>Output-space composition</h2>
@@ -826,7 +835,7 @@ tried (panel mean -0.300 to -0.290).</p>
 <span class="math inline">\(+0.06\)</span> recall gain in <a class="xref" href="#tab:sensitivity">Table 3</a> is an artifact of comparing at unequal alarm rates. It needs
 no GPU and no pinned environment — matching false-alarm rates is ranking arithmetic on the same
 committed <code>score_raw</code> and <code>gold</code> columns every other covered artifact uses, so it is
-regenerated and byte-checked by <code>make reproduce</code> (<a class="xref" href="#sec:repro">Section 8</a>); the emitter reproduces every
+regenerated and byte-checked by <code>make reproduce</code> (<a class="xref" href="#sec:repro">Section 9</a>); the emitter reproduces every
 published row of <a class="xref" href="#tab:sensitivity">Table 3</a> exactly before adding the matched column, which is how we know the
 two tables read the same underlying scores. Earlier drafts described this reconstruction as a
 <em>direction</em> that required the lock-pinned environment. That was wrong on both counts, and the
@@ -1204,7 +1213,7 @@ represented-source cost fails the non-inferiority margin, and it leaves the two 
 their own base on transfer.</span>
 <span>Retrospective on a fixed four-checkpoint panel with an inspected manifest (overlap audit pending); a
 description of this recipe on these runs, not a population or causal law.</span></p>
-<h1 data-num="4" id="sec:adaptation"><span class="secnum">4</span>Adapting released guards: a confirmatory starting-type study</h1>
+<h1 data-num="4" id="sec:adaptation"><span class="secnum">4</span>Interlude (Act I, confirmed): adapting released guards — a preregistered starting-type study</h1>
 <p>Acts I–II characterize what fine-tuning does to <em>general</em> instruction checkpoints, and Act III ranks
 <em>base</em> guards on regulated domains — all on panels the researcher inspected while building the
 method, so they are retrospective estimation, not confirmed findings (<a class="xref" href="#sec:honesty">Section E</a>). This section is
@@ -1221,7 +1230,7 @@ the <em>data</em>; the uninspected-cohort half of that discipline remains future
 (RQ1) does the specialization tradeoff also hit models that are <em>already</em> purpose-built safety
 guards, and (RQ2) is KL-SFT — which recovered transfer for general checkpoints (<a class="xref" href="#sec:actI-klsft">Section 3.6</a>)
 — a <em>free</em> improvement, i.e. does it retain transfer at no represented-source cost?</p>
-<h4 class="runin" id="design.">Design.</h4>
+<h2 data-num="4.1" id="sec:adaptation-design"><span class="secnum">4.1</span>Design: a <span class="math inline">\(2\times3\)</span> blocked grid over ten checkpoints</h2>
 <p>A <span class="math inline">\(2\times 3\)</span> blocked grid: <span class="math inline">\(\{\)</span>four general instruction checkpoints, six released
 purpose-built guards<span class="math inline">\(\}\times\{\)</span>unmodified <span class="math inline">\(U\)</span>, <span class="math inline">\(+\)</span>SFT, <span class="math inline">\(+\)</span>KL-SFT<span class="math inline">\(\}\)</span>, over 10
 checkpoints spanning 6 model families (gemma, granite, llama, mistral, qwen, smollm), five
@@ -1364,7 +1373,7 @@ represented-source cost (<strong>RQ2</strong>). Llama-Guard-3-1B sits at the ori
 move it. We exclude it from the ensembling panel and treat it as uninformative rather than as evidence of
 LoRA-resistance.</figcaption>
 </figure>
-<h4 class="runin" id="rq1-ordinary-sft-specializes-released-guards-too-supported.">RQ1 — ordinary SFT specializes released guards too (supported).</h4>
+<h2 data-num="4.2" id="sec:adaptation-rq1"><span class="secnum">4.2</span>RQ1: ordinary SFT specializes released guards too (supported)</h2>
 <p>Across the panel, our SFT protocol raised represented-source macro-AP by +0.174 (equal-family mean;
 LCB <span class="math inline">\(+0.129&gt;0\)</span>) while the gain was concentrated relative to held-out transfer (H_conc +0.239,
 LCB <span class="math inline">\(+0.189&gt;0\)</span>), with the preregistered criterion <span class="math inline">\(\text{LCB}(\text{H\_gain})&gt;0\)</span> and
@@ -1373,7 +1382,7 @@ artifact: the released guards move the same way — SFT buys represented ranking
 <span class="math inline">\(+0.212\)</span>, Granite-Guard-2B <span class="math inline">\(+0.139\)</span>) at a held-out cost (equal-family held-out change under SFT
 -0.065). Fine-tuning a released guard on your data specializes it toward your sources, at a
 bound-confirmed transfer cost, exactly as it does a general checkpoint.</p>
-<h4 class="runin" id="rq2-kl-sft-retains-transfer-but-is-not-a-free-improvement-not-supported.">RQ2 — KL-SFT retains transfer but is <em>not</em> a free improvement (not supported).</h4>
+<h2 data-num="4.3" id="sec:adaptation-rq2"><span class="secnum">4.3</span>RQ2: KL-SFT retains transfer, but is <em>not</em> a free improvement (not supported)</h2>
 <p>KL-SFT did preserve held-out transfer relative to SFT (H_preserve +0.049, LCB <span class="math inline">\(+0.035&gt;0\)</span>):
 in <a class="xref" href="#tab:adaptation">Table 6</a> every KL-SFT held-out delta on the nine <em>informative</em> checkpoints is less
 negative (or more positive) than its SFT counterpart; on the degenerate Llama-Guard-3-1B cell both are
@@ -1384,7 +1393,7 @@ gain for transfer retention; on this panel it is a genuine trade, not a free lun
 cautious verdict than the general-checkpoint KL control of <a class="xref" href="#sec:actI-klsft">Section 3.6</a> (where the represented
 cost was smaller), and the confirmatory design reports it as such rather than reading the favorable
 direction as a win.</p>
-<h4 class="runin" id="what-this-does-and-does-not-license.">What this does and does not license.</h4>
+<h2 data-num="4.4" id="sec:adaptation-license"><span class="secnum">4.4</span>What this does and does not license</h2>
 <p>The within-checkpoint deltas are causal only for <em>this recipe on this checkpoint</em>; the
 general-vs-purpose contrast is a <em>descriptive</em> blocked comparison (checkpoints are not randomly
 assigned to a starting type), not a causal claim about starting type. The bounds are conditional on the
@@ -1880,7 +1889,7 @@ for SmolLM2-1.7B and <span class="math inline">\(0.151\)</span> for SmolLM3-3B. 
 we do not rank guards on the margin either; the defensible statement is narrower and sufficient:
 <strong><span class="math inline">\(\Delta_{\mathrm{context}}\)</span> on the probability scale cannot be compared across guards whose
 score distributions differ by six orders of magnitude, and Qwen3-4B is not invariant on the scale this
-report elsewhere prefers</strong> (the raw margin, <a class="xref" href="#sec:repro">Section 8</a>).</p>
+report elsewhere prefers</strong> (the raw margin, <a class="xref" href="#sec:repro">Section 9</a>).</p>
 <h2 data-num="6.4" id="sec:actIV-mortgage-results"><span class="secnum">6.4</span>Evaluation protocol and zero-shot baseline results</h2>
 <h4 class="runin" id="protocol.">Protocol.</h4>
 <p>The reproducible layer is the evaluator, not the generator. A guard emits one
@@ -2281,7 +2290,7 @@ committed text-free per-row scores; the run was independently cross-checked on a
 </table></div></figure>
 <p><br/>
 <span> <strong>Paired top-two comparison</strong> (SmolLM3-3B <span class="math inline">\(-\)</span> Qwen3-4B on <em>identical</em> rows, 2,000-resample bootstrap). The marginal CIs above overlap, but a paired test cancels row-difficulty variance and resolves one vertical: overall <span class="math inline">\(+0.0055\)</span> <span class="math inline">\([-0.0008, +0.0120]\)</span>; finance <span class="math inline">\(+0.0009\)</span> <span class="math inline">\([-0.0075, +0.0097]\)</span>; <strong>health <span class="math inline">\(+0.0168\)</span> <span class="math inline">\([+0.0026, +0.0320]\)</span></strong> (CI excludes zero); law <span class="math inline">\(+0.0011\)</span> <span class="math inline">\([-0.0118, +0.0140]\)</span>. So the two guards are tied on finance and law and separate on health — “unresolved” was an unrun analysis, not a sample-size limit.</span></p>
-<h2 data-num="6.5" id="sec:actIII-frontier"><span class="secnum">6.5</span>What a frontier guardrail buys, and what it costs</h2>
+<h1 data-num="7" id="sec:actIII-frontier"><span class="secnum">7</span>What a frontier guardrail buys, and what it costs</h1>
 <p>Every guard in this report is a small open-weights model the operator runs itself. The obvious
 question a practitioner asks next is whether that choice is costing them safety, and how much:
 if a hosted frontier model is simply a better guardrail, the engineering in Acts I–II is
@@ -2289,7 +2298,7 @@ solving a problem one API call makes disappear. ExpGuard is the one instrument h
 answer it cleanly. Its rows are external and expert-annotated, its task is the same prompt-only
 classification the local guards perform, and every guard — local and hosted — can be scored
 on <em>identical</em> rows joined by row hash, so the comparison never crosses the label-tier
-boundary that <a class="xref" href="#tab:ledger">Table 25</a> forbids crossing.</p>
+boundary that <a class="xref" href="#tab:ledger">Table 26</a> forbids crossing.</p>
 <p><a class="xref" href="#tab:frontier">Table 14</a> adds two families to the four base checkpoints: the same four checkpoints
 after ordinary SFT, and <code>gpt-5.4</code> and <code>gpt-5.4-mini</code> at three reasoning efforts. Two
 choices make the rows commensurable. First, the primary column is recall at a <em>matched</em>
@@ -2300,6 +2309,7 @@ selected. Second, the frontier ranking signal is a self-reported integer <span c
 graded output the Responses API exposes for reasoning models; it takes roughly <span class="math inline">\(50\)</span>–<span class="math inline">\(65\)</span> distinct
 values over 2,275 rows, and those ties cap how finely AP can resolve a ranking. That
 handicaps the hosted rows, so a frontier number <em>above</em> a local one is conservative.</p>
+<h2 data-num="7.1" id="sec:frontier-size"><span class="secnum">7.1</span>How large the gap is, and what buying it costs</h2>
 <h4 class="runin" id="the-gain-is-real-and-it-is-large.">The gain is real and it is large.</h4>
 <p>The best hosted configuration
 (gpt-5.4 (low)) reaches .896 recall at the matched budget against
@@ -2309,6 +2319,23 @@ paired row bootstrap on identical rows puts the difference at +0.109
 ten that the best panel base guard waves through at a <span class="math inline">\(5\%\)</span> alarm budget, the frontier model
 catches. On evidence this is the largest single accuracy gap anywhere in this report, and it is
 measured on the strongest label tier we have.</p>
+<h4 class="runin" id="and-the-accuracy-is-bought-at-two-orders-of-magnitude.">And the accuracy is bought at two orders of magnitude.</h4>
+<p><a class="xref" href="#tab:frontier-serving">Table 16</a>
+puts the price beside the gain. The best hosted configuration answers in 1,553 ms
+at the median against SmolLM3-3B’s <span class="math inline">\(10\)</span>–<span class="math inline">\(25\)</span> ms batched forward pass —
+about 77<span class="math inline">\(\times\)</span> — at roughly $0.80 per thousand prompts against
+the amortised cost of a GPU the operator already owns. For a guardrail that fires on every inbound
+request, that is a budget line and a latency budget, not a rounding error. Three further costs
+appear in no column of either table. Prompts leave the operator’s infrastructure, which for the
+mortgage setting of <span class="xref-missing">Section</span> is a GLBA question before it is an engineering one.
+The operating point is only coarsely selectable: a continuous logit margin can be placed at any
+false-alarm budget exactly, while <span class="math inline">\(50\)</span>–<span class="math inline">\(65\)</span> distinct integer scores can only land near one.
+And the provider’s own input filter refused a subset of ExpGuard prompts outright, before the
+guard saw them — <em>non-deterministically</em>, with no row refused under all six configurations
+and most refused under four of six. A guardrail whose input filter intermittently declines to
+return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
+its own right.</p>
+<h2 data-num="7.2" id="sec:frontier-routes"><span class="secnum">7.2</span>Routes that do not close it: tuning, scale, ensembling, purpose-built guards</h2>
 <h4 class="runin" id="neither-tuning-nor-scale-closes-it.">Neither tuning nor scale closes it.</h4>
 <p>Two obvious escapes suggest themselves —
 tune the small guard, or buy a bigger one — and the same 2,275 rows let us price both.</p>
@@ -2348,22 +2375,6 @@ four-checkpoint panel by construction — that panel is enforced in code, not me
 so extending it is impossible without invalidating the release — and are trained and scored
 through a sealed sidecar lock that copies the recipe, seeds and manifests verbatim. Act I’s
 headline numbers are untouched and are not restated from either run.</p>
-<h4 class="runin" id="and-the-accuracy-is-bought-at-two-orders-of-magnitude.">And the accuracy is bought at two orders of magnitude.</h4>
-<p><a class="xref" href="#tab:frontier-serving">Table 16</a>
-puts the price beside the gain. The best hosted configuration answers in 1,553 ms
-at the median against SmolLM3-3B’s <span class="math inline">\(10\)</span>–<span class="math inline">\(25\)</span> ms batched forward pass —
-about 77<span class="math inline">\(\times\)</span> — at roughly $0.80 per thousand prompts against
-the amortised cost of a GPU the operator already owns. For a guardrail that fires on every inbound
-request, that is a budget line and a latency budget, not a rounding error. Three further costs
-appear in no column of either table. Prompts leave the operator’s infrastructure, which for the
-mortgage setting of <span class="xref-missing">Section</span> is a GLBA question before it is an engineering one.
-The operating point is only coarsely selectable: a continuous logit margin can be placed at any
-false-alarm budget exactly, while <span class="math inline">\(50\)</span>–<span class="math inline">\(65\)</span> distinct integer scores can only land near one.
-And the provider’s own input filter refused a subset of ExpGuard prompts outright, before the
-guard saw them — <em>non-deterministically</em>, with no row refused under all six configurations
-and most refused under four of six. A guardrail whose input filter intermittently declines to
-return a verdict, for reasons the operator cannot inspect or appeal, is a compliance artifact in
-its own right.</p>
 <h4 class="runin" id="nor-does-combining-what-we-already-have.">Nor does combining what we already have.</h4>
 <p>The other instinctive response to a
 vendor gap is an ensemble: we hold 18 open guards with ExpGuard scores —
@@ -2392,37 +2403,6 @@ structure that may not survive a change of traffic.</p>
 version of it (equal weights) is worse than picking the best member. It earns its place in one
 situation — when nothing may leave the network at all, seed ensembling plus stacking is the
 in-house ceiling, and it is roughly a quarter of the way to what the hosted model would give.</p>
-<h4 class="runin" id="the-deployment-question-is-not-which-guard-but-which-requests.">The deployment question is not which guard, but which requests.</h4>
-<p>Everything above
-compares whole guards, which frames the choice as self-host <em>or</em> outsource. That framing
-is wrong, and the per-row scores show why. Run the small guard inline on every request, rank
-requests by how near they fall to its own decision line, and re-score only that uncertain band
-with the hosted model, holding one global <span class="math inline">\(5\%\)</span> false-alarm budget across the whole
-construction. Escalating the least-confident <span class="math inline">\(10\%\)</span> of ExpGuard raises matched-budget recall
-from <span class="math inline">\(0.787\)</span> to <span class="math inline">\(0.819\)</span>; <span class="math inline">\(20\%\)</span> reaches <span class="math inline">\(0.842\)</span>, which is <em>half</em> the distance to the
-hosted model’s .896; <span class="math inline">\(30\%\)</span> reaches <span class="math inline">\(0.856\)</span>. The curve is steep early because the
-first requests escalated are the ones a second opinion can actually change, and it is smooth,
-so the escalated share is a dial set by whatever the data-residency and cost constraints
-allow rather than an architecture to be chosen once. Two implementation notes, since the
-construction is easy to get wrong: the two guards are fused on <em>rank</em>, because a logit
-margin and a self-reported integer risk are not on a common scale; and a per-band threshold
-was tried first and rejected, because with a small escalated slice there are too few deferred
-negatives to place a stable quantile, which made the curve non-monotone for purely numerical
-reasons. This is a retrospective analysis on committed scores, not a deployed system: it
-assumes the escalated subset may lawfully leave, which for the mortgage traffic of
-<span class="xref-missing">Section</span> is exactly the question that has to be answered first.</p>
-<h4 class="runin" id="what-this-does-and-does-not-license.-1">What this does and does not license.</h4>
-<p>It licenses one sentence: on external,
-expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
-accurate prompt-safety ranker than any small guard in this report, tuned or not, and the margin
-survives a paired test. It does <em>not</em> license extending that to the mortgage construct of
-<span class="xref-missing">Section</span>: ExpGuard is single-label general prompt safety, not the dual
-<span class="math inline">\(G\times D\)</span> compliance judgement, and nothing here was measured on it. Nor does it retire the
-report’s subject. Acts I–II are about what happens <em>when</em> you must run a small guard
-yourself — for latency, cost, data residency, or auditability — and this subsection prices
-that constraint rather than dissolving it. The honest reading is that the frontier number is the
-bar: it is what the specialization and composition machinery is trying to reach under
-constraints the hosted model does not have to satisfy.</p>
 <h4 class="runin" id="and-a-released-guard-is-not-the-shortcut-either.">And a released guard is not the shortcut either.</h4>
 <p>The first thing a practitioner
 asks is why not simply run a purpose-built guard, so <a class="xref" href="#tab:frontier">Table 14</a> carries six of them:
@@ -2460,6 +2440,7 @@ which for this contract carries the distribution over the two-newline prefix rat
 and each contract’s verdict prefix is teacher-forced), which is why Llama Guard scores at all
 here. The published degenerate cell should be read as a harness artifact, not as a measurement
 of that model.</p>
+<h2 data-num="7.3" id="sec:frontier-ladder"><span class="secnum">7.3</span>What scoring the ladder taught us about the specialization tax</h2>
 <h4 class="runin" id="a-by-product-worth-more-than-the-comparison-that-produced-it.">A by-product worth more than the comparison that produced it.</h4>
 <p>Scoring the ladder
 on Act I’s own two regimes (<a class="xref" href="#tab:frontier-scale">Table 15</a>) prices <em>spending on parameters</em>
@@ -2855,7 +2836,7 @@ the way to spend the next increment.</p>
 </tr>
 </tbody>
 </table></div></figure>
-<figure class="tablewrap" data-float="Table 16" id="tab:frontier-serving"><figcaption><span class="floatnum">Table 16.</span> What the frontier accuracy in <a class="xref" href="#tab:frontier">Table 14</a> costs to serve. Local P50 is the committed batched A100 figure from <a class="xref" href="#tab:latency">Table 18</a>; frontier latency is measured on the ExpGuard rows themselves at concurrency 200 (throughput-regime, an upper bound on an isolated request). Dollar figures are billed tokens at assumed public list prices — an estimate, not billing truth — and exclude the fixed cost of owning a GPU, which is what the self-hosted column elides. The gap is roughly two orders of magnitude in median latency for one order of magnitude fewer missed unsafe prompts, and three properties do not appear in any column: prompts leave the operator’s infrastructure, the operating point is only coarsely selectable, and the provider may refuse a prompt before the guard ever sees it.</figcaption><div class="tablescroll"><table class="plaintable">
+<figure class="tablewrap" data-float="Table 16" id="tab:frontier-serving"><figcaption><span class="floatnum">Table 16.</span> What the frontier accuracy in <a class="xref" href="#tab:frontier">Table 14</a> costs to serve. Local P50 is the committed batched A100 figure from <a class="xref" href="#tab:latency">Table 19</a>; frontier latency is measured on the ExpGuard rows themselves at concurrency 200 (throughput-regime, an upper bound on an isolated request). Dollar figures are billed tokens at assumed public list prices — an estimate, not billing truth — and exclude the fixed cost of owning a GPU, which is what the self-hosted column elides. The gap is roughly two orders of magnitude in median latency for one order of magnitude fewer missed unsafe prompts, and three properties do not appear in any column: prompts leave the operator’s infrastructure, the operating point is only coarsely selectable, and the provider may refuse a prompt before the guard ever sees it.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
 <tr>
@@ -2943,7 +2924,222 @@ the way to spend the next increment.</p>
 </tr>
 </tbody>
 </table></div></figure>
-<h1 data-num="7" id="sec:synthesis"><span class="secnum">7</span>Synthesis: one lesson at three scales, and what to do about it</h1>
+<h2 data-num="7.4" id="sec:actIII-h2h"><span class="secnum">7.4</span>The frontier gap is a property of the regime, not of the model</h2>
+<p>Everything above measures the gap on ExpGuard, and that choice does more work than it looks
+like. ExpGuard is an <em>external breadth probe</em>: no guard in this report was trained on it,
+which is exactly what makes it a clean instrument — and also means it reports the
+<em>transfer</em> regime and nothing else. The <span class="math inline">\(+0.109\)</span> figure is therefore the
+transfer gap, not the gap.</p>
+<p>Five of the general-safety corpora the GPT baseline scored are also scored by the Act I panel,
+and those rows can be joined: the two runs simply hash their row identities differently
+(<code>sha256(text)[:16]</code> against <code>content_sha256</code>, which normalizes first), so
+re-deriving both digests from the local corpus recovers the mapping for <span class="math inline">\(100\%\)</span> of the panel’s
+rows. The regime split is then read from Act I’s own manifest rather than asserted —
+<code>train.jsonl</code> is exactly <code>jailbreak_classification</code>, <code>prompt_injections</code>, <code>toxicchat</code> — so <code>id_test</code> rows are held-out
+<em>rows</em> from a <em>represented</em> source, while <code>transfer_test</code> sources are held out
+at the source level.</p>
+<p><a class="xref" href="#tab:h2h">Table 17</a> is the result, at the same matched 5% budget. It reverses direction
+across the split. On represented sources the panel’s small tuned guards <em>beat</em> the frontier
+reference: Qwen2.5-1.5B — a <em>1.5B</em> model — reaches .948 on
+<code>prompt_injections</code> against the reference’s .741, a paired difference of
++0.185 [+0.065, +0.423], and it is a <em>ranking</em> win rather than a
+threshold placement (AUROC 0.9928 against 0.8731). 5 of
+12 panel-SFT cells on represented sources clear zero at the <span class="math inline">\(95\%\)</span> level. On
+transfer sources the ordering flips back, the reference leads (.967 on
+<code>xstest</code> against Qwen3-4B base’s .917), and tuning is what
+costs the guard its position — the strongest transfer guard in the panel is an <em>untuned</em>
+base.</p>
+<figure class="tablewrap" data-float="Table 17" id="tab:h2h"><figcaption><span class="floatnum">Table 17.</span> <strong>The frontier gap is a property of the regime, not of the model size.</strong> TPR at a matched 5% false-alarm budget on the five general-safety corpora that both the Act I panel and the GPT baseline scored, joined by re-deriving each side’s row digest from the local corpus (100% of the panel’s rows join; <code>join_audit.json</code>). The regime split is read from Act I’s own manifest, not asserted: <em>represented</em> sources appear in <code>train.jsonl</code> (these are held-out <em>rows</em> from them, <code>id_test</code>); <em>transfer</em> sources are held out at the source level (<code>transfer_test</code>). On represented sources the small tuned guards beat the frontier reference; on transfer sources they lose to it, and tuning is what costs them. This is why <a class="xref" href="#tab:frontier">Table 14</a>, which measures ExpGuard alone — an external source the panel never trained on — sees only the second half of that picture. Retrospective and estimation-only: these rows and this panel were inspected during development. † marks a TPR whose threshold fell inside a tie block of a coarse score, so the cell is an artifact of the ties and not a behaviour — read its AUROC in <code>h2h.json</code> instead.</figcaption><div class="tablescroll"><table class="plaintable">
+
+<tbody>
+<tr>
+<td style="text-align: left;"></td>
+<td colspan="3" style="text-align: center;"><em>represented</em></td>
+<td colspan="2" style="text-align: center;"><em>transfer</em></td>
+</tr>
+<tr>
+<td style="text-align: left;">Guard</td>
+<td style="text-align: right;"><strong>jb_class.</strong></td>
+<td style="text-align: right;"><strong>prompt_inj.</strong></td>
+<td style="text-align: right;"><strong>toxicchat</strong></td>
+<td style="text-align: right;">jbbench</td>
+<td style="text-align: right;">xstest</td>
+</tr>
+<tr>
+<td colspan="6" style="text-align: left;"><em>Act I panel, base (zero-shot)</em></td>
+</tr>
+<tr>
+<td style="text-align: left;">Qwen2.5-1.5B</td>
+<td style="text-align: right;">.000</td>
+<td style="text-align: right;">.074</td>
+<td style="text-align: right;">.319</td>
+<td style="text-align: right;">†.200</td>
+<td style="text-align: right;">†.167</td>
+</tr>
+<tr>
+<td style="text-align: left;">SmolLM2-1.7B</td>
+<td style="text-align: right;">.000</td>
+<td style="text-align: right;">.000</td>
+<td style="text-align: right;">.184</td>
+<td style="text-align: right;">.600</td>
+<td style="text-align: right;">.575</td>
+</tr>
+<tr>
+<td style="text-align: left;">SmolLM3-3B</td>
+<td style="text-align: right;">.025</td>
+<td style="text-align: right;">.074</td>
+<td style="text-align: right;">.444</td>
+<td style="text-align: right;">.767</td>
+<td style="text-align: right;">.867</td>
+</tr>
+<tr>
+<td style="text-align: left;">Qwen3-4B</td>
+<td style="text-align: right;">.557</td>
+<td style="text-align: right;">†.296</td>
+<td style="text-align: right;">.681</td>
+<td style="text-align: right;">.867</td>
+<td style="text-align: right;">.917</td>
+</tr>
+<tr>
+<td colspan="6" style="text-align: left;"><em>Act I panel, SFT (mean of 5 seeds)</em></td>
+</tr>
+<tr>
+<td style="text-align: left;">Qwen2.5-1.5B</td>
+<td style="text-align: right;">.985</td>
+<td style="text-align: right;">.948</td>
+<td style="text-align: right;">.882</td>
+<td style="text-align: right;">.217</td>
+<td style="text-align: right;">.487</td>
+</tr>
+<tr>
+<td style="text-align: left;">SmolLM2-1.7B</td>
+<td style="text-align: right;">.985</td>
+<td style="text-align: right;">.911</td>
+<td style="text-align: right;">.816</td>
+<td style="text-align: right;">.367</td>
+<td style="text-align: right;">.700</td>
+</tr>
+<tr>
+<td style="text-align: left;">SmolLM3-3B</td>
+<td style="text-align: right;">.990</td>
+<td style="text-align: right;">.852</td>
+<td style="text-align: right;">.868</td>
+<td style="text-align: right;">.437</td>
+<td style="text-align: right;">.588</td>
+</tr>
+<tr>
+<td style="text-align: left;">Qwen3-4B</td>
+<td style="text-align: right;">.995</td>
+<td style="text-align: right;">.881</td>
+<td style="text-align: right;">.889</td>
+<td style="text-align: right;">.257</td>
+<td style="text-align: right;">.590</td>
+</tr>
+<tr>
+<td colspan="6" style="text-align: left;"><em>Frontier, hosted API (zero-shot)</em></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>gpt-5.4 (low)</strong></td>
+<td style="text-align: right;">.924</td>
+<td style="text-align: right;">.741</td>
+<td style="text-align: right;">.836</td>
+<td style="text-align: right;">†.100</td>
+<td style="text-align: right;">.967</td>
+</tr>
+<tr>
+<td style="text-align: left;">gpt-5.4 (medium)</td>
+<td style="text-align: right;">.924</td>
+<td style="text-align: right;">.704</td>
+<td style="text-align: right;">.874</td>
+<td style="text-align: right;">.750</td>
+<td style="text-align: right;">.967</td>
+</tr>
+<tr>
+<td style="text-align: left;">gpt-5.4 (high)</td>
+<td style="text-align: right;">.937</td>
+<td style="text-align: right;">.667</td>
+<td style="text-align: right;">.894</td>
+<td style="text-align: right;">.767</td>
+<td style="text-align: right;">.975</td>
+</tr>
+<tr>
+<td style="text-align: left;">gpt-5.4-mini (low)</td>
+<td style="text-align: right;">.962</td>
+<td style="text-align: right;">.556</td>
+<td style="text-align: right;">.845</td>
+<td style="text-align: right;">.850</td>
+<td style="text-align: right;">.942</td>
+</tr>
+<tr>
+<td style="text-align: left;">gpt-5.4-mini (medium)</td>
+<td style="text-align: right;">.962</td>
+<td style="text-align: right;">.519</td>
+<td style="text-align: right;">.845</td>
+<td style="text-align: right;">.767</td>
+<td style="text-align: right;">.917</td>
+</tr>
+<tr>
+<td style="text-align: left;">gpt-5.4-mini (high)</td>
+<td style="text-align: right;">.937</td>
+<td style="text-align: right;">.593</td>
+<td style="text-align: right;">.860</td>
+<td style="text-align: right;">.883</td>
+<td style="text-align: right;">.942</td>
+</tr>
+</tbody>
+</table></div></figure>
+<p><br/>
+<span> <strong>Paired comparison</strong> against gpt-5.4 / low on the rows both scored (2,000-resample paired row bootstrap, 95% CI). Strongest represented-source result: Qwen2.5-1.5B SFT on <code>prompt_injections</code> (<span class="math inline">\(n=67\)</span>), <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(=\)</span> +0.185 [+0.065, +0.423], <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(=\)</span> +0.107 [+0.031, +0.208] — a <em>ranking</em> win (AUROC 0.9928 vs. 0.8731), not a threshold placement. 5 of 12 panel-SFT cells on represented sources clear zero at the 95% level. The <code>jailbreakbench</code> column carries no deltas: the reference’s own TPR there is tie-collapsed (†), so differences against it are uninterpretable. Per-source <span class="math inline">\(n\)</span> is small (67–451 rows), so these intervals are wide and no per-cell ordering should be read as a ranking.</span></p>
+<p>Four limits bound this, and they matter more than the headline. Per-source <span class="math inline">\(n\)</span> is <span class="math inline">\(67\)</span>–<span class="math inline">\(451\)</span>,
+so the intervals are wide and no per-cell ordering is a ranking. The evidence is
+<strong>retrospective and estimation-only</strong> — these rows and this panel were inspected during
+development — so it sits at the same flavor as Acts I–II in <a class="xref" href="#tab:ledger">Table 26</a> and is never
+pooled with the ExpGuard numbers above despite appearing beside them. A represented-source win
+is not a claim about novel traffic: it says a guard beats the frontier on distributions an
+operator can enumerate in training, which is a deployment property and not a capability claim.
+And <code>id_test</code> is held out by <em>row</em>, not by content — the overlap audit
+(<span class="xref-missing">Section</span>) puts <span class="math inline">\(1.6\%\)</span>–<span class="math inline">\(5.0\%\)</span> of each represented split within
+Jaccard <span class="math inline">\(0.70\)</span> of a training row, which qualifies these margins rather than overturning them,
+most of all on <code>jailbreak_classification</code>.</p>
+<p>What survives all four is a statement about <em>where</em> the frontier earns its price. It is not
+buying a uniformly better guard; it is buying the regime a small guard is worst at. That
+reframes the practical question from “can a small guard match the frontier” to “how much of
+your traffic resembles something you can put in a training manifest” — and it is the
+measurement behind the routing rule in <a class="xref" href="#sec:practitioner">Section 8.1</a>, which escalates on
+unfamiliarity rather than on score margin.</p>
+<h2 data-num="7.5" id="sec:frontier-licenses"><span class="secnum">7.5</span>Which requests, and what this licenses</h2>
+<h4 class="runin" id="the-deployment-question-is-not-which-guard-but-which-requests.">The deployment question is not which guard, but which requests.</h4>
+<p>Everything above
+compares whole guards, which frames the choice as self-host <em>or</em> outsource. That framing
+is wrong, and the per-row scores show why. Run the small guard inline on every request, rank
+requests by how near they fall to its own decision line, and re-score only that uncertain band
+with the hosted model, holding one global <span class="math inline">\(5\%\)</span> false-alarm budget across the whole
+construction. Escalating the least-confident <span class="math inline">\(10\%\)</span> of ExpGuard raises matched-budget recall
+from <span class="math inline">\(0.787\)</span> to <span class="math inline">\(0.819\)</span>; <span class="math inline">\(20\%\)</span> reaches <span class="math inline">\(0.842\)</span>, which is <em>half</em> the distance to the
+hosted model’s .896; <span class="math inline">\(30\%\)</span> reaches <span class="math inline">\(0.856\)</span>. The curve is steep early because the
+first requests escalated are the ones a second opinion can actually change, and it is smooth,
+so the escalated share is a dial set by whatever the data-residency and cost constraints
+allow rather than an architecture to be chosen once. Two implementation notes, since the
+construction is easy to get wrong: the two guards are fused on <em>rank</em>, because a logit
+margin and a self-reported integer risk are not on a common scale; and a per-band threshold
+was tried first and rejected, because with a small escalated slice there are too few deferred
+negatives to place a stable quantile, which made the curve non-monotone for purely numerical
+reasons. This is a retrospective analysis on committed scores, not a deployed system: it
+assumes the escalated subset may lawfully leave, which for the mortgage traffic of
+<span class="xref-missing">Section</span> is exactly the question that has to be answered first.</p>
+<h4 class="runin" id="what-this-does-and-does-not-license.">What this does and does not license.</h4>
+<p>It licenses one sentence: on external,
+expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
+accurate prompt-safety ranker than any small guard in this report, tuned or not, and the margin
+survives a paired test. It does <em>not</em> license extending that to the mortgage construct of
+<span class="xref-missing">Section</span>: ExpGuard is single-label general prompt safety, not the dual
+<span class="math inline">\(G\times D\)</span> compliance judgement, and nothing here was measured on it. Nor does it retire the
+report’s subject. Acts I–II are about what happens <em>when</em> you must run a small guard
+yourself — for latency, cost, data residency, or auditability — and this subsection prices
+that constraint rather than dissolving it. The honest reading is that the frontier number is the
+bar: it is what the specialization and composition machinery is trying to reach under
+constraints the hosted model does not have to satisfy.</p>
+<h1 data-num="8" id="sec:synthesis"><span class="secnum">8</span>Synthesis: one lesson at three scales, and what to do about it</h1>
 <p>The three acts are one lesson. A guard’s benchmark score is co-produced by the benchmark: SFT buys
 represented-source ranking, not transfer — and at an equal false-alarm budget it does not even buy the
 recall it appears to, catching 0.217 against its own base’s 0.517
@@ -2955,11 +3151,20 @@ scrutiny as the guards: ours does not survive it (<a class="xref" href="#sec:act
 The recurring cast makes it concrete: Qwen3-4B, the strongest base, specializes the most on transfer,
 is the one composition hurts, yet is <em>numerically</em> the best-ranking zero-shot mortgage
 guard (on a small split, so read as a direction) — the ranking flips with the benchmark.</p>
-<p><a class="xref" href="#tab:guidelines">Table 17</a> distills the whole study into the guideline each finding implies: what we
+<p>The frontier comparison (<a class="xref" href="#sec:actIII-frontier">Section 7</a>) then turns the same lesson outward, and this is
+where it becomes a deployment rule rather than a caution. A hosted model is the more accurate ranker on
+<em>unfamiliar</em> prompts, but on sources an operator can enumerate in a training manifest the ordering
+inverts and a Qwen2.5-1.5B guard beats it outright (+0.185 [+0.065, +0.423];
+<a class="xref" href="#sec:actIII-h2h">Section 7.4</a>). So the gap is not a capability ceiling to be closed by a larger student — it is
+the price of the regime, and the practical question is not <em>which guard</em> but <em>what share of
+your traffic you can characterise in advance</em>. That reframes routing: escalate on <em>unfamiliarity</em>,
+not on score margin, since margin-based routing spends its hosted budget precisely where the local guard
+is already right.</p>
+<p><a class="xref" href="#tab:guidelines">Table 18</a> distills the whole study into the guideline each finding implies: what we
 learned, the evidence for it here, and what a practitioner should therefore <em>do</em>. Every row is
 anchored to a result in this report; where a finding is directional (small split) or fixed-panel, the
 guideline is qualified accordingly.</p>
-<figure class="tablewrap" data-float="Table 17" id="tab:guidelines"><figcaption><span class="floatnum">Table 17.</span> What this study establishes, and the professional guideline each finding implies. Numbers are
+<figure class="tablewrap" data-float="Table 18" id="tab:guidelines"><figcaption><span class="floatnum">Table 18.</span> What this study establishes, and the professional guideline each finding implies. Numbers are
 macro-AP deltas from the fixed panel (represented <span class="math inline">\(=\)</span> in-distribution sources, transfer <span class="math inline">\(=\)</span> held-out
 sources); CIs/LCBs are one-sided bootstrap bounds. Acts I–II are retrospective estimation on an
 inspected panel (<em>not</em> preregistered/confirmatory — see limitations); only the adaptation
@@ -2970,6 +3175,11 @@ study is preregistered. Read directional rows (marked) as a direction, not a ver
 <col style="width: 33%"/>
 <col style="width: 35%"/>
 </colgroup>
+<thead>
+<tr>
+<th colspan="3" style="text-align: left;"><a class="xref" href="#tab:guidelines">Table 18</a>, continued</th>
+</tr>
+</thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><span> What we learned</span></td>
@@ -3019,7 +3229,7 @@ invariance check before trusting any guard.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>6. A small, single-token guard is fast, cheap, and keeps data in-house.</strong></td>
-<td style="text-align: left;">One forward pass <span class="math inline">\(\approx\)</span>10–50 ms (P50–P90, batched) on one A100 (<a class="xref" href="#tab:latency">Table 18</a>); no third-party egress.</td>
+<td style="text-align: left;">One forward pass <span class="math inline">\(\approx\)</span>10–50 ms (P50–P90, batched) on one A100 (<a class="xref" href="#tab:latency">Table 19</a>); no third-party egress.</td>
 <td style="text-align: left;">Prefer a small self-hosted guard for inline, high-volume, or regulated traffic over a hosted-API
 round-trip.</td>
 </tr>
@@ -3032,14 +3242,25 @@ cost (LCB -0.060) fails the <span class="math inline">\(-0.02\)</span> non-infer
 free upgrade, and re-measure both splits on your own data.</td>
 </tr>
 <tr>
+<td style="text-align: left;"><strong>8. The frontier gap is a property of the <em>regime</em>, not of model size: a 1.5B guard beats a hosted frontier model on sources it represents, and loses on sources it does not.</strong></td>
+<td style="text-align: left;">On five corpora scored by both, at a matched 5% alarm budget: Qwen2.5-1.5B SFT reaches
+.948 on <code>prompt_injections</code> against gpt-5.4 / low’s .741 (+0.185
+[+0.065, +0.423], AUROC 0.9928 vs. 0.8731), 5 of 12
+represented cells clearing zero; on transfer sources the hosted model leads and the best local guard is
+an <em>untuned</em> base (<a class="xref" href="#sec:actIII-h2h">Section 7.4</a>). Retrospective, inspected panel.</td>
+<td style="text-align: left;">Do not ask “can a small guard match the frontier” — ask what share of your traffic you can enumerate
+in a training manifest. Self-host the enumerable share, and escalate on <em>unfamiliarity</em> rather than
+on score margin, because margin-based routing spends its budget where the local guard is already right.</td>
+</tr>
+<tr>
 <td style="text-align: left;"></td>
 <td style="text-align: left;"></td>
 <td style="text-align: left;"></td>
 </tr>
 </tbody>
 </table></div></figure>
-<h2 data-num="7.1" id="sec:practitioner"><span class="secnum">7.1</span>The decision guide: gate candidates, not leaderboards</h2>
-<p>The right-hand column of <a class="xref" href="#tab:guidelines">Table 17</a> <em>is</em> the decision guide, and it carries one caveat
+<h2 data-num="8.1" id="sec:practitioner"><span class="secnum">8.1</span>The decision guide: gate candidates, not leaderboards</h2>
+<p>The right-hand column of <a class="xref" href="#tab:guidelines">Table 18</a> <em>is</em> the decision guide, and it carries one caveat
 throughout: these are estimates on a fixed panel, and the domain labels are a measuring stick, not a
 verdict. Two of its rows deserve a sharper edge than a table cell allows. First, composition is a
 <em>repair</em> for a guard you already tuned, not a free win over the base — if you have not tuned yet
@@ -3082,17 +3303,17 @@ acceptance set, and must clear <em>all</em> required gates; a missing required g
 an empty feasible set is a deliberate no-ship, not a relaxed cutoff.</figcaption>
 </figure>
 
-<h2 data-num="7.2" id="sec:practitioner-cost"><span class="secnum">7.2</span>Latency and cost: the case for a small, self-hosted guard</h2>
+<h2 data-num="8.2" id="sec:practitioner-cost"><span class="secnum">8.2</span>Latency and cost: the case for a small, self-hosted guard</h2>
 <p>An inline guard runs on <em>every</em> request, so its own latency and cost sit on the critical path.
 Because our guard emits a single verdict token — one forward pass, no autoregressive generation — it
 is fast to run: measured per-call latency is <span class="math inline">\(\approx\)</span>10–50 ms (P50–P90, batched on one A100; P99 up to <span class="math inline">\(\approx\)</span>94 ms, and composition adds a pass) depending on model size
-(<a class="xref" href="#tab:latency">Table 18</a>), from <span class="math inline">\(10.4\)</span> ms (P50) for Qwen2.5-1.5B to <span class="math inline">\(25.2\)</span> ms for Qwen3-4B, with P90 within
+(<a class="xref" href="#tab:latency">Table 19</a>), from <span class="math inline">\(10.4\)</span> ms (P50) for Qwen2.5-1.5B to <span class="math inline">\(25.2\)</span> ms for Qwen3-4B, with P90 within
 <span class="math inline">\(\approx\)</span>50 ms, on a single A100 at batch 16. Latency tracks model size and prompt length, not any decode
 budget, because there is nothing to decode. One caveat on reading these numbers: they are <em>batched</em>
 per-row times (batch 16 on one A100) — throughput-latency under load, not a single-request, batch-1
 serving path, which carries a higher fixed per-call overhead but no queueing. Treat them as an
 order-of-magnitude serving estimate on this hardware, not a single-request SLA.</p>
-<figure class="tablewrap" data-float="Table 18" id="tab:latency"><figcaption><span class="floatnum">Table 18.</span> Guard inference latency — one forward pass to the single-token verdict (no autoregressive generation), per-row at batch size 16 on NVIDIA A100-SXM4-40GB (bf16), over the 79,392 committed Act I/II score rows. These are batched per-row times (throughput-latency under load), not single-request batch-1 serving latency, and composition (Act II) needs two passes. Latency scales with model size and prompt length, not with any decode budget.</figcaption><div class="tablescroll"><table class="plaintable">
+<figure class="tablewrap" data-float="Table 19" id="tab:latency"><figcaption><span class="floatnum">Table 19.</span> Guard inference latency — one forward pass to the single-token verdict (no autoregressive generation), per-row at batch size 16 on NVIDIA A100-SXM4-40GB (bf16), over the 79,392 committed Act I/II score rows. These are batched per-row times (throughput-latency under load), not single-request batch-1 serving latency, and composition (Act II) needs two passes. Latency scales with model size and prompt length, not with any decode budget.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
 <tr>
@@ -3134,15 +3355,15 @@ order-of-magnitude serving estimate on this hardware, not a single-request SLA.<
 </tbody>
 </table></div></figure>
 <p>A frontier hosted-API guard is structurally disadvantaged on the two axes that decide an inline deployment
-(<a class="xref" href="#tab:deployment">Table 19</a>) — illustratively, since we benchmark no hosted API here and the frontier column
+(<a class="xref" href="#tab:deployment">Table 20</a>) — illustratively, since we benchmark no hosted API here and the frontier column
 is an order-of-magnitude sketch from public characteristics, not a measurement. It adds a network
 round-trip — typically hundreds of milliseconds — to <em>every</em> request; it bills a per-token fee
 that scales with traffic; and, decisively for a regulated domain, it sends every prompt to a third party. A compact guard that a team hosts, versions, and audits
 in-house keeps regulated data inside the boundary and adds only tens of milliseconds. Together with the
 specialization (Act I) and composition (Act II) findings, this is the practical case for building guards
 from small checkpoints rather than routing every request to a frontier model.</p>
-<figure class="tablewrap" data-float="Table 19" id="tab:deployment"><figcaption><span class="floatnum">Table 19.</span> Deployment economics of an <em>inline</em> guard: a small self-hosted guard versus a frontier
-hosted-API guard. The small-guard latency is <em>measured</em> in this study (<a class="xref" href="#tab:latency">Table 18</a>); the
+<figure class="tablewrap" data-float="Table 20" id="tab:deployment"><figcaption><span class="floatnum">Table 20.</span> Deployment economics of an <em>inline</em> guard: a small self-hosted guard versus a frontier
+hosted-API guard. The small-guard latency is <em>measured</em> in this study (<a class="xref" href="#tab:latency">Table 19</a>); the
 frontier column is an <em>illustrative, order-of-magnitude</em> comparison from public hosted-API
 characteristics (typical round-trip latency and per-token list pricing as of mid-2026), <em>not</em> a
 measurement made here.</figcaption><div class="tablescroll"><table class="plaintable" style="width:92%;">
@@ -3160,7 +3381,7 @@ measurement made here.</figcaption><div class="tablescroll"><table class="plaint
 </tr>
 <tr>
 <td style="text-align: left;">Per-call latency</td>
-<td style="text-align: left;">one local forward pass, <span class="math inline">\(\approx\)</span>10–50 ms (<a class="xref" href="#tab:latency">Table 18</a>)</td>
+<td style="text-align: left;">one local forward pass, <span class="math inline">\(\approx\)</span>10–50 ms (<a class="xref" href="#tab:latency">Table 19</a>)</td>
 <td style="text-align: left;">network round-trip to a hosted API, typically <span class="math inline">\(10^{2}\)</span>–<span class="math inline">\(10^{3}\)</span> ms</td>
 </tr>
 <tr>
@@ -3180,7 +3401,7 @@ measurement made here.</figcaption><div class="tablescroll"><table class="plaint
 </tr>
 </tbody>
 </table></div></figure>
-<h1 data-num="8" id="sec:repro"><span class="secnum">8</span>Reproducibility</h1>
+<h1 data-num="9" id="sec:repro"><span class="secnum">9</span>Reproducibility</h1>
 <p>Every table and figure above is <code>\input</code> from a committed generated artifact bound to a
 lock; the remaining in-prose values are transcribed from those same artifacts and are not covered by the
 byte-check. A single entry point, <code>make reproduce</code> (run in <code>papers/unified-report/</code>, which
@@ -3222,7 +3443,7 @@ number live under <code>artifacts/</code> (the Act I/II scores in <code>artifac
 mortgage baseline in <code>mortgage-benchmark/out_eval/</code>, and the finance/health/law scores in
 <code>artifacts/expguard_external/</code>); and the figures are built by
 <code>papers/unified-report/figures/make_figures.py</code>.</p>
-<h1 data-num="9" id="sec:conclusion"><span class="secnum">9</span>Conclusion</h1>
+<h1 data-num="10" id="sec:conclusion"><span class="secnum">10</span>Conclusion</h1>
 <p>A small guard’s benchmark score is not a fixed property of the guard. It is co-produced by the
 benchmark that measures it, the objective that tuned it, the threshold that reads it, and the domain
 it is deployed into — and this report is an attempt to say that precisely enough to act on, by
@@ -3266,7 +3487,7 @@ included.</p>
 (<code>v1_hmda2022</code>, 994 rows, CC BY 4.0) whose <em>policy</em> label is assigned independently of its
 general-safety label, so the looks-safe stratum can be isolated rather than inferred; text-free
 per-row scores for the full panel; and one command that regenerates the covered tables from those
-scores and prints the coverage it did <em>not</em> achieve (<a class="xref" href="#sec:repro">Section 8</a>). The deliverable is a
+scores and prints the coverage it did <em>not</em> achieve (<a class="xref" href="#sec:repro">Section 9</a>). The deliverable is a
 measurement-and-decision workflow — compare to your own base, at a matched alarm budget, on
 represented <em>and</em> held-out sets, then gate on a domain instrument and recalibrate — not a new
 winning model, and not a claim that any guard here is good enough to deploy.</p>
@@ -3470,10 +3691,10 @@ does not license a ranking).</p>
 SmolLM2-1.7B-Instruct, SmolLM3-3B <sup class="cite">[<a href="#bib-bakouch2025smollm3">10</a>]</sup>, and Qwen3-4B. Each checkpoint is pinned to
 a fixed upstream revision, and for each we verify that <code>safe</code> and <code>unsafe</code> map to
 <em>distinct single tokens</em> under a fixed convention (leading-space <code>" safe"</code>/<code>" unsafe"</code>
-first, no-leading-space fallback), recording the token IDs and strings. <a class="xref" href="#tab:panel-recipe">Table 20</a> lists
+first, no-leading-space fallback), recording the token IDs and strings. <a class="xref" href="#tab:panel-recipe">Table 21</a> lists
 the panel and the frozen recipe together. The estimand is this exact four-checkpoint panel; results are
 not extrapolated to other scales, architectures, or vendors.</p>
-<figure class="tablewrap" data-float="Table 20" id="tab:panel-recipe"><figcaption><span class="floatnum">Table 20.</span> The fixed model panel and the frozen clean-v2 LoRA-SFT recipe (shared by Acts I–II).
+<figure class="tablewrap" data-float="Table 21" id="tab:panel-recipe"><figcaption><span class="floatnum">Table 21.</span> The fixed model panel and the frozen clean-v2 LoRA-SFT recipe (shared by Acts I–II).
 Revisions are pinned; decision tokens are verified as distinct single tokens per checkpoint.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
@@ -3533,7 +3754,7 @@ complete classification instruction and wrapper survive the truncation — a con
 an earlier artifact that could left-truncate the instruction itself. Truncation strategy and scored
 token counts are stored per row.</p>
 <h2 data-num="B.3" id="sec:setup-recipe"><span class="secnum">B.3</span>The frozen LoRA-SFT recipe</h2>
-<p>The recipe (lower panel of <a class="xref" href="#tab:panel-recipe">Table 20</a>) is fixed identically across all four bases so that
+<p>The recipe (lower panel of <a class="xref" href="#tab:panel-recipe">Table 21</a>) is fixed identically across all four bases so that
 the only thing varying within Act I is the checkpoint. It uses a <em>completion-only</em> loss — the
 cross-entropy is applied only to the verdict token and an appended end-of-sequence marker, not to the
 prompt — with a LoRA adapter of rank <span class="math inline">\(r{=}32\)</span> and scaling <span class="math inline">\(\alpha{=}64\)</span> (dropout <span class="math inline">\(0.05\)</span>) inserted into
@@ -3548,14 +3769,14 @@ are scored once and reused, for <span class="math inline">\(24\)</span> model bu
 from three represented sources — ToxicChat <sup class="cite">[<a href="#bib-lin2023toxicchat">37</a>]</sup>, Prompt-Injections, and
 Jailbreak-Classification — with <span class="math inline">\(200\)</span> safe and <span class="math inline">\(200\)</span> unsafe rows per source, selected by a hashed rank
 salted with the data seed and frozen as one shared row order across every checkpoint and seed
-(<a class="xref" href="#tab:manifest">Table 21</a>). Two datasets are <em>deliberately excluded from training</em>: BeaverTails
+(<a class="xref" href="#tab:manifest">Table 22</a>). Two datasets are <em>deliberately excluded from training</em>: BeaverTails
 <sup class="cite">[<a href="#bib-ji2023beavertails">31</a>]</sup>, because its safety annotation labels the prompt–response interaction rather
 than the prompt alone, and OR-Bench <sup class="cite">[<a href="#bib-cui2024orbench">15</a>]</sup>, which is reserved for the benign stress set;
 including either would confound the prompt-only, dataset-held-out design. The study uses the
 non-commercial academic data branch (ToxicChat is CC BY-NC 4.0), so any released adapter inherits a
 non-commercial mark, and no third-party raw text is redistributed — only pinned identifiers,
 revisions, and content hashes.</p>
-<figure class="tablewrap" data-float="Table 21" id="tab:manifest"><figcaption><span class="floatnum">Table 21.</span> The frozen 1,200-row training manifest (Acts I–II). All training rows come from three
+<figure class="tablewrap" data-float="Table 22" id="tab:manifest"><figcaption><span class="floatnum">Table 22.</span> The frozen 1,200-row training manifest (Acts I–II). All training rows come from three
 represented sources; each contributes <span class="math inline">\(400\)</span> rows balanced <span class="math inline">\(200{:}200\)</span>. BeaverTails and OR-Bench are
 excluded from training by design.</figcaption><div class="tablescroll"><table class="plaintable">
 
@@ -3602,7 +3823,7 @@ interaction, not the prompt).</figcaption>
 <h2 data-num="B.5" id="sec:setup-decon"><span class="secnum">B.5</span>Three evaluation regimes and decontamination</h2>
 <p>Evaluation is partitioned into three regimes, forming a spectrum of how “new” each test is to the
 guard (<a class="xref" href="#fig:splits">Figure 13</a> shows the full construction, from sources through the family-isolation gate to
-these regimes; <a class="xref" href="#tab:datasets">Table 22</a> is the complete roster of every dataset used in this report, with its
+these regimes; <a class="xref" href="#tab:datasets">Table 23</a> is the complete roster of every dataset used in this report, with its
 role, size, and reference).</p>
 <ul>
 <li><p><strong>Represented-source</strong> <span class="math inline">\(=\)</span> {ToxicChat, Prompt-Injections, Jailbreak-Classification} rows
@@ -3618,7 +3839,7 @@ computed on stress data</strong>; they only watch for over-blocking (benign FPR)
 </ul>
 <p>The primary metric within each regime is benchmark-macro AP; the secondary metric is the
 calibration-targeted operating point of <a class="xref" href="#sec:setup-stats">Section B.6</a>.</p>
-<figure class="tablewrap" data-float="Table 22" id="tab:datasets"><figcaption><span class="floatnum">Table 22.</span> Every dataset and benchmark used in this report, grouped by role. The three represented sources
+<figure class="tablewrap" data-float="Table 23" id="tab:datasets"><figcaption><span class="floatnum">Table 23.</span> Every dataset and benchmark used in this report, grouped by role. The three represented sources
 supply both the fine-tuning manifest (400 rows each, <span class="math inline">\(200{:}200\)</span> safe:unsafe) and, on held-back rows, the
 represented-source test; the transfer and stress sets are never seen in fine-tuning. Act III adds two
 regulated-domain benchmarks. All sources are consumed by pinned identifier, revision, and content hash;
@@ -4026,7 +4247,7 @@ preregistered claim.</p>
 <p>Averaging the five SFT seeds into one
 guard raises transfer by a bootstrap-significant but small +0.025 (one-sided LCB
 +0.020) over a single SFT run — yet transfer still lands <em>below</em> the base
-(-0.053 vs. base; <a class="xref" href="#tab:ensembling">Table 23</a>). Seed-ensembling KL-SFT behaves the same
+(-0.053 vs. base; <a class="xref" href="#tab:ensembling">Table 24</a>). Seed-ensembling KL-SFT behaves the same
 (-0.008). The reason is structural: every seed is trained by the same recipe on the same data,
 so all members share the <em>same</em> specialization bias. Averaging them cancels seed <em>variance</em>, not
 the shared <em>bias</em> toward the represented sources — so it polishes a specialized guard without
@@ -4060,7 +4281,7 @@ measured directly, not merely inferred from the AP midpoint: on transfer rows th
 correlate only 0.422 with its own fine-tune’s, versus 0.851 between two
 fine-tune seeds — the base is far more complementary to the fine-tune than one fine-tune run is to
 another, which is exactly why base <span class="math inline">\(\oplus\)</span> SFT recovers transfer while SFT <span class="math inline">\(\oplus\)</span> SFT (below) does not.</p>
-<figure class="tablewrap" data-float="Table 23" id="tab:ensembling"><figcaption><span class="floatnum">Table 23.</span> Retrospective ensembling on the adaptation panel (9 checkpoints across 5
+<figure class="tablewrap" data-float="Table 24" id="tab:ensembling"><figcaption><span class="floatnum">Table 24.</span> Retrospective ensembling on the adaptation panel (9 checkpoints across 5
 families, excl. the degenerate Llama-Guard null cell; equal-family macro-AP on the raw margin,
 anchored to each checkpoint’s <em>own</em> unmodified base). Within-checkpoint ensembles average raw
 margins (scale-comparable, shared head). Represented <span class="math inline">\(=\)</span> id_test, transfer <span class="math inline">\(=\)</span> transfer_test.
@@ -4174,14 +4395,14 @@ specialized member buys nothing).</figcaption>
 <h4 class="runin" id="a-committee-of-fine-tuned-guards-does-not-generalize-better.">A committee of fine-tuned guards does not generalize better.</h4>
 <p>The strongest form of the
 technique — a cross-model <em>committee</em> that rank-averages different guards on the same row — makes
-the point sharpest (<a class="xref" href="#tab:ensembling-committee">Table 24</a>). A committee of the SFT guards is <em>worse</em> than
+the point sharpest (<a class="xref" href="#tab:ensembling-committee">Table 25</a>). A committee of the SFT guards is <em>worse</em> than
 the single best guard on transfer (-0.014 over the four general checkpoints,
 -0.056 over all ten): SFT drives every member toward the same represented sources, so their
 held-out errors are correlated and averaging cannot cancel them — it only dilutes the best member. The
 committee of <em>KL-SFT</em> guards merely breaks even (+0.004 / -0.004),
 because KL regularization leaves the members less specialized and therefore more diverse — but that is
 the KL penalty doing the work, not the ensemble.</p>
-<figure class="tablewrap" data-float="Table 24" id="tab:ensembling-committee"><figcaption><span class="floatnum">Table 24.</span> Cross-model <em>committee</em> ensembles (rank-percentile average of different guards on the
+<figure class="tablewrap" data-float="Table 25" id="tab:ensembling-committee"><figcaption><span class="floatnum">Table 25.</span> Cross-model <em>committee</em> ensembles (rank-percentile average of different guards on the
 same row). A committee of SFT guards does not beat the single best guard on transfer — SFT
 correlates their off-distribution errors. Only the less-specialized KL-SFT committee breaks even.</figcaption><div class="tablescroll"><table class="plaintable">
 
@@ -4250,7 +4471,7 @@ correlates their off-distribution errors. Only the less-specialized KL-SFT commi
 seeds or as a committee of tuned guards — does not, because specialization correlates their
 off-distribution errors. Ensembling is a variance tool, not a bias fix: it costs <span class="math inline">\(N\)</span> inference passes,
 does not dissolve the represented/transfer tradeoff, and every composed candidate must still be
-recalibrated and gated on both splits like any other (<a class="xref" href="#sec:practitioner">Section 7.1</a>).</p>
+recalibrated and gated on both splits like any other (<a class="xref" href="#sec:practitioner">Section 8.1</a>).</p>
 
 </div></div>
 <h1 data-num="E" id="sec:honesty"><span class="secnum">E</span>Limitations, the evidence ledger, and the validation roadmap</h1>
@@ -4268,7 +4489,7 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
 <li><p><strong>No population or universal claim.</strong> The panel is a <em>fixed, purposively chosen</em> set of four checkpoints drawn from only <em>two model lineages</em> (Qwen: Qwen2.5-1.5B, Qwen3-4B; and the SmolLM family: SmolLM2-1.7B, SmolLM3-3B). Lineage, scale, and native alignment recipe are therefore confounded: any “size effect” we might read off four points is inseparable from “which of two families it came from.” Nothing here estimates a distribution over models, and the hierarchical-bootstrap intervals (e.g. the aggregate transfer change <span class="math inline">\(-0.0589\)</span> [<span class="math inline">\(-0.0837,-0.0321\)</span>]) are explicitly <em>conditional on this panel</em>, not population intervals.</p></li>
 <li><p><strong>Heterogeneous native policies are not controlled.</strong> Each base checkpoint arrives with its <em>own</em> native safety training and implicit policy. A paired base<span class="math inline">\(\to\)</span>SFT delta therefore mixes “what our fine-tune did” with “what this vendor’s alignment already did,” and the four bases do not share a common definition of <code>unsafe</code>. This is a feature for the paired design (we always compare a model to itself) but a limit on interpretation: the cross-checkpoint spread partly reflects incompatible starting policies, not just differing tunability.</p></li>
 <li><p><strong>Not confirmatory — the benchmarks were inspected during development.</strong> The 1,200-row training manifest and the transfer suite were visible to the researcher while the method was being built. “Held out” throughout this report means <em>dataset-held-out</em> (rows/sources not used in training), <em>not</em> sealed-from-the-researcher. This makes Acts I and II <em>retrospective and estimation-only</em>. No pre-registration protects them; the honest status is “a reproducible characterization of this panel,” not “a confirmed finding.” The one partial exception is the starting-type adaptation study (<a class="xref" href="#sec:adaptation">Section 4</a>), whose estimands, decision rules, and non-inferiority margin were fixed in a committed claim registry (<code>artifacts/starting_type_adaptation_v1/protocol/claim_registry.json</code>) <em>before</em> any score existed — so it is <em>analysis</em>-preregistered. It is not data-blind: it re-scores the same 3,308 rows from the same frozen manifest as Acts I–II, the registry is <code>finalization_status: dev_nonfinal</code>, and no release lock binds it.</p></li>
-<li><p><strong>Decontamination against the v2 transfer suite is asserted, not yet audited.</strong> The manifest was decontaminated during construction and is reported as clean-v2, but the <em>formal</em> overlap audit (n-gram / near-duplicate check of the training manifest against the current v2 transfer benchmarks) is still pending. If residual train/transfer overlap exists, it would <em>inflate</em> measured transfer — i.e. it would make specialization look milder than it is — so the pending audit is a caveat in the direction of caution.</p></li>
+<li><p><strong>Decontamination against the v2 transfer suite is now audited, and it is clean — but the audit is not complete.</strong><span data-label="sec:decontamination" id="sec:decontamination"></span> The manifest was decontaminated during construction and reported as clean-v2; the formal overlap audit has since been run (<code>experiments/audit_overlap_lineage.py</code>, committed to <code>artifacts/overlap_audit/</code>) and found <em>no</em> leakage from the 1,200-row training manifest into the v2 transfer suite: zero exact matches, zero after normalization, zero <code>family_id</code> or <code>upstream_family_id</code> collisions, zero rows at <span class="math inline">\(5\)</span>-gram containment <span class="math inline">\(\geq 0.80\)</span>, and zero at character-shingle Jaccard <span class="math inline">\(\geq 0.70\)</span> (worst per-source Jaccard <span class="math inline">\(0.139\)</span> <code>jailbreakbench</code>, <span class="math inline">\(0.101\)</span> <code>wildjailbreak</code>, <span class="math inline">\(0.214\)</span> <code>xstest</code>, <span class="math inline">\(0.538\)</span> <code>wildguardtest</code>). The transfer estimates therefore require no downward revision. Two gaps remain and are the reason this is not struck from the list. First, <a class="xref" href="#sec:actIII-h2h">Section 7.4</a>’s <em>represented</em> splits are not clean in the same sense — <code>id_test</code> is held out by row, not by content, and <span class="math inline">\(1.6\%\)</span>–<span class="math inline">\(5.0\%\)</span> of each represented split sits within Jaccard <span class="math inline">\(0.70\)</span> of a training row (<span class="math inline">\(2/67\)</span> <code>prompt_injections</code>, <span class="math inline">\(8/159\)</span> <code>jailbreak_classification</code>, <span class="math inline">\(7/451\)</span> <code>toxicchat</code>), which is expected for held-out rows of a represented source and templated jailbreak corpora but does qualify those margins. Second, the audit implements exact, normalized, <span class="math inline">\(n\)</span>-gram, near-duplicate and provenance-lineage checks but <em>not</em> an embedding-space check, which needs a pinned encoder whose identity would have to enter the lock; a semantic near-duplicate that shares no <span class="math inline">\(5\)</span>-gram would still pass.</p></li>
 <li><p><strong>Single recipe, single manifest.</strong> Act I uses exactly one LoRA configuration (rank 32, <span class="math inline">\(\alpha{=}64\)</span>, dropout 0.05 on <code>q,k,v,o,gate,up,down</code>; 300 steps; lr <span class="math inline">\(2\!\times\!10^{-4}\)</span> cosine, warmup 0.03; effective batch 4; <code>max_len</code> 1024; seeds 42–46 with data order fixed at seed 42) on one frozen manifest. The specialization signature is a property of <em>this recipe on this data</em>; a different rank, step budget, or data mixture could move the represented/transfer trade-off, and we do not sweep them.</p></li>
 <li><p><strong>Balanced-prevalence evaluation overstates production precision.</strong> The transfer regime is scored on a balanced pool (790 unsafe vs. 790 safe rows) and the represented regime is near-balanced (313 vs. 364). Real inbound traffic is overwhelmingly benign, so unsafe prompts are <em>rare</em>. Average precision and any precision-at-threshold measured on a balanced set are optimistic relative to a deployment where the negative class dominates: at low base rates the same ranking yields far lower precision. This is now made quantitative rather than left as a caveat — <a class="xref" href="#sec:actI-prevalence">Section 3.7</a> and <a class="xref" href="#fig:prevalence">Figure 5</a> recompute <span class="math inline">\(\mathrm{AP}(\pi_+)\)</span> exactly from the ranking (<a class="xref" href="#eq:ap-prevalence">Equation 4</a>): the base transfer guards fall from <span class="math inline">\(0.79\)</span>–<span class="math inline">\(0.94\)</span> balanced to <span class="math inline">\(\approx0.10\)</span>–<span class="math inline">\(0.54\)</span> at <span class="math inline">\(1\%\)</span> prevalence (<a class="xref" href="#fig:prevalence">Figure 5</a>), and the guard ordering itself re-spaces as positives get rare. Read every AP here as a <em>ranking</em> quality on a balanced pool, not as a deployed precision.</p></li>
 <li><p><strong>Ranking recovery is not threshold transfer.</strong> All AP-based results are threshold-free; deployment is not. At a calibration-selected operating point the gap is stark: SFT lifts represented-source recall from <span class="math inline">\(13.0\)</span>% to <span class="math inline">\(76.9\)</span>% but raises the transfer false-alarm rate from <span class="math inline">\(8.1\)</span>% to <span class="math inline">\(15.5\)</span>% (macro) — and pooled FPR moves further, <span class="math inline">\(4.3\)</span>%<span class="math inline">\(\to17.0\)</span>% — while HarmBench recall <em>falls</em> from <span class="math inline">\(78.0\)</span>% to <span class="math inline">\(60.0\)</span>% (<a class="xref" href="#tab:sensitivity">Table 3</a>). Equalising the alarm budget removes the apparent recall gain entirely and reverses it on all four checkpoints (transfer recall <span class="math inline">\(0.517\!\to\!0.217\)</span>; <a class="xref" href="#tab:matchedfpr">Table 4</a>), so the deployment cost of specialization is larger than the unequal-rate row suggests, not smaller. Composition recovers rank but its realized transfer FPR at a 5% target is <span class="math inline">\(11.4\)</span>% — better than SFT’s <span class="math inline">\(15.5\)</span>% yet still above target (<a class="xref" href="#tab:pilot-operating">Table 10</a>). A better AP does not hand you a transferable cutoff. The size of these blow-ups is telling: a Gaussian-tail calculation maps the macro FPR shift (<span class="math inline">\(8.1\%\!\to\!15.5\%\)</span>) to only <span class="math inline">\(\approx0.4\)</span> standard deviations of calibration drift, and the pooled shift (<span class="math inline">\(4.3\%\!\to\!17.0\%\)</span>) to <span class="math inline">\(\approx0.8\)</span> SD — sub-sigma drifts that no realistic calibration protocol excludes, because a fixed cutoff’s false-alarm rate is <em>exponentially</em> sensitive to drift at the operating quantile.</p></li>
@@ -4281,15 +4502,15 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
 <h4 class="runin" id="act-iii-mortgage-a-measuring-stick-not-a-legal-finding.">Act III, mortgage — a measuring stick, not a legal finding.</h4>
 <p>The mortgage benchmark’s 994 dual labels (<span class="math inline">\(G\)</span>=general-safety, <span class="math inline">\(D\)</span>=mortgage-policy) are assigned by an <em>LLM judge against written policy cards</em>, with self-consistency checks but <em>no</em> subject-matter-expert (SME) adjudication and <em>no</em> human inter-annotator agreement (no Fleiss-<span class="math inline">\(\kappa\)</span>). It therefore <em>surfaces</em> guard behavior on the load-bearing G0/D1 stratum (reads safe, is a violation); it <em>certifies nothing</em> about any real lender, applicant, or model, and licenses no fair-lending or disparate-impact conclusion. Four further limits bound it: <strong>(i)</strong> the <strong>G1/D0 quadrant is empty</strong> (0 rows), so “looks unsafe yet is policy-compliant” — the over-refusal-on-compliant-requests failure mode — is <em>unmeasurable</em> here; <strong>(ii)</strong> several strata are <em>small</em> (G1/D1 = 42 rows; private_test = 95 rows; 39 protected minimal pairs / 78 rows), so per-stratum estimates are noisy; <strong>(iii)</strong> the zero-shot bases rank policy violations only <em>moderately</em> (AP<span class="math inline">\(\cdot\)</span>D <span class="math inline">\(0.67\)</span>–<span class="math inline">\(0.85\)</span>; <a class="xref" href="#tab:baseline">Table 12</a>) — and against a chance floor of <span class="math inline">\(0.555\)</span> (81/146 <span class="math inline">\(D\)</span>-positives) that band is only <span class="math inline">\(0.12\)</span>–<span class="math inline">\(0.30\)</span> above chance, so much of the subtle G0/D1 stratum stays unresolved by ranking. <span class="math inline">\(G\)</span> and <span class="math inline">\(D\)</span> are also not independent in v1: the empty G1/D0 cell makes <span class="math inline">\(G\)</span> a strict subset of <span class="math inline">\(D\)</span> (<span class="math inline">\(\phi=0.19\)</span>), which is a property of the release, not of guard behaviour; <strong>(iv)</strong> the fixed-threshold operating point is deliberately <em>not</em> tabulated because it is knife-edge for these clustered-score guards (its G0/D1 catch count swung by more than 50 rows across library versions) — itself a finding about unreliable threshold transfer, not a number to deploy. The protected-pair gap <span class="math inline">\(\Delta_{\mathrm{context}}\)</span> is a fairness <em>signal</em>, not a fairness <em>verdict</em> — and on this split it does not rank guards: Qwen3-4B’s <span class="math inline">\(0.000\)</span> is a saturation artifact (<span class="math inline">\(0.797\)</span> log-odds on the raw margin), and Qwen2.5-1.5B’s <span class="math inline">\(0.183\)</span> is carried by one pair that contrasts a named trait against a seven-word placeholder rather than swapping a single token (excluding it, <span class="math inline">\(0.020\)</span>). See <a class="xref" href="#sec:actIV-mortgage-pairs">Section 6.3</a>.</p>
 <h4 class="runin" id="act-iii-expguard-external-single-label-never-pooled.">Act III, ExpGuard — external, single-label, never pooled.</h4>
-<p>The finance/health/law replication uses <em>external, expert-annotated</em> labels (<code>prompt_label</code>) over 2,275 rows — a strictly stronger labeling tier than the mortgage LLM-judge. It tests whether the specialization/transfer pattern <em>recurs</em> across regulated verticals, but it is <strong>single-label</strong> (not the mortgage dual <span class="math inline">\(G\times D\)</span> construct), so it is a breadth/transfer probe, not a compliance construct. The four-checkpoint <em>base</em> result is complete (<a class="xref" href="#tab:expguard">Table 13</a>) and reproducible from committed per-row scores. The tuned comparison and a frontier-model reference point are now also present (<a class="xref" href="#tab:frontier">Table 14</a>, <a class="xref" href="#sec:actIII-frontier">Section 6.5</a>), with one provenance caveat that governs every tuned row: the Act I <em>release</em> adapters no longer exist — they were produced on an ephemeral runner whose bucket was deleted at cleanup — so those rows are the KL-SFT <span class="math inline">\(\beta=0\)</span> arm, a distinct execution of the same recipe under the same LOCK contract and train manifest, with different <code>adapter_sha256</code> values. They are labelled <strong>SFT (in-env)</strong> wherever they appear, they are the same <code>sft_inenv</code> quantity <code>klsft_summary.json</code> already reports beside <code>sft_committed</code>, and no Act I headline number is restated from them. What remains genuinely open is a <em>dual-labeled</em> finance/health construct with expert sign-off. Because ExpGuard’s labels come from a different source and tier, its numbers are <em>never</em> averaged, ranked, or otherwise pooled with the mortgage LLM-judge numbers or with the retrospective panel.</p>
+<p>The finance/health/law replication uses <em>external, expert-annotated</em> labels (<code>prompt_label</code>) over 2,275 rows — a strictly stronger labeling tier than the mortgage LLM-judge. It tests whether the specialization/transfer pattern <em>recurs</em> across regulated verticals, but it is <strong>single-label</strong> (not the mortgage dual <span class="math inline">\(G\times D\)</span> construct), so it is a breadth/transfer probe, not a compliance construct. The four-checkpoint <em>base</em> result is complete (<a class="xref" href="#tab:expguard">Table 13</a>) and reproducible from committed per-row scores. The tuned comparison and a frontier-model reference point are now also present (<a class="xref" href="#tab:frontier">Table 14</a>, <a class="xref" href="#sec:actIII-frontier">Section 7</a>), with one provenance caveat that governs every tuned row: the Act I <em>release</em> adapters no longer exist — they were produced on an ephemeral runner whose bucket was deleted at cleanup — so those rows are the KL-SFT <span class="math inline">\(\beta=0\)</span> arm, a distinct execution of the same recipe under the same LOCK contract and train manifest, with different <code>adapter_sha256</code> values. They are labelled <strong>SFT (in-env)</strong> wherever they appear, they are the same <code>sft_inenv</code> quantity <code>klsft_summary.json</code> already reports beside <code>sft_committed</code>, and no Act I headline number is restated from them. What remains genuinely open is a <em>dual-labeled</em> finance/health construct with expert sign-off. Because ExpGuard’s labels come from a different source and tier, its numbers are <em>never</em> averaged, ranked, or otherwise pooled with the mortgage LLM-judge numbers or with the retrospective panel.</p>
 <div class="callout callout-takeaway"><div class="callout-title">The one-line version</div><div class="callout-body">
 
 <p>We measured paired base-to-tuned changes on a fixed two-lineage panel, on benchmarks we had seen, at balanced prevalence, using ranking metrics — plus one depth domain with LLM-judge labels and one external breadth domain with expert labels. That supports “on this panel, tuning specializes and composition recovers some transfer.” It does <em>not</em> support any causal, universal, deployment, or fair-lending claim.</p>
 
 </div></div>
 <h2 data-num="E.2" id="sec:ledger"><span class="secnum">E.2</span>The unified evidence ledger</h2>
-<p>The report carries evidence at <em>different tiers</em>, and the honesty of the synthesis depends on never letting a weaker tier borrow credibility from a stronger one. Two dimensions matter. The first is the <strong>evidence flavor</strong>: is the number <em>retrospective / estimation-only</em> (measured after the fact on inspected data, conditional on a fixed panel) or does it come from an <em>external, independently annotated</em> source? The second is the <strong>label tier</strong>, in decreasing strength: <em>SME-adjudicated with reported inter-annotator agreement</em> (the gold standard — we have <em>none</em> of this yet); <em>external expert-annotated</em> (ExpGuard); and <em>LLM-judge, policy-card-consistent</em> (the mortgage benchmark — self-consistent against written cards, but no human). <a class="xref" href="#tab:ledger">Table 25</a> records, for each body of evidence, its flavor, its label tier, what it establishes, and what would upgrade it. The governing rule is stated once and applied everywhere: <strong>the three columns of flavor are never pooled</strong>. Retrospective panel numbers (Acts I–II), the LLM-judge mortgage numbers (Act III depth), and the external expert-annotated ExpGuard numbers (Act III breadth) are reported side by side but never averaged into a single headline.</p>
-<figure class="tablewrap" data-float="Table 25" id="tab:ledger"><figcaption><span class="floatnum">Table 25.</span> The unified evidence ledger. Each row records one body of evidence, its flavor and label tier, what it establishes, and the concrete upgrade that would strengthen it. The three flavors are never pooled; no row is promoted to a causal, universal, or fair-lending claim.</figcaption><div class="tablescroll"><table class="plaintable">
+<p>The report carries evidence at <em>different tiers</em>, and the honesty of the synthesis depends on never letting a weaker tier borrow credibility from a stronger one. Two dimensions matter. The first is the <strong>evidence flavor</strong>: is the number <em>retrospective / estimation-only</em> (measured after the fact on inspected data, conditional on a fixed panel) or does it come from an <em>external, independently annotated</em> source? The second is the <strong>label tier</strong>, in decreasing strength: <em>SME-adjudicated with reported inter-annotator agreement</em> (the gold standard — we have <em>none</em> of this yet); <em>external expert-annotated</em> (ExpGuard); and <em>LLM-judge, policy-card-consistent</em> (the mortgage benchmark — self-consistent against written cards, but no human). <a class="xref" href="#tab:ledger">Table 26</a> records, for each body of evidence, its flavor, its label tier, what it establishes, and what would upgrade it. The governing rule is stated once and applied everywhere: <strong>the three columns of flavor are never pooled</strong>. Retrospective panel numbers (Acts I–II), the LLM-judge mortgage numbers (Act III depth), and the external expert-annotated ExpGuard numbers (Act III breadth) are reported side by side but never averaged into a single headline.</p>
+<figure class="tablewrap" data-float="Table 26" id="tab:ledger"><figcaption><span class="floatnum">Table 26.</span> The unified evidence ledger. Each row records one body of evidence, its flavor and label tier, what it establishes, and the concrete upgrade that would strengthen it. The three flavors are never pooled; no row is promoted to a causal, universal, or fair-lending claim.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
 <tr>
@@ -4302,7 +4523,7 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
 <td style="text-align: left;">Act I: SFT specialization (<a class="xref" href="#tab:primary">Table 1</a> and <a class="xref" href="#tab:sensitivity">Table 3</a>, <a class="xref" href="#fig:plane">Figure 4</a>)</td>
 <td style="text-align: left;">Retrospective, estimation-only; dataset-held-out; benchmarks inspected in dev</td>
 <td style="text-align: left;">On this panel, SFT lifts represented-source AP (<span class="math inline">\(+0.3234\)</span>) but not transfer (<span class="math inline">\(-0.0589\)</span>); <span class="math inline">\(15/20\)</span> seeds specialize</td>
-<td style="text-align: left;">Two lineages; single recipe; balanced prevalence; <span class="math inline">\(\Delta\)</span> coupled to base; v2 decontamination audit pending <span class="math inline">\(\to\)</span> prospective uninspected cohort + overlap audit</td>
+<td style="text-align: left;">Two lineages; single recipe; balanced prevalence; <span class="math inline">\(\Delta\)</span> coupled to base; v2 overlap audit run and clean, embedding check still absent <span class="math inline">\(\to\)</span> prospective uninspected cohort + embedding-space overlap check</td>
 </tr>
 <tr>
 <td style="text-align: left;">Act II: composition (<a class="xref" href="#tab:pilot-summary">Table 7</a>, <a class="xref" href="#tab:pilot-models">Table 8</a> and <a class="xref" href="#tab:pilot-operating">Table 10</a>, <a class="xref" href="#eq:comp">Equation 5</a>)</td>
@@ -4333,13 +4554,13 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
 <p>Each limitation above has a matching upgrade. The roadmap is ordered roughly by how much it would strengthen the central claims, and every item names the specific weakness it closes.</p>
 <ol>
 <li><p><strong>Lock a genuinely uninspected prospective cohort</strong> (closes “not confirmatory,” Acts I–II). Pre-register the estimands and decision rules, then evaluate on data neither the researcher nor the manifest builder has seen. This is the single upgrade that would move Acts I and II from “retrospective characterization of this panel” to a confirmatory finding; the adaptation study (<a class="xref" href="#sec:adaptation">Section 4</a>) applies the <em>preregistration</em> half of this discipline (locked estimands and gates) to the starting-type question, but not the uninspected-data half — it reuses the Act I manifest and rows — so the remaining step is a genuinely uninspected cohort for both it and Acts I–II’s core specialization estimands.</p></li>
-<li><p><strong>Complete the v2 decontamination audit</strong> (closes the pending-audit caveat). Run the formal n-gram / near-duplicate overlap check of the 1,200-row manifest against the v2 transfer suite and report the residual overlap; any leakage found would revise the transfer estimates <em>downward</em> (i.e. specialization would look sharper).</p></li>
+<li><p><strong>Add the embedding-space overlap check</strong> (the remaining half of the decontamination audit). The <span class="math inline">\(n\)</span>-gram, near-duplicate, normalized, exact and provenance-lineage checks are now run and clean (<span class="xref-missing">Section</span>), so the pending-audit caveat is closed for lexical overlap and the transfer estimates stand. What is left is semantic overlap: a paraphrase sharing no <span class="math inline">\(5\)</span>-gram with any training row would pass every check implemented. Closing it requires pinning an encoder in the lock — an identity decision, which is why it is a roadmap item rather than a script.</p></li>
 <li><p><strong>Add the remaining composition control</strong> (closes Act II’s mechanism gap). The equal-inference-cost <strong>SFT+SFT</strong> baseline is now run (<a class="xref" href="#tab:sftsft">Table 9</a>: base+SFT beats two-adapter ensembling on every checkpoint, so the recovery is the base’s doing); the open item is a true weight-space <strong>WiSE-FT</strong> rescoring <sup class="cite">[<a href="#bib-wortsman2022wiseft">48</a>]</sup> to compare output-space against weight-space interpolation on identical rows.</p></li>
 <li><p><strong>SME-adjudicate a stratified mortgage subset and report Fleiss-<span class="math inline">\(\kappa\)</span></strong> (closes the mortgage label-tier gap). Have qualified subject-matter experts independently re-label a stratified subset (weighted toward the G0/D1 and protected-pair rows), report inter-annotator agreement, and reconcile against the LLM-judge labels; this is what would let any mortgage number graduate from “measuring stick” toward an audit-grade instrument.</p></li>
 <li><p><strong>Populate the empty G1/D0 quadrant</strong> (closes an unmeasurable failure mode). Construct grounded “looks unsafe yet policy-compliant” requests so over-refusal on legitimate mortgage traffic becomes measurable rather than absent by construction.</p></li>
 <li><p><strong>Evaluate at production prevalence with a cost-weighted operating point</strong> (closes “balanced prevalence overstates precision”). Re-score at realistic (heavily benign) base rates and report precision and a cost-weighted threshold, so the deployed-precision story is not read off a balanced pool.</p></li>
 <li><p><strong>Broaden the panel beyond two lineages</strong> (closes the lineage/scale confound). Add checkpoints from additional model families and a wider size range so that “stronger bases specialize more” can be tested rather than inferred from four coupled points.</p></li>
-<li><p><strong>Build dual-labeled finance/health constructs with expert sign-off</strong> (closes the remaining breadth gap). The four-checkpoint <em>base</em> ExpGuard eval is complete (<a class="xref" href="#tab:expguard">Table 13</a>), and the tuned and frontier comparisons are now in place (<a class="xref" href="#tab:frontier">Table 14</a>). What is still missing is the construct itself: extend the mortgage-style dual-label <span class="math inline">\(G\times D\)</span> design into finance and health with expert adjudication — one domain built in depth plus verticals built for breadth. Two smaller follow-ons fall out of <a class="xref" href="#sec:actIII-frontier">Section 6.5</a>: re-run the tuned arm from <em>release-provenance</em> adapters if they are ever reconstructed (the present rows are a same-recipe re-execution), and score the KL-SFT <span class="math inline">\(\beta&gt;0\)</span> arms on ExpGuard, for which the adapter grid and the scoring path already exist.</p></li>
+<li><p><strong>Build dual-labeled finance/health constructs with expert sign-off</strong> (closes the remaining breadth gap). The four-checkpoint <em>base</em> ExpGuard eval is complete (<a class="xref" href="#tab:expguard">Table 13</a>), and the tuned and frontier comparisons are now in place (<a class="xref" href="#tab:frontier">Table 14</a>). What is still missing is the construct itself: extend the mortgage-style dual-label <span class="math inline">\(G\times D\)</span> design into finance and health with expert adjudication — one domain built in depth plus verticals built for breadth. Two smaller follow-ons fall out of <a class="xref" href="#sec:actIII-frontier">Section 7</a>: re-run the tuned arm from <em>release-provenance</em> adapters if they are ever reconstructed (the present rows are a same-recipe re-execution), and score the KL-SFT <span class="math inline">\(\beta&gt;0\)</span> arms on ExpGuard, for which the adapter grid and the scoring path already exist.</p></li>
 <li><p><strong>Score gated / commercial guards and extend beyond prompt-only</strong> (closes the non-commercial-data and scope limits). Once licenses are accepted, evaluate gated open guards (e.g. Llama Guard 3, WildGuard) on the same rows and scorer; and extend the task beyond input-prompt classification to response and multi-turn moderation. Note that several training sources are non-commercial / gated, which constrains redistribution — raw third-party rows are referenced by pinned identifier + revision + content hash, never redistributed.</p></li>
 </ol>
 <div class="callout callout-takeaway"><div class="callout-title">The disciplined next step</div><div class="callout-body">

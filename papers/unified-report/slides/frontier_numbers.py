@@ -17,8 +17,10 @@ from pathlib import Path
 
 GENERATED = Path(__file__).resolve().parents[1] / "generated"
 MACROS = GENERATED / "frontier_macros.tex"
+H2H_MACROS = GENERATED / "h2h_macros.tex"
 
 _MACRO = re.compile(r"\\newcommand\{\\Frontier([A-Za-z]+)\}\{(.*)\}\s*$")
+_H2H_MACRO = re.compile(r"\\newcommand\{\\Htwo([A-Za-z]+)\}\{(.*)\}\s*$")
 
 
 class MissingFigure(KeyError):
@@ -47,6 +49,40 @@ def load() -> Figures:
     if not out:
         raise ValueError(f"{MACROS} parsed to zero macros; the emitter format changed")
     return out
+
+
+def load_h2h() -> Figures:
+    """The represented-vs-transfer head-to-head figures, same anti-drift contract as load().
+
+    Reads generated/h2h_macros.tex -- the file unified_report.tex also inputs -- so a slide
+    quoting the regime result cannot drift from Table 17. Values come back in the paper's own
+    printed form (".948", "+0.185", "$[+0.065, +0.423]$").
+    """
+    if not H2H_MACROS.is_file():
+        raise FileNotFoundError(
+            f"{H2H_MACROS} missing. Run experiments/emit_frontier_general_h2h_tex.py first."
+        )
+    out = Figures()
+    for line in H2H_MACROS.read_text().splitlines():
+        m = _H2H_MACRO.match(line.strip())
+        if m:
+            out[m.group(1)] = m.group(2)
+    if not out:
+        raise ValueError(f"{H2H_MACROS} parsed to zero macros; the emitter format changed")
+    return out
+
+
+def bare(value: str) -> str:
+    r"""Strip the LaTeX the macros carry for the paper, so a slide can print the value.
+
+    Handles the three forms these macros actually use: math mode ($+0.185$), the \code{...}
+    wrapper around identifiers, and the escaped underscore inside them. Order matters --
+    unwrap \code{} before removing braces, or the command name survives and the braces do not.
+    """
+    v = value.strip()
+    v = re.sub(r"\\code\{([^}]*)\}", r"\1", v)   # \code{prompt\_injections} -> prompt\_injections
+    v = v.replace("\\_", "_").replace("\\%", "%").replace("$", "")
+    return v.replace("{", "").replace("}", "").strip()
 
 
 def pct(value: str) -> str:

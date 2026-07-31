@@ -38,6 +38,8 @@ import frontier_numbers as FN  # noqa: E402
 # file unified_report.tex \inputs. Slides that quote them therefore cannot drift from the
 # paper, and a missing figure fails the build instead of printing a stale number.
 F = FN.load()
+HT = FN.load_h2h()
+b = FN.bare
 
 # ------------------------------------------------------------------- identity
 # Every token comes from deck_theme, which was extracted from the redesigned decks. Do not
@@ -1307,6 +1309,64 @@ tuned {F['ScaleTunedRep']}/{F['ScaleTunedTransfer']}.
 Caveat to state if pushed: comparing a 32B base to a tuned 4B is a deployment-choice contrast,
 not a controlled one at fixed size. What the tuned-32B cell establishes is narrower -- at that
 size, on this recipe and data, tuning is not where the next increment should go.
+""")
+
+# ------------------------- 18b · the gap is a property of the regime, not the model
+# Follows the two-routes slide deliberately: that slide closes off tuning and scale, this one
+# says why neither was ever going to work -- the gap is not a capacity gap. Figures come from
+# h2h_macros.tex through frontier_numbers.load_h2h(), the same anti-drift path as \Frontier*.
+s = d.blank()
+y = d.header(s, "The gap is a regime, not a size",
+             "On sources it represents, a 1.5B guard beats the hosted model",
+             "Five corpora scored by both sides, joined by row hash, at the same "
+             + b(HT['Budget']) + " false-alarm budget")
+
+cw = (CW - Inches(0.42)) / 2
+bullets(s, M, y - Inches(0.02), cw, Inches(2.6), [
+    (f"Represented sources: {b(HT['BestTpr'])} vs {b(HT['RefTpr'])}.",
+     f"{b(HT['BestName'])} SFT on {b(HT['BestSource'])} against the hosted reference. "
+     f"Paired {b(HT['BestDeltaTpr'])} {b(HT['BestDeltaTprCI'])}, and a ranking win rather "
+     f"than a threshold placement — AUROC {b(HT['BestAuroc'])} vs {b(HT['RefAuroc'])}. "
+     f"{b(HT['NSig'])} of {b(HT['NSftCells'])} represented cells clear zero."),
+    ("Transfer sources: the ordering reverses.",
+     f"{b(HT['TransRefTpr'])} for the hosted model against {b(HT['TransBestLocalTpr'])} for "
+     f"{b(HT['TransBestLocalName'])} — and the best local guard there is untuned. Tuning is "
+     "what costs it the position."),
+])
+callout(s, M + cw + Inches(0.42), y - Inches(0.02), cw, Inches(1.24),
+        "why tuning and scale could not close it",
+        "They were aimed at the wrong quantity. The gap is not capacity the student lacks; it "
+        "is the price of being asked about traffic nobody put in the manifest.", color=BLUE)
+callout(s, M + cw + Inches(0.42), y + Inches(1.38), cw, Inches(1.20),
+        "what it licenses",
+        "Not “small guards match the frontier”. Only: on distributions an operator can "
+        "enumerate, a small self-hosted guard wins at a matched alarm budget — a deployment "
+        "property, not a capability claim.", color=ORANGE)
+callout(s, M, y + Inches(2.72), CW, Inches(0.92), "read with these limits",
+        "Per-source n is 67–451, so the intervals are wide and no per-cell ordering is a "
+        "ranking. Retrospective and estimation-only: these rows and this panel were inspected "
+        "during development. And id_test is held out by row, not by content — 1.6–5.0% of each "
+        "represented split sits within Jaccard 0.70 of a training row.", color=SLATE)
+d.notes(s, f"""
+The point of this slide is that the previous one was asking the wrong question.
+
+Tuning and scale both failed to close the gap because the gap is not a capacity gap. Split the
+same five corpora by whether the source was in the training manifest and the ordering inverts:
+on represented sources {b(HT['BestName'])} — a 1.5B model — reaches {b(HT['BestTpr'])} against
+the hosted {b(HT['RefTpr'])}, paired difference {b(HT['BestDeltaTpr'])}
+{b(HT['BestDeltaTprCI'])}. AUROC {b(HT['BestAuroc'])} against {b(HT['RefAuroc'])} confirms it
+is the ranking, not the threshold.
+
+Represented = {b(HT['RepSources'])}, read from the training manifest rather than asserted.
+
+The join is worth mentioning if anyone asks why this was not in the earlier tables: the two
+runs hash row identities differently — raw bytes on one side, NFC-normalised on the other — so
+re-deriving both digests from the local corpus was what made the comparison possible at all.
+100% of the panel's rows join.
+
+Do not oversell. This is retrospective on an inspected panel, the per-source samples are small,
+and one column (jailbreakbench) supports no comparison at all because the hosted model's own
+score ties so heavily that its threshold lands inside a tie block.
 """)
 
 # ------------------------------------------------------ 19 · decision guide
