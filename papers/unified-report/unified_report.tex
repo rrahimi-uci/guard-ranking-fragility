@@ -91,6 +91,7 @@
 \input{generated/ensembling_macros}  % Ensembling appendix: \Ens* (point estimates + bootstrap + committee)
 \input{generated/matched_fpr_macros} % Act I matched-FPR operating point: \Matched*
 \input{generated/frontier_macros}    % Act III frontier-vs-local ExpGuard comparison: \Frontier*
+\input{generated/cascade_macros}     % Selective-cascade curve: \Cascade*
 \input{generated/h2h_macros}         % Act III represented-vs-transfer head-to-head: \Htwo*
 \input{generated/teaser_macros}      % Figure 1 caption: 2-dp \Teaser* forms of the panel deltas
 
@@ -443,7 +444,7 @@ reaching for an ensemble usually does not have. Its largest weights also include
 \emph{negative} coefficient on one guard, so the fit is exploiting member-specific error
 structure that may not survive a change of traffic.
 
-So the answer is no: ensembling small guards does not beat the hosted model, and the cheap
+So the answer is no: on ExpGuard, ensembling small guards does not beat the hosted model, and the cheap
 version of it (equal weights) is worse than picking the best member. It earns its place in one
 situation --- when nothing may leave the network at all, seed ensembling plus stacking is the
 in-house ceiling, and it is roughly a quarter of the way to what the hosted model would give.
@@ -523,9 +524,10 @@ $\FrontierScaleTunedTransferCost$ transfer --- and on ExpGuard tuning moves its 
 recall by $\FrontierScaleTunedExpguardDelta$, the wrong way. For a guardrail, whose entire
 purpose is the traffic nobody anticipated, that is a bad trade at any size. Across the six
 checkpoints we can now tune, SFT hurts \FrontierSftNumHurt{} of \FrontierSftNumTotal{} on
-external held-out prompts, and the best tuned configuration anywhere in this study
+external held-out prompts, and on ExpGuard the best tuned configuration in this study
 (\FrontierBestSftName{} at \FrontierBestSftTpr) still sits well below the hosted model's
-\FrontierBestTpr.
+\FrontierBestTpr. That ordering is specific to this external, never-trained-on probe:
+\Cref{sec:actIII-h2h} shows it reverses on sources the panel does represent.
 
 One limit keeps the untuned-32B result from being a recommendation: it is a deployment-choice
 contrast, not a controlled one. Qwen3-32B is $8$--$21\times$ the parameters of the panel
@@ -597,8 +599,9 @@ is wrong, and the per-row scores show why. Run the small guard inline on every r
 requests by how near they fall to its own decision line, and re-score only that uncertain band
 with the hosted model, holding one global $5\%$ false-alarm budget across the whole
 construction. Escalating the least-confident $10\%$ of ExpGuard raises matched-budget recall
-from $0.787$ to $0.819$; $20\%$ reaches $0.842$, which is \emph{half} the distance to the
-hosted model's \FrontierBestTpr; $30\%$ reaches $0.856$. The curve is steep early because the
+from \CascadeLocalOnly{} to \CascadeTen{}; $20\%$ reaches \CascadeTwenty{}, which is
+\emph{half} the distance to the hosted model's \FrontierBestTpr; $30\%$ reaches
+\CascadeThirty{}. The curve is steep early because the
 first requests escalated are the ones a second opinion can actually change, and it is smooth,
 so the escalated share is a dial set by whatever the data-residency and cost constraints
 allow rather than an architecture to be chosen once. Two implementation notes, since the
@@ -619,8 +622,10 @@ $G\times D$ compliance judgement, and nothing here was measured on it. Nor does 
 report's subject. Acts~I--II are about what happens \emph{when} you must run a small guard
 yourself --- for latency, cost, data residency, or auditability --- and this subsection prices
 that constraint rather than dissolving it. The honest reading is that the frontier number is the
-bar: it is what the specialization and composition machinery is trying to reach under
-constraints the hosted model does not have to satisfy.
+bar \emph{on unfamiliar traffic}: it is what the specialization and composition machinery is
+trying to reach under constraints the hosted model does not have to satisfy. On traffic the
+operator can enumerate, \Cref{sec:actIII-h2h} shows the bar is already cleared --- which is
+why the deployment question is a routing question rather than a modelling one.
 
 
 \section{Synthesis: one lesson at three scales, and what to do about it}

@@ -2433,7 +2433,7 @@ obviously, it needs <em>labelled in-domain data</em> to fit the weights, which i
 reaching for an ensemble usually does not have. Its largest weights also include a
 <em>negative</em> coefficient on one guard, so the fit is exploiting member-specific error
 structure that may not survive a change of traffic.</p>
-<p>So the answer is no: ensembling small guards does not beat the hosted model, and the cheap
+<p>So the answer is no: on ExpGuard, ensembling small guards does not beat the hosted model, and the cheap
 version of it (equal weights) is worse than picking the best member. It earns its place in one
 situation — when nothing may leave the network at all, seed ensembling plus stacking is the
 in-house ceiling, and it is roughly a quarter of the way to what the hosted model would give.</p>
@@ -2509,9 +2509,10 @@ Qwen3-32B goes from
 recall by <span class="math inline">\(-0.020\)</span>, the wrong way. For a guardrail, whose entire
 purpose is the traffic nobody anticipated, that is a bad trade at any size. Across the six
 checkpoints we can now tune, SFT hurts 4 of 6 on
-external held-out prompts, and the best tuned configuration anywhere in this study
+external held-out prompts, and on ExpGuard the best tuned configuration in this study
 (Qwen3-32B at .809) still sits well below the hosted model’s
-.896.</p>
+.896. That ordering is specific to this external, never-trained-on probe:
+<a class="xref" href="#sec:actIII-h2h">Section 7.4</a> shows it reverses on sources the panel does represent.</p>
 <p>One limit keeps the untuned-32B result from being a recommendation: it is a deployment-choice
 contrast, not a controlled one. Qwen3-32B is <span class="math inline">\(8\)</span>–<span class="math inline">\(21\times\)</span> the parameters of the panel
 checkpoints and costs accordingly, so the comparison is about <em>where</em> to spend a fixed
@@ -3149,8 +3150,9 @@ is wrong, and the per-row scores show why. Run the small guard inline on every r
 requests by how near they fall to its own decision line, and re-score only that uncertain band
 with the hosted model, holding one global <span class="math inline">\(5\%\)</span> false-alarm budget across the whole
 construction. Escalating the least-confident <span class="math inline">\(10\%\)</span> of ExpGuard raises matched-budget recall
-from <span class="math inline">\(0.787\)</span> to <span class="math inline">\(0.819\)</span>; <span class="math inline">\(20\%\)</span> reaches <span class="math inline">\(0.842\)</span>, which is <em>half</em> the distance to the
-hosted model’s .896; <span class="math inline">\(30\%\)</span> reaches <span class="math inline">\(0.856\)</span>. The curve is steep early because the
+from .787 to .819; <span class="math inline">\(20\%\)</span> reaches .842, which is
+<em>half</em> the distance to the hosted model’s .896; <span class="math inline">\(30\%\)</span> reaches
+.856. The curve is steep early because the
 first requests escalated are the ones a second opinion can actually change, and it is smooth,
 so the escalated share is a dial set by whatever the data-residency and cost constraints
 allow rather than an architecture to be chosen once. Two implementation notes, since the
@@ -3171,8 +3173,10 @@ survives a paired test. It does <em>not</em> license extending that to the mortg
 report’s subject. Acts I–II are about what happens <em>when</em> you must run a small guard
 yourself — for latency, cost, data residency, or auditability — and this subsection prices
 that constraint rather than dissolving it. The honest reading is that the frontier number is the
-bar: it is what the specialization and composition machinery is trying to reach under
-constraints the hosted model does not have to satisfy.</p>
+bar <em>on unfamiliar traffic</em>: it is what the specialization and composition machinery is
+trying to reach under constraints the hosted model does not have to satisfy. On traffic the
+operator can enumerate, <a class="xref" href="#sec:actIII-h2h">Section 7.4</a> shows the bar is already cleared — which is
+why the deployment question is a routing question rather than a modelling one.</p>
 <h1 data-num="8" id="sec:synthesis"><span class="secnum">8</span>Synthesis: one lesson at three scales, and what to do about it</h1>
 <p>The three acts are one lesson. A guard’s benchmark score is co-produced by the benchmark: SFT buys
 represented-source ranking, not transfer — and at an equal false-alarm budget it does not even buy the
