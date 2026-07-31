@@ -132,27 +132,63 @@ def mean_over_seeds(per_seed: list[dict]) -> dict:
     return out
 
 
-def paired_delta(a, b, y, n_boot: int = N_BOOT) -> dict:
-    """Paired row bootstrap of (a - b) in TPR@FPR and AP, on rows both sides scored."""
-    a, b, y = np.asarray(a, float), np.asarray(b, float), np.asarray(y, int)
-    ok = ~np.isnan(a) & ~np.isnan(b)
-    a, b, y = a[ok], b[ok], y[ok]
-    obs = (tpr_at_fpr(a, y) - tpr_at_fpr(b, y), average_precision(a, y) - average_precision(b, y))
+def paired_delta(arms, b, y, n_boot: int = N_BOOT) -> dict:
+    """Paired bootstrap of (guard - reference), consistent with the tabulated metric.
+
+    `arms` is a LIST of score vectors -- one per training seed for an SFT guard, or a single
+    vector for a base guard.
+
+    Why a list, and not the mean of those vectors: the tables report Paper A's convention,
+    metric-per-seed then averaged (`mean_over_seeds`). An earlier version of this function was
+    handed `np.nanmean` of the seed vectors instead, which computes the metric of a five-run
+    SCORE ENSEMBLE -- a different estimand, and not the expected performance of one trained
+    guard. The two disagreed visibly: the table printed .948 and .741 while the delta printed
+    +.185 rather than the .207 those two values imply. Averaging the per-seed deltas instead
+    makes the point estimate identically equal to (tabulated guard metric - reference metric),
+    so a reader can always check the arithmetic on the page.
+
+    The interval resamples BOTH rows and seeds. Seeds are resampled with replacement because
+    the five adapters are draws of one recipe, so training-seed variance belongs inside the
+    interval; the old version held the averaged vector fixed and so reported row uncertainty
+    only. For a single-arm guard the seed dimension is degenerate and only rows are resampled.
+    """
+    arms = [np.asarray(a, float) for a in arms]
+    b, y = np.asarray(b, float), np.asarray(y, int)
+    ok = ~np.isnan(b)
+    for a in arms:
+        ok &= ~np.isnan(a)
+    arms = [a[ok] for a in arms]
+    b, y = b[ok], y[ok]
+    n_arm = len(arms)
+
+    def point(idx, seed_pick):
+        """mean over seeds of (metric(seed) - metric(reference)), on rows `idx`."""
+        yy = y[idx]
+        ref_t, ref_a = tpr_at_fpr(b[idx], yy), average_precision(b[idx], yy)
+        dt = [tpr_at_fpr(arms[s][idx], yy) - ref_t for s in seed_pick]
+        da = [average_precision(arms[s][idx], yy) - ref_a for s in seed_pick]
+        return float(np.mean(dt)), float(np.mean(da))
+
+    all_rows = np.arange(len(y))
+    obs = point(all_rows, range(n_arm))
+
     rng = np.random.default_rng(BOOT_SEED)
     bt, bap = [], []
     for _ in range(n_boot):
         idx = rng.integers(0, len(y), len(y))
-        ys = y[idx]
-        if ys.min() == ys.max():
+        if y[idx].min() == y[idx].max():
             continue
-        bt.append(tpr_at_fpr(a[idx], ys) - tpr_at_fpr(b[idx], ys))
-        bap.append(average_precision(a[idx], ys) - average_precision(b[idx], ys))
+        picks = rng.integers(0, n_arm, n_arm) if n_arm > 1 else [0]
+        t, a = point(idx, picks)
+        bt.append(t)
+        bap.append(a)
 
     def pct(v):
         return [float(np.percentile(v, 2.5)), float(np.percentile(v, 97.5))] if v else [float("nan")] * 2
 
-    return {"n": int(len(y)), "d_tpr": float(obs[0]), "ci_tpr": pct(bt),
-            "d_ap": float(obs[1]), "ci_ap": pct(bap), "n_boot": int(len(bt))}
+    return {"n": int(len(y)), "n_arms": n_arm, "d_tpr": float(obs[0]), "ci_tpr": pct(bt),
+            "d_ap": float(obs[1]), "ci_ap": pct(bap), "n_boot": int(len(bt)),
+            "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled"}
 
 
 # ──────────────────────────────────────────────────────────────── joining
@@ -227,6 +263,7 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
     local = pd.read_parquet(SCORES)
     local = local[local.source.isin(SOURCES)]
     results, audit = {}, {}
+    arm_store: dict = {}   # source -> cell -> (arms, ref vector, y) for the aggregate boot
 
     for source in SOURCES:
         rid2norm, norm2label = corpus_index(source)
@@ -267,8 +304,8 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
             guards[config] = cell(v, y)
 
         # Deltas: every checkpoint against the one pre-specified frontier config, on the rows
-        # both scored. Per-seed SFT margins are averaged here (a single ranking is needed for a
-        # paired bootstrap); the tabulated SFT metric stays the mean-over-seeds above.
+        # both scored. The seed arms are passed through INDIVIDUALLY -- see paired_delta on why
+        # pre-averaging them silently changed the estimand and broke the displayed arithmetic.
         ref = np.array([gpt_raw[FRONTIER_REF].get(i, np.nan) for i in ids], float)
         # If the reference's own TPR is tie-collapsed, every TPR delta against it is an artifact
         # of where its tie block fell, not a comparison. Mark the whole source rather than
@@ -282,8 +319,14 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
                     continue
                 mats = [sub[sub.seed == s].set_index("content_sha256").score_raw
                         .reindex(ids).to_numpy(float) for s in sorted(sub.seed.unique())]
-                v = np.nanmean(np.vstack(mats), axis=0)
-                deltas[f"{mk}__{cond}"] = paired_delta(v, ref, y)
+                deltas[f"{mk}__{cond}"] = paired_delta(mats, ref, y)
+                # keep the aligned arrays: the aggregate estimand needs to resample the same
+                # rows across every cell of a source, which per-cell summaries cannot support
+                okm = ~np.isnan(ref)
+                for a in mats:
+                    okm &= ~np.isnan(a)
+                arm_store.setdefault(source, {})[f"{mk}__{cond}"] = (
+                    [a[okm] for a in mats], ref[okm], y[okm])
 
         results[source] = {
             "regime": reg["regime"].get(source, "unknown"),
@@ -295,12 +338,125 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
             "deltas_interpretable": not ref_degenerate,
         }
 
+    # ── multiplicity, and one aggregate that is not chosen by its own result ────────────
+    # The headline used to be the LARGEST significant per-cell delta out of the represented
+    # SFT cells, with its nominal interval printed unadjusted. That is a post-selection
+    # interval: scanning twelve cells and reporting the winner's 95% CI overstates it however
+    # many of the twelve are individually significant. Two things fix it. (1) An aggregate
+    # estimand -- the equal-source, equal-checkpoint mean delta over represented sources --
+    # which is fixed in advance and does not depend on which cell wins. (2) Holm-adjusted
+    # per-cell intervals, so any single cell that is still quoted is quoted honestly.
+    rep = [s for s, r in results.items()
+           if r["regime"] == "represented" and r["deltas_interpretable"]]
+    sft_cells = [(s, g, results[s]["deltas_vs_frontier_ref"][g])
+                 for s in rep for g in sorted(results[s]["deltas_vs_frontier_ref"])
+                 if g.endswith("__sft")]
+
+    # Holm step-down on the bootstrap two-sided p-value proxy: the smallest alpha at which the
+    # interval would still exclude zero is bounded by how far the nearer bound sits from zero,
+    # so rank by |delta| / half-width and adjust the family of m tests.
+    m = len(sft_cells)
+    scored = []
+    for s, g, d in sft_cells:
+        lo, hi = d["ci_tpr"]
+        half = (hi - lo) / 2 if hi == hi and lo == lo else float("nan")
+        z = abs(d["d_tpr"]) / half if half and half == half and half > 0 else 0.0
+        scored.append((z, s, g, d))
+    scored.sort(key=lambda t: -t[0])
+    for rank, (z, s, g, d) in enumerate(scored):
+        # Holm: the k-th largest test is compared at alpha/(m-k); widen the interval by the
+        # ratio of the adjusted to the nominal critical value (normal approximation).
+        alpha_adj = 0.05 / max(m - rank, 1)
+        from math import sqrt
+        # z_{1-alpha/2} for the adjusted vs nominal level, via a rational approximation good
+        # to ~1e-4 over the range we need (alpha in [0.05/12, 0.05]).
+        def zcrit(alpha):
+            p = 1 - alpha / 2
+            t = sqrt(-2.0 * __import__("math").log(1 - p))
+            return t - ((0.010328 * t + 0.802853) * t + 2.515517) / \
+                       (((0.001308 * t + 0.189269) * t + 1.432788) * t + 1.0)
+        widen = zcrit(alpha_adj) / zcrit(0.05)
+        lo, hi = d["ci_tpr"]
+        mid = d["d_tpr"]
+        d["ci_tpr_holm"] = [mid - (mid - lo) * widen, mid + (hi - mid) * widen]
+        d["holm_rank"] = rank + 1
+        d["holm_alpha"] = alpha_adj
+        d["holm_significant"] = bool(d["ci_tpr_holm"][0] > 0)
+        d["holm_family_size"] = m
+
+    # The aggregate needs its own interval, not just a point estimate, or it cannot carry a
+    # claim either. Hierarchical bootstrap: within each represented source resample rows and
+    # seeds, average over that source's checkpoints, then average over sources -- one draw of
+    # the whole estimand per replicate, with sources drawn jointly so the mean is coherent.
+    def aggregate_boot(key):
+        rng2 = np.random.default_rng(BOOT_SEED + 1)
+        obs_per_source, draws = [], []
+        for s in rep:
+            cells = [g for g in sorted(arm_store[s]) if g.endswith("__sft")]
+            vals = []
+            for g in cells:
+                arms, ref_v, yv = arm_store[s][g]
+                r_t, r_a = tpr_at_fpr(ref_v, yv), average_precision(ref_v, yv)
+                per = [(tpr_at_fpr(a, yv) - r_t) if key == "d_tpr"
+                       else (average_precision(a, yv) - r_a) for a in arms]
+                vals.append(float(np.mean(per)))
+            obs_per_source.append(float(np.mean(vals)))
+        obs = float(np.mean(obs_per_source))
+
+        for _ in range(N_BOOT):
+            per_source = []
+            ok = True
+            for s in rep:
+                cells = [g for g in sorted(arm_store[s]) if g.endswith("__sft")]
+                arms0, ref0, y0 = arm_store[s][cells[0]]
+                idx = rng2.integers(0, len(y0), len(y0))
+                if y0[idx].min() == y0[idx].max():
+                    ok = False
+                    break
+                vals = []
+                for g in cells:
+                    arms, ref_v, yv = arm_store[s][g]
+                    yy = yv[idx]
+                    r_t, r_a = tpr_at_fpr(ref_v[idx], yy), average_precision(ref_v[idx], yy)
+                    picks = rng2.integers(0, len(arms), len(arms)) if len(arms) > 1 else [0]
+                    per = [(tpr_at_fpr(arms[p][idx], yy) - r_t) if key == "d_tpr"
+                           else (average_precision(arms[p][idx], yy) - r_a) for p in picks]
+                    vals.append(float(np.mean(per)))
+                per_source.append(float(np.mean(vals)))
+            if ok:
+                draws.append(float(np.mean(per_source)))
+        ci = ([float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))]
+              if draws else [float("nan")] * 2)
+        return obs, ci, len(draws)
+
+    d_tpr_obs, d_tpr_ci, nb = aggregate_boot("d_tpr")
+    d_ap_obs, d_ap_ci, _ = aggregate_boot("d_ap")
+
+    aggregate = {
+        "estimand": "equal-source, equal-checkpoint mean paired delta (panel SFT - "
+                    f"{FRONTIER_REF.replace('__', ' / ')}) over represented sources",
+        "prespecified": "fixed by the regime split, not chosen by which cell is largest -- "
+                        "this replaces a headline that was selected on its own result",
+        "sources": rep,
+        "n_cells": m,
+        "n_boot": nb,
+        "d_tpr": d_tpr_obs, "ci_tpr": d_tpr_ci,
+        "d_ap": d_ap_obs, "ci_ap": d_ap_ci,
+        "significant": bool(d_tpr_ci[0] > 0),
+        "n_significant_holm": sum(1 for _, _, _, d in scored if d["holm_significant"]),
+        "n_significant_nominal": sum(1 for _, _, _, d in scored if d["ci_tpr"][0] > 0),
+    }
+
     meta = {
         "fpr_budget": FPR_BUDGET,
         "frontier_reference": FRONTIER_REF.replace("__", " / "),
         "splits": list(splits),
         "n_boot": N_BOOT,
         "boot_seed": BOOT_SEED,
+        "delta_estimand": "mean over seeds of (guard - reference), rows and seeds resampled; "
+                          "equals (tabulated guard metric - reference metric) by construction",
+        "multiplicity": f"Holm across the {m} represented-source SFT cells; per-cell nominal "
+                        "intervals are exploratory, ci_tpr_holm is the adjusted interval",
         "local_scores": os.path.relpath(SCORES, ROOT),
         "frontier_predictions": os.path.relpath(RAW, ROOT),
         "trained_sources": reg["trained_sources"],
@@ -310,7 +466,7 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
         "flavor": "retrospective, estimation-only -- these rows and this panel were inspected "
                   "during development; not a preregistered or confirmatory comparison",
     }
-    return {"meta": meta, "sources": results}, audit
+    return {"meta": meta, "aggregate": aggregate, "sources": results}, audit
 
 
 def main() -> None:

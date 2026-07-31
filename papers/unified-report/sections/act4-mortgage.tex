@@ -59,9 +59,32 @@ verdict is exactly what lets us pull the G0/D1 stratum out and score a guard on 
 
 \Cref{tab:composition} gives the full breakdown of the frozen \code{v1\_hmda2022} release: 994 rows,
 all synthetic. It is split \emph{family-isolated} into train (604), dev (149), and public-test (146),
-plus a sealed private-test slice (95) that is held back to detect overfitting later; ``family-isolated''
-means near-duplicate rows are grouped and sent as a whole to \emph{either} train or test, never split,
-so a guard cannot ace the test by having seen a near-twin in training.
+plus a 95-row confirmatory slice; ``family-isolated'' means near-duplicate rows are grouped and sent as
+a whole to \emph{either} train or test, never split, so a guard cannot ace the test by having seen a
+near-twin in training.
+
+\paragraph{Two corrections to the release's own description.} Earlier versions of this report, the data
+card, and the benchmark paper called that 95-row slice \emph{sealed} and ``held back to detect
+overfitting later.'' Neither half is true of the artifact as shipped. The file
+\code{private\_test.jsonl} is \textbf{committed to this repository}, carries full prompt text, and was
+visible to the researcher --- the builder (\code{magen/package.py}) does write it outside the
+distributable bundle, but the committed release directory was assembled by hand and includes it. And it
+is already \emph{spent}: the GPT baseline scored \code{mortgage\_hmda2022} over
+\code{public\_test}~$+$~\code{private\_test} ($241 = 146 + 95$ rows), so it can no longer serve as a
+later overfitting check for anything. Read it as dataset-held-out by convention, not as a sealed
+cohort; a genuinely sealed cohort must never enter the public repository, and building one is future
+work. No number in this report is affected --- every mortgage result below is \code{public\_test} only.
+
+Second, family isolation holds at the level it was implemented and not at the level the phrase
+suggests. No \code{content\_family} spans two splits (0 of 958), but \emph{pairs} were never a grouping
+key, and one protected pair leaks: \code{PAIR-0000\#1} has its reference arm in train
+(\code{MGB-BEN-00377}) and its wheelchair arm in public test (\code{MGB-BEN-00374}). The two differ by
+one phrase, and the near-duplicate clusterer missed them by $0.0023$ --- an estimated Jaccard of
+$0.8477$ against a $0.85$ threshold. It is the only public-test row within $0.7$ word-$5$-gram
+similarity of any training row (1 of 146). Because the fairness evaluator keeps only pairs with both
+arms present in the evaluated split, the reported $\Delta_{\mathrm{context}}$ and every AP here are
+unaffected; the consequence is that 38, not 39, pairs are usable inside a single split, and that the
+isolation guarantee should be stated as \code{content\_family}-level rather than pair-level.
 
 By quadrant, the \textbf{G0/D1 stratum is the largest non-benign block --- 502 rows} --- which is by
 design: the looks-safe-but-non-compliant case is the payload of the benchmark, so it is the best
@@ -79,8 +102,8 @@ Ranking quality (AP) cannot tell you whether a guard treats two otherwise-identi
 differently because one names a protected group. For that we add \textbf{protected-class pairs}: two
 requests identical in every slot --- same fact sheet, same role, same ask --- except for the
 protected-class mention, both members benign (G0/D0, so a fair
-guard must PASS both), sharing a \code{pair\_id}. The release contains \textbf{39 protected pairs
-(78 rows)}. This is the established \emph{counterfactual token fairness} construction
+guard must PASS both), sharing a \code{pair\_id}. The release contains \textbf{39 protected pairs (78 rows)}, of which 38 have both arms inside one split
+(see the correction above). This is the established \emph{counterfactual token fairness} construction
 \citep{garg2019counterfactual,kusner2017counterfactual}, and it reframes the manipulation of
 \citet{bowen2024mortgage} --- who varied
 race on real applications to audit an \emph{underwriter} --- as a guard \emph{invariance} test: we do
@@ -141,7 +164,7 @@ not by coincidence. We score the four base instruction checkpoints from the comp
 \citep{rahimi2026benchmark} --- the same panel used throughout this report --- \emph{zero-shot}, i.e.\
 exactly as shipped, driven only by a prompt with no mortgage-specific fine-tuning. Gated off-the-shelf
 guards \citep{inan2023llamaguard,han2024wildguard} were not scored in this earlier mortgage run (their
-licenses had not yet been accepted; they were accepted in time for the confirmatory adaptation study of
+licenses had not yet been accepted; they were accepted in time for the analysis-preregistered adaptation study of
 \Cref{sec:adaptation}, which does score both), and a domain-fine-tuned arm is future work.
 
 \paragraph{Results.} \Cref{tab:baseline} reports the four zero-shot guards on the 146-row public-test

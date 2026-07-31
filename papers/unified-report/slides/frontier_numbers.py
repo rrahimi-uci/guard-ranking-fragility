@@ -18,9 +18,11 @@ from pathlib import Path
 GENERATED = Path(__file__).resolve().parents[1] / "generated"
 MACROS = GENERATED / "frontier_macros.tex"
 H2H_MACROS = GENERATED / "h2h_macros.tex"
+CASCADE_MACROS = GENERATED / "cascade_macros.tex"
 
 _MACRO = re.compile(r"\\newcommand\{\\Frontier([A-Za-z]+)\}\{(.*)\}\s*$")
 _H2H_MACRO = re.compile(r"\\newcommand\{\\Htwo([A-Za-z]+)\}\{(.*)\}\s*$")
+_CASCADE_MACRO = re.compile(r"\\newcommand\{\\Cascade([A-Za-z]+)\}\{(.*)\}\s*$")
 
 
 class MissingFigure(KeyError):
@@ -69,6 +71,26 @@ def load_h2h() -> Figures:
             out[m.group(1)] = m.group(2)
     if not out:
         raise ValueError(f"{H2H_MACROS} parsed to zero macros; the emitter format changed")
+    return out
+
+
+def load_cascade() -> Figures:
+    """The selective-cascade curve, read from generated/cascade_macros.tex.
+
+    A slide quoting an escalation point must not hardcode it: the exec deck previously printed
+    87% for the 20% point when the artifact says .842, and used that inflated figure to claim
+    escalation beats the 18-model blend (.850), which reverses the actual ordering.
+    """
+    if not CASCADE_MACROS.is_file():
+        raise FileNotFoundError(
+            f"{CASCADE_MACROS} missing. Run experiments/emit_cascade_tex.py first.")
+    out = Figures()
+    for line in CASCADE_MACROS.read_text().splitlines():
+        m = _CASCADE_MACRO.match(line.strip())
+        if m:
+            out[m.group(1)] = m.group(2)
+    if not out:
+        raise ValueError(f"{CASCADE_MACROS} parsed to zero macros; the emitter format changed")
     return out
 
 

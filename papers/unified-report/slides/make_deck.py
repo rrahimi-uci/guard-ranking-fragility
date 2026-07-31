@@ -418,7 +418,7 @@ run(p, "make reproduce (covered tables)  ·  frozen benchmark v1_hmda2022",
 d.notes(s, """
 One-line thesis: a small guard's benchmark score is not a property of the guard —
 the benchmark co-produces it. Everything in the deck is estimation on a fixed,
-purposively chosen panel, plus one preregistered confirmatory study and one
+purposively chosen panel, plus one analysis-preregistered study and one
 external expert-annotated replication. No causal, universal, or deployment claim.
 """)
 
@@ -1320,17 +1320,16 @@ size, on this recipe and data, tuning is not where the next increment should go.
 # h2h_macros.tex through frontier_numbers.load_h2h(), the same anti-drift path as \Frontier*.
 s = d.blank()
 y = d.header(s, "The gap is a regime, not a size",
-             "On sources it represents, a 1.5B guard beats the hosted model",
+             "On sources it represents, the panel ranks better than the hosted model",
              "Five corpora scored by both sides, joined by row hash, at the same "
              + b(HT['Budget']) + " false-alarm budget")
 
 cw = (CW - Inches(0.42)) / 2
 bullets(s, M, y - Inches(0.02), cw, Inches(2.6), [
-    (f"Represented sources: {b(HT['BestTpr'])} vs {b(HT['RefTpr'])}.",
-     f"{b(HT['BestName'])} SFT on {b(HT['BestSource'])} against the hosted reference. "
-     f"Paired {b(HT['BestDeltaTpr'])} {b(HT['BestDeltaTprCI'])}, and a ranking win rather "
-     f"than a threshold placement — AUROC {b(HT['BestAuroc'])} vs {b(HT['RefAuroc'])}. "
-     f"{b(HT['NSig'])} of {b(HT['NSftCells'])} represented cells clear zero."),
+    (f"Represented sources: {b(HT['AggDeltaTpr'])} in the panel's favour.",
+     f"Equal-source, equal-checkpoint mean paired difference against the hosted reference, "
+     f"95% CI {b(HT['AggDeltaTprCI'])} — excludes zero. In AP, {b(HT['AggDeltaAp'])} "
+     f"{b(HT['AggDeltaApCI'])}. Pre-specified by the regime split, not picked as the best cell."),
     ("Transfer sources: the ordering reverses.",
      f"{b(HT['TransRefTpr'])} for the hosted model against {b(HT['TransBestLocalTpr'])} for "
      f"{b(HT['TransBestLocalName'])} — and the best local guard there is untuned. Tuning is "

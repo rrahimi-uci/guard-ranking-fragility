@@ -1,4 +1,4 @@
-\section{Interlude (Act~I, confirmed): adapting released guards --- a preregistered starting-type study}
+\section{Interlude (Act~I, revisited): adapting released guards --- an analysis-preregistered starting-type study}
 \label{sec:adaptation}
 
 Acts~I--II characterize what fine-tuning does to \emph{general} instruction checkpoints, and Act~III ranks
@@ -81,7 +81,7 @@ LCB \AdaHCostLCB, which does not clear the preregistered non-inferiority margin 
 the second criterion fails and RQ2 is \textbf{not supported}. KL-SFT trades represented-source adaptation
 gain for transfer retention; on this panel it is a genuine trade, not a free lunch. This is a more
 cautious verdict than the general-checkpoint KL control of \Cref{sec:actI-klsft} (where the represented
-cost was smaller), and the confirmatory design reports it as such rather than reading the favorable
+cost was smaller), and the locked-criterion design reports it as such rather than reading the favorable
 direction as a win.
 
 \subsection{What this does and does not license}
@@ -111,9 +111,14 @@ First, the cell is retained in the equal-family means as a zero contribution, so
 in this section is diluted by exactly $6/5 = 1.2\times$: dropping the null family would move
 $H_{\mathrm{gain}}$ from \AdaHGain{} to $+0.208$, $H_{\mathrm{conc}}$ from \AdaHConc{} to $+0.286$,
 $H_{\mathrm{preserve}}$ from \AdaHPreserve{} to $+0.059$, and $H_{\mathrm{cost}}$ from \AdaHCost{} to
-$-0.043$. Because a null family only pulls an equal-family mean toward zero, this cannot manufacture
-support: it makes RQ1 harder to clear and makes RQ2's failure look milder than it is. Both verdicts
-therefore stand, and the reported magnitudes are conservative --- but they are $20\%$ smaller than the
+$-0.043$. Because the null family contributes identically zero in \emph{every} bootstrap replicate, each
+equal-family statistic is exactly $5/6$ of its five-family value replicate by replicate, so the
+registered bounds rescale by exactly $6/5$ without any rerun: $H_{\mathrm{gain}}$ LCB
+$0.129\!\to\!0.155$, $H_{\mathrm{conc}}$ $0.189\!\to\!0.227$, $H_{\mathrm{preserve}}$
+$0.035\!\to\!0.042$, $H_{\mathrm{cost}}$ $-0.060\!\to\!-0.072$, and the held-out SFT upper bound
+$-0.047\!\to\!-0.057$. RQ1 stays supported and RQ2 still fails, and fails harder. So this cannot
+manufacture support: it makes RQ1 harder to clear and makes RQ2's failure look milder than it is. Both verdicts
+therefore stand, and the reported magnitudes are conservative --- but they are one sixth ($16.7\%$) smaller than the
 five-family values, which is stated here rather than left for a reader to derive. Second, the study's
 own eligibility rule (proposal \S4.3) requires each checkpoint's verdict likelihoods to be
 \emph{nonconstant}; a degenerate cell fails that test, so under the rule as written this checkpoint
@@ -123,14 +128,23 @@ is a departure from a preregistered criterion and not an application of one.
 \paragraph{The pooled starting-type interaction is not reported.} The protocol also preregisters a
 fixed-panel interaction $\Gamma$ --- the equal-family mean movement of purpose-built families minus
 that of general families (proposal \S6.3). It was not computed, and the claim registry's
-\code{stop\_narrow\_gates} fallback does authorize omitting it; but that fallback is conditional, and
-the condition it names (fewer than three purpose-built families passing preflight) did not obtain ---
-five did. The operative obstacle is the family taxonomy actually used in the analysis, which places
-Qwen2.5-1.5B, Qwen3-4B, Qwen3Guard-Gen-0.6B and Qwen3Guard-Gen-4B in a single \code{qwen} family. A
-family that spans both starting types cannot be assigned to either side of $\Gamma$, so the estimand is
-ill-defined under this taxonomy. Splitting Qwen by starting type would make it computable, but that is
-an analytic choice made after seeing the scores and no bootstrap exists for it, so no $\Gamma$ is quoted
-here. What this report supports is therefore per-checkpoint and per-family movement, not a pooled
+\code{stop\_narrow\_gates} fallback does authorize omitting it, conditional on fewer than three
+purpose-built families passing preflight. That condition cannot be evaluated either way, because
+\emph{no} checkpoint has a passing preflight: all ten files in
+\code{artifacts/starting\_type\_adaptation\_v1/preflight/} record \code{eligible: false} with
+\code{finalization\_status: nonfinal}, and the two training-dependent checks --- including
+\code{smoke\_adapter\_only\_finite}, the one that implements the nonconstant-margin rule --- are
+\code{skipped} with \code{reason: include\_training=False}. So the eligibility gate was never run for
+any checkpoint, not merely violated for one. An earlier version of this paragraph asserted that five
+purpose-built families passed preflight; the committed artifacts contradict that and it was wrong. The operative obstacle is a deviation in the analysis code, not an indeterminacy in the protocol. The
+committed analysis places Qwen2.5-1.5B, Qwen3-4B, Qwen3Guard-Gen-0.6B and Qwen3Guard-Gen-4B in a
+single \code{qwen} family, and a family spanning both starting types cannot sit on either side of
+$\Gamma$. But the protocol already prescribes the split: proposal \S6.3 states that ``the two Qwen
+\emph{purpose-built} sizes contribute one Qwen-family value,'' which separates them from the general
+Qwen checkpoints. So $\Gamma$ was computable as registered and the single-family taxonomy is what made
+it indeterminate --- the reverse of what an earlier version of this paragraph claimed. No $\Gamma$ is
+quoted here because no bootstrap for it was ever run, which is a gap in execution rather than in the
+registration. What this report supports is therefore per-checkpoint and per-family movement, not a pooled
 cross-type contrast.
 
 \begin{takeaway}{Adapting a released guard}

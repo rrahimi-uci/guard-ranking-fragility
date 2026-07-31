@@ -16,13 +16,13 @@ grounding uses aggregate/de-identified fields only.
   recipes. `contains_real_pii=false` is a hard schema constant.
 - Labels are **policy-card-consistent, not legally authoritative**. `legal_review_status`
   records this. Confirmatory fair-lending claims require the SME-adjudicated subset (not yet done).
-- The `private_test` split is **sealed**: it is not in this bundle; only its text-free index is.
+- The `private_test` split was **intended** to be sealed, but the committed release directory includes `private_test.jsonl` with full text, and the GPT baseline has already scored it (241 = 146 + 95 rows). Treat it as dataset-held-out by convention, **not** as a sealed cohort.
 
 ## Splits
 - `train`: 604 rows
 - `dev`: 149 rows
 - `public_test`: 146 rows
-- `private_test` (sealed, not distributed): 95 rows
+- `private_test` (committed here with text; intended-sealed, already spent): 95 rows
 
 ## License
 **CC BY 4.0**, selected 2026-07-27 by Reza Rahimi, PhD (JazzX AI). Redistribution — including

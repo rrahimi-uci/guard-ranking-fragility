@@ -113,7 +113,7 @@
 <li class="toc-top"><a href="#sec:actI-op"><span class="toc-num">3.5</span><span>At a deployable operating point</span></a></li>
 <li class="toc-top"><a href="#sec:actI-klsft"><span class="toc-num">3.6</span><span>A recipe control: does anti-forgetting (KL-regularized) SFT preserve transfer?</span></a></li>
 <li class="toc-top"><a href="#sec:actI-prevalence"><span class="toc-num">3.7</span><span>The deployment base rate also chooses the winner</span></a></li>
-<li class="toc-top"><a href="#sec:adaptation"><span class="toc-num">4</span><span>Interlude (Act I, confirmed): adapting released guards — a preregistered starting-type study</span></a></li>
+<li class="toc-top"><a href="#sec:adaptation"><span class="toc-num">4</span><span>Interlude (Act I, revisited): adapting released guards — an analysis-preregistered starting-type study</span></a></li>
 <li class="toc-top"><a href="#sec:adaptation-design"><span class="toc-num">4.1</span><span>Design: a \(2\times3\) blocked grid over ten checkpoints</span></a></li>
 <li class="toc-top"><a href="#sec:adaptation-rq1"><span class="toc-num">4.2</span><span>RQ1: ordinary SFT specializes released guards too (supported)</span></a></li>
 <li class="toc-top"><a href="#sec:adaptation-rq2"><span class="toc-num">4.3</span><span>RQ2: KL-SFT retains transfer, but is not a free improvement (not supported)</span></a></li>
@@ -192,8 +192,8 @@ false-alarm rate on unseen traffic (<span class="math inline">\(4.3\%\!\rightarr
 <span class="math inline">\(0.517\!\rightarrow\!0.217\)</span>, <code>HarmBench</code> recall
 <span class="math inline">\(0.780\!\rightarrow\!0.203\)</span>, worse on all four checkpoints); (ii) a retraining-free
 base<span class="math inline">\(+\)</span>adapter <em>composition</em> recovers much of the lost transfer (<span class="math inline">\(+0.076\)</span> vs. the
-fine-tune) at one extra inference pass; (iii) a <em>preregistered confirmatory</em> study over ten
-checkpoints (including six released vendor guards) confirms the same specialization even for
+fine-tune) at one extra inference pass; (iii) an <em>analysis-preregistered</em> study (locked criteria, inspected rows) over ten
+checkpoints (including five released vendor guards with a valid signal; a sixth cell measured our harness) finds the same specialization even for
 purpose-built guards, while KL-regularized
 SFT preserves transfer but at a real represented cost — a tradeoff dial, not a free win; and (iv) in
 regulated domains, evaluated base-only and zero-shot, the numerically top-ranked guard <em>differs</em>
@@ -204,10 +204,12 @@ probability scale that saturates for one checkpoint, it is a negative methodolog
 fairness ranking.</p>
 <p>The contribution is a measurement-and-decision <em>workflow</em> for choosing guards in regulated
 products — compare to your own base, gate on both represented and transfer, recalibrate, and treat
-repairs as gated candidates — not a new winning model. One command regenerates and byte-checks 12 of the 24
+repairs as gated candidates — not a new winning model. One command regenerates and byte-checks 16 of the 31
 generated artifacts from committed per-row scores and prints the coverage it did <em>not</em> achieve
-(4 need the lock-pinned environment; 8 are committed outputs of their own locked analyses), and the dual-labeled
-mortgage benchmark ships frozen and checksummed.</p>
+(4 need the lock-pinned environment; 11 are committed outputs of their own
+locked analyses), and the dual-labeled mortgage benchmark ships frozen and checksummed. Those counts are
+themselves emitted by the harness rather than typed here, because an earlier version quoted a stale
+“12 of the 24” after the artifact surface grew.</p>
 
     </section>
 
@@ -1213,7 +1215,7 @@ represented-source cost fails the non-inferiority margin, and it leaves the two 
 their own base on transfer.</span>
 <span>Retrospective on a fixed four-checkpoint panel with an inspected manifest (overlap audit pending); a
 description of this recipe on these runs, not a population or causal law.</span></p>
-<h1 data-num="4" id="sec:adaptation"><span class="secnum">4</span>Interlude (Act I, confirmed): adapting released guards — a preregistered starting-type study</h1>
+<h1 data-num="4" id="sec:adaptation"><span class="secnum">4</span>Interlude (Act I, revisited): adapting released guards — an analysis-preregistered starting-type study</h1>
 <p>Acts I–II characterize what fine-tuning does to <em>general</em> instruction checkpoints, and Act III ranks
 <em>base</em> guards on regulated domains — all on panels the researcher inspected while building the
 method, so they are retrospective estimation, not confirmed findings (<a class="xref" href="#sec:honesty">Section E</a>). This section is
@@ -1391,7 +1393,7 @@ LCB -0.060, which does not clear the preregistered non-inferiority margin of <sp
 the second criterion fails and RQ2 is <strong>not supported</strong>. KL-SFT trades represented-source adaptation
 gain for transfer retention; on this panel it is a genuine trade, not a free lunch. This is a more
 cautious verdict than the general-checkpoint KL control of <a class="xref" href="#sec:actI-klsft">Section 3.6</a> (where the represented
-cost was smaller), and the confirmatory design reports it as such rather than reading the favorable
+cost was smaller), and the locked-criterion design reports it as such rather than reading the favorable
 direction as a win.</p>
 <h2 data-num="4.4" id="sec:adaptation-license"><span class="secnum">4.4</span>What this does and does not license</h2>
 <p>The within-checkpoint deltas are causal only for <em>this recipe on this checkpoint</em>; the
@@ -1416,9 +1418,14 @@ First, the cell is retained in the equal-family means as a zero contribution, so
 in this section is diluted by exactly <span class="math inline">\(6/5 = 1.2\times\)</span>: dropping the null family would move
 <span class="math inline">\(H_{\mathrm{gain}}\)</span> from +0.174 to <span class="math inline">\(+0.208\)</span>, <span class="math inline">\(H_{\mathrm{conc}}\)</span> from +0.239 to <span class="math inline">\(+0.286\)</span>,
 <span class="math inline">\(H_{\mathrm{preserve}}\)</span> from +0.049 to <span class="math inline">\(+0.059\)</span>, and <span class="math inline">\(H_{\mathrm{cost}}\)</span> from -0.036 to
-<span class="math inline">\(-0.043\)</span>. Because a null family only pulls an equal-family mean toward zero, this cannot manufacture
-support: it makes RQ1 harder to clear and makes RQ2’s failure look milder than it is. Both verdicts
-therefore stand, and the reported magnitudes are conservative — but they are <span class="math inline">\(20\%\)</span> smaller than the
+<span class="math inline">\(-0.043\)</span>. Because the null family contributes identically zero in <em>every</em> bootstrap replicate, each
+equal-family statistic is exactly <span class="math inline">\(5/6\)</span> of its five-family value replicate by replicate, so the
+registered bounds rescale by exactly <span class="math inline">\(6/5\)</span> without any rerun: <span class="math inline">\(H_{\mathrm{gain}}\)</span> LCB
+<span class="math inline">\(0.129\!\to\!0.155\)</span>, <span class="math inline">\(H_{\mathrm{conc}}\)</span> <span class="math inline">\(0.189\!\to\!0.227\)</span>, <span class="math inline">\(H_{\mathrm{preserve}}\)</span>
+<span class="math inline">\(0.035\!\to\!0.042\)</span>, <span class="math inline">\(H_{\mathrm{cost}}\)</span> <span class="math inline">\(-0.060\!\to\!-0.072\)</span>, and the held-out SFT upper bound
+<span class="math inline">\(-0.047\!\to\!-0.057\)</span>. RQ1 stays supported and RQ2 still fails, and fails harder. So this cannot
+manufacture support: it makes RQ1 harder to clear and makes RQ2’s failure look milder than it is. Both verdicts
+therefore stand, and the reported magnitudes are conservative — but they are one sixth (<span class="math inline">\(16.7\%\)</span>) smaller than the
 five-family values, which is stated here rather than left for a reader to derive. Second, the study’s
 own eligibility rule (proposal §4.3) requires each checkpoint’s verdict likelihoods to be
 <em>nonconstant</em>; a degenerate cell fails that test, so under the rule as written this checkpoint
@@ -1428,14 +1435,23 @@ is a departure from a preregistered criterion and not an application of one.</p>
 <p>The protocol also preregisters a
 fixed-panel interaction <span class="math inline">\(\Gamma\)</span> — the equal-family mean movement of purpose-built families minus
 that of general families (proposal §6.3). It was not computed, and the claim registry’s
-<code>stop_narrow_gates</code> fallback does authorize omitting it; but that fallback is conditional, and
-the condition it names (fewer than three purpose-built families passing preflight) did not obtain —
-five did. The operative obstacle is the family taxonomy actually used in the analysis, which places
-Qwen2.5-1.5B, Qwen3-4B, Qwen3Guard-Gen-0.6B and Qwen3Guard-Gen-4B in a single <code>qwen</code> family. A
-family that spans both starting types cannot be assigned to either side of <span class="math inline">\(\Gamma\)</span>, so the estimand is
-ill-defined under this taxonomy. Splitting Qwen by starting type would make it computable, but that is
-an analytic choice made after seeing the scores and no bootstrap exists for it, so no <span class="math inline">\(\Gamma\)</span> is quoted
-here. What this report supports is therefore per-checkpoint and per-family movement, not a pooled
+<code>stop_narrow_gates</code> fallback does authorize omitting it, conditional on fewer than three
+purpose-built families passing preflight. That condition cannot be evaluated either way, because
+<em>no</em> checkpoint has a passing preflight: all ten files in
+<code>artifacts/starting_type_adaptation_v1/preflight/</code> record <code>eligible: false</code> with
+<code>finalization_status: nonfinal</code>, and the two training-dependent checks — including
+<code>smoke_adapter_only_finite</code>, the one that implements the nonconstant-margin rule — are
+<code>skipped</code> with <code>reason: include_training=False</code>. So the eligibility gate was never run for
+any checkpoint, not merely violated for one. An earlier version of this paragraph asserted that five
+purpose-built families passed preflight; the committed artifacts contradict that and it was wrong. The operative obstacle is a deviation in the analysis code, not an indeterminacy in the protocol. The
+committed analysis places Qwen2.5-1.5B, Qwen3-4B, Qwen3Guard-Gen-0.6B and Qwen3Guard-Gen-4B in a
+single <code>qwen</code> family, and a family spanning both starting types cannot sit on either side of
+<span class="math inline">\(\Gamma\)</span>. But the protocol already prescribes the split: proposal §6.3 states that “the two Qwen
+<em>purpose-built</em> sizes contribute one Qwen-family value,” which separates them from the general
+Qwen checkpoints. So <span class="math inline">\(\Gamma\)</span> was computable as registered and the single-family taxonomy is what made
+it indeterminate — the reverse of what an earlier version of this paragraph claimed. No <span class="math inline">\(\Gamma\)</span> is
+quoted here because no bootstrap for it was ever run, which is a gap in execution rather than in the
+registration. What this report supports is therefore per-checkpoint and per-family movement, not a pooled
 cross-type contrast.</p>
 <div class="callout callout-takeaway"><div class="callout-title">Adapting a released guard</div><div class="callout-body">
 
@@ -1867,9 +1883,31 @@ verdict is exactly what lets us pull the G0/D1 stratum out and score a guard on 
 <h2 data-num="6.2" id="sec:actIV-mortgage-composition"><span class="secnum">6.2</span>The frozen composition (994 rows)</h2>
 <p><a class="xref" href="#tab:composition">Table 11</a> gives the full breakdown of the frozen <code>v1_hmda2022</code> release: 994 rows,
 all synthetic. It is split <em>family-isolated</em> into train (604), dev (149), and public-test (146),
-plus a sealed private-test slice (95) that is held back to detect overfitting later; “family-isolated”
-means near-duplicate rows are grouped and sent as a whole to <em>either</em> train or test, never split,
-so a guard cannot ace the test by having seen a near-twin in training.</p>
+plus a 95-row confirmatory slice; “family-isolated” means near-duplicate rows are grouped and sent as
+a whole to <em>either</em> train or test, never split, so a guard cannot ace the test by having seen a
+near-twin in training.</p>
+<h4 class="runin" id="two-corrections-to-the-releases-own-description.">Two corrections to the release’s own description.</h4>
+<p>Earlier versions of this report, the data
+card, and the benchmark paper called that 95-row slice <em>sealed</em> and “held back to detect
+overfitting later.” Neither half is true of the artifact as shipped. The file
+<code>private_test.jsonl</code> is <strong>committed to this repository</strong>, carries full prompt text, and was
+visible to the researcher — the builder (<code>magen/package.py</code>) does write it outside the
+distributable bundle, but the committed release directory was assembled by hand and includes it. And it
+is already <em>spent</em>: the GPT baseline scored <code>mortgage_hmda2022</code> over
+<code>public_test</code> <span class="math inline">\(+\)</span> <code>private_test</code> (<span class="math inline">\(241 = 146 + 95\)</span> rows), so it can no longer serve as a
+later overfitting check for anything. Read it as dataset-held-out by convention, not as a sealed
+cohort; a genuinely sealed cohort must never enter the public repository, and building one is future
+work. No number in this report is affected — every mortgage result below is <code>public_test</code> only.</p>
+<p>Second, family isolation holds at the level it was implemented and not at the level the phrase
+suggests. No <code>content_family</code> spans two splits (0 of 958), but <em>pairs</em> were never a grouping
+key, and one protected pair leaks: <code>PAIR-0000#1</code> has its reference arm in train
+(<code>MGB-BEN-00377</code>) and its wheelchair arm in public test (<code>MGB-BEN-00374</code>). The two differ by
+one phrase, and the near-duplicate clusterer missed them by <span class="math inline">\(0.0023\)</span> — an estimated Jaccard of
+<span class="math inline">\(0.8477\)</span> against a <span class="math inline">\(0.85\)</span> threshold. It is the only public-test row within <span class="math inline">\(0.7\)</span> word-<span class="math inline">\(5\)</span>-gram
+similarity of any training row (1 of 146). Because the fairness evaluator keeps only pairs with both
+arms present in the evaluated split, the reported <span class="math inline">\(\Delta_{\mathrm{context}}\)</span> and every AP here are
+unaffected; the consequence is that 38, not 39, pairs are usable inside a single split, and that the
+isolation guarantee should be stated as <code>content_family</code>-level rather than pair-level.</p>
 <p>By quadrant, the <strong>G0/D1 stratum is the largest non-benign block — 502 rows</strong> — which is by
 design: the looks-safe-but-non-compliant case is the payload of the benchmark, so it is the best
 populated. G0/D0 (benign) holds 450 rows, G1/D1 (bad on both counts) 42, and <strong>G1/D0 is empty
@@ -1883,8 +1921,8 @@ privacy (18), against 450 benign rows.</p>
 differently because one names a protected group. For that we add <strong>protected-class pairs</strong>: two
 requests identical in every slot — same fact sheet, same role, same ask — except for the
 protected-class mention, both members benign (G0/D0, so a fair
-guard must PASS both), sharing a <code>pair_id</code>. The release contains <strong>39 protected pairs
-(78 rows)</strong>. This is the established <em>counterfactual token fairness</em> construction
+guard must PASS both), sharing a <code>pair_id</code>. The release contains <strong>39 protected pairs (78 rows)</strong>, of which 38 have both arms inside one split
+(see the correction above). This is the established <em>counterfactual token fairness</em> construction
 <sup class="cite">[<a href="#bib-garg2019counterfactual">21</a>, <a href="#bib-kusner2017counterfactual">35</a>]</sup>, and it reframes the manipulation of
 <sup class="cite">[<a href="#bib-bowen2024mortgage">29</a>]</sup> — who varied
 race on real applications to audit an <em>underwriter</em> — as a guard <em>invariance</em> test: we do
@@ -1938,7 +1976,7 @@ composed label <span class="math inline">\(\text{final}=G\lor D\)</span> equals 
 not by coincidence. We score the four base instruction checkpoints from the companion study
 <sup class="cite">[<a href="#bib-rahimi2026benchmark">43</a>]</sup> — the same panel used throughout this report — <em>zero-shot</em>, i.e. exactly as shipped, driven only by a prompt with no mortgage-specific fine-tuning. Gated off-the-shelf
 guards <sup class="cite">[<a href="#bib-inan2023llamaguard">30</a>, <a href="#bib-han2024wildguard">26</a>]</sup> were not scored in this earlier mortgage run (their
-licenses had not yet been accepted; they were accepted in time for the confirmatory adaptation study of
+licenses had not yet been accepted; they were accepted in time for the analysis-preregistered adaptation study of
 <a class="xref" href="#sec:adaptation">Section 4</a>, which does score both), and a domain-fine-tuned arm is future work.</p>
 <h4 class="runin" id="results.">Results.</h4>
 <p><a class="xref" href="#tab:baseline">Table 12</a> reports the four zero-shot guards on the 146-row public-test
@@ -2342,7 +2380,9 @@ self-chosen <span class="math inline">\(2.3\)</span>–<span class="math inline"
 selected. Second, the frontier ranking signal is a self-reported integer <span class="math inline">\(0\)</span>–<span class="math inline">\(100\)</span> risk, the only
 graded output the Responses API exposes for reasoning models; it takes roughly <span class="math inline">\(50\)</span>–<span class="math inline">\(65\)</span> distinct
 values over 2,275 rows, and those ties cap how finely AP can resolve a ranking. That
-handicaps the hosted rows, so a frontier number <em>above</em> a local one is conservative.</p>
+limits how finely the hosted ranking can be resolved. That bounds precision without fixing a
+direction — a finer score could resolve a tie block either way — so a frontier number above a
+local one should not be read as conservative, only as coarsely resolved.</p>
 <h2 data-num="7.1" id="sec:frontier-size"><span class="secnum">7.1</span>How large the gap is, and what buying it costs</h2>
 <h4 class="runin" id="the-gain-is-real-and-it-is-large.">The gain is real and it is large.</h4>
 <p>The best hosted configuration
@@ -2395,8 +2435,11 @@ includes zero, so we read this as “no gain”, not as a loss), and the full
 [+0.039, +0.084]. Set that against the gap that remains to the hosted model even from
 Qwen3-32B: +0.066 [+0.043, +0.089]. <strong>Everything
 <span class="math inline">\(8\times\)</span> the parameters bought is about the size of the gap still left</strong>,
-so closing it by scale alone would take at least another order of magnitude — and 32B is
-already far outside the deployment envelope that motivates a small guard.</p>
+so scale alone does not close it over the range we measured — and 32B is already far outside
+the deployment envelope that motivates a small guard. We deliberately do not extrapolate a
+required parameter count from this: with three points, one of them non-monotonic, no scaling
+law is identified, and an earlier version of this passage claimed “at least another order of
+magnitude” on evidence that cannot support it.</p>
 <p>One provenance caveat governs every tuned row and is stated wherever they appear. The Act I
 <em>release</em> adapters were produced on an ephemeral runner whose bucket was deleted at
 cleanup and no longer exist, so the SFT rows here are the KL-SFT sweep’s <span class="math inline">\(\beta=0\)</span> arm —
@@ -2793,7 +2836,7 @@ the way to spend the next increment.</p>
 </tbody>
 </table></div></figure>
 <p><br/>
-<span> <strong>Paired comparison</strong> (gpt-5.4 (low) <span class="math inline">\(-\)</span> Qwen3-32B base, the strongest open guard here, on the 2,275 rows both scored; 2,000-resample paired row bootstrap). <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(= +0.0661\)</span> <span class="math inline">\([+0.0428, +0.0893]\)</span>; <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(= +0.0140\)</span> <span class="math inline">\([+0.0098, +0.0188]\)</span>. Within the Qwen3 family, <span class="math inline">\(8\times\)</span> the parameters (4B <span class="math inline">\(\to\)</span> 32B) buys <span class="math inline">\(\Delta\)</span>TPR <span class="math inline">\(= +0.0621\)</span> <span class="math inline">\([+0.0395, +0.0842]\)</span> — about as much as the gap that remains. Against the strongest tuned guard (Qwen3-32B SFT in-env), averaged over its 5 seeds: <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(= +0.0865\)</span>, <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(= +0.0210\)</span>. The frontier score is a coarse integer 0–100 risk with heavy ties, which caps AP resolution, so these deltas are conservative.</span></p>
+<span> <strong>Paired comparison</strong> (gpt-5.4 (low) <span class="math inline">\(-\)</span> Qwen3-32B base, the strongest open guard here, on the 2,275 rows both scored; 2,000-resample paired row bootstrap). <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(= +0.0661\)</span> <span class="math inline">\([+0.0428, +0.0893]\)</span>; <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(= +0.0140\)</span> <span class="math inline">\([+0.0098, +0.0188]\)</span>. Within the Qwen3 family, <span class="math inline">\(8\times\)</span> the parameters (4B <span class="math inline">\(\to\)</span> 32B) buys <span class="math inline">\(\Delta\)</span>TPR <span class="math inline">\(= +0.0621\)</span> <span class="math inline">\([+0.0395, +0.0842]\)</span> — about as much as the gap that remains. Against the strongest tuned guard (Qwen3-32B SFT in-env), averaged over its 5 seeds: <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(= +0.0865\)</span>, <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(= +0.0210\)</span>. The frontier score is a coarse integer 0–100 risk with heavy ties, which caps how finely its ranking can be resolved. That limits precision without fixing a direction: a finer score could order a tie block either way, so these deltas should not be read as conservative.</span></p>
 <figure class="tablewrap" data-float="Table 15" id="tab:frontier-scale"><figcaption><span class="floatnum">Table 15.</span> Scaling the base versus tuning a small one, on Act I’s own two regimes (macro-AP; represented <span class="math inline">\(=\)</span> in-distribution sources on <code>id_test</code>, transfer <span class="math inline">\(=\)</span> held-out sources on <code>transfer_test</code>). The convention here reproduces Act I’s committed <code>base_represented</code> and <code>base_transfer</code> to four decimals for all four panel checkpoints, which is what licenses placing extension rows beside them. SFT buys represented AP and pays for it in transfer; a larger <em>untuned</em> base buys much of the same represented AP and keeps its transfer. These are inspected-panel numbers and are reported apart from — never pooled with — the external ExpGuard numbers in <a class="xref" href="#tab:frontier">Table 14</a>. The scale rows are a deployment-choice contrast, not a controlled one: Qwen3-32B is <span class="math inline">\(8\)</span>–<span class="math inline">\(21\times\)</span> the parameters of the panel checkpoints and costs accordingly.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
@@ -2871,7 +2914,7 @@ the way to spend the next increment.</p>
 </tr>
 </tbody>
 </table></div></figure>
-<figure class="tablewrap" data-float="Table 16" id="tab:frontier-serving"><figcaption><span class="floatnum">Table 16.</span> What the frontier accuracy in <a class="xref" href="#tab:frontier">Table 14</a> costs to serve. Local P50 is the committed batched A100 figure from <a class="xref" href="#tab:latency">Table 19</a>; frontier latency is measured on the ExpGuard rows themselves at concurrency 200 (throughput-regime, an upper bound on an isolated request). Dollar figures are billed tokens at assumed public list prices — an estimate, not billing truth — and exclude the fixed cost of owning a GPU, which is what the self-hosted column elides. The gap is roughly two orders of magnitude in median latency for one order of magnitude fewer missed unsafe prompts, and three properties do not appear in any column: prompts leave the operator’s infrastructure, the operating point is only coarsely selectable, and the provider may refuse a prompt before the guard ever sees it.</figcaption><div class="tablescroll"><table class="plaintable">
+<figure class="tablewrap" data-float="Table 16" id="tab:frontier-serving"><figcaption><span class="floatnum">Table 16.</span> What the frontier accuracy in <a class="xref" href="#tab:frontier">Table 14</a> costs to serve. Local P50 is the committed batched A100 figure from <a class="xref" href="#tab:latency">Table 19</a>; frontier latency is measured on the ExpGuard rows themselves at concurrency 200 (throughput-regime, an upper bound on an isolated request). Dollar figures are billed tokens at assumed public list prices — an estimate, not billing truth — and exclude the fixed cost of owning a GPU, which is what the self-hosted column elides. The trade is roughly two orders of magnitude in median latency against about <em>halving</em> the misses: at a matched <span class="math inline">\(5\%\)</span> budget the hosted model misses <span class="math inline">\(10.4\%\)</span> of unsafe prompts against the best small base’s <span class="math inline">\(21.3\%\)</span> (<span class="math inline">\(2.0\times\)</span> fewer) and the best <span class="math inline">\(32\)</span>B open base’s <span class="math inline">\(17.0\%\)</span> (<span class="math inline">\(1.6\times\)</span> fewer). An earlier version of this caption said <em>one order of magnitude</em> fewer misses, which was simply wrong. Three properties also do not appear in any column: prompts leave the operator’s infrastructure, the operating point is only coarsely selectable, and the provider may refuse a prompt before the guard ever sees it.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
 <tr>
@@ -2975,15 +3018,35 @@ rows. The regime split is then read from Act I’s own manifest rather than ass
 at the source level.</p>
 <p><a class="xref" href="#tab:h2h">Table 17</a> is the result, at the same matched 5% budget. It reverses direction
 across the split. On represented sources the panel’s small tuned guards <em>beat</em> the frontier
-reference: Qwen2.5-1.5B — a <em>1.5B</em> model — reaches .948 on
-<code>prompt_injections</code> against the reference’s .741, a paired difference of
-+0.185 [+0.065, +0.423], and it is a <em>ranking</em> win rather than a
-threshold placement (AUROC 0.9928 against 0.8731). 5 of
-12 panel-SFT cells on represented sources clear zero at the <span class="math inline">\(95\%\)</span> level. On
+reference. The claim-bearing quantity is an <em>aggregate</em> fixed by the regime split rather
+than by any cell’s result: the equal-source, equal-checkpoint mean paired difference over the
+3 represented sources is +0.083 [+0.008, +0.163] in recall at
+the matched budget, and +0.039 [+0.014, +0.072] in AP. Both exclude zero. On
 transfer sources the ordering flips back, the reference leads (.967 on
 <code>xstest</code> against Qwen3-4B base’s .917), and tuning is what
 costs the guard its position — the strongest transfer guard in the panel is an <em>untuned</em>
 base.</p>
+<h4 class="runin" id="the-largest-single-cell-is-exploratory-and-does-not-survive-multiplicity.">The largest single cell is exploratory, and does not survive multiplicity.</h4>
+<p>The most
+striking cell is Qwen2.5-1.5B — a <em>1.5B</em> model — at .948 on
+<code>prompt_injections</code> against the reference’s .741, i.e. +0.207 with a
+nominal interval of [+0.043, +0.390] and a ranking rather than a threshold advantage
+(AUROC 0.9928 against 0.8731). That cell is <em>selected as the maximum of
+12</em>, so its nominal interval is post-selection and overstates the evidence.
+Holm-adjusted across the 12 represented-source SFT cells it becomes
+[-0.033, +0.475], which includes zero: 4 of 12 cells clear
+zero nominally and 0 survive the familywise correction. The per-cell numbers are
+therefore reported as exploratory throughout, and no sentence in this report should be read as
+“a 1.5B guard beats the frontier” on the strength of one cell. What the aggregate supports is
+weaker and still substantive: <em>on average across represented sources</em>, the panel’s tuned
+guards rank unsafe prompts better than the hosted reference at a matched alarm budget.</p>
+<p>An earlier version of this subsection reported +0.207 as <span class="math inline">\(+0.185\)</span> with a narrower
+interval. That number came from a different estimand than the one tabulated beside it — the
+metric of a five-seed <em>score ensemble</em> rather than the mean of five per-seed metrics — so
+the difference did not equal the two values it sat between, and it carried no training-seed
+uncertainty. The estimator is now the mean of per-seed paired differences with both rows and
+seeds resampled, which makes every delta equal the arithmetic difference of the two tabulated
+values by construction and widens the intervals accordingly.</p>
 <figure class="tablewrap" data-float="Table 17" id="tab:h2h"><figcaption><span class="floatnum">Table 17.</span> <strong>The frontier gap is a property of the regime, not of the model size.</strong> TPR at a matched 5% false-alarm budget on the five general-safety corpora that both the Act I panel and the GPT baseline scored, joined by re-deriving each side’s row digest from the local corpus (100% of the panel’s rows join; <code>join_audit.json</code>). The regime split is read from Act I’s own manifest, not asserted: <em>represented</em> sources appear in <code>train.jsonl</code> (these are held-out <em>rows</em> from them, <code>id_test</code>); <em>transfer</em> sources are held out at the source level (<code>transfer_test</code>). On represented sources the small tuned guards beat the frontier reference; on transfer sources they lose to it, and tuning is what costs them. This is why <a class="xref" href="#tab:frontier">Table 14</a>, which measures ExpGuard alone — an external source the panel never trained on — sees only the second half of that picture. Retrospective and estimation-only: these rows and this panel were inspected during development. † marks a TPR whose threshold fell inside a tie block of a coarse score, so the cell is an artifact of the ties and not a behaviour — read its AUROC in <code>h2h.json</code> instead.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
@@ -3124,7 +3187,7 @@ base.</p>
 </tbody>
 </table></div></figure>
 <p><br/>
-<span> <strong>Paired comparison</strong> against gpt-5.4 / low on the rows both scored (2,000-resample paired row bootstrap, 95% CI). Strongest represented-source result: Qwen2.5-1.5B SFT on <code>prompt_injections</code> (<span class="math inline">\(n=67\)</span>), <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(=\)</span> +0.185 [+0.065, +0.423], <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(=\)</span> +0.107 [+0.031, +0.208] — a <em>ranking</em> win (AUROC 0.9928 vs. 0.8731), not a threshold placement. 5 of 12 panel-SFT cells on represented sources clear zero at the 95% level. The <code>jailbreakbench</code> column carries no deltas: the reference’s own TPR there is tie-collapsed (†), so differences against it are uninterpretable. Per-source <span class="math inline">\(n\)</span> is small (67–451 rows), so these intervals are wide and no per-cell ordering should be read as a ranking.</span></p>
+<span> <strong>Paired comparison</strong> against gpt-5.4 / low on the rows both scored. Each delta is the mean over training seeds of (guard <span class="math inline">\(-\)</span> reference), so it equals the arithmetic difference of the two tabulated values; the 2,000-resample bootstrap resamples <em>both</em> rows and seeds, so the intervals carry training-seed as well as row uncertainty. <strong>Claim-bearing result:</strong> the equal-source, equal-checkpoint mean over the 3 represented sources is <span class="math inline">\(\Delta\)</span>TPR@5%FPR <span class="math inline">\(=\)</span> +0.083 [+0.008, +0.163] and <span class="math inline">\(\Delta\)</span>AP <span class="math inline">\(=\)</span> +0.039 [+0.014, +0.072], both excluding zero. Individual cells are <strong>exploratory</strong>: the largest (Qwen2.5-1.5B SFT on <code>prompt_injections</code>, <span class="math inline">\(n=67\)</span>, +0.207) is selected as the maximum of 12, so its nominal [+0.043, +0.390] is post-selection; Holm-adjusted it is [-0.033, +0.475]. 4 of 12 cells clear zero nominally and 0 survive the familywise correction. The <code>jailbreakbench</code> column carries no deltas: the reference’s own TPR there is tie-collapsed (†), so differences against it are uninterpretable. Per-source <span class="math inline">\(n\)</span> is small (67–451 rows), so these intervals are wide and no per-cell ordering should be read as a ranking.</span></p>
 <p>Four limits bound this, and they matter more than the headline. Per-source <span class="math inline">\(n\)</span> is <span class="math inline">\(67\)</span>–<span class="math inline">\(451\)</span>,
 so the intervals are wide and no per-cell ordering is a ranking. The evidence is
 <strong>retrospective and estimation-only</strong> — these rows and this panel were inspected during
@@ -3192,8 +3255,9 @@ guard (on a small split, so read as a direction) — the ranking flips with the 
 <p>The frontier comparison (<a class="xref" href="#sec:actIII-frontier">Section 7</a>) then turns the same lesson outward, and this is
 where it becomes a deployment rule rather than a caution. A hosted model is the more accurate ranker on
 <em>unfamiliar</em> prompts, but on sources an operator can enumerate in a training manifest the ordering
-inverts and a Qwen2.5-1.5B guard beats it outright (+0.185 [+0.065, +0.423];
-<a class="xref" href="#sec:actIII-h2h">Section 7.4</a>). So the gap is not a capability ceiling to be closed by a larger student — it is
+inverts: averaged over the represented sources the panel’s tuned guards rank better than the
+reference by +0.083 [+0.008, +0.163] at the matched budget (<a class="xref" href="#sec:actIII-h2h">Section 7.4</a>;
+individual cells are exploratory and none survives a familywise correction). So the gap is not a capability ceiling to be closed by a larger student — it is
 the price of the regime, and the practical question is not <em>which guard</em> but <em>what share of
 your traffic you can characterise in advance</em>. That reframes routing: escalate on <em>unfamiliarity</em>,
 not on score margin, since margin-based routing spends its hosted budget precisely where the local guard
@@ -3244,7 +3308,7 @@ unequal alarm rates hides its sign.</td>
 <tr>
 <td style="text-align: left;"><strong>3. A base-anchored KL penalty buys back most of the transfer SFT gives up — at a represented-source cost, no extra inference.</strong></td>
 <td style="text-align: left;">KL-SFT (<span class="math inline">\(\beta{=}0.5\)</span>): transfer +0.061 vs. SFT at a represented cost
--0.035 (general checkpoints, retrospective, <span class="math inline">\(n{=}4\)</span>). The <em>confirmatory</em> study
+-0.035 (general checkpoints, retrospective, <span class="math inline">\(n{=}4\)</span>). The <em>locked-criterion</em> study
 (Row 7) finds this trade fails non-inferiority (<a class="xref" href="#sec:adaptation">Section 4</a>).</td>
 <td style="text-align: left;">If you must SFT and care about OOD, add <span class="math inline">\(\beta\,\mathrm{KL}(\pi_\theta\Vert\pi_{\text{base}})\)</span>
 (<span class="math inline">\(\beta{\approx}0.5\)</span>); it recovers transfer at no extra forward pass but a real represented-source
@@ -3273,19 +3337,20 @@ round-trip.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>7. Fine-tuning a <em>released</em> guard specializes it too; KL-SFT keeps transfer but at a represented cost.</strong></td>
-<td style="text-align: left;">Confirmatory 10-checkpoint study: SFT raises represented AP +0.174 (LCB +0.129) with a
+<td style="text-align: left;">Analysis-preregistered 10-checkpoint study: SFT raises represented AP +0.174 (LCB +0.129) with a
 bound-confirmed transfer loss; KL-SFT preserves transfer (LCB +0.035) but its represented
 cost (LCB -0.060) fails the <span class="math inline">\(-0.02\)</span> non-inferiority margin (<a class="xref" href="#sec:adaptation">Section 4</a>).</td>
 <td style="text-align: left;">Adapting a purpose-built guard is not exempt from the tradeoff; use KL-SFT as a tradeoff dial, not a
 free upgrade, and re-measure both splits on your own data.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>8. The frontier gap is a property of the <em>regime</em>, not of model size: a 1.5B guard beats a hosted frontier model on sources it represents, and loses on sources it does not.</strong></td>
-<td style="text-align: left;">On five corpora scored by both, at a matched 5% alarm budget: Qwen2.5-1.5B SFT reaches
-.948 on <code>prompt_injections</code> against gpt-5.4 / low’s .741 (+0.185
-[+0.065, +0.423], AUROC 0.9928 vs. 0.8731), 5 of 12
-represented cells clearing zero; on transfer sources the hosted model leads and the best local guard is
-an <em>untuned</em> base (<a class="xref" href="#sec:actIII-h2h">Section 7.4</a>). Retrospective, inspected panel.</td>
+<td style="text-align: left;"><strong>8. The frontier gap is a property of the <em>regime</em>, not of model size: on sources it represents the panel ranks <em>better</em> than a hosted frontier model, and on sources it does not it ranks worse.</strong></td>
+<td style="text-align: left;">On five corpora scored by both, at a matched 5% alarm budget: the equal-source mean paired
+difference over represented sources is +0.083 [+0.008, +0.163] in recall and
++0.039 [+0.014, +0.072] in AP, both excluding zero; on transfer sources the hosted model
+leads and the best local guard is an <em>untuned</em> base (<a class="xref" href="#sec:actIII-h2h">Section 7.4</a>). Per-cell results are
+exploratory — 4 of 12 clear zero nominally, 0 after a
+familywise correction. Retrospective, inspected panel.</td>
 <td style="text-align: left;">Do not ask “can a small guard match the frontier” — ask what share of your traffic you can enumerate
 in a training manifest. Self-host the enumerable share, and escalate on <em>unfamiliarity</em> rather than
 on score margin, because margin-based routing spends its budget where the local guard is already right.</td>
@@ -3448,20 +3513,27 @@ regenerates the covered tables/figures from committed per-row scores by calling 
 Act I specialization tables in a lock-pinned environment; the Act II composition, mortgage, ExpGuard,
 SFT+SFT, latency and teaser artifacts in any environment), asserts byte-identity with the committed
 copies, and prints a verified/unverified/not-covered count. <strong>Coverage is partial and the harness
-says so</strong>: of the 24 generated artifacts the report <code>\input</code>s, 12 are byte-checked here,
-4 require the lock-pinned environment (the Act I tables and the <code>\Rep*</code>/
-<code>\Transfer*</code> macros), and 8 — the adaptation, KL-SFT, ensembling and mortgage-composition
-tables — are committed outputs of their own locked analyses that are not yet wired into the byte-check.
-The command exits nonzero unless every covered artifact verifies, and it now asserts that these three
-counts <em>partition</em> the inputs exactly: an earlier version printed “11/22” because the figures
-directory — not one of the <code>\input</code>ed <code>.tex</code> artifacts — was being counted in
-a tally whose denominator excluded it. The matched-false-alarm-budget table (<a class="xref" href="#tab:matchedfpr">Table 4</a>) is one
-of the 12 covered artifacts: it is derived from the same committed <code>score_raw</code>/<code>gold</code> columns
+says so</strong>: of the 31 generated artifacts the report <code>\input</code>s,
+16 are byte-checked here, 4 require the lock-pinned environment (the Act I
+tables and the <code>\Rep*</code>/<code>\Transfer*</code> macros), and
+11 — the adaptation, KL-SFT, ensembling, cascade and mortgage-composition tables —
+are committed outputs of their own locked analyses that are not yet wired into the byte-check. Every
+count in this paragraph is emitted by the harness itself, because they were previously typed by hand and
+went stale as the artifact surface grew. Three limits are worth stating plainly rather than leaving to a
+reader to discover. The command exits nonzero unless every covered artifact verifies, but
+<code>make reproduce</code> does <em>not</em> pass <code>--check</code>: only <code>make reproduce-check</code> compares,
+and without it the harness overwrites the committed copy and reports “regenerated”. The figures path
+regenerates and never compares, so “every table and figure asserts byte-identity” overstates what is
+checked — figures are not. And the run is not side-effect-free: the mortgage re-evaluation rewrites four
+report files unless <code>guard_research</code> is importable, so a verifier may have to restore the checkout
+afterwards. Repairing all three — a temp-directory check that compares figures too and leaves the tree
+byte-clean — is the outstanding reproducibility work. The matched-false-alarm-budget table
+(<a class="xref" href="#tab:matchedfpr">Table 4</a>) is one of the covered artifacts: it is derived from the same committed <code>score_raw</code>/<code>gold</code> columns
 as everything else here and needs no GPU.</p>
 <h4 class="runin" id="three-reproducibility-tiers-kept-distinct.">Three reproducibility tiers, kept distinct.</h4>
 <p><strong>(i) Analysis reproducibility</strong> — regenerating
 a table from the committed per-row scores — is what <code>make reproduce</code> verifies byte-for-byte, with no
-GPU and no network. It is the tier the 10 covered artifacts meet in any environment and the 4 Act I
+GPU and no network. It is the tier the 16 covered artifacts meet in any environment and the 4 Act I
 artifacts meet under the pinned lock; the 8 uncovered artifacts are reproducible in principle by their own
 analysis scripts but are not asserted here.
 <strong>(ii) Training/scoring reproducibility</strong> — re-deriving those per-row scores by training the <span class="math inline">\(4\times5\)</span>
@@ -3509,7 +3581,7 @@ committed scores, needing no GPU and no retraining, and it reverses the sign of 
 comparison at unequal alarm rates should be treated as uninterpretable by default.</p>
 <h4 class="runin" id="the-negative-and-null-results-are-contributions-not-residue.">The negative and null results are contributions, not residue.</h4>
 <p>A preregistered
-ten-checkpoint study confirms the specialization tradeoff on released, purpose-built guards
+ten-checkpoint study finds the specialization tradeoff, against locked criteria, on released, purpose-built guards
 (+0.174, LCB +0.129) and, in the same breath, <em>fails</em> its own second criterion:
 KL-regularized SFT retains transfer but at a represented cost of -0.036 (LCB -0.060) that
 does not clear the preregistered <span class="math inline">\(-0.02\)</span> margin, so it is a tradeoff dial and not a free
@@ -4225,7 +4297,8 @@ assigned label matches the target the planner set for that cell; otherwise the r
 dropped. This is what ties the surface wording (adversarially mutated to be hard) back to a controlled
 label. Domain-independent harm (the jailbreak seeds behind the <span class="math inline">\(G{=}1\)</span> rows) is drawn from curated
 seeds; the novel mortgage-policy content is LLM-authored. Accepted rows then pass provenance and
-decontamination, a family-isolated train/dev/test split with a sealed private test, and are published
+decontamination, a family-isolated train/dev/test split plus a committed 95-row confirmatory slice that is
+<em>not</em> sealed (<a class="xref" href="#sec:actIV">Section 6</a>), and are published
 as the frozen <code>v1_hmda2022</code> release — the object the reproducible harness scores.</p>
 <p>Each row is built around exactly one <strong>trap</strong> — the tactic that makes its label hard to read
 off the surface. <code>direct</code> states the ask plainly; <code>business_justified</code> wraps it in a
@@ -4305,7 +4378,7 @@ transfer (the Act II caveat, <a class="xref" href="#sec:actIII">Section 5</a>)
 Recomputing the honest 2-pass analogues on this same panel (equal-checkpoint mean over the ten cells,
 reproducing the tabulated row as a control): base <span class="math inline">\(\oplus\)</span> <em>one</em> adapter on raw margins gains
 <span class="math inline">\(+0.012\)</span>, and base <span class="math inline">\(\oplus\)</span> one adapter <em>calibrated</em> — exactly <a class="xref" href="#eq:comp">Equation 5</a> — gains <span class="math inline">\(+0.008\)</span>,
-against the <span class="math inline">\(+0.015\)</span> of the six-pass row. So the qualitative conclusion (only crossing the specialization
+against the <span class="math inline">\(+0.014\)</span> of the six-pass row as tabulated. So the qualitative conclusion (only crossing the specialization
 axis lifts transfer above base) survives at the promoted operator, but the magnitude does not: the
 cost-matched gain sits at the one-sided LCB the six-pass row reports, and no main-text claim rests on this
 appendix. A generated, bootstrapped row for the 2-pass calibrated operator is a stated gap
@@ -4529,7 +4602,7 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
 <li><p><strong>Not confirmatory — the benchmarks were inspected during development.</strong> The 1,200-row training manifest and the transfer suite were visible to the researcher while the method was being built. “Held out” throughout this report means <em>dataset-held-out</em> (rows/sources not used in training), <em>not</em> sealed-from-the-researcher. This makes Acts I and II <em>retrospective and estimation-only</em>. No pre-registration protects them; the honest status is “a reproducible characterization of this panel,” not “a confirmed finding.” The one partial exception is the starting-type adaptation study (<a class="xref" href="#sec:adaptation">Section 4</a>), whose estimands, decision rules, and non-inferiority margin were fixed in a committed claim registry (<code>artifacts/starting_type_adaptation_v1/protocol/claim_registry.json</code>) <em>before</em> any score existed — so it is <em>analysis</em>-preregistered. It is not data-blind: it re-scores the same 3,308 rows from the same frozen manifest as Acts I–II, the registry is <code>finalization_status: dev_nonfinal</code>, and no release lock binds it.</p></li>
 <li><p><strong>Decontamination against the v2 transfer suite is now audited, and it is clean — but the audit is not complete.</strong><span data-label="sec:decontamination" id="sec:decontamination"></span> The manifest was decontaminated during construction and reported as clean-v2; the formal overlap audit has since been run (<code>experiments/audit_overlap_lineage.py</code>, committed to <code>artifacts/overlap_audit/</code>) and found <em>no</em> leakage from the 1,200-row training manifest into the v2 transfer suite: zero exact matches, zero after normalization, zero <code>family_id</code> or <code>upstream_family_id</code> collisions, zero rows at <span class="math inline">\(5\)</span>-gram containment <span class="math inline">\(\geq 0.80\)</span>, and zero at character-shingle Jaccard <span class="math inline">\(\geq 0.70\)</span> (worst per-source Jaccard <span class="math inline">\(0.139\)</span> <code>jailbreakbench</code>, <span class="math inline">\(0.101\)</span> <code>wildjailbreak</code>, <span class="math inline">\(0.214\)</span> <code>xstest</code>, <span class="math inline">\(0.538\)</span> <code>wildguardtest</code>). The transfer estimates therefore require no downward revision. Two gaps remain and are the reason this is not struck from the list. First, <a class="xref" href="#sec:actIII-h2h">Section 7.4</a>’s <em>represented</em> splits are not clean in the same sense — <code>id_test</code> is held out by row, not by content, and <span class="math inline">\(1.6\%\)</span>–<span class="math inline">\(5.0\%\)</span> of each represented split sits within Jaccard <span class="math inline">\(0.70\)</span> of a training row (<span class="math inline">\(2/67\)</span> <code>prompt_injections</code>, <span class="math inline">\(8/159\)</span> <code>jailbreak_classification</code>, <span class="math inline">\(7/451\)</span> <code>toxicchat</code>), which is expected for held-out rows of a represented source and templated jailbreak corpora but does qualify those margins. Second, the audit implements exact, normalized, <span class="math inline">\(n\)</span>-gram, near-duplicate and provenance-lineage checks but <em>not</em> an embedding-space check, which needs a pinned encoder whose identity would have to enter the lock; a semantic near-duplicate that shares no <span class="math inline">\(5\)</span>-gram would still pass.</p></li>
 <li><p><strong>Single recipe, single manifest.</strong> Act I uses exactly one LoRA configuration (rank 32, <span class="math inline">\(\alpha{=}64\)</span>, dropout 0.05 on <code>q,k,v,o,gate,up,down</code>; 300 steps; lr <span class="math inline">\(2\!\times\!10^{-4}\)</span> cosine, warmup 0.03; effective batch 4; <code>max_len</code> 1024; seeds 42–46 with data order fixed at seed 42) on one frozen manifest. The specialization signature is a property of <em>this recipe on this data</em>; a different rank, step budget, or data mixture could move the represented/transfer trade-off, and we do not sweep them.</p></li>
-<li><p><strong>Balanced-prevalence evaluation overstates production precision.</strong> The transfer regime is scored on a balanced pool (790 unsafe vs. 790 safe rows) and the represented regime is near-balanced (313 vs. 364). Real inbound traffic is overwhelmingly benign, so unsafe prompts are <em>rare</em>. Average precision and any precision-at-threshold measured on a balanced set are optimistic relative to a deployment where the negative class dominates: at low base rates the same ranking yields far lower precision. This is now made quantitative rather than left as a caveat — <a class="xref" href="#sec:actI-prevalence">Section 3.7</a> and <a class="xref" href="#fig:prevalence">Figure 5</a> recompute <span class="math inline">\(\mathrm{AP}(\pi_+)\)</span> exactly from the ranking (<a class="xref" href="#eq:ap-prevalence">Equation 4</a>): the base transfer guards fall from <span class="math inline">\(0.79\)</span>–<span class="math inline">\(0.94\)</span> balanced to <span class="math inline">\(\approx0.10\)</span>–<span class="math inline">\(0.54\)</span> at <span class="math inline">\(1\%\)</span> prevalence (<a class="xref" href="#fig:prevalence">Figure 5</a>), and the guard ordering itself re-spaces as positives get rare. Read every AP here as a <em>ranking</em> quality on a balanced pool, not as a deployed precision.</p></li>
+<li><p><strong>Balanced-prevalence evaluation overstates production precision.</strong> The transfer regime is scored on a balanced pool (790 unsafe vs. 790 safe rows) and the represented regime is near-balanced (313 vs. 364). Real inbound traffic is overwhelmingly benign, so unsafe prompts are <em>rare</em>. Average precision and any precision-at-threshold measured on a balanced set are optimistic relative to a deployment where the negative class dominates: at low base rates the same ranking yields far lower precision. This is now made quantitative rather than left as a caveat — <a class="xref" href="#sec:actI-prevalence">Section 3.7</a> and <a class="xref" href="#fig:prevalence">Figure 5</a> recompute <span class="math inline">\(\mathrm{AP}(\pi_+)\)</span> exactly from the ranking (<a class="xref" href="#eq:ap-prevalence">Equation 4</a>): the base transfer guards fall from <span class="math inline">\(0.79\)</span>–<span class="math inline">\(0.94\)</span> balanced to <span class="math inline">\(\approx0.11\)</span>–<span class="math inline">\(0.56\)</span> at <span class="math inline">\(1\%\)</span> prevalence (<a class="xref" href="#fig:prevalence">Figure 5</a>), and the guard ordering itself re-spaces as positives get rare. Read every AP here as a <em>ranking</em> quality on a balanced pool, not as a deployed precision.</p></li>
 <li><p><strong>Ranking recovery is not threshold transfer.</strong> All AP-based results are threshold-free; deployment is not. At a calibration-selected operating point the gap is stark: SFT lifts represented-source recall from <span class="math inline">\(13.0\)</span>% to <span class="math inline">\(76.9\)</span>% but raises the transfer false-alarm rate from <span class="math inline">\(8.1\)</span>% to <span class="math inline">\(15.5\)</span>% (macro) — and pooled FPR moves further, <span class="math inline">\(4.3\)</span>%<span class="math inline">\(\to17.0\)</span>% — while HarmBench recall <em>falls</em> from <span class="math inline">\(78.0\)</span>% to <span class="math inline">\(60.0\)</span>% (<a class="xref" href="#tab:sensitivity">Table 3</a>). Equalising the alarm budget removes the apparent recall gain entirely and reverses it on all four checkpoints (transfer recall <span class="math inline">\(0.517\!\to\!0.217\)</span>; <a class="xref" href="#tab:matchedfpr">Table 4</a>), so the deployment cost of specialization is larger than the unequal-rate row suggests, not smaller. Composition recovers rank but its realized transfer FPR at a 5% target is <span class="math inline">\(11.4\)</span>% — better than SFT’s <span class="math inline">\(15.5\)</span>% yet still above target (<a class="xref" href="#tab:pilot-operating">Table 10</a>). A better AP does not hand you a transferable cutoff. The size of these blow-ups is telling: a Gaussian-tail calculation maps the macro FPR shift (<span class="math inline">\(8.1\%\!\to\!15.5\%\)</span>) to only <span class="math inline">\(\approx0.4\)</span> standard deviations of calibration drift, and the pooled shift (<span class="math inline">\(4.3\%\!\to\!17.0\%\)</span>) to <span class="math inline">\(\approx0.8\)</span> SD — sub-sigma drifts that no realistic calibration protocol excludes, because a fixed cutoff’s false-alarm rate is <em>exponentially</em> sensitive to drift at the operating quantile.</p></li>
 <li><p><strong>Prompt-only scope.</strong> We classify the <em>incoming request</em> (binary <code>safe</code>/<code>unsafe</code>) via the single-token <span class="math inline">\(z_{\text{unsafe}}-z_{\text{safe}}\)</span> head. We do not evaluate response classification, multi-turn context, tool-call arguments, or streamed content. Guards that read the assistant’s <em>output</em> or a full dialogue are a different task and are out of scope; nothing here should be read as a claim about them.</p></li>
 </ol>

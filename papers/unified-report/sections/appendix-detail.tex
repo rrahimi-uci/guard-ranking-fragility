@@ -152,7 +152,8 @@ assigned label matches the target the planner set for that cell; otherwise the r
 dropped. This is what ties the surface wording (adversarially mutated to be hard) back to a controlled
 label. Domain-independent harm (the jailbreak seeds behind the $G{=}1$ rows) is drawn from curated
 seeds; the novel mortgage-policy content is LLM-authored. Accepted rows then pass provenance and
-decontamination, a family-isolated train/dev/test split with a sealed private test, and are published
+decontamination, a family-isolated train/dev/test split plus a committed 95-row confirmatory slice that is
+\emph{not} sealed (\Cref{sec:actIV}), and are published
 as the frozen \code{v1\_hmda2022} release --- the object the reproducible harness scores.
 
 Each row is built around exactly one \textbf{trap} --- the tactic that makes its label hard to read

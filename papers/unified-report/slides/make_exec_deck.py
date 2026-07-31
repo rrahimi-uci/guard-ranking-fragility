@@ -269,6 +269,7 @@ def callout(s, l, t, w, h, label, body, color=ACCENT):
 # ═══════════════════════════════════════════════════════════════════════ build
 F = FN.load()
 HT = FN.load_h2h()
+CA = FN.load_cascade()
 b = FN.bare
 d = Deck()
 
@@ -468,10 +469,10 @@ y = d.header(s, "but better at what",
 
 cw = (CW - Inches(0.40)) / 2
 statcard(s, M, y + Inches(0.10), cw, Inches(1.62),
-         b(HT['BestTpr']) + "  vs  " + b(HT['RefTpr']),
-         "Catch rate on " + b(HT['BestSource']) + " -- a " + b(HT['BestName']) + " guard "
-         "against the hosted model. Difference " + b(HT['BestDeltaTpr']) + " "
-         + b(HT['BestDeltaTprCI']) + ", and a ranking win, not a threshold trick.",
+         b(HT['AggDeltaTpr']) + " catch rate",
+         "Averaged across every source we can describe in advance, our tuned guards rank "
+         "BETTER than the hosted model at the same alarm budget. 95% interval "
+         + b(HT['AggDeltaTprCI']) + " -- it excludes zero.",
          color=BLUE)
 statcard(s, M + cw + Inches(0.40), y + Inches(0.10), cw, Inches(1.62),
          b(HT['TransRefTpr']) + "  vs  " + b(HT['TransBestLocalTpr']),
@@ -492,11 +493,16 @@ This is the slide that changes the recommendation, so do not rush it.
 
 Slide 4 said hosted is about ten points better. True -- on prompts nobody anticipated. This
 slide says that on sources we can enumerate in a training manifest the ordering inverts, and a
-{b(HT['BestName'])} model beats the hosted one outright: {b(HT['BestTpr'])} against
-{b(HT['RefTpr'])}, difference {b(HT['BestDeltaTpr'])} with 95% interval
-{b(HT['BestDeltaTprCI'])}. It is a ranking win, not a threshold placement -- AUROC
-{b(HT['BestAuroc'])} against {b(HT['RefAuroc'])} -- and {b(HT['NSig'])} of
-{b(HT['NSftCells'])} represented cells clear zero at the 95% level.
+our tuned guards rank BETTER on average: the equal-source mean difference is
+{b(HT['AggDeltaTpr'])}, 95% interval {b(HT['AggDeltaTprCI'])}, which excludes zero. In AP it is
+{b(HT['AggDeltaAp'])} {b(HT['AggDeltaApCI'])}.
+
+Be careful with single benchmarks here, and say this before anyone asks. The most eye-catching
+cell is a {b(HT['BestName'])} guard at {b(HT['BestTpr'])} against {b(HT['RefTpr'])} on
+{b(HT['BestSource'])}. That cell is the largest of {b(HT['NCells'])}, so quoting its own interval
+overstates it: {b(HT['NSigNominal'])} of {b(HT['NCells'])} cells clear zero on their own, and
+{b(HT['NSigHolm'])} survive a familywise correction. The average is the number to defend, not
+the best cell.
 
 Represented sources here are {b(HT['RepSources'])}. Held-out sources are the ones we never
 trained on, and there the hosted model leads.
@@ -635,13 +641,14 @@ rows = [["Option", "Catch rate", "Cost per request", "Verdict"],
          f"{F['EnsMembers']} model calls", ("worse than one", ACCENT)],
         [f"Weighted blend of all {F['EnsMembers']}", FN.pct(F["EnsStack"]),
          f"{F['EnsMembers']} calls + labelled data", ("best in-house", BLUE)],
-        ["Escalate the uncertain 20% instead", "87%", "1.2 model calls",
-         ("beats all of it", ACCENT)]]
+        ["Escalate the uncertain 20% instead", FN.pct(CA["Twenty"]), "1.2 model calls",
+         ("nearly matches, far cheaper", BLUE)]]
 table(s, M, y + Inches(0.04), CW, rows, [0.34, 0.17, 0.26, 0.23], row_h=Inches(0.56))
 callout(s, M, y + Inches(3.44), CW, Inches(1.00), "the finding that matters for planning",
-        f"Escalating one request in five beats a {F['EnsMembers']}-model blend — at a sixteenth "
-        f"of the compute and with no labelled data to collect. Ensembling is the right answer "
-        f"only when nothing may leave at all; then it is worth about a quarter of the gap.",
+        f"Escalating one request in five gets within about a point of the {F['EnsMembers']}-model "
+        f"blend ({FN.pct(CA['Twenty'])} vs {FN.pct(F['EnsStack'])}) at a sixteenth of the compute "
+        f"and with no labelled data to collect. Ensembling is the right answer only when nothing "
+        f"may leave at all; then it is the in-house ceiling, worth about a quarter of the gap.",
         color=AMBER)
 d.notes(s, f"""
 This slide exists because "just ensemble the small models" is the most common suggestion in the
@@ -663,8 +670,12 @@ for an ensemble does not have. We scored it {F['EnsFolds']}-fold out-of-fold so 
 grading its own homework, and its fitted weights include a negative coefficient on one guard,
 which means it is exploiting error structure that may not survive a change of traffic.
 
-The last row is the point: escalating the uncertain fifth reaches 87%, beating the whole blend
-at a fraction of the cost. So ensembling is not the route -- unless lane 1 applies and nothing
+The last row is the point: escalating the uncertain fifth reaches {FN.pct(CA['Twenty'])} against the
+blend's {FN.pct(F['EnsStack'])} -- it does NOT beat the blend, it very nearly matches it for a
+sixteenth of the compute and no labelled data. If challenged on this, the honest line is that
+the blend is still the in-house ceiling; escalation is the cheaper route to almost the same place.
+An earlier version of this slide printed 87% here and claimed escalation beat the blend, which
+reversed the ordering. So ensembling is not the route -- unless lane 1 applies and nothing
 may leave, in which case it is the in-house ceiling and worth building.
 """)
 
