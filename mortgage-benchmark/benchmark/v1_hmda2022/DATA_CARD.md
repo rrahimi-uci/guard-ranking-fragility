@@ -1,7 +1,7 @@
 # Mortgage Guardrail Benchmark — Data Card
 
 **Version:** 0.1.0-agentic
-**Built:** deterministic (seed 20260714) by the agentic HMDA-grounded generator in this folder.
+**Built:** by the agentic HMDA-grounded generator in this folder under seed 20260714. The seed fixes sampling and split assignment, but the generation calls run at nonzero temperature (default 0.7, `magen/llm.py`), so a rebuild reproduces the *design* and the splits, **not** the exact row text. Treat the committed JSONL as the artifact of record.
 
 ## What this is
 A request-screening benchmark for a mortgage-specific safety guardrail. Each row is one
@@ -51,4 +51,4 @@ there. **No data file changed**: `dev.jsonl`, `public_test.jsonl`, `private_test
 digests, so the frozen benchmark itself is untouched and every published number still stands.
 
 ## Reproduce
-See the folder README. `make all` rebuilds the whole benchmark from the frozen design + seed.
+See the folder README. There is no `make all` target; the build is driven by the `magen` pipeline steps documented there, and see the determinism note above before expecting byte-identical output.

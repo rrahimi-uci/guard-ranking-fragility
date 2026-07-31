@@ -435,8 +435,12 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
     aggregate = {
         "estimand": "equal-source, equal-checkpoint mean paired delta (panel SFT - "
                     f"{FRONTIER_REF.replace('__', ' / ')}) over represented sources",
-        "prespecified": "fixed by the regime split, not chosen by which cell is largest -- "
-                        "this replaces a headline that was selected on its own result",
+        "selection_status": "POST HOC. This aggregate did not exist before the per-cell headline "
+                            "failed multiplicity; it was added in the same revision that discovered "
+                            "the failure. It is a better summary than the maximum of twelve because "
+                            "it does not depend on which cell wins, but it is not pre-specified, and "
+                            "it must not be described as such. Only a summary frozen before a fresh "
+                            "cohort is scored can carry a confirmatory frontier claim.",
         "sources": rep,
         "n_cells": m,
         "n_boot": nb,

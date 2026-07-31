@@ -1329,7 +1329,8 @@ bullets(s, M, y - Inches(0.02), cw, Inches(2.6), [
     (f"Represented sources: {b(HT['AggDeltaTpr'])} in the panel's favour.",
      f"Equal-source, equal-checkpoint mean paired difference against the hosted reference, "
      f"95% CI {b(HT['AggDeltaTprCI'])} — excludes zero. In AP, {b(HT['AggDeltaAp'])} "
-     f"{b(HT['AggDeltaApCI'])}. Pre-specified by the regime split, not picked as the best cell."),
+     f"{b(HT['AggDeltaApCI'])}. Post-hoc descriptive summary, not a pre-specified test — but "
+     f"its weighting does not depend on which cell wins."),
     ("Transfer sources: the ordering reverses.",
      f"{b(HT['TransRefTpr'])} for the hosted model against {b(HT['TransBestLocalTpr'])} for "
      f"{b(HT['TransBestLocalName'])} — and the best local guard there is untuned. Tuning is "

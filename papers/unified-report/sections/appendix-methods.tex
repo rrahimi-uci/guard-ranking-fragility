@@ -276,7 +276,8 @@ has $994$ rows over four $G\times D$ quadrants --- G0/D0 ($450$), G0/D1 ($502$),
 violation) the largest. It spans seven content strata (fair-lending $204$, fraud $112$, UDAAP $90$,
 disclosure $66$, ATR/QM $54$, privacy $18$, and benign $450$) and is split into train $604$ / dev $149$
 / public-test $146$ / private-test $95$. As a fairness-invariance gate it embeds $39$ protected-class
-\emph{minimal pairs} ($78$ rows) that are identical except for one protected token; the induced
+\emph{protected pairs} ($78$ rows) differing only in the protected attribute, of which $21$ are
+true single-token swaps and the rest substitute a longer phrase (\Cref{sec:actIV-mortgage-pairs}); the induced
 prediction gap is denoted $\Delta_{\text{context}}$. The row composition is in \Cref{tab:composition} and
 the zero-shot base results (AP$\cdot$G, AP$\cdot$D, $\Delta_{\text{context}}$) in \Cref{tab:baseline}
 (Act~III).

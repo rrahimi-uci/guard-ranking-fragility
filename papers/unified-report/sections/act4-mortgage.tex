@@ -59,9 +59,11 @@ verdict is exactly what lets us pull the G0/D1 stratum out and score a guard on 
 
 \Cref{tab:composition} gives the full breakdown of the frozen \code{v1\_hmda2022} release: 994 rows,
 all synthetic. It is split \emph{family-isolated} into train (604), dev (149), and public-test (146),
-plus a 95-row confirmatory slice; ``family-isolated'' means near-duplicate rows are grouped and sent as
-a whole to \emph{either} train or test, never split, so a guard cannot ace the test by having seen a
-near-twin in training.
+plus a 95-row confirmatory slice; ``family-isolated'' means rows sharing a
+\code{content\_family} are grouped and sent as a whole to \emph{either} train or test, never split.
+That invariant holds exactly (0 of 958 content families span splits), but it is narrower than the
+guarantee the phrase suggests: grouping is by \code{content\_family} only, so a near-twin that the
+clusterer did not group can still cross --- and one does, as the correction below records.
 
 \paragraph{Two corrections to the release's own description.} Earlier versions of this report, the data
 card, and the benchmark paper called that 95-row slice \emph{sealed} and ``held back to detect

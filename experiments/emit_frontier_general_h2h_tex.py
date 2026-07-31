@@ -56,14 +56,16 @@ def cellval(source: str, guard: str) -> str:
 
 AGG = D["aggregate"]
 
-# The headline is now the PRE-SPECIFIED AGGREGATE, not the largest cell.
+# The headline is now an AGGREGATE rather than the largest cell -- but it is POST HOC.
 #
 # The previous version scanned every represented-source SFT cell, kept the ones whose nominal
 # 95% CI excluded zero, and printed the largest as the headline with that nominal interval.
 # That interval is post-selection: choosing the maximum of twelve and reporting its unadjusted
 # CI overstates the evidence however many of the twelve are individually significant. The
-# aggregate below is fixed by the regime split rather than by any cell's result, so it can
-# carry a claim; the selected cell is still emitted because the narrative uses it, but it is
+# aggregate below is fixed by the regime split rather than by any cell's result, which makes it a
+# sounder summary -- but it was chosen after the per-cell headline failed, so it is a post-hoc
+# descriptive summary, not a pre-specified test. The selected cell is still emitted because the
+# narrative uses it, but it is
 # emitted WITH its Holm-adjusted interval and labelled as selected wherever it appears.
 best = None
 for s in REPRESENTED:
@@ -176,8 +178,9 @@ foot = (r"\bottomrule" "\n" r"\end{tabular}\\[3pt]{\footnotesize \textbf{Paired 
         r"against \HtwoRef{} on the rows both scored. Each delta is the mean over training seeds "
         r"of (guard $-$ reference), so it equals the arithmetic difference of the two tabulated "
         r"values; the \HtwoNBoot{}-resample bootstrap resamples \emph{both} rows and seeds, so "
-        r"the intervals carry training-seed as well as row uncertainty. \textbf{Claim-bearing "
-        r"result:} the equal-source, equal-checkpoint mean over the \HtwoNRepSources{} "
+        r"the intervals carry training-seed as well as row uncertainty. \textbf{Summary reported "
+        r"(post hoc, descriptive --- added after the per-cell headline failed multiplicity, so "
+        r"not pre-specified):} the equal-source, equal-checkpoint mean over the \HtwoNRepSources{} "
         r"represented sources is $\Delta$TPR@\HtwoBudget{}FPR $=$ \HtwoAggDeltaTpr{} "
         r"\HtwoAggDeltaTprCI{} and $\Delta$AP $=$ \HtwoAggDeltaAp{} \HtwoAggDeltaApCI{}, both "
         r"excluding zero. Individual cells are \textbf{exploratory}: the largest "
@@ -199,5 +202,5 @@ with open(os.path.join(GEN, "tab_h2h_gen.tex"), "w") as fh:
     fh.write("\n".join(lines) + "\n")
 print("wrote h2h_macros.tex and tab_h2h_gen.tex")
 print(f"selected cell (exploratory): {LABEL[bmk]} SFT on {bs} dTPR={bv['d_tpr']:+.3f} nominal {[round(x,3) for x in bv['ci_tpr']]} Holm {[round(x,3) for x in bv['ci_tpr_holm']]}")
-print(f"AGGREGATE (claim-bearing): dTPR={AGG['d_tpr']:+.4f} CI {AGG['ci_tpr']}")
+print(f"AGGREGATE (post-hoc descriptive): dTPR={AGG['d_tpr']:+.4f} CI {AGG['ci_tpr']}")
 print(f"cells significant: nominal {AGG['n_significant_nominal']}/{AGG['n_cells']}  Holm {AGG['n_significant_holm']}/{AGG['n_cells']}")
