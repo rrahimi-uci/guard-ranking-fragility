@@ -92,17 +92,53 @@ general-vs-purpose contrast is a \emph{descriptive} blocked comparison (checkpoi
 assigned to a starting type), not a causal claim about starting type. The bounds are conditional on the
 fixed model panel: the bootstrap resamples evaluation families and seeds but holds model identities
 fixed, so with few families a single dominant family can move the equal-family mean; read H as a
-fixed-panel summary, not a population estimate. One checkpoint, Llama-Guard-3-1B, shows essentially zero
-movement under both SFT and KL-SFT (\Cref{tab:adaptation}): its $20$-token-pruned, embedding-tied output
-head leaves the decision-token margins effectively unmoved by LoRA, so it contributes no adaptation
-signal and should be read as a null/degenerate cell, not evidence of robustness. It is retained in the
-equal-family means as a zero contribution; because a null family only pulls those means toward zero,
-dropping it does not weaken either verdict (it would only raise the RQ1 gain/concentration bounds and
-push the RQ2 cost bound further past the margin).
+fixed-panel summary, not a population estimate.
+
+\paragraph{The Llama-Guard cell is a harness artifact, and it dilutes every number here.}
+One checkpoint, Llama-Guard-3-1B, shows exactly zero movement under both SFT and KL-SFT
+(\Cref{tab:adaptation}) --- one unique score across all $36{,}388$ scored cells
+($3{,}308$ rows $\times$ eleven conditions). \textbf{The cause is not a
+property of that model.} It was two independent harness bugs, diagnosed after this study was scored
+and described in full in \Cref{sec:actIV}: the native template rendered its conversation
+wrapper with the user turn missing while still satisfying every marker, and the verdict was read at a
+prompt position that carries the distribution over a two-newline prefix rather than over
+\code{safe}/\code{unsafe}. Its output head is intact and both decision tokens carry full-norm rows. An
+earlier version of this section attributed the null cell to that pruned, embedding-tied head; that
+explanation is superseded and wrong. The cell measures our instrument, not the guard.
+
+Two consequences follow, and both are deviations from the protocol as written rather than results.
+First, the cell is retained in the equal-family means as a zero contribution, so \emph{every} estimand
+in this section is diluted by exactly $6/5 = 1.2\times$: dropping the null family would move
+$H_{\mathrm{gain}}$ from \AdaHGain{} to $+0.208$, $H_{\mathrm{conc}}$ from \AdaHConc{} to $+0.286$,
+$H_{\mathrm{preserve}}$ from \AdaHPreserve{} to $+0.059$, and $H_{\mathrm{cost}}$ from \AdaHCost{} to
+$-0.043$. Because a null family only pulls an equal-family mean toward zero, this cannot manufacture
+support: it makes RQ1 harder to clear and makes RQ2's failure look milder than it is. Both verdicts
+therefore stand, and the reported magnitudes are conservative --- but they are $20\%$ smaller than the
+five-family values, which is stated here rather than left for a reader to derive. Second, the study's
+own eligibility rule (proposal \S4.3) requires each checkpoint's verdict likelihoods to be
+\emph{nonconstant}; a degenerate cell fails that test, so under the rule as written this checkpoint
+should have been excluded rather than retained at zero. Retaining it is the conservative choice, but it
+is a departure from a preregistered criterion and not an application of one.
+
+\paragraph{The pooled starting-type interaction is not reported.} The protocol also preregisters a
+fixed-panel interaction $\Gamma$ --- the equal-family mean movement of purpose-built families minus
+that of general families (proposal \S6.3). It was not computed, and the claim registry's
+\code{stop\_narrow\_gates} fallback does authorize omitting it; but that fallback is conditional, and
+the condition it names (fewer than three purpose-built families passing preflight) did not obtain ---
+five did. The operative obstacle is the family taxonomy actually used in the analysis, which places
+Qwen2.5-1.5B, Qwen3-4B, Qwen3Guard-Gen-0.6B and Qwen3Guard-Gen-4B in a single \code{qwen} family. A
+family that spans both starting types cannot be assigned to either side of $\Gamma$, so the estimand is
+ill-defined under this taxonomy. Splitting Qwen by starting type would make it computable, but that is
+an analytic choice made after seeing the scores and no bootstrap exists for it, so no $\Gamma$ is quoted
+here. What this report supports is therefore per-checkpoint and per-family movement, not a pooled
+cross-type contrast.
 
 \begin{takeaway}{Adapting a released guard}
-Fine-tuning a purpose-built guard on your data specializes it just like a general model (RQ1,
-bound-confirmed): you gain represented ranking and lose transfer. KL-SFT buys the transfer back but
-charges represented AP beyond the non-inferiority margin (RQ2 not supported) --- treat it as a
-tradeoff dial, not a free upgrade, and re-measure both splits on your own data.
+Every purpose-built checkpoint that carried a valid signal specialized under SFT exactly as the general
+checkpoints did (RQ1, bound-confirmed): represented ranking up, transfer down. This is a
+\emph{per-checkpoint} statement --- the pooled purpose-built-versus-general contrast was preregistered
+but is not reported (above), so ``just like a general model'' is a description of the individual cells,
+not a measured interaction. KL-SFT buys the transfer back but charges represented AP beyond the
+non-inferiority margin (RQ2 not supported) --- treat it as a tradeoff dial, not a free upgrade, and
+re-measure both splits on your own data.
 \end{takeaway}

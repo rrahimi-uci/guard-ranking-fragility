@@ -1399,19 +1399,53 @@ general-vs-purpose contrast is a <em>descriptive</em> blocked comparison (checkp
 assigned to a starting type), not a causal claim about starting type. The bounds are conditional on the
 fixed model panel: the bootstrap resamples evaluation families and seeds but holds model identities
 fixed, so with few families a single dominant family can move the equal-family mean; read H as a
-fixed-panel summary, not a population estimate. One checkpoint, Llama-Guard-3-1B, shows essentially zero
-movement under both SFT and KL-SFT (<a class="xref" href="#tab:adaptation">Table 6</a>): its <span class="math inline">\(20\)</span>-token-pruned, embedding-tied output
-head leaves the decision-token margins effectively unmoved by LoRA, so it contributes no adaptation
-signal and should be read as a null/degenerate cell, not evidence of robustness. It is retained in the
-equal-family means as a zero contribution; because a null family only pulls those means toward zero,
-dropping it does not weaken either verdict (it would only raise the RQ1 gain/concentration bounds and
-push the RQ2 cost bound further past the margin).</p>
+fixed-panel summary, not a population estimate.</p>
+<h4 class="runin" id="the-llama-guard-cell-is-a-harness-artifact-and-it-dilutes-every-number-here.">The Llama-Guard cell is a harness artifact, and it dilutes every number here.</h4>
+<p>One checkpoint, Llama-Guard-3-1B, shows exactly zero movement under both SFT and KL-SFT
+(<a class="xref" href="#tab:adaptation">Table 6</a>) — one unique score across all 36,388 scored cells
+(3,308 rows <span class="math inline">\(\times\)</span> eleven conditions). <strong>The cause is not a
+property of that model.</strong> It was two independent harness bugs, diagnosed after this study was scored
+and described in full in <a class="xref" href="#sec:actIV">Section 6</a>: the native template rendered its conversation
+wrapper with the user turn missing while still satisfying every marker, and the verdict was read at a
+prompt position that carries the distribution over a two-newline prefix rather than over
+<code>safe</code>/<code>unsafe</code>. Its output head is intact and both decision tokens carry full-norm rows. An
+earlier version of this section attributed the null cell to that pruned, embedding-tied head; that
+explanation is superseded and wrong. The cell measures our instrument, not the guard.</p>
+<p>Two consequences follow, and both are deviations from the protocol as written rather than results.
+First, the cell is retained in the equal-family means as a zero contribution, so <em>every</em> estimand
+in this section is diluted by exactly <span class="math inline">\(6/5 = 1.2\times\)</span>: dropping the null family would move
+<span class="math inline">\(H_{\mathrm{gain}}\)</span> from +0.174 to <span class="math inline">\(+0.208\)</span>, <span class="math inline">\(H_{\mathrm{conc}}\)</span> from +0.239 to <span class="math inline">\(+0.286\)</span>,
+<span class="math inline">\(H_{\mathrm{preserve}}\)</span> from +0.049 to <span class="math inline">\(+0.059\)</span>, and <span class="math inline">\(H_{\mathrm{cost}}\)</span> from -0.036 to
+<span class="math inline">\(-0.043\)</span>. Because a null family only pulls an equal-family mean toward zero, this cannot manufacture
+support: it makes RQ1 harder to clear and makes RQ2’s failure look milder than it is. Both verdicts
+therefore stand, and the reported magnitudes are conservative — but they are <span class="math inline">\(20\%\)</span> smaller than the
+five-family values, which is stated here rather than left for a reader to derive. Second, the study’s
+own eligibility rule (proposal §4.3) requires each checkpoint’s verdict likelihoods to be
+<em>nonconstant</em>; a degenerate cell fails that test, so under the rule as written this checkpoint
+should have been excluded rather than retained at zero. Retaining it is the conservative choice, but it
+is a departure from a preregistered criterion and not an application of one.</p>
+<h4 class="runin" id="the-pooled-starting-type-interaction-is-not-reported.">The pooled starting-type interaction is not reported.</h4>
+<p>The protocol also preregisters a
+fixed-panel interaction <span class="math inline">\(\Gamma\)</span> — the equal-family mean movement of purpose-built families minus
+that of general families (proposal §6.3). It was not computed, and the claim registry’s
+<code>stop_narrow_gates</code> fallback does authorize omitting it; but that fallback is conditional, and
+the condition it names (fewer than three purpose-built families passing preflight) did not obtain —
+five did. The operative obstacle is the family taxonomy actually used in the analysis, which places
+Qwen2.5-1.5B, Qwen3-4B, Qwen3Guard-Gen-0.6B and Qwen3Guard-Gen-4B in a single <code>qwen</code> family. A
+family that spans both starting types cannot be assigned to either side of <span class="math inline">\(\Gamma\)</span>, so the estimand is
+ill-defined under this taxonomy. Splitting Qwen by starting type would make it computable, but that is
+an analytic choice made after seeing the scores and no bootstrap exists for it, so no <span class="math inline">\(\Gamma\)</span> is quoted
+here. What this report supports is therefore per-checkpoint and per-family movement, not a pooled
+cross-type contrast.</p>
 <div class="callout callout-takeaway"><div class="callout-title">Adapting a released guard</div><div class="callout-body">
 
-<p>Fine-tuning a purpose-built guard on your data specializes it just like a general model (RQ1,
-bound-confirmed): you gain represented ranking and lose transfer. KL-SFT buys the transfer back but
-charges represented AP beyond the non-inferiority margin (RQ2 not supported) — treat it as a
-tradeoff dial, not a free upgrade, and re-measure both splits on your own data.</p>
+<p>Every purpose-built checkpoint that carried a valid signal specialized under SFT exactly as the general
+checkpoints did (RQ1, bound-confirmed): represented ranking up, transfer down. This is a
+<em>per-checkpoint</em> statement — the pooled purpose-built-versus-general contrast was preregistered
+but is not reported (above), so “just like a general model” is a description of the individual cells,
+not a measured interaction. KL-SFT buys the transfer back but charges represented AP beyond the
+non-inferiority margin (RQ2 not supported) — treat it as a tradeoff dial, not a free upgrade, and
+re-measure both splits on your own data.</p>
 
 </div></div>
 <h1 data-num="5" id="sec:actIII"><span class="secnum">5</span>Recover transfer without retraining: output-space composition (Act II)</h1>
@@ -2327,7 +2361,7 @@ about 77<span class="math inline">\(\times\)</span> — at roughly $0.80 per tho
 the amortised cost of a GPU the operator already owns. For a guardrail that fires on every inbound
 request, that is a budget line and a latency budget, not a rounding error. Three further costs
 appear in no column of either table. Prompts leave the operator’s infrastructure, which for the
-mortgage setting of <span class="xref-missing">Section</span> is a GLBA question before it is an engineering one.
+mortgage setting of <a class="xref" href="#sec:actIV">Section 6</a> is a GLBA question before it is an engineering one.
 The operating point is only coarsely selectable: a continuous logit margin can be placed at any
 false-alarm budget exactly, while <span class="math inline">\(50\)</span>–<span class="math inline">\(65\)</span> distinct integer scores can only land near one.
 And the provider’s own input filter refused a subset of ExpGuard prompts outright, before the
@@ -3098,7 +3132,7 @@ pooled with the ExpGuard numbers above despite appearing beside them. A represen
 is not a claim about novel traffic: it says a guard beats the frontier on distributions an
 operator can enumerate in training, which is a deployment property and not a capability claim.
 And <code>id_test</code> is held out by <em>row</em>, not by content — the overlap audit
-(<span class="xref-missing">Section</span>) puts <span class="math inline">\(1.6\%\)</span>–<span class="math inline">\(5.0\%\)</span> of each represented split within
+(<a class="xref" href="#sec:not-establish">Section E.1</a>) puts <span class="math inline">\(1.6\%\)</span>–<span class="math inline">\(5.0\%\)</span> of each represented split within
 Jaccard <span class="math inline">\(0.70\)</span> of a training row, which qualifies these margins rather than overturning them,
 most of all on <code>jailbreak_classification</code>.</p>
 <p>What survives all four is a statement about <em>where</em> the frontier earns its price. It is not
@@ -3126,13 +3160,13 @@ was tried first and rejected, because with a small escalated slice there are too
 negatives to place a stable quantile, which made the curve non-monotone for purely numerical
 reasons. This is a retrospective analysis on committed scores, not a deployed system: it
 assumes the escalated subset may lawfully leave, which for the mortgage traffic of
-<span class="xref-missing">Section</span> is exactly the question that has to be answered first.</p>
+<a class="xref" href="#sec:actIV">Section 6</a> is exactly the question that has to be answered first.</p>
 <h4 class="runin" id="what-this-does-and-does-not-license.">What this does and does not license.</h4>
 <p>It licenses one sentence: on external,
 expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
 accurate prompt-safety ranker than any small guard in this report, tuned or not, and the margin
 survives a paired test. It does <em>not</em> license extending that to the mortgage construct of
-<span class="xref-missing">Section</span>: ExpGuard is single-label general prompt safety, not the dual
+<a class="xref" href="#sec:actIV">Section 6</a>: ExpGuard is single-label general prompt safety, not the dual
 <span class="math inline">\(G\times D\)</span> compliance judgement, and nothing here was measured on it. Nor does it retire the
 report’s subject. Acts I–II are about what happens <em>when</em> you must run a small guard
 yourself — for latency, cost, data residency, or auditability — and this subsection prices
@@ -4554,7 +4588,7 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
 <p>Each limitation above has a matching upgrade. The roadmap is ordered roughly by how much it would strengthen the central claims, and every item names the specific weakness it closes.</p>
 <ol>
 <li><p><strong>Lock a genuinely uninspected prospective cohort</strong> (closes “not confirmatory,” Acts I–II). Pre-register the estimands and decision rules, then evaluate on data neither the researcher nor the manifest builder has seen. This is the single upgrade that would move Acts I and II from “retrospective characterization of this panel” to a confirmatory finding; the adaptation study (<a class="xref" href="#sec:adaptation">Section 4</a>) applies the <em>preregistration</em> half of this discipline (locked estimands and gates) to the starting-type question, but not the uninspected-data half — it reuses the Act I manifest and rows — so the remaining step is a genuinely uninspected cohort for both it and Acts I–II’s core specialization estimands.</p></li>
-<li><p><strong>Add the embedding-space overlap check</strong> (the remaining half of the decontamination audit). The <span class="math inline">\(n\)</span>-gram, near-duplicate, normalized, exact and provenance-lineage checks are now run and clean (<span class="xref-missing">Section</span>), so the pending-audit caveat is closed for lexical overlap and the transfer estimates stand. What is left is semantic overlap: a paraphrase sharing no <span class="math inline">\(5\)</span>-gram with any training row would pass every check implemented. Closing it requires pinning an encoder in the lock — an identity decision, which is why it is a roadmap item rather than a script.</p></li>
+<li><p><strong>Add the embedding-space overlap check</strong> (the remaining half of the decontamination audit). The <span class="math inline">\(n\)</span>-gram, near-duplicate, normalized, exact and provenance-lineage checks are now run and clean (<a class="xref" href="#sec:not-establish">Section E.1</a>), so the pending-audit caveat is closed for lexical overlap and the transfer estimates stand. What is left is semantic overlap: a paraphrase sharing no <span class="math inline">\(5\)</span>-gram with any training row would pass every check implemented. Closing it requires pinning an encoder in the lock — an identity decision, which is why it is a roadmap item rather than a script.</p></li>
 <li><p><strong>Add the remaining composition control</strong> (closes Act II’s mechanism gap). The equal-inference-cost <strong>SFT+SFT</strong> baseline is now run (<a class="xref" href="#tab:sftsft">Table 9</a>: base+SFT beats two-adapter ensembling on every checkpoint, so the recovery is the base’s doing); the open item is a true weight-space <strong>WiSE-FT</strong> rescoring <sup class="cite">[<a href="#bib-wortsman2022wiseft">48</a>]</sup> to compare output-space against weight-space interpolation on identical rows.</p></li>
 <li><p><strong>SME-adjudicate a stratified mortgage subset and report Fleiss-<span class="math inline">\(\kappa\)</span></strong> (closes the mortgage label-tier gap). Have qualified subject-matter experts independently re-label a stratified subset (weighted toward the G0/D1 and protected-pair rows), report inter-annotator agreement, and reconcile against the LLM-judge labels; this is what would let any mortgage number graduate from “measuring stick” toward an audit-grade instrument.</p></li>
 <li><p><strong>Populate the empty G1/D0 quadrant</strong> (closes an unmeasurable failure mode). Construct grounded “looks unsafe yet policy-compliant” requests so over-refusal on legitimate mortgage traffic becomes measurable rather than absent by construction.</p></li>

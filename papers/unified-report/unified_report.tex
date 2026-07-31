@@ -362,7 +362,7 @@ about \FrontierSlowdown$\times$ --- at roughly \$\FrontierBestCost{} per thousan
 the amortised cost of a GPU the operator already owns. For a guardrail that fires on every inbound
 request, that is a budget line and a latency budget, not a rounding error. Three further costs
 appear in no column of either table. Prompts leave the operator's infrastructure, which for the
-mortgage setting of \Cref{sec:actIV-mortgage} is a GLBA question before it is an engineering one.
+mortgage setting of \Cref{sec:actIV} is a GLBA question before it is an engineering one.
 The operating point is only coarsely selectable: a continuous logit margin can be placed at any
 false-alarm budget exactly, while $50$--$65$ distinct integer scores can only land near one.
 And the provider's own input filter refused a subset of ExpGuard prompts outright, before the
@@ -578,7 +578,7 @@ pooled with the ExpGuard numbers above despite appearing beside them. A represen
 is not a claim about novel traffic: it says a guard beats the frontier on distributions an
 operator can enumerate in training, which is a deployment property and not a capability claim.
 And \code{id\_test} is held out by \emph{row}, not by content --- the overlap audit
-(\Cref{sec:decontamination}) puts $1.6\%$--$5.0\%$ of each represented split within
+(\Cref{sec:not-establish}) puts $1.6\%$--$5.0\%$ of each represented split within
 Jaccard~$0.70$ of a training row, which qualifies these margins rather than overturning them,
 most of all on \code{jailbreak\_classification}.
 
@@ -608,13 +608,13 @@ was tried first and rejected, because with a small escalated slice there are too
 negatives to place a stable quantile, which made the curve non-monotone for purely numerical
 reasons. This is a retrospective analysis on committed scores, not a deployed system: it
 assumes the escalated subset may lawfully leave, which for the mortgage traffic of
-\Cref{sec:actIV-mortgage} is exactly the question that has to be answered first.
+\Cref{sec:actIV} is exactly the question that has to be answered first.
 
 \paragraph{What this does and does not license.} It licenses one sentence: on external,
 expert-annotated finance/health/law prompts, a hosted frontier model is a materially more
 accurate prompt-safety ranker than any small guard in this report, tuned or not, and the margin
 survives a paired test. It does \emph{not} license extending that to the mortgage construct of
-\Cref{sec:actIV-mortgage}: ExpGuard is single-label general prompt safety, not the dual
+\Cref{sec:actIV}: ExpGuard is single-label general prompt safety, not the dual
 $G\times D$ compliance judgement, and nothing here was measured on it. Nor does it retire the
 report's subject. Acts~I--II are about what happens \emph{when} you must run a small guard
 yourself --- for latency, cost, data residency, or auditability --- and this subsection prices

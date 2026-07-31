@@ -827,8 +827,11 @@ run(p, "KL-SFT does preserve transfer (+0.049, LCB +0.035) — but its represent
 bullets(s, rx, y + Inches(2.90), rw, Inches(1.5), [
     ("Not a general-model artifact.", "ShieldGemma-2B +0.212 represented, Granite-Guard-2B "
      "+0.139 — released guards move the same way."),
-    ("One null cell, reported as such.", "Llama-Guard-3-1B's pruned, embedding-tied head "
-     "leaves its margins unmoved by LoRA. Uninformative, not robust."),
+    # The pruned-head explanation was wrong and is superseded: the null cell is a harness
+    # artifact (two rendering/read-position bugs), not a property of that model.
+    ("One null cell — our bug, not their model.", "Llama-Guard-3-1B returned one score for "
+     "every row: two harness bugs, since fixed. Retained at zero, which dilutes every number "
+     "here by 1.2x and only makes the verdicts harder to reach."),
 ], size=11.5, gap=9)
 
 d.notes(s, """
