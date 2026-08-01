@@ -40,7 +40,12 @@ F = FN.load()
 HT = FN.load_h2h()
 # Act I re-read over FPR [0,.05]. Same contract as everything else here: the slide reads the
 # macro file the paper \inputs, so the deck cannot quote a different amplification than Table 6.
-LFP = FN.load_named("lowfpr_macros.tex")
+# signed() so a macro's ASCII hyphen renders as the same U+2212 minus the hand-set numbers on
+# these slides use -- the two appear in one sentence on the operating-point and KL slides.
+LFP = {k: FN.signed(FN.bare(v)) for k, v in FN.load_named("lowfpr_macros.tex").items()}
+# The KL dial re-read in the same region (Table 7 of the paper). Added because the low-FPR
+# finding had reached the SFT slide but not the KL slide, while the report prices both.
+LFPK = {k: FN.signed(FN.bare(v)) for k, v in FN.load_named("lowfpr_kl_macros.tex").items()}
 # The adaptation slide used to hard-code +0.174 / +0.129 / -0.036 / -0.060. Those were the
 # MIXED six-family panel values; the analyzer now computes the registered purpose-built-panel
 # estimand, so the slide reads the macro file instead of restating a superseded number.
@@ -402,7 +407,7 @@ rect(s, Inches(10.41), Inches(2.41), Inches(0.28), Inches(0.28), fill=ACCENT,
 
 tf = tbox(s, M, Inches(1.28), Inches(9.0), Inches(0.30))
 p = para(tf, first=True, space_after=0)
-run(p, "JAZZX AI   ·   RESEARCH REPORT   ·   JULY 2026", size=10.5, bold=True,
+run(p, "JAZZX AI   ·   RESEARCH REPORT   ·   AUGUST 2026", size=10.5, bold=True,
     color=ACCENT, spc=180)
 
 # Title and subtitle are two boxes, not one run with a line break. The paper's subtitle is
@@ -628,7 +633,8 @@ run(p, "held-out transfer macro-AP   [−0.0837, −0.0321]", size=11.5, color=S
 
 callout(s, rx, y + Inches(1.86), rw, Inches(1.30), "The average is a mirage",
         "It pools effects that point in opposite directions: +0.0400 for SmolLM2-1.7B "
-        "against −0.1499 for Qwen3-4B. Read the per-checkpoint column, not the bottom row.",
+        "against −0.1499 for Qwen3-4B. Read the per-checkpoint column, not the bottom row — "
+        "and read SmolLM2's gain as average ranking only (slide 7).",
         color=ORANGE, body_size=12)
 
 bullets(s, rx, y + Inches(3.34), rw, Inches(1.1), [
@@ -649,6 +655,12 @@ The transfer losses concentrate on the jailbreak-style adversarial sets and spar
 xstest, which contrasts genuinely unsafe prompts against benign look-alikes. So this is
 not uniform forgetting — it is forgetting the hardest, most out-of-distribution cases
 first.
+
+Scope the one positive cell before someone else does. SmolLM2's +0.0400 transfer gain is a
+statement about AVERAGE RANKING, not about deployable recall: re-read inside the 5% alarm
+budget it is +0.011 pAUC and -0.012 budget recall, both straddling zero. So "positive for
+the weakest base" holds on the headline metric and does not survive at the operating point.
+Slide 7 has the general form of that correction.
 """)
 
 # --------------------------------------------------- 6 · specialization plane
@@ -671,12 +683,13 @@ bullets(s, rx, y + Inches(1.68), rw, Inches(1.9), [
     ("SFT never simply degrades the guard.", "Nothing lands in uniform loss. It trades "
      "transfer for represented ranking."),
     ("The 5 uniform gains are the weak bases.", "Four SmolLM2 seeds plus one Qwen2.5 seed "
-     "— the two checkpoints with the least transfer skill to lose."),
+     "— the two checkpoints with the least transfer skill to lose. On average ranking only "
+     "(slide 7)."),
     ("Stable within checkpoint.", "Every Qwen3-4B seed is a substantial transfer loss; "
      "every SmolLM2 seed a represented gain."),
 ], size=11.5, gap=9)
 
-callout(s, rx, y + Inches(3.66), rw, Inches(0.86), "Read it this way",
+callout(s, rx, y + Inches(3.74), rw, Inches(0.86), "Read it this way",
         "Specialization is the dominant outcome on this panel — but it is not universal, "
         "and the exceptions are predictable from base strength.", color=SLATE, body_size=11.5)
 
@@ -712,11 +725,15 @@ bullets(s, rx, y + Inches(1.80), rw, Inches(2.5), [
     ("The threshold did not transfer.", "The cutoff that looked safe in calibration is "
      "not the cutoff you get in the field."),
     # Read from generated/lowfpr_macros.tex so the slide cannot drift from Table 6 of the paper.
-    ("Our headline metric understates all of this.",
-     f"macro-AP averages over the whole ranking. Re-read only inside the 5% budget, no cell "
-     f"flips sign but the transfer cost goes {FN.bare(LFP['LowFprTransApDelta'])} → "
-     f"{FN.bare(LFP['LowFprTransPAucDelta'])} pAUC "
-     f"({FN.bare(LFP['LowFprTransAmplification'])}×)."),
+    # BOTH halves, because the paper's finding is that macro-AP understates the trade on both
+    # sides -- an earlier build of this slide quoted only the transfer amplification.
+    ("Our headline metric understates both halves.",
+     f"Re-read inside the 5% budget, {LFP['LowFprSignFlips']} cells flip sign — but "
+     f"represented goes {LFP['LowFprRepApDelta']} → "
+     f"{LFP['LowFprRepPAucDelta']} pAUC ({LFP['LowFprRepAmplification']}×) "
+     f"and transfer {LFP['LowFprTransApDelta']} → "
+     f"{LFP['LowFprTransPAucDelta']} "
+     f"({LFP['LowFprTransAmplification']}×)."),
 ], size=11, gap=8)
 
 d.notes(s, """
@@ -744,6 +761,14 @@ hedge it replaced.
 Note also that the HarmBench drop needs no threshold caveat at all: the tuned guard
 catches less while alarming more, so it is dominated — worse on both axes at once, not
 traded off.
+
+The fourth bullet is the metric version of the same discipline, and it costs us a claim as
+well as buying one. It buys: read where a guard is actually placed, the trade is 2-3x steeper
+than the headline, in BOTH directions. It costs: SmolLM2-1.7B is the one checkpoint whose
+transfer improves on macro-AP (+0.040, interval clears zero), and in the operating region that
+gain is +0.011 pAUC and -0.012 budget recall — both straddling zero. So do not defend
+"positive for the weakest base" as a deployment statement; it is an average-ranking statement.
+Nothing else changes: 0 of the 8 cells flip sign.
 
 Also worth saying out loud: every AP on the previous slides is measured on a balanced or
 near-balanced pool. The next slide is what happens when you serve real traffic instead.
@@ -810,18 +835,26 @@ s = d.blank()
 y = d.header(s, "Act I  ·  the mitigation",
              "Anti-forgetting KL is a tradeoff dial, not a free upgrade",
              "One line added to the loss:  L = CE(verdict) + β · KL( π_θ ‖ π_base ),  evaluated on the completion tokens")
-picture(s, "klsft", M, y - Inches(0.06), CW, Inches(3.24))
+picture(s, "klsft", M, y - Inches(0.06), CW, Inches(2.92))
 
+# The report prices this dial in the operating region too (Table 7), and asymmetrically: the
+# cost half amplifies almost three times as fast as the benefit half. Both callouts read
+# generated/lowfpr_kl_macros.tex, the same file the paper \inputs.
 cw = (CW - Inches(0.30)) / 2
-callout(s, M, y + Inches(3.32), cw, Inches(1.16), "What it recovers",
-        "At β=0.5, transfer macro-AP rises +0.061 on average versus plain SFT — no second "
-        "model in memory, no base retraining, no extra inference pass.",
+callout(s, M, y + Inches(3.02), cw, Inches(1.46), "What it recovers",
+        f"At β={LFPK['LowFprKlBeta']}, transfer macro-AP rises "
+        f"{LFPK['LowFprKlTransApDelta']} on average versus plain SFT — no second "
+        f"model in memory, no base retraining, no extra inference pass. Inside the 5% alarm "
+        f"budget, {LFPK['LowFprKlTransPAucDelta']} pAUC "
+        f"({LFPK['LowFprKlTransAmplification']}×).",
         color=GREEN, body_size=12)
-callout(s, M + cw + Inches(0.30), y + Inches(3.32), cw, Inches(1.16), "What it charges",
-        f"Represented macro-AP falls −0.035 here. In the analysis-preregistered "
-        f"ten-checkpoint study the same trade costs {A['HCost']}, whose lower bound "
-        f"({A['HCostLCB']}) fails the −{A['Margin']} non-inferiority margin: RQ2 criterion "
-        f"NOT met.", color=ACCENT, body_size=12)
+callout(s, M + cw + Inches(0.30), y + Inches(3.02), cw, Inches(1.46), "What it charges",
+        f"Represented macro-AP falls {LFPK['LowFprKlRepApDelta']} here — "
+        f"{LFPK['LowFprKlRepPAucDelta']} pAUC in the same 5% region "
+        f"({LFPK['LowFprKlRepAmplification']}×, so the cost half grows faster than "
+        f"the benefit half). In the analysis-preregistered ten-checkpoint study the trade "
+        f"costs {A['HCost']}, whose lower bound ({A['HCostLCB']}) fails the −{A['Margin']} "
+        f"margin: RQ2 criterion NOT met.", color=ACCENT, body_size=12)
 
 d.notes(s, """
 β = 0 reproduces vanilla SFT exactly, so this is a strict one-knob generalization of the
@@ -834,6 +867,18 @@ looks close to free. In the PREREGISTERED ten-checkpoint study it is not: the
 represented cost fails the margin that was fixed in advance. And on the two checkpoints
 that specialize hardest, KL-SFT still leaves held-out transfer below the unmodified
 base. Mitigation, not restoration.
+
+Price the dial where you would run it, which is the second half of each callout. On average
+ranking this reads like "two points of represented AP for six points of transfer AP". Inside
+the 5% alarm budget it is closer to twenty-one points of represented pAUC for fifteen: the
+benefit amplifies 2.4x, the cost 6.2x. That does not make KL useless — it makes the choice
+sharper, and more clearly a choice.
+
+It also sharpens the preregistered verdict rather than restating it. RQ2's -0.02 margin is
+missed by about 1.7x read on AP, and by about 10.7x read in the operating region on this
+panel. That registered failure was not narrow. Say it as a qualification of the magnitude,
+not as a re-run of the registered study's own interval — these are point estimates on the
+four general checkpoints, not on its ten-checkpoint panel.
 
 One more thing this control accidentally bought us, and it bounds several numbers in this
 deck. Because β = 0 IS the Act I recipe — same manifest, same seeds, same scorer, only a
@@ -1182,7 +1227,7 @@ callout(s, rx, y + Inches(3.28), cw, Inches(1.44), "The one expert-labeled tier"
         "2,275 expert-annotated rows across finance / health / law. Ranking is not monotone "
         "in model size. The paired test leans against a tie on health (+0.017) — but four "
         "unadjusted comparisons, clearing zero by +0.0026: a direction, not a resolved "
-        "ranking. Finance and law: ties.",
+        "ranking. Finance and law are differences too small to sign — not demonstrated ties.",
         color=GREEN, body_size=11.5)
 
 d.notes(s, """
@@ -1193,7 +1238,10 @@ failed. Two defects cut in opposite directions and between them dissolve the app
 contrast — Qwen3-4B's zero is a units artifact, and Qwen2.5's headline 0.183 is carried
 almost entirely by ONE pair (0.508) that contrasts "Muslim" against "an applicant with no
 stated protected trait" — a seven-word placeholder, not a single-token swap. Restricted
-to genuine single-token pairs Qwen2.5 scores 0.020, nominally the MOST invariant.
+to genuine single-token pairs Qwen2.5 scores 0.020, which puts it INSIDE the unsaturated
+guards' band rather than above it (SmolLM3-3B 0.012, SmolLM2-1.7B 0.024) — so the apparent
+contrast is carried by the one non-minimal pair, not by the guard. Do not upgrade that to
+"the most invariant"; the band is what the number supports.
 Reporting the honest version cost us the cleanest-looking chart in the report.
 
 Right: this is the strictly stronger evidence tier — expert annotation, not LLM-judge —
@@ -1208,6 +1256,11 @@ and the health interval clears zero by only +0.0026 at its lower end. Under a Bo
 split across the three verticals it would not clear. So health is the one vertical where
 the data LEAN against a tie — worth a targeted replication, not a resolved ranking. If
 you are asked to rank SmolLM3 against Qwen3 on this evidence, decline.
+
+Be equally careful in the other direction, which is the wording the report fixed. Finance
+(+0.001) and law (+0.001) are NOT demonstrated equivalences: an interval containing zero is
+not evidence of no difference, and no equivalence margin was registered. They are differences
+too small for this sample to sign. Saying "ties" claims a result nobody measured.
 """)
 
 # ------------------------------------------------ 16 · deployment economics
@@ -1348,29 +1401,42 @@ datatable(s, rx, y - Inches(0.02), CW - cw - Inches(0.42), rows,
           [1.45, 0.72, 0.80], size=10.5, head_size=9.5, row_h=Inches(0.40),
           head_h=Inches(0.38))
 
-callout(s, M, y + Inches(2.66), CW, Inches(0.94),
-        "The specialization tax scales with the base",
-        f"Ordered by base strength, SFT's represented gain decays monotonically while its "
-        f"transfer cost grows. Tuning {F['ScaleTunedName']} buys "
-        f"{F['ScaleTunedRepGain']} represented and costs "
-        f"{F['ScaleTunedTransferCost']} transfer — and moves its ExpGuard recall "
-        f"{F['ScaleTunedExpguardDelta']}, the wrong way. For a guardrail, whose job is the "
-        "traffic nobody anticipated, that is a bad trade at any size.",
+# NOT "the tax scales with the base". The report withdrew that reading: the transfer cost is
+# not monotone in base strength (Qwen3-4B pays more from a weaker base than 8B or 32B do), so
+# what is regular is the ENDPOINT every tuned checkpoint lands on, not a tendency of capable
+# bases to specialize harder. Earlier builds asserted the behavioural version.
+callout(s, M, y + Inches(2.66), CW, Inches(1.06),
+        "The tax tracks the distance to the endpoint",
+        f"Ordered by base strength the represented gain decays monotonically — but the "
+        f"transfer cost does not: Qwen3-4B pays −0.150 from a .885 base, more than Qwen3-8B "
+        f"(−0.101 from .905) or {F['ScaleTunedName']} "
+        f"({FN.signed(F['ScaleTunedTransferCost'])} from .953). What is regular is the "
+        f"endpoint — every "
+        f"tuned checkpoint lands in .78–.85 transfer whatever its base. Tuning "
+        f"{F['ScaleTunedName']} buys {F['ScaleTunedRepGain']} represented and moves its "
+        f"ExpGuard recall {F['ScaleTunedExpguardDelta']}, the wrong way. For a guardrail, "
+        "whose job is the traffic nobody anticipated, that is a bad trade at any size.",
         color=ACCENT, body_size=10.5)
 
 d.notes(s, f"""
-This is the slide that turns Act I's specialization finding into a scaling law, and it is new
-evidence rather than a restatement.
+This is the slide that carries Act I's specialization finding up the size ladder, and it is new
+evidence rather than a restatement. Do not call it a scaling law -- three points, one of them
+non-monotonic, identify no scaling law, and the report says so.
 
 Left column: the two routes a reader will propose. Tuning helps only the weakest base and hurts
 {F['SftNumHurt']} of {F['SftNumTotal']} on external held-out prompts. Scale moves in the right
 direction but an eightfold parameter increase bought slightly less than the gap that remained.
 
-Right column is the important one. Order the panel by how strong the base already was and the
-represented gain decays monotonically -- .528, .354, .313, .098, .076,
-{F['ScaleTunedRepGain']} -- while the transfer cost grows and plateaus around minus .10 to
-minus .15. The tax is not fixed overhead; it is the price of forcing an already-capable base
-onto a narrow distribution.
+Right column is the important one, and it needs one qualification said out loud. Order the panel
+by how strong the base already was and the represented gain decays monotonically -- .528, .354,
+.313, .098, .076, {F['ScaleTunedRepGain']}. The transfer cost does NOT behave that way:
+Qwen3-4B pays -0.150 from a .885 base, more than Qwen3-8B (-0.101 from .905) or
+{F['ScaleTunedName']} ({F['ScaleTunedTransferCost']} from .953). So this is not a demonstrated
+tendency of capable bases to specialize harder, and an earlier version of this slide said it was.
+What IS regular is the endpoint: every tuned checkpoint lands in .78-.85 transfer and .975-.990
+represented whatever its base, so the tax is the distance to a benchmark-fixed endpoint --
+arithmetic, not a behavioural law. The deployment consequence survives that reading intact: past
+a base of roughly .9 represented, SFT buys under 0.10 AP and still charges close to full price.
 
 The 32B row was the objection we went and measured: someone will say a tuned big model beats an
 untuned one. It does not. Untuned {F['ScaleUntunedRep']}/{F['ScaleUntunedTransfer']} against
@@ -1395,9 +1461,9 @@ cw = (CW - Inches(0.42)) / 2
 bullets(s, M, y - Inches(0.02), cw, Inches(2.6), [
     (f"Represented sources: {b(HT['AggDeltaTpr'])} in the panel's favour.",
      f"Equal-source, equal-checkpoint mean paired difference against the hosted reference, "
-     f"95% CI {b(HT['AggDeltaTprCI'])} — excludes zero. In AP, {b(HT['AggDeltaAp'])} "
-     f"{b(HT['AggDeltaApCI'])}. Post-hoc descriptive summary, not a pre-specified test — but "
-     f"its weighting does not depend on which cell wins."),
+     f"95% CI {b(HT['AggDeltaTprCI'])} — excludes zero, holding the source set fixed. In AP, "
+     f"{b(HT['AggDeltaAp'])} {b(HT['AggDeltaApCI'])}. Post-hoc descriptive summary, not a "
+     f"pre-specified test — but its weighting does not depend on which cell wins."),
     ("Transfer sources: the ordering reverses.",
      f"{b(HT['TransRefTpr'])} for the hosted model against {b(HT['TransBestLocalTpr'])} for "
      f"{b(HT['TransBestLocalName'])} — and the best local guard there is untuned. Tuning is "
@@ -1412,11 +1478,17 @@ callout(s, M + cw + Inches(0.42), y + Inches(1.38), cw, Inches(1.20),
         "Not “small guards match the frontier”. Only: on distributions an operator can "
         "enumerate, a small self-hosted guard wins at a matched alarm budget — a deployment "
         "property, not a capability claim.", color=ORANGE)
-callout(s, M, y + Inches(2.72), CW, Inches(0.92), "read with these limits",
-        "Per-source n is 67–451, so the intervals are wide and no per-cell ordering is a "
-        "ranking. Retrospective and estimation-only: these rows and this panel were inspected "
-        "during development. And id_test is held out by row, not by content — 1.6–5.0% of each "
-        "represented split sits within Jaccard 0.70 of a training row.", color=SLATE)
+# The source-resampling sensitivity belongs on the slide, not only in the notes: it is what
+# bounds how far the +0.083 travels, and the paper carries it in the abstract, in Figure 1's
+# caption and in the weighting table. Read from h2h_macros.tex like everything else here.
+callout(s, M, y + Inches(2.72), CW, Inches(1.32), "read with these limits",
+        f"The interval is conditional on these three corpora. Drawing sources with replacement "
+        f"instead widens it to {b(HT['AggSrcResampledCI'])}, which includes zero — so this is a "
+        f"claim about the panel's behaviour on those sources, not about represented sources in "
+        f"general. Per-source n is 67–451, so no per-cell ordering is a ranking. Retrospective "
+        f"and estimation-only: these rows and this panel were inspected during development. And "
+        f"id_test is held out by row, not by content — 1.6–5.0% of each represented split sits "
+        f"within Jaccard 0.70 of a training row.", color=SLATE)
 d.notes(s, f"""
 The point of this slide is that the previous one was asking the wrong question.
 
@@ -1433,6 +1505,21 @@ The join is worth mentioning if anyone asks why this was not in the earlier tabl
 runs hash row identities differently — raw bytes on one side, NFC-normalised on the other — so
 re-deriving both digests from the local corpus was what made the comparison possible at all.
 100% of the panel's rows join.
+
+Two conditionals behind the headline interval, and volunteer the first one -- it is the honest
+statement of how far the result travels. The bootstrap holds the SOURCE SET fixed and resamples
+evaluation families within it, because three purposively chosen corpora do not sample a
+population of corpora. Draw sources with replacement instead and the interval widens to
+{b(HT['AggSrcResampledCI'])}, which includes zero. It is also conditional on the seed pairing:
+one seed vector per checkpoint is reused across sources, which is what preserves the covariance.
+
+The weighting is the other place it is fragile, and the report tabulates all four. Only two of
+the four support a positive advantage at all: weighting sources by row count roughly halves the
+estimate to {b(HT['AggRowWTpr'])} {b(HT['AggRowWTprCI'])} and straddles zero, and including the
+BASE arms alongside the tuned ones excludes zero in the OPPOSITE direction
+({b(HT['AggWithBaseTpr'])}). That last row says what the result is about: the represented-source
+advantage is a property of TUNED guards specifically -- Act I's specialization seen from the
+other side -- not a general statement that small guards beat hosted ones.
 
 Do not oversell. This is retrospective on an inspected panel, the per-source samples are small,
 and one column (jailbreakbench) supports no comparison at all because the hosted model's own
@@ -1486,11 +1573,17 @@ rw = CW - fw - Inches(0.50)
 bullets(s, rx, y - Inches(0.02), rw, Inches(3.3), [
     ("Never rank guards on a single leaderboard.", "Score your candidates on represented, "
      "held-out, over-refusal and domain sets."),
+    # Rows 2 and 3 of the report's guidelines table both now price the trade in the region
+    # you deploy in, so both bullets carry it here.
     ("Always compare a tune to its own base — at a matched false-alarm rate.", "A delta "
      "against other models hides the transfer cost; a recall compared at unequal alarm "
-     "rates hides its sign."),
+     f"rates hides its sign. Price it in the 5% region: "
+     f"{LFP['LowFprTransPAucDelta']} pAUC, not "
+     f"{LFP['LowFprTransApDelta']} AP."),
     ("Treat KL-β as a dial, not a default.", "It buys transfer at a real represented cost "
-     "that failed our preregistered margin."),
+     f"that failed our preregistered margin — in the 5% region, "
+     f"{LFPK['LowFprKlTransPAucDelta']} for "
+     f"{LFPK['LowFprKlRepPAucDelta']} pAUC."),
     ("Compose to repair, not to upgrade.", "If you already tuned and transfer regressed, "
      "average base + adapter — the base is what buys the recovery back."),
     ("Rank recovery is never threshold reuse.", "Re-choose the operating point on the "
@@ -1499,7 +1592,7 @@ bullets(s, rx, y - Inches(0.02), rw, Inches(3.3), [
      "invariance check — and audit the gate as hard as the guards."),
 ], size=11.5, gap=8)
 
-callout(s, rx, y + Inches(3.52), rw, Inches(1.14), "Scope, stated plainly",
+callout(s, rx, y + Inches(3.76), rw, Inches(1.14), "Scope, stated plainly",
         "Retrospective estimation on a fixed four-checkpoint panel with an inspected "
         "manifest; only the adaptation study is preregistered. Mortgage labels are "
         "LLM-judge, not counsel-reviewed. No causal, universal, deployment, or "
