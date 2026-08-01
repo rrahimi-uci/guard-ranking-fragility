@@ -59,7 +59,7 @@ Body of evidence & Flavor \& label tier & Establishes (conditional on panel/data
 \midrule
 Act~I: SFT specialization (\Cref{tab:primary,tab:sensitivity}, \Cref{fig:plane}) &
 Retrospective, estimation-only; dataset-held-out; benchmarks inspected in dev &
-On this panel, SFT lifts represented-source AP ($\RepDelta$) but not transfer ($\TransferDelta$); $\SpecializationSeedCount/\TotalSeedCount$ seeds specialize &
+On this panel, SFT lifts represented-source AP ($\RepDelta$) but not transfer ($\TransferDelta$); $\SpecializationSeedCount/\TotalSeedCount$ seeds specialize. Re-read over FPR~$[0,\LowFprBudget]$ the direction is unchanged (no cell flips sign) but the trade is $\LowFprTransApDelta\to\LowFprTransPAucDelta$ transfer and $\LowFprRepApDelta\to\LowFprRepPAucDelta$ represented (\Cref{tab:lowfpr}) &
 Two lineages; single recipe; balanced prevalence; $\Delta$ coupled to base; v2 overlap audit run and clean, embedding check still absent $\to$ prospective uninspected cohort + embedding-space overlap check \\
 Act~II: composition (\Cref{tab:pilot-summary,tab:pilot-models,tab:pilot-operating}, \Cref{eq:comp}) &
 Retrospective, estimation-only; same panel &

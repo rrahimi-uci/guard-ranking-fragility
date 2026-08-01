@@ -239,6 +239,59 @@ a theme Acts~II and~III return to.
 
 \noindent On this four-checkpoint panel, post-SFT scores cluster near a benchmark-fixed endpoint, so ``stronger bases specialize more'' is largely arithmetic rather than skill; the full attractor analysis and \Cref{fig:attractor} are in \Cref{app:detail}.
 
+\subsection{The whole ranking is not the operating region}
+\label{sec:actI-lowfpr}
+
+\Cref{sec:actI-op} equalised the alarm \emph{budget} and re-read one operating point. A more basic
+question sits underneath it, and the report has not answered it: our headline metric is macro-AP,
+an average of precision over the \emph{entire} ranking, while every deployment sentence we write is
+about a guard that fires on a few percent of traffic. Those are different quantities. AP rewards
+ordering deep in the negative mass --- the region below any threshold an inline guard would ever
+use --- so a change in AP need not imply the same change where the guard is actually placed.
+
+\Cref{tab:lowfpr} settles it by recomputing the identical eight cells under three metrics on the
+\emph{same} committed rows: macro-AP, the benchmark-macro one-way partial AUC over
+FPR~$[0,\LowFprBudget]$, and benchmark-macro recall at that budget. Partial AUC integrates the ROC
+only inside the alarm budget and is normalised to the mean TPR there, so it reads on the same scale
+as a recall --- against a chance floor of $\LowFprChance$, not $0.5$. Intervals are the report's
+usual paired bootstrap over \LowFprNBoot{} replicates, resampling evaluation \code{family\_id}
+clusters and training seeds.
+
+\input{generated/tab_lowfpr_gen}
+
+\paragraph{The direction survives; the magnitude does not.} \LowFprSignFlips{} of the eight cells
+change sign: every checkpoint moves the same way under all three metrics, so Act~I's qualitative
+finding is not an artifact of choosing an average-ranking metric. What macro-AP does do is
+systematically \emph{understate} the trade, on both sides. The represented gain is
+$\LowFprRepApDelta$ on AP against $\LowFprRepPAucDelta$ on pAUC
+($\LowFprRepAmplification\times$), and the transfer cost is $\LowFprTransApDelta$ against
+$\LowFprTransPAucDelta$ ($\LowFprTransAmplification\times$), with panel-mean budget recall moving
+$\LowFprTransTprDelta$. The worst cell is the recurring one: \LowFprWorstName{} gives back
+$\LowFprWorstAp$ of macro-AP and $\LowFprWorstPAuc$ \LowFprWorstPAucCI{} of pAUC ---
+$\LowFprWorstTpr$ in budget recall, which is to say roughly two of every five unsafe prompts it
+would have caught at a $\LowFprBudget$ alarm rate before tuning.
+
+One qualification cuts the other way, and it weakens a claim we make elsewhere. SmolLM2-1.7B is the
+single checkpoint whose transfer \emph{improves} under SFT on macro-AP ($+0.0400$, an interval that
+clears zero). In the operating region that gain does not survive: pAUC $+0.011$ and budget recall
+$-0.012$, both straddling zero. So ``positive for the weakest base'' is a statement about average
+ranking, not about deployable recall, and \Cref{sec:actI-primary}'s ``the model that had the least
+is the only one that improves'' should be read with that scope.
+
+\begin{takeaway}{Why we report both, and which one to act on}
+macro-AP is the right instrument for the question Act~I asks --- \emph{did the fine-tune reorder the
+data?} --- and it is what makes the paired estimand comparable across benchmarks of different base
+rates. It is the wrong instrument for the question a practitioner asks: \emph{what happens at the
+alarm rate I can afford?} On this panel the two agree in sign and disagree by a factor of two to
+three in size, always in the direction that makes specialization look milder than it is. Read the
+AP columns to compare methods; read the pAUC and budget-recall columns before believing a
+deployment number.
+\end{takeaway}
+
+\noindent This is a re-reading of evidence the report already has, at the same evidence tier: same
+fixed panel, same inspected sources, same retrospective status, no new data and no GPU. It licenses
+nothing that \Cref{tab:primary} did not already license --- it prices it differently.
+
 \subsection{A recipe control: does anti-forgetting (KL-regularized) SFT preserve transfer?}
 \label{sec:actI-klsft}
 
@@ -284,6 +337,29 @@ Effects at or below it should be read as unresolved: composition's $+0.017$ aggr
 The bootstrap intervals elsewhere in the report resample evaluation rows and seeds; they do \emph{not}
 capture this environment term, so they are narrower than a full reproduction would be.
 
+\paragraph{The dial, priced in the operating region.} \Cref{sec:actI-lowfpr} showed macro-AP
+understates Act~I's trade; it understates this one too, and asymmetrically.
+\Cref{tab:lowfpr-kl} recomputes the same KL cells over FPR~$[0,\LowFprBudget]$. The direction is
+unchanged at both $\beta$ --- KL buys transfer and charges represented ranking --- but at
+$\beta{=}\LowFprKlBeta$ the transfer gain is $\LowFprKlTransApDelta$ on AP against
+$\LowFprKlTransPAucDelta$ on pAUC ($\LowFprKlTransAmplification\times$) and
+$\LowFprKlTransTprDelta$ in budget recall, while the represented cost is $\LowFprKlRepApDelta$
+against $\LowFprKlRepPAucDelta$ ($\LowFprKlRepAmplification\times$). Both halves grow, and the
+\emph{cost} half grows more than twice as fast as the benefit half. A dial that looks like
+``two points of represented AP for six points of transfer AP'' is, where a guard is placed, closer
+to twenty-one points of represented pAUC for fifteen. That does not make KL useless --- it makes the
+choice sharper, and more clearly a choice.
+
+\input{generated/tab_lowfpr_kl_gen}
+
+\noindent It also sharpens the one preregistered verdict in this report. \Cref{sec:adaptation}'s RQ2
+fails a registered $-0.02$ non-inferiority margin on represented macro-AP. Read on AP that margin is
+missed by about $\LowFprKlMarginMultipleAp\times$; read in the operating region on this panel it is
+missed by about $\LowFprKlMarginMultiplePAuc\times$. The registered criterion was not narrowly
+missed. (These are point estimates on the four general checkpoints, not a re-run of the registered
+study's own family bootstrap on its ten-checkpoint panel, so they qualify that verdict's magnitude
+rather than restating its interval.)
+
 \begin{takeaway}{What the recipe control shows}
 \KLTakeaway
 \end{takeaway}
@@ -327,7 +403,10 @@ rather than a single balanced number is a zero-cost recompute (roadmap), and it 
 deployment precision.
 
 \edb{Represented AP $\RepDelta$ (LCB $\RepLCB$) vs.\ transfer $\TransferDelta$ (UCB $\TransferUCB$);
-specialization in $\SpecializationSeedCount/\TotalSeedCount$ seeds (\Cref{tab:primary}). A base-anchored
+specialization in $\SpecializationSeedCount/\TotalSeedCount$ seeds (\Cref{tab:primary}). Read in the
+deployment region the direction holds and the size roughly triples: transfer
+$\LowFprTransPAucDelta$ pAUC$[0,\LowFprBudget]$, budget recall $\LowFprTransTprDelta$
+(\Cref{tab:lowfpr}). A base-anchored
 KL penalty ($\beta{=}0.5$) buys back transfer (\KLBetaHalfTransferDelta{} vs.\ SFT) at a represented cost
 \KLBetaHalfRepDelta{} (\Cref{sec:actI-klsft}).}
 {Never replace a base guard on represented AP alone; compare each tune to its \emph{own} base on

@@ -99,6 +99,8 @@
 \input{generated/cascade_macros}     % Selective-cascade curve: \Cascade*
 \input{generated/repro_macros}       % Coverage of the generated/ surface: \Repro*
 \input{generated/h2h_macros}         % Act III represented-vs-transfer head-to-head: \Htwo*
+\input{generated/lowfpr_macros}      % Act I re-read over FPR [0,.05]: \LowFpr*
+\input{generated/lowfpr_kl_macros}   % the KL dial in the same region: \LowFprKl*
 \input{generated/teaser_macros}      % Figure 1 caption: 2-dp \Teaser* forms of the panel deltas
 
 \title{\textbf{Benchmark Gains Do Not Guarantee Transfer}\\[3pt]
@@ -126,6 +128,13 @@ checkpoints. That is an ROC-point comparison at a common budget, not a deployabl
 (\Cref{sec:matched-fpr-limits}). The
 claim is therefore not that fine-tuning always harms transfer; it is that a represented-benchmark gain,
 by itself, does not establish transfer.
+
+\smallskip
+\noindent Because every deployment sentence here is about an alarm budget while the headline metric
+averages over the whole ranking, we re-read the same rows over FPR~$[0,\LowFprBudget]$. No cell changes
+sign, so the direction holds --- but macro-AP understates both halves of the trade: the transfer cost
+is $\LowFprTransApDelta$ on macro-AP against $\LowFprTransPAucDelta$ on partial AUC, and the represented
+gain $\LowFprRepApDelta$ against $\LowFprRepPAucDelta$ (\Cref{sec:actI-lowfpr}).
 
 \smallskip
 \noindent Two extensions and one remedy bound that result. A directional, non-confirmatory extension to
@@ -1155,7 +1164,10 @@ KL-SFT ($\beta{=}0.5$): transfer \KLBetaHalfTransferDelta{} vs.\ SFT at a repres
 (Row~7) finds this trade fails non-inferiority (\Cref{sec:adaptation}). &
 If you must SFT and care about OOD, add $\beta\,\mathrm{KL}(\pi_\theta\Vert\pi_{\text{base}})$
 ($\beta{\approx}0.5$); it recovers transfer at no extra forward pass but a real represented-source
-cost --- a tradeoff dial, not a free upgrade. \\
+cost --- a tradeoff dial, not a free upgrade. Price the dial where you will deploy it, not on
+average ranking: in the FPR~$[0,\LowFprBudget]$ region the same trade is
+$\LowFprKlTransPAucDelta$ transfer for $\LowFprKlRepPAucDelta$ represented pAUC
+(\Cref{tab:lowfpr-kl}). \\
 \rowcolor{guidealt}
 \textbf{\textcolor{tkgreenedge}{4.}~Output-space composition repairs a tuned guard's lost transfer --- at inference, not retraining.} &
 Base$+$adapter average recovers transfer and beats an equal-cost SFT$+$SFT ensemble

@@ -290,6 +290,14 @@ def train_one_cell(lock, model_key, seed, out_dir, train_path, steps=None,
         import torch.nn.functional as F
 
         class KLRegTrainer(FixedOrderTrainer):
+            # Achieved-KL bookkeeping. The first version kept only `self._kl_running`, overwritten
+            # every micro-batch, and never handed it to the Trainer log stream -- so `final_kl` in
+            # the run metadata was the KL of whichever micro-batch happened to run last, and no
+            # achieved-KL curve existed anywhere, by construction rather than by non-release. A
+            # reviewer cannot diagnose a regularizer whose realised strength was never recorded.
+            _kl_sum = 0.0
+            _kl_n = 0
+
             def compute_loss(self, model, inputs, return_outputs=False, **kw):
                 # Delegate CE to the base Trainer so the completion-only cross-entropy is normalized
                 # IDENTICALLY to vanilla SFT (incl. num_items_in_batch grad-accum scaling); beta==0
@@ -298,16 +306,48 @@ def train_one_cell(lock, model_key, seed, out_dir, train_path, steps=None,
                 shift_logits = outputs.logits[:, :-1, :]
                 shift_labels = inputs["labels"][:, 1:]
                 mask = shift_labels != -100
+                # The reference must be a deterministic function of the frozen base weights.
+                # disable_adapter() removes the LoRA delta (and with it lora_dropout, which PEFT
+                # short-circuits on that branch), but it does NOT leave training mode, so any base
+                # architecture carrying its own dropout would inject noise into the anchor. All four
+                # pinned panel checkpoints happen to set attention_dropout=0.0, which made this
+                # latent rather than active -- exactly the kind of silent dependency on someone
+                # else's config default that should not be load-bearing. Force eval mode for the
+                # reference forward and restore the previous mode afterwards.
+                was_training = model.training
                 with torch.no_grad():
-                    with model.disable_adapter():              # frozen base forward (reference)
-                        ref_logits = model(input_ids=inputs["input_ids"],
-                                           attention_mask=inputs["attention_mask"]).logits
+                    model.eval()
+                    try:
+                        with model.disable_adapter():          # frozen base forward (reference)
+                            ref_logits = model(input_ids=inputs["input_ids"],
+                                               attention_mask=inputs["attention_mask"]).logits
+                    finally:
+                        if was_training:
+                            model.train()
                 logp = F.log_softmax(shift_logits[mask].float(), dim=-1)
                 logp_ref = F.log_softmax(ref_logits[:, :-1, :][mask].float(), dim=-1)
                 kl = (logp.exp() * (logp - logp_ref)).sum(-1).mean()   # KL(pi_theta || pi_base) >= 0
-                self._kl_running = float(kl.detach())
+                # NB the student side is deliberately left stochastic: lora_dropout is active on the
+                # CE forward whose logits these are, so the penalty regularizes the sampled
+                # sub-network, which is the intended trust region. Only the anchor is made
+                # deterministic. The logged value is therefore a dropout-averaged estimate of the
+                # achieved KL, not a noiseless one, and is labelled as such in the run metadata.
+                k = float(kl.detach())
+                self._kl_running = k
+                KLRegTrainer._kl_sum += k
+                KLRegTrainer._kl_n += 1
                 loss = ce_loss + float(kl_beta) * kl
                 return (loss, outputs) if return_outputs else loss
+
+            def log(self, logs, *a, **k):
+                # Put achieved KL in the same stream as the loss so a curve is recoverable.
+                if KLRegTrainer._kl_n:
+                    logs = {**logs, "kl": KLRegTrainer._kl_sum / KLRegTrainer._kl_n}
+                    KLRegTrainer._kl_sum, KLRegTrainer._kl_n = 0.0, 0
+                return super().log(logs, *a, **k)
+
+        # Class-level accumulators must not leak between cells in a sweep.
+        KLRegTrainer._kl_sum, KLRegTrainer._kl_n = 0.0, 0
 
         trainer_cls = KLRegTrainer if (kl_beta and float(kl_beta) > 0) else FixedOrderTrainer
 
@@ -323,7 +363,14 @@ def train_one_cell(lock, model_key, seed, out_dir, train_path, steps=None,
         trainer = trainer_cls(model=model, args=args, train_dataset=ds, data_collator=collate)
         trainer.train()
         if kl_beta and float(kl_beta) > 0:
+            # `final_kl` is the LAST micro-batch's KL and is kept only for backwards
+            # compatibility; `kl_curve` is the per-log-step achieved-KL series a reviewer needs to
+            # tell "the penalty was active and decaying" from "the penalty was inert".
             meta["final_kl"] = getattr(trainer, "_kl_running", None)
+            meta["kl_curve"] = [{"step": h.get("step"), "kl": h.get("kl")}
+                                for h in trainer.state.log_history if "kl" in h]
+            meta["kl_reference_mode"] = "eval"      # deterministic anchor; see KLRegTrainer
+            meta["kl_student_mode"] = "train"       # lora_dropout active on the regularized side
 
         adir = C.adapter_dir(out_dir)
         model.save_pretrained(adir)

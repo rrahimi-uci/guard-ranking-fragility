@@ -38,6 +38,9 @@ import frontier_numbers as FN  # noqa: E402
 # paper, and a missing figure fails the build instead of printing a stale number.
 F = FN.load()
 HT = FN.load_h2h()
+# Act I re-read over FPR [0,.05]. Same contract as everything else here: the slide reads the
+# macro file the paper \inputs, so the deck cannot quote a different amplification than Table 6.
+LFP = FN.load_named("lowfpr_macros.tex")
 # The adaptation slide used to hard-code +0.174 / +0.129 / -0.036 / -0.060. Those were the
 # MIXED six-family panel values; the analyzer now computes the registered purpose-built-panel
 # estimand, so the slide reads the macro file instead of restating a superseded number.
@@ -699,7 +702,13 @@ bullets(s, rx, y + Inches(1.80), rw, Inches(2.5), [
      "at ~12%, so this is not a blanket increase in caution."),
     ("The threshold did not transfer.", "The cutoff that looked safe in calibration is "
      "not the cutoff you get in the field."),
-], size=11.5, gap=10)
+    # Read from generated/lowfpr_macros.tex so the slide cannot drift from Table 6 of the paper.
+    ("Our headline metric understates all of this.",
+     f"macro-AP averages over the whole ranking. Re-read only inside the 5% budget, no cell "
+     f"flips sign but the transfer cost goes {FN.bare(LFP['LowFprTransApDelta'])} → "
+     f"{FN.bare(LFP['LowFprTransPAucDelta'])} pAUC "
+     f"({FN.bare(LFP['LowFprTransAmplification'])}×)."),
+], size=11, gap=8)
 
 d.notes(s, """
 The lower block of the chart is the fair comparison, and it is the one to spend time on.
