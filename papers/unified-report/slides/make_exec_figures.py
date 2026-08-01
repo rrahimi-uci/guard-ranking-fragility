@@ -185,7 +185,9 @@ def fig_tax(rows):
     # Descending by base strength: barh puts index 0 at the BOTTOM, so sorting
     # strongest-first makes the weakest base the top row. Reading top-down then follows
     # the sentence the chart is making -- as the base gets stronger, the gain shrinks and
-    # the cost grows. Sorting the other way tells the story backwards.
+    # the held-out effect turns from a gain into a loss. Sorting the other way tells the
+    # story backwards. Note the LOSS is not monotone in base strength (Qwen3-4B gives back
+    # more than either larger model), which is why neither deck claims that it is.
     pts.sort(key=lambda t: -t[1])
 
     fig, ax = plt.subplots(figsize=(8.0, 4.5))

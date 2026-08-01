@@ -491,9 +491,14 @@ y = d.header(s, "but better at what",
 cw = (CW - Inches(0.40)) / 2
 statcard(s, M, y + Inches(0.10), cw, Inches(1.62),
          b(HT['AggDeltaTpr']) + " catch rate",
+         # The interval is conditional on the three corpora we tested; the report states the
+         # unconditional version in its abstract, and it includes zero. An exec reading this
+         # as "we win on describable traffic" needs the scope on the same card as the claim.
          "Averaged across every source we can describe in advance, our tuned guards rank "
          "BETTER than the hosted model at the same alarm budget. 95% interval "
-         + b(HT['AggDeltaTprCI']) + " -- it excludes zero.",
+         + b(HT['AggDeltaTprCI']) + " -- excludes zero across these three sources; treat "
+         "them as a sample of future manifests and it widens to "
+         + b(HT['AggSrcResampledCI']) + ".",
          color=BLUE)
 statcard(s, M + cw + Inches(0.40), y + Inches(0.10), cw, Inches(1.62),
          b(HT['TransRefTpr']) + "  vs  " + b(HT['TransBestLocalTpr']),
@@ -532,6 +537,15 @@ overstates it: {b(HT['NSigNominal'])} of {b(HT['NCells'])} cells clear zero on t
 {b(HT['NSigHolm'])} survive a familywise correction. The average is the number to defend, not
 the best cell.
 
+And be precise about what the average is an average OVER, because it bounds the sourcing rule.
+The interval is conditional on these three corpora: it resamples rows within a fixed source set,
+because three sources we picked do not sample a population of sources. Drawing sources with
+replacement instead widens it to {b(HT['AggSrcResampledCI'])}, which INCLUDES zero. Read that as
+the honest scope of the claim -- it says our tuned guards rank better on traffic that looks like
+these three manifests, not that they would on any manifest we might write next. It is a reason
+to characterise our own traffic before assuming the advantage transfers to it, not a reason to
+discount the split recommendation, which also rests on residency and cost.
+
 Represented sources here are {b(HT['RepSources'])}. Held-out sources are the ones we never
 trained on, and there the hosted model leads.
 
@@ -555,8 +569,10 @@ picture(s, "exec_tax", M, y - Inches(0.06), Inches(8.15), Inches(4.20), align="l
 callout(s, M + Inches(8.45), y + Inches(0.02), CW - Inches(8.45), Inches(2.00),
         "the pattern behind it",
         "Fine-tuning teaches a model the traffic you trained it on and costs it accuracy on "
-        "traffic you did not. Read the chart downward: the blue gain shrinks and the red cost "
-        "grows as the starting model gets stronger.", color=ACCENT)
+        "traffic you did not. Read the chart downward: the blue gain shrinks steadily as the "
+        "starting model gets stronger. The red cost is not as orderly — it turns from a gain "
+        "into a loss and stays there, because every tuned model lands on much the same "
+        "finishing accuracy.", color=ACCENT)
 callout(s, M + Inches(8.45), y + Inches(2.20), CW - Inches(8.45), Inches(1.72),
         "planning consequence",
         f"Budgeting a tuning project to close a vendor gap is not supported here. The best "
@@ -571,9 +587,17 @@ swings from {F['SftWorstDelta']} to {F['SftBestDelta']}.
 
 Mechanism, in plain terms: fine-tuning on a fixed set of sources specialises the model to
 those sources. It buys a lot of accuracy on traffic that looks like the training data and
-gives some back on traffic that does not. Our measurements say the trade gets worse as the
-starting model gets stronger -- the strongest model we tuned gained the least and lost the
-most.
+gives some back on traffic that does not. The strongest model we tuned gained the least --
+that part is orderly, all the way down the chart.
+
+Do not go one step further and say it also lost the most, which an earlier version of this
+slide did. The loss is not ordered by starting strength: the 4B model gave back the most
+(-0.150) from a weaker starting point than either the 8B (-0.101) or the 32B (-0.117). What
+is orderly is where they all END UP -- every tuned model lands on roughly the same
+unfamiliar-traffic accuracy whatever it started from, so the cost is the distance it had to
+fall, not evidence that better models specialise harder. The planning consequence is the same
+either way: above a strong starting point, tuning buys very little and still charges close to
+full price.
 
 This is the central finding of the underlying research, reproduced here on external
 expert-annotated data rather than on our own panel, which is a harder test.

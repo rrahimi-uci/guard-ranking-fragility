@@ -93,20 +93,33 @@ labelled the one expert-annotated tier, and the mortgage labels are labelled LLM
 and not counsel-reviewed. Slide 15 restates the scope boundary in full. Speaker notes
 carry the caveats that do not fit on the slides — read them before presenting.
 
-Four limits are load-bearing enough that the deck states them on the slide, not only in
+Six limits are load-bearing enough that the deck states them on the slide, not only in
 the notes. Slide 7 shows the operating point under **both** threshold rules, because a
 recall comparison at unequal false-alarm rates is not a comparison of discriminative
 power — at an equal budget Act I's apparent transfer-recall gain reverses on all four
-checkpoints. Slide 3 carries the qualifier under its four panels: the domain-arm CIs
+checkpoints. Slides 7, 9 and 20 also carry the FPR $[0,.05]$ re-read of that trade
+(`lowfpr_macros.tex`, `lowfpr_kl_macros.tex`): macro-AP understates **both** halves, by
+2.1× on the represented gain and 3.0× on the transfer cost, and understates the KL dial
+asymmetrically (2.4× on what it buys, 6.2× on what it charges). Slide 3 carries the
+qualifier under its four panels: the domain-arm CIs
 overlap and Q4's left bar is post hoc, so the claim is that the leaderboard's answer
-moves, not that the ordering is resolved. Slide 15
+moves, not that the ordering is resolved. Slide 19 and exec slide 5 carry the source-set
+conditional on that post-hoc aggregate — resampling the three corpora widens $+0.083$ to
+an interval that includes zero, which is the honest statement of how far it travels. Slide 15
 reports health as *leaning* against a tie rather than resolved: four unadjusted paired
 comparisons, the interval clearing zero by +0.0026. And slide 9's notes carry the
 ≈0.015 mean / 0.029 worst-case reproduction noise floor measured by the KL control's
 β = 0 arm, which is what bounds every small effect quoted anywhere in the deck.
 
-Two claims the decks deliberately do **not** make, because the report withdrew them: that the
-hosted–local gap is *conservative* (coarse integer ties bound how finely the hosted ranking
-resolves, but they do not fix a direction), and that closing the gap by scale alone would take
-another order of magnitude (three points, one non-monotonic, identify no scaling law). Earlier
-builds of both decks asserted both.
+Five claims the decks deliberately do **not** make, because the report withdrew or scoped
+them. That the hosted–local gap is *conservative* (coarse integer ties bound how finely the
+hosted ranking resolves, but they do not fix a direction). That closing the gap by scale alone
+would take another order of magnitude (three points, one non-monotonic, identify no scaling
+law). That the specialization tax *scales with the base* — the transfer cost is not monotone in
+base strength (Qwen3-4B pays more from a weaker base than either larger model), so slide 18 and
+exec slide 6 say the tax is the distance to a benchmark-fixed **endpoint**, which is arithmetic
+rather than a behavioural law. That ExpGuard finance and law are *ties* — an interval containing
+zero is not evidence of no difference and no equivalence margin was registered, so they are
+differences too small to sign. And that SmolLM2's positive transfer delta is a deployment result:
+it is +0.040 on macro-AP and straddles zero inside the alarm budget, so slides 5–7 scope it to
+average ranking. Earlier builds of the decks asserted the first four.
