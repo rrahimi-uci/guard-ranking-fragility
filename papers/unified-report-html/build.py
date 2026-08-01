@@ -84,6 +84,9 @@ def seo_files() -> dict[str, str]:
 
 # Sentinels chosen from a range LaTeX never emits and pandoc passes through untouched.
 REF, CITE, BOX, ENDBOX, RAW = "\u27e6REF:", "\u27e6CITE:", "\u27e6BOX:", "\u27e6/BOX\u27e7", "\u27e6RAW:"
+# \citet needs its own sentinel. Collapsing it into \citep printed a bare "[36]" where the
+# PDF prints "Lee et al. [36]", which left sentences starting with a bracketed number.
+CITET = "\u27e6CITET:"
 EQ = "\u27e6EQ:"
 CLOSE = "\u27e7"
 
@@ -254,7 +257,7 @@ def _edb(tex: str) -> str:
                 f"\\textbf{{Decision.}} {de}\n\n"
                 f"\\textbf{{Boundary.}} {bo}")
         tex = (tex[:m.start()]
-               + f"\n\n\\begin{{quote}}\n{BOX}editor:What this establishes{CLOSE}\n\n{body}"
+               + f"\n\n\\begin{{quote}}\n{BOX}result:What this establishes{CLOSE}\n\n{body}"
                  f"\n\n{ENDBOX}\n\\end{{quote}}\n\n"
                + tex[j:])
     return tex
@@ -263,7 +266,7 @@ def _edb(tex: str) -> str:
 def _boxes(tex: str) -> str:
     """\\begin{takeaway}{Title} ... \\end{takeaway}  ->  sentinel-delimited quote block."""
     for env, kind in (("takeaway", "takeaway"), ("background", "background"),
-                      ("casebox", "case"), ("edbox", "editor")):
+                      ("casebox", "case"), ("edbox", "result")):
         pat = re.compile(r"\\begin\{" + env + r"\}\s*(?=\{)")
         while (m := pat.search(tex)):
             title, j = _balanced(tex, m.end())
@@ -283,11 +286,17 @@ PREAMBLE_SHIM = r"""\documentclass{article}
 \newcommand{\Cref}[1]{&REF;#1&CLOSE;}
 \newcommand{\cref}[1]{&REF;#1&CLOSE;}
 \newcommand{\citep}[1]{&CITE;#1&CLOSE;}
-\newcommand{\citet}[1]{&CITE;#1&CLOSE;}
+\newcommand{\citet}[1]{&CITET;#1&CLOSE;}
 \newcommand{\citealp}[1]{&CITE;#1&CLOSE;}
 \newcommand{\cite}[1]{&CITE;#1&CLOSE;}
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\draftwarning}{}
+% tab:closest and tab:h2h-weighting are built entirely out of these two marks. They are
+% defined in unified_report.tex's preamble, which this builder does not read (it takes only
+% the body), so without them pandoc dropped every mark and shipped a table of empty cells.
+% Literal characters rather than \checkmark/\times: selectable text, no MathJax round-trip.
+\newcommand{\cmark}{✓}
+\newcommand{\xmark}{✗}
 """
 
 
@@ -417,7 +426,8 @@ def flatten(redact: bool = True) -> tuple[str, dict]:
     tex = (PREAMBLE_SHIM + macro_shim()
            + "\n\\begin{document}\n" + body + "\n\\end{document}\n")
     # sentinel placeholders -> real sentinels (kept out of the shim so \n parsing is simple)
-    tex = tex.replace("&REF;", REF).replace("&CITE;", CITE).replace("&CLOSE;", CLOSE)
+    tex = (tex.replace("&REF;", REF).replace("&CITET;", CITET)
+              .replace("&CITE;", CITE).replace("&CLOSE;", CLOSE))
     meta["abstract"] = abstract
     return tex, meta
 
@@ -433,6 +443,66 @@ def pandoc(tex: str) -> str:
 
 
 # --------------------------------------------------------------------- 3. bibliography
+# BibTeX values are LaTeX, not text. An earlier version only stripped the OUTER braces, so
+# capitalisation-protecting braces ({LLM}) and accent macros (\"o, \'e) shipped verbatim into
+# the published reference list -- 19 of the 55 entries had a mangled author or title.
+_ACCENTS = {
+    r'\"a': "ä", r'\"o': "ö", r'\"u': "ü", r'\"A': "Ä", r'\"O': "Ö", r'\"U': "Ü",
+    r"\'a": "á", r"\'e": "é", r"\'i": "í", r"\'o": "ó", r"\'u": "ú", r"\'c": "ć",
+    r"\'A": "Á", r"\'E": "É", r"\'I": "Í", r"\'O": "Ó", r"\'U": "Ú", r"\'n": "ń",
+    r"\`a": "à", r"\`e": "è", r"\`o": "ò", r"\^a": "â", r"\^e": "ê", r"\^o": "ô",
+    r"\~n": "ñ", r"\~a": "ã", r"\~o": "õ", r"\c c": "ç", r"\v s": "š", r"\v c": "č",
+    r"\v z": "ž", r"\ss": "ß", r"\o": "ø", r"\aa": "å", r"\l": "ł",
+}
+
+
+def _detex(s: str) -> str:
+    """LaTeX field value -> plain text fit for HTML."""
+    s = s.strip()
+    # Dotless i/j exist only as accent bases ({\'\i} = í). Fold them to the plain letter first
+    # so the accent patterns below see a word character and can match.
+    s = re.sub(r"\\i(?![a-zA-Z])", "i", s)
+    s = re.sub(r"\\j(?![a-zA-Z])", "j", s)
+    for pat in (r"\{\\(\w+)\s+(\w)\}", r"\{\\(.)\{(\w)\}\}", r"\{\\(.)(\w)\}"):
+        s = re.sub(pat, lambda m: _ACCENTS.get("\\" + m.group(1) + m.group(2),
+                                               _ACCENTS.get("\\" + m.group(1) + " " + m.group(2),
+                                                            m.group(2))), s)
+    for tex, ch in _ACCENTS.items():
+        s = s.replace(tex, ch)
+    s = re.sub(r"\\(?:emph|textit|textbf|texttt|mbox|text)\{([^{}]*)\}", r"\1", s)
+    s = re.sub(r"\\url\{([^{}]*)\}", r"\1", s)
+    s = s.replace(r"\&", "&").replace(r"\_", "_").replace(r"\%", "%").replace(r"\$", "$")
+    s = s.replace("---", "—").replace("--", "–").replace("~", " ")
+    s = s.replace("{", "").replace("}", "")
+    return " ".join(s.split())
+
+
+def _corporate(author: str) -> bool:
+    """One brace-wrapped organisation, whose own name may contain the word "and"."""
+    a = author.strip()
+    return a.startswith("{{") or (a.startswith("{") and a.endswith("}") and " and " in a)
+
+
+def _people(author: str) -> str:
+    """"Bowen III, Donald E. and Price, S. McKay" -> "Donald E. Bowen III, S. McKay Price".
+
+    Joining with a comma without first flipping "Last, First" turned every two-author entry
+    into an unparseable four-name list.
+    """
+    if _corporate(author):
+        return _detex(author)
+    out = []
+    for person in author.split(" and "):
+        person = person.strip()
+        if person.count(",") == 1:
+            last, first = (p.strip() for p in person.split(","))
+            person = f"{first} {last}".strip()
+        out.append(person)
+    if len(out) > 1:
+        return ", ".join(out[:-1]) + " and " + out[-1]
+    return out[0] if out else ""
+
+
 def bibliography() -> dict[str, dict]:
     """Minimal BibTeX read: enough for a numbered, alphabetized reference list."""
     raw = (SRC / "refs.bib").read_text()
@@ -447,14 +517,53 @@ def bibliography() -> dict[str, dict]:
         fields = {}
         for fm in re.finditer(r"(\w+)\s*=\s*[{\"](.*?)[}\"],?\s*(?=\n\s*\w+\s*=|\n?\s*\}?\s*$)",
                               raw[start:i - 1], re.S):
-            fields[fm.group(1).lower()] = " ".join(fm.group(2).split()).strip("{}")
+            fields[fm.group(1).lower()] = " ".join(fm.group(2).split())
         entries[m.group(2).strip()] = fields
     return entries
 
 
 def _sortkey(f: dict) -> tuple:
-    a = f.get("author", f.get("title", "zz"))
-    return (a.split(" and ")[0].split(",")[0].split()[-1].lower(), f.get("year", ""))
+    """Alphabetise by the first author's surname, or by a corporate name taken whole.
+
+    A brace-wrapped author ({Meta AI}) is one organisation, not "First Last", so taking the
+    last whitespace token filed seven Meta model cards under "AI".
+    """
+    a = (f.get("author") or f.get("title") or "zz").strip()
+    if a.startswith("{{") or (a.startswith("{") and a.endswith("}") and " and " in a):
+        # One brace-wrapped corporate author, possibly containing the word "and" as part of
+        # its own name ("{FFIEC and CFPB}"). Splitting it first filed it under "(FFIEC)".
+        key = _detex(a)
+    else:
+        first = a.split(" and ")[0].strip()
+        if first.startswith("{") and first.endswith("}"):
+            key = _detex(first)
+        elif "," in first:
+            key = first.split(",")[0]
+        else:
+            key = first.split()[-1] if first.split() else first
+    key = re.sub(r"^[^0-9a-zA-Z]+", "", _detex(key)).lower()
+    return (key, f.get("year", ""))
+
+
+def bib_surname(f: dict) -> str:
+    """The name \\citet prints in running text: "Lee et al." / "Wortsman and Ilharco"."""
+    a = f.get("author", "")
+    if not a:
+        return _detex(f.get("title", "")).split(":")[0]
+    if _corporate(a):
+        return _detex(a)
+    people = [p.strip() for p in a.split(" and ") if p.strip()]
+    first = people[0]
+    if first.startswith("{"):
+        name = _detex(first)
+    elif "," in first:
+        name = _detex(first.split(",")[0])
+    else:
+        name = _detex(first.split()[-1])
+    if len(people) == 1:
+        return name
+    return f"{name} et al." if len(people) > 2 else f"{name} and " + (
+        _detex(people[1].split(",")[0]) if "," in people[1] else _detex(people[1].split()[-1]))
 
 
 def render_bib(entries: dict, cited: list[str]) -> tuple[str, dict[str, int]]:
@@ -467,11 +576,20 @@ def render_bib(entries: dict, cited: list[str]) -> tuple[str, dict[str, int]]:
     rows = []
     for k in keys:
         f = entries[k]
-        who = f.get("author", "").replace(" and ", ", ")
-        venue = f.get("journal") or f.get("booktitle") or f.get("publisher") or ""
-        bits = [b for b in (html.escape(who), f"<em>{html.escape(f.get('title',''))}</em>",
-                            html.escape(venue), html.escape(f.get("year", ""))) if b.strip(" <em>/")]
+        who = _people(_detex(f.get("author", "")))
+        venue = _detex(f.get("journal") or f.get("booktitle") or f.get("publisher") or "")
+        # howpublished/note carry the arXiv id or the model-card provenance for the entries
+        # that have no journal; dropping them left a third of the list with no identifier.
+        extra = _detex(f.get("howpublished") or "")
+        note = _detex(f.get("note") or "")
+        if f.get("eprint") and "arxiv" not in (venue + extra).lower():
+            extra = (extra + " " if extra else "") + f"arXiv:{_detex(f['eprint'])}"
+        bits = [b for b in (html.escape(who), f"<em>{html.escape(_detex(f.get('title','')))}</em>",
+                            html.escape(venue), html.escape(extra), html.escape(note),
+                            html.escape(f.get("year", ""))) if b.strip(" <em>/")]
         url = f.get("url") or (f"https://doi.org/{f['doi']}" if f.get("doi") else "")
+        if not url and f.get("eprint"):
+            url = f"https://arxiv.org/abs/{f['eprint']}"
         cite = ". ".join(bits)
         if url:
             cite += f'. <a href="{html.escape(url)}" rel="noopener">link</a>'
@@ -526,9 +644,15 @@ def postprocess(frag: str, meta: dict) -> str:
     APPENDIX_STARTS_AT = "Related work"          # the first \section after \appendix
     top, sub, subsub, appx = 0, 0, 0, 0
     numbers: dict[str, str] = {}
+    cur = ""
     for h in soup.find_all(["h1", "h2", "h3", "h4"]):
         if h.name == "h4":
             h["class"] = h.get("class", []) + ["runin"]
+            # An unnumbered run-in heading can still be a \Cref target (sec:matched-fpr-limits
+            # is a \paragraph). cleveref resolves those to the enclosing numbered section, so
+            # do the same here: without it the reference rendered as a bare, unlinked "Section".
+            if h.get("id") and cur:
+                numbers.setdefault(h["id"], cur)
             continue
         if h.name == "h1":
             if appx or h.get_text().strip().startswith(APPENDIX_STARTS_AT):
@@ -553,6 +677,16 @@ def postprocess(frag: str, meta: dict) -> str:
         if h.get("id"):
             numbers[h["id"]] = cur
         h["data-num"] = cur
+
+    # A bare \label in running prose (sec:llama-guard-harness) becomes an anchor with no
+    # heading, so the loop above never saw it. Give every remaining sec: anchor the number of
+    # the nearest numbered heading before it -- the section a reader actually lands in.
+    for el in soup.find_all(id=re.compile(r"^sec:")):
+        if el.get("id") in numbers:
+            continue
+        prev = el.find_previous(["h1", "h2", "h3"])
+        if prev is not None and prev.get("data-num"):
+            numbers[el["id"]] = prev["data-num"]
 
     # ---- 4d. float numbering in document order, cross-checked against the PDF
     counters = {"Table": 0, "Figure": 0}
@@ -649,20 +783,29 @@ def postprocess(frag: str, meta: dict) -> str:
         out.append(html.escape(txt[pos:]))
         node.replace_with(BeautifulSoup("".join(out), "html.parser"))
 
-    # ---- 4f. citations -> numbered superscript links
+    # ---- 4f. citations -> numbered superscript links (\citep) or "Author et al. [n]" (\citet)
+    entries = bibliography()
     cited: list[str] = []
-    for node in soup.find_all(string=re.compile(re.escape(CITE))):
-        for m in re.finditer(re.escape(CITE) + r"(.*?)" + re.escape(CLOSE), str(node), re.S):
+    both = re.compile("|".join(re.escape(s) for s in (CITET, CITE)))
+    for node in soup.find_all(string=both):
+        for m in re.finditer(f"(?:{re.escape(CITET)}|{re.escape(CITE)})(.*?)" + re.escape(CLOSE),
+                             str(node), re.S):
             cited += [k.strip() for k in m.group(1).split(",") if k.strip()]
-    bib_html, bibnum = render_bib(bibliography(), cited)
-    for node in list(soup.find_all(string=re.compile(re.escape(CITE)))):
+    bib_html, bibnum = render_bib(entries, cited)
+    for node in list(soup.find_all(string=both)):
         out, pos, txt = [], 0, str(node)
-        for m in re.finditer(re.escape(CITE) + r"(.*?)" + re.escape(CLOSE), txt, re.S):
+        for m in re.finditer(f"({re.escape(CITET)}|{re.escape(CITE)})(.*?)" + re.escape(CLOSE),
+                             txt, re.S):
             out.append(html.escape(txt[pos:m.start()]))
-            keys = [k.strip() for k in m.group(1).split(",") if k.strip()]
+            keys = [k.strip() for k in m.group(2).split(",") if k.strip()]
             links = [f'<a href="#bib-{html.escape(k)}">{bibnum[k]}</a>'
                      for k in keys if k in bibnum]
-            out.append(f'<sup class="cite">[{", ".join(links)}]</sup>' if links else "")
+            sup = f'<sup class="cite">[{", ".join(links)}]</sup>' if links else ""
+            if m.group(1) == CITET and keys and keys[0] in bibnum:
+                who = html.escape(bib_surname(entries[keys[0]]))
+                out.append(f'<a class="citet" href="#bib-{html.escape(keys[0])}">{who}</a>{sup}')
+            else:
+                out.append(sup)
             pos = m.end()
         out.append(html.escape(txt[pos:]))
         node.replace_with(BeautifulSoup("".join(out), "html.parser"))
@@ -696,7 +839,7 @@ def postprocess(frag: str, meta: dict) -> str:
     toc.append("</ol></nav>")
 
     return (soup.decode(), "\n".join(toc), bib_html,
-            {"tables": counters["Table"], "figures": counters["Figure"]})
+            {"tables": counters["Table"], "figures": counters["Figure"]}, numbers)
 
 
 # ------------------------------------------------------------------------- 5. verify
@@ -815,7 +958,7 @@ def main(argv=None) -> int:
     print(f"  figures converted/copied: {figures()}")
     tex, meta = flatten(redact=args.redact_case_study)
     frag = pandoc(tex)
-    body, toc, bib, counts = postprocess(frag, meta)
+    body, toc, bib, counts, numbers = postprocess(frag, meta)
     print(f"  floats numbered: {counts['tables']} tables, {counts['figures']} figures")
 
     problems = verify(counts)
@@ -823,14 +966,39 @@ def main(argv=None) -> int:
         print(f"  VERIFY: {p}")
 
     abstract_tex = ((PREAMBLE_SHIM + macro_shim())
-                    .replace("&REF;", REF).replace("&CITE;", CITE).replace("&CLOSE;", CLOSE)
+                    .replace("&REF;", REF).replace("&CITET;", CITET)
+                    .replace("&CITE;", CITE).replace("&CLOSE;", CLOSE)
                     + "\n\\begin{document}\n" + meta["abstract"] + "\n\\end{document}\n")
     abstract_html = pandoc(abstract_tex)
     from bs4 import BeautifulSoup
     asoup = BeautifulSoup(abstract_html, "html.parser")
-    for node in list(asoup.find_all(string=re.compile(re.escape(REF) + "|" + re.escape(CITE)))):
-        node.replace_with(re.sub(re.escape(REF) + r".*?" + re.escape(CLOSE), "",
-                          re.sub(re.escape(CITE) + r".*?" + re.escape(CLOSE), "", str(node))))
+    # Resolve the abstract's cross-references against the body's numbering. They used to be
+    # DELETED, which left the surrounding parentheses behind: the published abstract read
+    # "Evidence tiers are never pooled ();" -- in the most-read paragraph on the page.
+    n_abs = 0
+    for node in list(asoup.find_all(string=re.compile(re.escape(REF)))):
+        out, pos, txt = [], 0, str(node)
+        for m in re.finditer(re.escape(REF) + r"(.*?)" + re.escape(CLOSE), txt, re.S):
+            out.append(html.escape(txt[pos:m.start()]))
+            parts = []
+            for key in [k.strip() for k in m.group(1).split(",") if k.strip()]:
+                kind = KINDS.get(key.split(":")[0], "Section")
+                num = numbers.get(key)
+                parts.append(f'<a class="xref" href="#{html.escape(key)}">{kind}&nbsp;{num}</a>'
+                             if num else html.escape(kind))
+                n_abs += 1
+            out.append(parts[0] if len(parts) == 1 else
+                       ", ".join(parts[:-1]) + " and " + parts[-1])
+            pos = m.end()
+        out.append(html.escape(txt[pos:]))
+        node.replace_with(BeautifulSoup("".join(out), "html.parser"))
+    # Citations do not appear in this abstract; strip any that ever do rather than emit a
+    # sentinel, but say so loudly instead of silently swallowing a reference.
+    for node in list(asoup.find_all(string=re.compile(re.escape(CITE) + "|" + re.escape(CITET)))):
+        print("  VERIFY: abstract contains a citation, which this builder drops")
+        node.replace_with(re.sub(f"(?:{re.escape(CITET)}|{re.escape(CITE)})" + r".*?"
+                                 + re.escape(CLOSE), "", str(node)))
+    print(f"  abstract cross-references resolved: {n_abs}")
     abstract_html = asoup.decode()
 
     page = (HERE / "template.html").read_text()

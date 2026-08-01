@@ -115,8 +115,11 @@ def papers_index(reg) -> str:
     lines += ["", "## Editorial lifecycle", "",
               "- `unified-report/proposal.md` is a contract-consumed starting-type protocol",
               "  despite its generic filename; it stays at its current path.",
-              "- `unified-report/review.md` is the latest scientific review.",
-              "- `unified-report/review-2026-07-17.md` is a historical applied-fix ledger.",
+              "- `unified-report/review-2026-07-30.md` is the latest scientific review; "
+              "`review.md` and",
+              "  `review-2026-07-17.md` are the two earlier ones, kept as the applied-fix record. "
+              "(This list",
+              "  named `review.md` as the latest after a newer one had been added.)",
               "- Simplified editions are editorial derivatives, not separate studies.",
               "- Office `~$` lock files are not publication artifacts and are git-ignored.", ""]
     return "\n".join(lines) + "\n"

@@ -395,6 +395,7 @@ def fig_cascade(rows):
 
 
 def main() -> int:
+    print(T.figure_font_report())   # see make_slide_figures: a silent fallback is a defect
     ASSETS.mkdir(parents=True, exist_ok=True)
     rows = FR.compute()["rows"]
     for fn in (fig_gap, fig_tax, fig_scale, fig_cascade):

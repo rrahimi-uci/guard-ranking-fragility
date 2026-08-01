@@ -123,17 +123,23 @@ def para(tf, first=False, align=PP_ALIGN.LEFT, space_after=8, line_spacing=None)
 
 
 def run(p, text, size=16, bold=False, color=INK, font=SANS, italic=False, spc=None):
-    r = p.add_run()
-    r.text = text
-    r.font.size = Pt(size)
-    r.font.bold = bold
-    r.font.italic = italic
-    r.font.color.rgb = color
-    r.font.name = font
-    if spc is not None:
-        # Letter-spacing has no python-pptx property; set the raw attribute, exactly as
-        # make_deck._spacing does. Note qn() is wrong here -- it expects a prefixed tag.
-        r.font._rPr.set("spc", str(int(spc)))
+    # One run per line with an <a:br/> between, for the reason make_deck.run documents: a
+    # literal "\n" inside <a:t> is not an OOXML line break and renderers may drop it.
+    r = None
+    for i, segment in enumerate(str(text).split("\n")):
+        if i:
+            p.add_line_break()
+        r = p.add_run()
+        r.text = segment
+        r.font.size = Pt(size)
+        r.font.bold = bold
+        r.font.italic = italic
+        r.font.color.rgb = color
+        r.font.name = font
+        if spc is not None:
+            # Letter-spacing has no python-pptx property; set the raw attribute, exactly as
+            # make_deck._spacing does. Note qn() is wrong here -- it expects a prefixed tag.
+            r.font._rPr.set("spc", str(int(spc)))
     return r
 
 
@@ -182,7 +188,14 @@ class Deck:
         s.notes_slide.notes_text_frame.text = text.strip()
 
     def save(self):
+        # See make_deck.Deck.save: replace python-pptx's default-template document
+        # properties, and correct the inherited 4:3 PresentationFormat on a 16:9 deck.
+        T.stamp_properties(
+            self.prs, "Guardrail sourcing: buy hosted, or run our own?",
+            subject="Executive briefing accompanying “Benchmark Gains Do Not Guarantee "
+                    "Transfer: Fine-Tuning Small Language Model Safety Guards”")
         self.prs.save(OUT)
+        T.fix_presentation_format(OUT)
         return OUT
 
 
@@ -296,7 +309,7 @@ run(p, "Do we buy a hosted guardrail,\nor run our own?", size=40, bold=True,
 tf = tbox(s, M, Inches(4.62), Inches(7.70), Inches(0.80))
 p = para(tf, first=True, space_after=0, line_spacing=1.10)
 run(p, "Measured on 2,275 expert-annotated finance, healthcare and law prompts. "
-       "Eight guard configurations, identical rows, identical false-alarm budget.",
+       "Twenty-four guard configurations, identical rows, identical false-alarm budget.",
     size=T.SZ_SUBTITLE, color=MUTED)
 tf = tbox(s, M, Inches(6.02), Inches(7.70), Inches(0.30))
 p = para(tf, first=True, space_after=0)
@@ -428,15 +441,18 @@ bigger one". Both were tested. Neither worked. Slides 5 and 6.
 # ─────────────────────────────────────────────────────── 4 · what hosted buys
 s = d.blank()
 y = d.header(s, "what hosted buys", "At the same false-alarm rate, the hosted model catches "
-             "roughly one in ten of the prompts our own guards miss",
+             "about half of the unsafe prompts our own guards miss",
              "Catch rate on expert-annotated finance / healthcare / law prompts, "
              "all at a 5% false-alarm budget")
 picture(s, "exec_gap", M, y - Inches(0.06), Inches(8.05), Inches(4.30), align="left")
+# "The true gap is if anything wider" was withdrawn from the report. Coarse ties bound how
+# finely the hosted ranking resolves; they do not fix a direction, so the gap is not a floor.
 callout(s, M + Inches(8.35), y + Inches(0.02), CW - Inches(8.35), Inches(1.86),
-        "read this as a floor, not a ceiling",
+        "read this as coarsely resolved",
         "The hosted model reports only a coarse 0-100 confidence, which limits how finely we "
-        "can rank its answers. That handicaps it in this comparison, so the true gap is if "
-        "anything wider.", color=BLUE)
+        "can rank its answers. That bounds precision without fixing a direction — a finer "
+        "score could order a tied block either way — so do not read the gap as conservative.",
+        color=BLUE)
 callout(s, M + Inches(8.35), y + Inches(2.06), CW - Inches(8.35), Inches(1.86),
         "why 'at the same false-alarm rate' matters",
         "Any guard can raise its catch rate by alarming more often. Holding the alarm rate "
@@ -574,10 +590,15 @@ bullets(s, M + Inches(8.40), y + Inches(0.04), CW - Inches(8.40), Inches(3.0), [
      "Slightly larger than everything that scaling bought."),
     ("4B to 8B bought nothing. ", "Size does not buy guard accuracy smoothly."),
 ], size=13.5, gap=11)
+# The callout used to read "would take at least another order of magnitude". The report
+# withdrew that sentence: three points, one of them non-monotonic, identify no scaling law,
+# so no required parameter count can be extrapolated from this ladder. Say what was measured.
 callout(s, M, y + Inches(3.10), CW, Inches(0.98), "what this implies for a build plan",
-        f"Closing the remaining gap by size alone would take at least another order of "
-        f"magnitude — and {F['BestOpenParams']}B is already past the point where a guard is "
-        f"cheap to run on every request, which was the reason to self-host in the first place.",
+        f"Over the range we measured, size does not close the gap — and "
+        f"{F['BestOpenParams']}B is already past the point where a guard is cheap to run on "
+        f"every request, which was the reason to self-host in the first place. Three points, "
+        f"one of them non-monotonic, identify no scaling law, so we do not extrapolate a size "
+        f"that would close it.",
         color=ACCENT)
 d.notes(s, f"""
 One claim: scale is not the escape hatch either.
@@ -654,7 +675,7 @@ rows = [["Option", "Catch rate", "Cost per request", "Verdict"],
 table(s, M, y + Inches(0.04), CW, rows, [0.34, 0.17, 0.26, 0.23], row_h=Inches(0.56))
 callout(s, M, y + Inches(3.44), CW, Inches(1.00), "the finding that matters for planning",
         f"Escalating one request in five gets within about a point of the {F['EnsMembers']}-model "
-        f"blend ({FN.pct(CA['Twenty'])} vs {FN.pct(F['EnsStack'])}) at a sixteenth of the compute "
+        f"blend ({FN.pct(CA['Twenty'])} vs {FN.pct(F['EnsStack'])}) at a fifteenth of the compute "
         f"and with no labelled data to collect. Ensembling is the right answer only when nothing "
         f"may leave at all; then it is the in-house ceiling, worth about a quarter of the gap.",
         color=AMBER)
@@ -791,7 +812,13 @@ bullets(s, M, y + Inches(0.06), CW, Inches(3.2), [
      "side does not."),
     ("Prices are list, not invoices. ", "Cost figures are billed tokens at public rates and "
      "exclude the GPU cost on our own side."),
-], size=14.5)
+    # The recommendation on slide 3 rests on the escalation curve, and the report is explicit
+    # that the curve is optimistically tuned. Stating it only in the notes let the deck carry
+    # the number at a higher confidence than the paper allows.
+    ("The escalation curve is optimistically tuned. ", "Its decision line and its global 5% "
+     "budget are both chosen on the same rows it is then scored on, so a live deployment "
+     "should expect to close somewhat less than 51% of the gap at a fifth escalated."),
+], size=13.5)
 callout(s, M, y + Inches(3.35), CW, Inches(1.08), "what would change the recommendation",
         "A regulated-domain benchmark that scores whole answers against specific rules, with "
         "expert adjudication. That is the instrument we do not have, and building it is the "

@@ -102,6 +102,13 @@ apps/benchmark-explorer/dist/
 
 # Office editor lock files are not publication artifacts
 ~$*
+# PowerPoint writes "<name> - Repaired.pptx" when it recovers or re-saves a deck. Those
+# are hand-edited copies of a code-generated artifact (papers/unified-report/slides/README.md
+# explains why they get deleted rather than kept), and nothing matched them before, so a
+# `git add -A` would have published one.
+*Repaired.pptx
+*Repaired.docx
+*Repaired.xlsx
 
 # Transient execution outputs (storage contract: runs/<study_id>/<run_id>/)
 /runs/

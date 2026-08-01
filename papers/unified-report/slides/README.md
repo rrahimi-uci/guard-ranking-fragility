@@ -41,38 +41,46 @@ rerun and a table changes, the slide figure changes with it.
 
 The deck requests Cambria for display text and Calibri for body text. Figure generation
 uses the first available face in the declared Calibri → Carlito → Arial → DejaVu Sans
-fallback stack and prints the selected face, so a fallback is visible rather than silent.
+fallback stack, and both figure scripts print `deck_theme.figure_font_report()` before they
+render, so a fallback is visible rather than silent. (An earlier version of this README
+promised that report while nothing called it; the safeguard existed only on paper.)
+
+Read that report: Calibri ships with Office, so most build boxes lack it. The committed
+figures were rendered with **Arial**, the third entry in the stack, while the `.pptx` chrome
+still asks for Calibri and resolves it on the viewer's machine. That is a deliberate
+metric-compatible fallback, not a defect — but it means the figures and the slide text are
+not guaranteed to be the same face.
 
 ## Structure
 
-| # | Slide | Source |
+| # | Slide | Source in the report |
 | --- | --- | --- |
 | 1 | Title | — |
-| 2 | The problem — a guard's score is not a property of the guard | Table 1 (claim ledger) |
-| 3 | One figure — three acts, one thesis | Figure 1 |
-| 4 | How we measure — compare each guard to its own base | §2.6, Figure 2 |
-| 5 | Act I — a large represented gain that does not transfer | Table 2 |
-| 6 | Act I — 15 of 20 guards specialize | Table 3, Figure 4 |
-| 7 | Act I — the operating point, under both threshold rules | Tables 4, 5 |
-| 8 | Act I — the deployment base rate | Figure 5, Eq. 4 |
-| 9 | Act I — KL is a tradeoff dial | Table 6 |
-| 10 | Preregistered — released guards specialize too | Table 7, Figure 6 |
-| 11 | Act II — repair without retraining | Table 9 |
-| 12 | Act II — it is the base, not ensembling | Tables 10, 11 |
-| 13 | Act III — general safety ≠ domain compliance | Table 12, Figure 9 |
-| 14 | Act III — one row, end to end | Figure 8 |
-| 15 | Act III — two results we did not want | Tables 13, 14 |
-| 16 | Why self-host | Tables 22, 23 |
-| 17 | External reference point — the hosted frontier model | Table 16 |
-| 18 | Two routes that do not work: tuning and scale | Table 17, Figure 12 |
-| 19 | The gap is a regime, not a size | Table 18, Figure 13 |
-| 20 | What to do — gate candidates, not leaderboards | Table 21, Figure 14 |
-| 21 | What this contributes, and what would make it evidence | §10 |
+| 2 | The problem — a guard's score is not a property of the guard | Act I per-benchmark + operating-point table; worked G0/D1 case-study figure |
+| 3 | One figure — four questions, one thesis | the four-panel front figure |
+| 4 | How we measure — compare each guard to its own base | Background §"Estimands, the fixed panel, and the paired hierarchical bootstrap"; study-at-a-glance figure |
+| 5 | Act I — a large represented gain that does not transfer | Act I fixed-panel result table |
+| 6 | Act I — 15 of 20 guards specialize | per-seed value table; specialization plane |
+| 7 | Act I — the operating point, under both threshold rules | Act I per-benchmark/operating-point table; matched-false-alarm-budget table |
+| 8 | Act I — the deployment base rate | prevalence curve; the AP(π₊) equation |
+| 9 | Act I — KL is a tradeoff dial | anti-forgetting (KL-SFT) control table |
+| 10 | Preregistered — released guards specialize too | adaptation movement-vector table; adaptation plane |
+| 11 | Act II — repair without retraining | composition fixed-panel summary table |
+| 12 | Act II — it is the base, not ensembling | per-checkpoint composition table; SFT+SFT equal-cost control |
+| 13 | Act III — general safety ≠ domain compliance | mortgage zero-shot baseline table; fairness-gate figure |
+| 14 | Act III — one row, end to end | worked G0/D1 case-study figure |
+| 15 | Act III — two results we did not want | mortgage baseline and ExpGuard tables |
+| 16 | Why self-host | guard-latency and deployment-economics tables |
+| 17 | External reference point — the hosted frontier model | frontier-vs-local table |
+| 18 | Two routes that do not work: tuning and scale | scale-versus-tuning table; gap-ladder figure |
+| 19 | The gap is a regime, not a size | represented-vs-transfer head-to-head table; regime map |
+| 20 | What to do — gate candidates, not leaderboards | guidelines table; gating workflow figure |
+| 21 | What this contributes, and what would make it evidence | Conclusion |
 
-Table and figure numbers above are the *rendered* numbers in the current PDF, and they move whenever
-a float is inserted — adding the claim ledger as Table 1 shifted every later table by one. The deck
-itself cites sources by content rather than by number (only slide 2's speaker notes name a table), so
-this column is the thing that goes stale. Re-derive it with:
+Sources are named by **content, not by rendered float number**. Rendered numbers move whenever a
+float is inserted — adding the claim ledger as Table 1 shifted every later table by one, and this
+column then sat stale in 8 of its 21 rows while claiming to be current. The speaker notes follow the
+same rule. If you do want the numbers for a particular build:
 
 ```bash
 pdftotext ../unified_report.pdf - | grep -oE '^(Table|Figure) [0-9]+:.{0,60}'
@@ -90,9 +98,16 @@ Four limits are load-bearing enough that the deck states them on the slide, not 
 the notes. Slide 7 shows the operating point under **both** threshold rules, because a
 recall comparison at unequal false-alarm rates is not a comparison of discriminative
 power — at an equal budget Act I's apparent transfer-recall gain reverses on all four
-checkpoints. Slide 3's third panel is annotated *"different rows — not a controlled
-pair"*, since v1 contains no protected pair on which a violation is scored. Slide 15
+checkpoints. Slide 3 carries the qualifier under its four panels: the domain-arm CIs
+overlap and Q4's left bar is post hoc, so the claim is that the leaderboard's answer
+moves, not that the ordering is resolved. Slide 15
 reports health as *leaning* against a tie rather than resolved: four unadjusted paired
 comparisons, the interval clearing zero by +0.0026. And slide 9's notes carry the
 ≈0.015 mean / 0.029 worst-case reproduction noise floor measured by the KL control's
 β = 0 arm, which is what bounds every small effect quoted anywhere in the deck.
+
+Two claims the decks deliberately do **not** make, because the report withdrew them: that the
+hosted–local gap is *conservative* (coarse integer ties bound how finely the hosted ranking
+resolves, but they do not fix a direction), and that closing the gap by scale alone would take
+another order of magnitude (three points, one non-monotonic, identify no scaling law). Earlier
+builds of both decks asserted both.

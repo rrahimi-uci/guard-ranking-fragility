@@ -231,8 +231,9 @@ on represented sources would advertise only the first of these three.
 
 And the apparent consolation --- ``at least transfer recall went up'' --- does not survive a fair
 comparison. That $+0.06$ was bought with alarms. Give the tuned guard the same alarm budget as its own
-base and its transfer recall \emph{halves} (\MatchedTransferBase{} to \MatchedTransferSft{}) on all four
-checkpoints. The threshold that looked safe in calibration is not the threshold you get in the field ---
+base and its transfer recall drops on all four checkpoints --- the panel mean roughly \emph{halves}
+(\MatchedTransferBase{} to \MatchedTransferSft{}), and per checkpoint the fall runs from $39\%$ of the
+base's recall (Qwen2.5-1.5B) to $72\%$ of it (SmolLM3-3B). The threshold that looked safe in calibration is not the threshold you get in the field ---
 a theme Acts~II and~III return to.
 \end{takeaway}
 
@@ -334,5 +335,6 @@ represented \emph{and} held-out sets, and if you must SFT while caring about OOD
 --- but as a dial, not a default: the preregistered test in \Cref{sec:adaptation} finds its
 represented-source cost fails the non-inferiority margin, and it leaves the two hardest specializers below
 their own base on transfer.}
-{Retrospective on a fixed four-checkpoint panel with an inspected manifest (overlap audit pending); a
+{Retrospective on a fixed four-checkpoint panel with an inspected manifest (the lexical overlap audit is
+run and clean; the embedding-space check is not --- \Cref{sec:decontamination}); a
 description of this recipe on these runs, not a population or causal law.}

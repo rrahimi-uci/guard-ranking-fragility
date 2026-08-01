@@ -5,7 +5,10 @@ Ensembling is a classic way to make a classifier generalize, so it is natural to
 the transfer loss that fine-tuning induces (\Cref{sec:actI}). We test this \emph{retrospectively} on the
 adaptation panel's committed per-row margins (\Cref{sec:adaptation}): \EnsNCk{} checkpoints across \EnsNFam{}
 families (excluding the degenerate Llama-Guard null cell), each scored under \{unmodified base, SFT,
-KL-SFT\} $\times$ five seeds on the \emph{same} rows. Every number is equal-family macro-AP on the raw
+KL-SFT\} $\times$ five seeds on the \emph{same} rows. The one exception is the cross-model committee of
+\Cref{tab:ensembling-committee}, which is reported over the four general checkpoints and over all ten
+including the null cell, because a rank-averaged committee is defined by its membership and dropping a
+member would change the object rather than clean it. Every number is equal-family macro-AP on the raw
 logit margin, anchored to each checkpoint's \emph{own} unmodified base --- identical estimand to the main
 text. Within a checkpoint the base and its adapters share one output head, so raw margins are scale-comparable
 in \emph{units}; they are not comparable in \emph{dispersion}, and averaging them raw is therefore not
@@ -36,8 +39,10 @@ mean}, so it costs six forward passes rather than two. On this panel it raises t
 at a represented cost of \EnsBaseSFTvsSFTRep{} (95\% CI $[\EnsBaseSFTvsSFTRepLCB, \EnsBaseSFTvsSFTRepUCB]$).
 It is a recovery, not a Pareto win: for the strongest base the composed guard still gives back a little
 transfer (the Act~II caveat, \Cref{sec:actIII}). \textbf{Cost-matched, the effect is about half as large.}
-Recomputing the honest 2-pass analogues on this same panel (equal-checkpoint mean over the ten cells,
-reproducing the tabulated row as a control): base $\oplus$ \emph{one} adapter on raw margins gains
+Recomputing the honest 2-pass analogues on this same \EnsNCk{}-checkpoint panel, as an
+equal-\emph{checkpoint} mean (the tabulated row is an equal-\emph{family} mean, so the two weightings
+do not coincide and the control below is read as a magnitude check, not a reproduction):
+base $\oplus$ \emph{one} adapter on raw margins gains
 $+0.012$, and base $\oplus$ one adapter \emph{calibrated} --- exactly \Cref{eq:comp} --- gains $+0.008$,
 against the $+0.014$ of the six-pass row as tabulated. So the qualitative conclusion (only crossing the specialization
 axis lifts transfer above base) survives at the promoted operator, but the magnitude does not: the

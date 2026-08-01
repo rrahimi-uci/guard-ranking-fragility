@@ -2,11 +2,25 @@
 """Generate the unified report's result visualizations from COMMITTED data, so every figure is
 reproducible and matches the report's tables. Run: python figures/make_figures.py (from the report dir).
 
-Figures:
-  fig_act1_percheckpoint.pdf   per-checkpoint represented vs transfer SFT delta (the split)   <- tab_primary_gen.tex
-  fig_act3_composition.pdf     per-checkpoint transfer macro-AP: base / SFT / composition      <- pilot_per_model_table.tex
-  fig_mortgage_quadrant.pdf    the G x D 2x2 with row counts (G0/D1 payload; empty G1/D0)       <- benchmark jsonl `quadrant`
-  fig_mortgage_baseline.pdf    zero-shot guards: AP.G, AP.D, and the Delta_context fairness gap <- out_eval/baseline_table.json
+Plotted figures (all eleven are byte-compared by `reproduce.py --check`):
+  fig_teaser.pdf               the four-panel front figure, one panel per question         <- teaser/pilot/h2h/frontier macros
+  fig_act1_percheckpoint.pdf   per-checkpoint represented vs transfer SFT delta (the split) <- tab_primary_gen.tex
+  fig_prevalence.pdf           AP(pi+) recomputed from the committed transfer ROC           <- scores.parquet
+  fig_attractor.pdf            the benchmark-fixed endpoint, and the slope-(-1) consequence <- tab_primary_gen.tex
+  fig_adaptation_plane.pdf     released-guard adaptation plane, SFT -> KL-SFT arrows        <- tab_adaptation_gen.tex
+  fig_act3_composition.pdf     per-checkpoint transfer macro-AP: base / SFT / composition   <- pilot_per_model_table.tex
+  fig_ensembling_plane.pdf     seed-ensembling vs crossing the specialization axis          <- tab_ensembling_gen.tex
+  fig_mortgage_quadrant.pdf    the G x D 2x2 with row counts (G0/D1 payload; empty G1/D0)   <- benchmark jsonl `quadrant`
+  fig_mortgage_baseline.pdf    zero-shot guards: AP.G, AP.D, and the two fairness scales    <- out_eval/baseline_table.json
+  fig_expguard_domains.pdf     per-domain AP for the four bases on finance/health/law       <- expguard_table.tex
+  fig_gap_ladder.pdf           every in-house route against the hosted number, + cascade    <- frontier/cascade macros
+
+Graphviz diagrams (rendered from committed .dot, NOT byte-compared -- `dot` output varies by build):
+  experiment_design.png, data_splits.png, pipeline.png
+
+NOT produced here: `specialization_plane.pdf` (report Figure 4) is a committed artifact that predates
+this harness and has no generator, so it is neither regenerated nor compared. Re-deriving it from
+tab_seed_values_gen.tex is a roadmap item; until then it is the one figure outside the byte-check.
 """
 from __future__ import annotations
 import json, os, re, glob

@@ -61,7 +61,9 @@ def load_h2h() -> Figures:
 
     Reads generated/h2h_macros.tex -- the file unified_report.tex also inputs -- so a slide
     quoting the regime result cannot drift from Table 17. Values come back in the paper's own
-    printed form (".948", "+0.185", "$[+0.065, +0.423]$").
+    printed form (".948", "$+0.207$", "$[+0.042, +0.389]$"). The example used to quote
+    "+0.185" and a narrower band -- the superseded score-ensemble estimand -- which is
+    exactly the drift this module exists to prevent, so it is kept current too.
     """
     if not H2H_MACROS.is_file():
         raise FileNotFoundError(
@@ -149,6 +151,26 @@ def bare(value: str) -> str:
     v = re.sub(r"\\code\{([^}]*)\}", r"\1", v)   # \code{prompt\_injections} -> prompt\_injections
     v = v.replace("\\_", "_").replace("\\%", "%").replace("$", "")
     return v.replace("{", "").replace("}", "").strip()
+
+
+_TEXT_MATH = {r"\times": "×", r"\to": "→", r"\rightarrow": "→", r"\approx": "≈",
+              r"\pm": "±", r"\leq": "≤", r"\geq": "≥", r"\cdot": "·", r"\beta": "β",
+              r"\alpha": "α", r"\Delta": "Δ", r"\emph": "", r"\textbf": ""}
+
+
+def plain(value: str) -> str:
+    r"""`bare()` plus the text-math commands a macro body can carry.
+
+    \AdaNullDilution is `$5/4 = 1.25\times$`. `bare()` only removes the math delimiters, so
+    interpolating it into slide prose printed the literal "1.25\times" on the rendered slide.
+    Anything a deck prints must survive this function with no backslash left in it.
+    """
+    v = bare(value)
+    for tex, ch in sorted(_TEXT_MATH.items(), key=lambda kv: -len(kv[0])):
+        v = v.replace(tex, ch)
+    v = re.sub(r"\s+", " ", v).strip()
+    assert "\\" not in v, f"unconverted LaTeX left in a slide value: {value!r} -> {v!r}"
+    return v
 
 
 def signed(value: str) -> str:
