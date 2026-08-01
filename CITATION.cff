@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite the paper below."
-title: "The Safety-Guard Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Regulated Domains"
+title: "Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards"
 authors:
   - family-names: Rahimi
     given-names: Reza
@@ -21,7 +21,7 @@ keywords:
   - reproducibility
 preferred-citation:
   type: article
-  title: "The Safety-Guard Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards in High-Compliance Regulated Domains"
+  title: "Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards"
   authors:
     - family-names: Rahimi
       given-names: Reza

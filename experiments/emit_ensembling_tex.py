@@ -13,7 +13,10 @@ Writes:
 import json, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A = os.path.join(ROOT, "artifacts", "starting_type_adaptation_v1", "analysis")
-GEN = os.path.join(ROOT, "papers", "unified-report", "generated")
+# PAPER_GEN_DIR lets papers/unified-report/reproduce.py --check emit into a scratch
+# directory and byte-compare, so verification never writes into the tracked tree.
+GEN = os.environ.get("PAPER_GEN_DIR") or os.path.join(
+    ROOT, "papers", "unified-report", "generated")
 P = json.load(open(os.path.join(A, "ensembling_point.json")))
 CB = json.load(open(os.path.join(A, "ensembling_committee_bootstrap.json")))
 EC = json.load(open(os.path.join(A, "ensembling_error_correlation.json")))

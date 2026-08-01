@@ -1,6 +1,17 @@
 # Presentation deck
 
-`safety_guard_benchmark_deck.pptx` — 18 slides, 16:9, speaker notes on every slide.
+Two decks are built from code, and only these two are current:
+
+- `safety_guard_benchmark_deck.pptx` — 21 slides, 16:9, speaker notes on every slide.
+  The research talk.
+- `safety_guard_exec_deck.pptx` — 13 slides, 16:9. The guardrail-sourcing decision,
+  for a non-research audience.
+
+Both track the report *Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model
+Safety Guards*. Earlier hand-edited
+`_redesigned` and `- Repaired` copies were deleted: the redesign now lives in
+`deck_theme.py`, so the generated decks *are* the redesigned decks, and the stale copies
+still carried the withdrawn title and pre-correction numbers.
 
 Built for conference talks and internal briefings from the same committed artifacts the
 report itself `\input`s, so a number in the deck cannot drift from a number in the paper.
@@ -28,41 +39,44 @@ rerun and a table changes, the slide figure changes with it.
 
 ## Fonts
 
-Georgia (headings) + Arial (body). Both ship with Office on macOS and Windows, so the
-deck renders identically off this machine — no embedded-font surprises at a venue.
-
-Georgia's old-style figures are used deliberately for standalone statistics (`+0.3234`),
-but Arial is forced wherever digits sit next to letters: in Georgia, `G0 / D0` reads as
-`Go / Do`.
+The deck requests Cambria for display text and Calibri for body text. Figure generation
+uses the first available face in the declared Calibri → Carlito → Arial → DejaVu Sans
+fallback stack and prints the selected face, so a fallback is visible rather than silent.
 
 ## Structure
 
 | # | Slide | Source |
 | --- | --- | --- |
 | 1 | Title | — |
-| 2 | The problem — three failure modes | Table 3 |
-| 3 | The whole study in one figure | Figure 1 |
-| 4 | Method: the paired estimand | §2, Figure 2 |
-| 5 | Act I — represented gain, no transfer | Table 1 |
-| 6 | Act I — the specialization plane | Table 2, Figure 4 |
-| 7 | Act I — the operating point, both threshold rules | Tables 3, 4 |
+| 2 | The problem — a guard's score is not a property of the guard | Table 1 (claim ledger) |
+| 3 | One figure — three acts, one thesis | Figure 1 |
+| 4 | How we measure — compare each guard to its own base | §2.6, Figure 2 |
+| 5 | Act I — a large represented gain that does not transfer | Table 2 |
+| 6 | Act I — 15 of 20 guards specialize | Table 3, Figure 4 |
+| 7 | Act I — the operating point, under both threshold rules | Tables 4, 5 |
 | 8 | Act I — the deployment base rate | Figure 5, Eq. 4 |
-| 9 | Act I — KL-SFT is a dial | Table 5 |
-| 10 | Preregistered adaptation study | Table 6, Figure 6 |
-| 11 | Act II — composition recovers transfer | Table 8 |
-| 12 | Act II — it is the base, not ensembling | Tables 9, 10 |
-| 13 | Act III — the dual-label design | Table 11, Figure 9 |
+| 9 | Act I — KL is a tradeoff dial | Table 6 |
+| 10 | Preregistered — released guards specialize too | Table 7, Figure 6 |
+| 11 | Act II — repair without retraining | Table 9 |
+| 12 | Act II — it is the base, not ensembling | Tables 10, 11 |
+| 13 | Act III — general safety ≠ domain compliance | Table 12, Figure 9 |
 | 14 | Act III — one row, end to end | Figure 8 |
-| 15 | Act III — two negatives | Tables 12, 13 |
-| 16 | Deployment economics: why self-host | Tables 15, 16 |
-| 17 | The decision guide | Table 14, Figure 12 |
-| 18 | What this contributes, and what would make it evidence | §9 |
+| 15 | Act III — two results we did not want | Tables 13, 14 |
+| 16 | Why self-host | Tables 22, 23 |
+| 17 | External reference point — the hosted frontier model | Table 16 |
+| 18 | Two routes that do not work: tuning and scale | Table 17, Figure 12 |
+| 19 | The gap is a regime, not a size | Table 18, Figure 13 |
+| 20 | What to do — gate candidates, not leaderboards | Table 21, Figure 14 |
+| 21 | What this contributes, and what would make it evidence | §10 |
 
-Table numbers above are the *rendered* numbers in the current PDF. Adding
-`tab:matchedfpr` as Table 4 shifted every later table by one; the deck itself cites
-sources by content rather than by number (only slide 2's speaker notes name a table), so
-this column is the thing that goes stale when a float is inserted. Re-derive it with
-`pdftotext unified_report.pdf - | grep -oE '^Table [0-9]+:.{0,60}'`.
+Table and figure numbers above are the *rendered* numbers in the current PDF, and they move whenever
+a float is inserted — adding the claim ledger as Table 1 shifted every later table by one. The deck
+itself cites sources by content rather than by number (only slide 2's speaker notes name a table), so
+this column is the thing that goes stale. Re-derive it with:
+
+```bash
+pdftotext ../unified_report.pdf - | grep -oE '^(Table|Figure) [0-9]+:.{0,60}'
+```
 
 ## Scope discipline
 

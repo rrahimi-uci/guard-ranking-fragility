@@ -29,7 +29,6 @@ import sys
 from pathlib import Path
 
 from pptx import Presentation
-from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
@@ -42,25 +41,40 @@ import frontier_numbers as FN  # noqa: E402
 OUT = HERE / "safety_guard_exec_deck.pptx"
 
 # ─────────────────────────────────────────────────────────── identity (shared palette)
-INK = RGBColor(0x12, 0x26, 0x3A)
-SLATE = RGBColor(0x5A, 0x6B, 0x7C)
-MUTED = RGBColor(0x8A, 0x97, 0xA5)
-RULE = RGBColor(0xD8, 0xDE, 0xE4)
-PAPER = RGBColor(0xF7, 0xF9, 0xFA)
-WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-ACCENT = RGBColor(0xA0, 0x21, 0x28)
-BLUE = RGBColor(0x25, 0x63, 0xEB)
-GREEN = RGBColor(0x15, 0x80, 0x3D)
-AMBER = RGBColor(0xB7, 0x79, 0x1F)
-TINT = {
-    ACCENT: RGBColor(0xFA, 0xF0, 0xF0), BLUE: RGBColor(0xEF, 0xF4, 0xFE),
-    GREEN: RGBColor(0xEF, 0xF7, 0xF1), AMBER: RGBColor(0xFD, 0xF7, 0xEC),
-    SLATE: RGBColor(0xF2, 0xF5, 0xF7),
-}
-SERIF, SANS = "Georgia", "Arial"
-W, H = Inches(13.333), Inches(7.5)
-M = Inches(0.85)
-CW = W - 2 * M
+# Tokens come from deck_theme, the same module the benchmark deck and both figure generators
+# use. The exec redesign was verified to use an identical palette and type scale; only its
+# geometry differs (a wider 0.85" margin and a 40pt hero), so those stay local below.
+import deck_theme as T  # noqa: E402
+
+INK = T.rgb(T.TEXT)
+SLATE = T.rgb(T.DIM)
+MUTED = T.rgb(T.BODY)
+RULE = T.rgb(T.CARD_LINE)
+PAPER = T.rgb(T.CARD)
+WHITE = T.rgb(T.TEXT)
+BG_TITLE = T.rgb(T.BG_TITLE)
+BG_SLIDE = T.rgb(T.BG_SLIDE)
+CARD_LINE = T.rgb(T.CARD_LINE)
+WARN_CARD = T.rgb(T.WARN_CARD)
+WARN_LINE = T.rgb(T.WARN_LINE)
+FAINT = T.rgb(T.FAINT)
+DATA = T.rgb(T.DATA)
+ACCENT = T.rgb(T.ACCENT)
+ACCENT_SOFT = T.rgb(T.ACCENT_SOFT)
+BLUE = T.rgb(T.DATA_REPRESENTED)
+GREEN = T.rgb(T.DATA_COMPOSITION)
+AMBER = T.rgb(T.DATA_GOLD)
+# On a dark surface a tint is a surface, not a wash: red-keyed panels take the warning
+# surface, everything else the standard card.
+TINT = {ACCENT: WARN_CARD, ACCENT_SOFT: WARN_CARD, BLUE: PAPER, GREEN: PAPER,
+        AMBER: PAPER, SLATE: PAPER}
+TINT_LINE = {ACCENT: WARN_LINE, ACCENT_SOFT: WARN_LINE, BLUE: CARD_LINE, GREEN: CARD_LINE,
+             AMBER: CARD_LINE, SLATE: CARD_LINE}
+LABEL_ON_CARD = {ACCENT: ACCENT_SOFT}   # red is too low-contrast as a label on the dark card
+SERIF, SANS = T.DISPLAY, T.UI
+W, H = Inches(T.SLIDE_W), Inches(T.SLIDE_H)
+M = Inches(0.85)                        # exec geometry: wider margin than the benchmark deck
+CW = W - 2 * M                          # 11.633
 TITLE_SHORT = "Guardrail sourcing · in-house inline, escalate the uncertain slice"
 
 
@@ -129,34 +143,40 @@ class Deck:
         self.prs.slide_width, self.prs.slide_height = W, H
         self.n = 0
 
-    def blank(self, chrome=True):
+    def _background(self, s, fill):
+        s.background.fill.solid()
+        s.background.fill.fore_color.rgb = fill
+
+    def blank(self, chrome=True, title_slide=False):
         s = self.prs.slides.add_slide(self.prs.slide_layouts[6])
-        rect(s, 0, 0, W, Inches(0.062), fill=ACCENT)
+        self._background(s, BG_TITLE if title_slide else BG_SLIDE)
+        # No top accent bar: the redesign removed it (deck_theme.HAS_TOP_BAR).
         if chrome:
             self.n += 1
-            tf = tbox(s, M, Inches(7.00), Inches(9.5), Inches(0.28))
+            tf = tbox(s, M, Inches(T.FOOTER_Y), Inches(9.5), Inches(0.28))
             p = para(tf, first=True, space_after=0)
-            run(p, TITLE_SHORT, size=9.5, color=MUTED)
-            tf2 = tbox(s, W - M - Inches(1.2), Inches(7.00), Inches(1.2), Inches(0.28))
+            run(p, TITLE_SHORT, size=T.SZ_FOOTER, color=FAINT)
+            tf2 = tbox(s, W - M - Inches(1.2), Inches(T.FOOTER_Y), Inches(1.2), Inches(0.28))
             p2 = para(tf2, first=True, align=PP_ALIGN.RIGHT, space_after=0)
-            run(p2, f"{self.n:02d}", size=10.5, bold=True, color=ACCENT, spc=60)
+            run(p2, f"{self.n:02d}", size=T.SZ_PAGENUM, bold=True, color=ACCENT, spc=60)
         return s
 
     def header(self, s, kicker, title, sub=None):
-        tf = tbox(s, M, Inches(0.42), CW, Inches(0.26))
+        tf = tbox(s, M, Inches(0.40), CW, Inches(0.28))
         p = para(tf, first=True, space_after=0)
         run(p, kicker.upper(), size=10.5, bold=True, color=ACCENT, spc=140)
-        tf = tbox(s, M, Inches(0.78), CW, Inches(0.80))
+        # 1.02" of title box holds two 25pt lines, which several exec titles need.
+        tf = tbox(s, M, Inches(0.72), CW, Inches(1.02))
         p = para(tf, first=True, space_after=0, line_spacing=1.02)
-        run(p, title, size=30, bold=True, color=INK, font=SERIF)
-        y = Inches(1.66)
+        run(p, title, size=T.SZ_TITLE, bold=True, color=INK, font=SERIF)
+        y = Inches(2.10)
         if sub:
-            tf = tbox(s, M, Inches(1.62), CW, Inches(0.40))
+            tf = tbox(s, M, Inches(1.86), CW, Inches(0.34))
             p = para(tf, first=True, space_after=0)
-            run(p, sub, size=15, color=SLATE)
-            y = Inches(2.10)
-        rect(s, M, y, CW, Pt(0.9), fill=RULE)
-        return y + Inches(0.26)
+            run(p, sub, size=12.5, color=SLATE)
+            y = Inches(2.45)
+        # No rule under the header: the redesign dropped it.
+        return y
 
     def notes(self, s, text):
         s.notes_slide.notes_text_frame.text = text.strip()
@@ -166,35 +186,36 @@ class Deck:
         return OUT
 
 
-def statcard(s, l, t, w, h, value, caption, color=ACCENT, value_size=40):
-    rect(s, l, t, w, h, fill=TINT[color])
-    rect(s, l, t, w, Inches(0.05), fill=color)
-    tf = tbox(s, l + Inches(0.24), t + Inches(0.26), w - Inches(0.48), h - Inches(0.5))
+def statcard(s, l, t, w, h, value, caption, color=ACCENT, value_size=None):
+    """Flat card with a display numeral. No top accent rule: the border carries the edge."""
+    value_size = T.SZ_STAT if value_size is None else value_size
+    rect(s, l, t, w, h, fill=TINT[color], line=TINT_LINE[color], lw=T.LW_CARD)
+    tf = tbox(s, l + Inches(0.26), t + Inches(0.16), w - Inches(0.52), h - Inches(0.32))
     p = para(tf, first=True, space_after=4)
     run(p, value, size=value_size, bold=True, color=color, font=SERIF)
     p = para(tf, space_after=0)
-    run(p, caption, size=12, color=SLATE)
+    run(p, caption, size=T.SZ_BODY, color=MUTED)
 
 
-def bullets(s, l, t, w, h, items, size=15, gap=12, mcolor=ACCENT):
+def bullets(s, l, t, w, h, items, size=None, gap=12, mcolor=ACCENT):
+    size = 11.0 if size is None else size      # exec body size in the redesign
     tf = tbox(s, l, t, w, h)
     for i, item in enumerate(items):
         p = para(tf, first=(i == 0), space_after=gap)
         run(p, "—  ", size=size, bold=True, color=mcolor)
         if isinstance(item, tuple):
             run(p, item[0], size=size, bold=True, color=INK)
-            run(p, item[1], size=size, color=SLATE)
+            run(p, item[1], size=size, color=MUTED)
         else:
-            run(p, item, size=size, color=INK)
+            run(p, item, size=size, color=MUTED)
 
 
 def table(s, l, t, w, rows, col_w, row_h=Inches(0.46), header=True):
     """Minimal table: first row is a header band, subsequent rows alternate paper/white."""
     y = t
     for ri, row in enumerate(rows):
-        fill = INK if (header and ri == 0) else (PAPER if ri % 2 else WHITE)
-        rect(s, l, y, w, row_h, fill=fill,
-             line=None if (header and ri == 0) else RULE, lw=0.5)
+        fill = PAPER if (header and ri == 0) else (BG_SLIDE if ri % 2 else PAPER)
+        rect(s, l, y, w, row_h, fill=fill, line=CARD_LINE, lw=T.LW_CARD)
         x = l
         for ci, cell in enumerate(row):
             cwid = int(w * col_w[ci])
@@ -203,9 +224,9 @@ def table(s, l, t, w, rows, col_w, row_h=Inches(0.46), header=True):
             p = para(tf, first=True, space_after=0,
                      align=PP_ALIGN.LEFT if ci == 0 else PP_ALIGN.CENTER)
             bold = (header and ri == 0) or ci == 0
-            col = WHITE if (header and ri == 0) else INK
+            col = DATA if (header and ri == 0) else MUTED
             txt, cc = (cell if isinstance(cell, tuple) else (cell, col))
-            run(p, str(txt), size=13, bold=bold, color=cc)
+            run(p, str(txt), size=T.SZ_KICKER_SM, bold=bold, color=cc)
             x += cwid
         y += row_h
     return y
@@ -236,42 +257,55 @@ def picture(s, name, l, t, w, h, align="center"):
 
 
 def callout(s, l, t, w, h, label, body, color=ACCENT):
-    rect(s, l, t, w, h, fill=TINT[color], shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-    rect(s, l, t, Inches(0.055), h, fill=color)
-    tf = tbox(s, l + Inches(0.26), t + Inches(0.18), w - Inches(0.5), h - Inches(0.36))
+    rect(s, l, t, w, h, fill=TINT[color], line=TINT_LINE[color], lw=T.LW_CARD)
+    tf = tbox(s, l + Inches(0.26), t + Inches(0.16), w - Inches(0.52), h - Inches(0.32))
     p = para(tf, first=True, space_after=5)
-    run(p, label.upper(), size=11, bold=True, color=color, spc=110)
+    run(p, label.upper(), size=T.SZ_BODY_SM, bold=True,
+        color=LABEL_ON_CARD.get(color, color), spc=110)
     p = para(tf, space_after=0, line_spacing=1.06)
-    run(p, body, size=13.5, color=INK)
+    run(p, body, size=11.0, color=MUTED)
 
 
 # ═══════════════════════════════════════════════════════════════════════ build
 F = FN.load()
+HT = FN.load_h2h()
+CA = FN.load_cascade()
+b = FN.bare
 d = Deck()
 
 # ─────────────────────────────────────────────────────────────── 1 · title
-s = d.blank(chrome=False)
-rect(s, 0, 0, W, H, fill=WHITE)
-rect(s, 0, 0, W, Inches(0.062), fill=ACCENT)
-tf = tbox(s, M, Inches(2.15), CW, Inches(0.30))
+s = d.blank(chrome=False, title_slide=True)
+
+# Concentric rings, right of the headline — the redesign's title motif, sized for the exec
+# deck's wider margin. Drawn first so the text layers sit above them.
+for cx, cy, dia, ln, lw in [(7.10, 1.30, 4.90, T.DECO_LINE, T.LW_DECO),
+                            (7.75, 1.95, 3.60, T.DECO_LINE, T.LW_DECO),
+                            (8.40, 2.60, 2.30, T.DECO_LINE_WARM, T.LW_ACCENT_THIN)]:
+    rect(s, Inches(cx), Inches(cy), Inches(dia), Inches(dia), fill=None,
+         line=T.rgb(ln), lw=lw, shape=MSO_SHAPE.OVAL)
+rect(s, Inches(9.41), Inches(3.61), Inches(0.28), Inches(0.28), fill=ACCENT,
+     shape=MSO_SHAPE.OVAL)
+
+tf = tbox(s, M, Inches(2.12), Inches(8.20), Inches(0.30))
 p = para(tf, first=True, space_after=0)
-run(p, "GUARDRAIL SOURCING DECISION", size=12, bold=True, color=ACCENT, spc=180)
-tf = tbox(s, M, Inches(2.70), Inches(10.6), Inches(1.7))
+run(p, "GUARDRAIL SOURCING DECISION", size=11.0, bold=True, color=ACCENT, spc=180)
+tf = tbox(s, M, Inches(2.56), Inches(8.60), Inches(1.90))
 p = para(tf, first=True, space_after=0, line_spacing=1.03)
-run(p, "Do we buy a hosted guardrail,\nor run our own?", size=44, bold=True,
+run(p, "Do we buy a hosted guardrail,\nor run our own?", size=40, bold=True,
     color=INK, font=SERIF)
-tf = tbox(s, M, Inches(4.62), Inches(10.2), Inches(0.9))
+tf = tbox(s, M, Inches(4.62), Inches(7.70), Inches(0.80))
 p = para(tf, first=True, space_after=0, line_spacing=1.10)
 run(p, "Measured on 2,275 expert-annotated finance, healthcare and law prompts. "
        "Eight guard configurations, identical rows, identical false-alarm budget.",
-    size=15.5, color=SLATE)
-rect(s, M, Inches(5.75), Inches(1.5), Pt(2.2), fill=ACCENT)
-tf = tbox(s, M, Inches(6.05), CW, Inches(0.6))
-p = para(tf, first=True, space_after=2)
-run(p, "Reza Rahimi, PhD", size=14, bold=True, color=INK)
-p = para(tf, space_after=0)
-run(p, "Full method, intervals and limitations: the technical report and research deck",
-    size=12, color=MUTED)
+    size=T.SZ_SUBTITLE, color=MUTED)
+tf = tbox(s, M, Inches(6.02), Inches(7.70), Inches(0.30))
+p = para(tf, first=True, space_after=0)
+run(p, "Reza Rahimi, PhD", size=12.5, bold=True, color=INK)
+tf = tbox(s, M, Inches(6.32), Inches(7.70), Inches(0.28))
+p = para(tf, first=True, space_after=0)
+run(p, "Full method, intervals and limitations: “Benchmark Gains Do Not Guarantee Transfer: "
+       "Fine-Tuning Small Language Model Safety Guards” — the technical report and research deck",
+    size=10.5, color=SLATE)
 d.notes(s, """
 Ninety seconds on this slide. The framing sentence is: we need a safety guardrail in front of
 every request our assistant handles, and there are two ways to get one -- call a hosted
@@ -423,6 +457,74 @@ If asked about the labels: external, expert-annotated, and a stronger labelling 
 anything we produced ourselves. We did not grade our own homework here.
 """)
 
+# ────────────────────────── 4b · the gap is a regime, not a verdict on model size
+# The single most decision-relevant slide in this deck: it converts "hosted is better" into
+# "hosted is better on traffic we cannot anticipate", which is a sourcing rule rather than a
+# preference. Numbers come from h2h_macros.tex via frontier_numbers.load_h2h(), the same
+# anti-drift contract the rest of the frontier material uses.
+s = d.blank()
+y = d.header(s, "but better at what",
+             "On traffic we can describe in advance, our own guard already wins",
+             "Same five corpora, same " + b(HT['Budget']) + " false-alarm budget, "
+             "split by whether the source was in our training manifest")
+
+cw = (CW - Inches(0.40)) / 2
+statcard(s, M, y + Inches(0.10), cw, Inches(1.62),
+         b(HT['AggDeltaTpr']) + " catch rate",
+         "Averaged across every source we can describe in advance, our tuned guards rank "
+         "BETTER than the hosted model at the same alarm budget. 95% interval "
+         + b(HT['AggDeltaTprCI']) + " -- it excludes zero.",
+         color=BLUE)
+statcard(s, M + cw + Inches(0.40), y + Inches(0.10), cw, Inches(1.62),
+         b(HT['TransRefTpr']) + "  vs  " + b(HT['TransBestLocalTpr']),
+         "The same comparison on a source we did NOT train on. Hosted leads, and our best "
+         "guard there is an UNTUNED base -- tuning is what costs us the position.",
+         color=ACCENT)
+
+# This callout used to recommend escalating on UNFAMILIARITY "not on how unsure the local guard
+# sounds". That is a router we never built: the only cascade measured anywhere in this programme
+# escalates by rank distance to the local guard's own decision line -- a margin router -- and it is
+# what slide 3 recommends and slide 8 prices. Recommending the untested alternative here
+# contradicted both the deck and the report, so the callout now recommends what was measured and
+# names the alternative as untested.
+callout(s, M, y + Inches(1.92), CW, Inches(1.20), "the sourcing rule this implies",
+        "The gap is not a ceiling a bigger local model would break through -- it is the price "
+        "of the regime. So the question is not “can a small guard match the frontier” but "
+        "“what share of our traffic can we describe in a training manifest”. Self-host that "
+        "share and escalate the rest by how near the local guard sits to its own decision line "
+        "-- the router we measured. Routing on UNFAMILIARITY instead is the more attractive idea "
+        "and we did not test it: treat it as the next experiment, not as the plan.",
+        color=GREEN)
+
+d.notes(s, f"""
+This is the slide that changes the recommendation, so do not rush it.
+
+Slide 4 said hosted is about ten points better. True -- on prompts nobody anticipated. This
+slide says that on sources we can enumerate in a training manifest the ordering inverts, and a
+our tuned guards rank BETTER on average: the equal-source mean difference is
+{b(HT['AggDeltaTpr'])}, 95% interval {b(HT['AggDeltaTprCI'])}, which excludes zero. In AP it is
+{b(HT['AggDeltaAp'])} {b(HT['AggDeltaApCI'])}.
+
+Be careful with single benchmarks here, and say this before anyone asks. The most eye-catching
+cell is a {b(HT['BestName'])} guard at {b(HT['BestTpr'])} against {b(HT['RefTpr'])} on
+{b(HT['BestSource'])}. That cell is the largest of {b(HT['NCells'])}, so quoting its own interval
+overstates it: {b(HT['NSigNominal'])} of {b(HT['NCells'])} cells clear zero on their own, and
+{b(HT['NSigHolm'])} survive a familywise correction. The average is the number to defend, not
+the best cell.
+
+Represented sources here are {b(HT['RepSources'])}. Held-out sources are the ones we never
+trained on, and there the hosted model leads.
+
+Two honest caveats, offered before they are asked. Per-source samples are small (67 to 451
+rows), so read the direction rather than the exact margin. And this is retrospective analysis
+on a panel we inspected while building the method -- it is a strong signal, not a sealed
+confirmatory result.
+
+The business consequence: we do not need to beat the frontier everywhere to stop paying per
+prompt. We need to know which slice of traffic we can characterise, self-host that, and buy
+hosted capacity only for the rest.
+""")
+
 # ────────────────────────────────────────────────── 5 · tuning did not close it
 s = d.blank()
 y = d.header(s, "route one: fine-tune ours", "Fine-tuning did not close the gap, and on "
@@ -547,13 +649,14 @@ rows = [["Option", "Catch rate", "Cost per request", "Verdict"],
          f"{F['EnsMembers']} model calls", ("worse than one", ACCENT)],
         [f"Weighted blend of all {F['EnsMembers']}", FN.pct(F["EnsStack"]),
          f"{F['EnsMembers']} calls + labelled data", ("best in-house", BLUE)],
-        ["Escalate the uncertain 20% instead", "87%", "1.2 model calls",
-         ("beats all of it", ACCENT)]]
+        ["Escalate the uncertain 20% instead", FN.pct(CA["Twenty"]), "1.2 model calls",
+         ("nearly matches, far cheaper", BLUE)]]
 table(s, M, y + Inches(0.04), CW, rows, [0.34, 0.17, 0.26, 0.23], row_h=Inches(0.56))
 callout(s, M, y + Inches(3.44), CW, Inches(1.00), "the finding that matters for planning",
-        f"Escalating one request in five beats a {F['EnsMembers']}-model blend — at a sixteenth "
-        f"of the compute and with no labelled data to collect. Ensembling is the right answer "
-        f"only when nothing may leave at all; then it is worth about a quarter of the gap.",
+        f"Escalating one request in five gets within about a point of the {F['EnsMembers']}-model "
+        f"blend ({FN.pct(CA['Twenty'])} vs {FN.pct(F['EnsStack'])}) at a sixteenth of the compute "
+        f"and with no labelled data to collect. Ensembling is the right answer only when nothing "
+        f"may leave at all; then it is the in-house ceiling, worth about a quarter of the gap.",
         color=AMBER)
 d.notes(s, f"""
 This slide exists because "just ensemble the small models" is the most common suggestion in the
@@ -575,8 +678,12 @@ for an ensemble does not have. We scored it {F['EnsFolds']}-fold out-of-fold so 
 grading its own homework, and its fitted weights include a negative coefficient on one guard,
 which means it is exploiting error structure that may not survive a change of traffic.
 
-The last row is the point: escalating the uncertain fifth reaches 87%, beating the whole blend
-at a fraction of the cost. So ensembling is not the route -- unless lane 1 applies and nothing
+The last row is the point: escalating the uncertain fifth reaches {FN.pct(CA['Twenty'])} against the
+blend's {FN.pct(F['EnsStack'])} -- it does NOT beat the blend, it very nearly matches it for a
+sixteenth of the compute and no labelled data. If challenged on this, the honest line is that
+the blend is still the in-house ceiling; escalation is the cheaper route to almost the same place.
+An earlier version of this slide printed 87% here and claimed escalation beat the blend, which
+reversed the ordering. So ensembling is not the route -- unless lane 1 applies and nothing
 may leave, in which case it is the in-house ceiling and worth building.
 """)
 
@@ -708,7 +815,8 @@ domain, not more guard comparisons on general safety.
 """)
 
 # ────────────────────────────────────────────────────────── 12 · what we would do
-s = d.blank()
+# Closing slide shares the title slide's darker surface, bookending the deck.
+s = d.blank(title_slide=True)
 y = d.header(s, "proposal", "What we would do next",
              "Sequenced so each step is cheap and the expensive one is last")
 cw = (CW - Inches(0.45)) / 2

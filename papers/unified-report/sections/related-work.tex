@@ -45,13 +45,22 @@ What this family reports, almost without exception, is \emph{absolute} moderatio
 is co-produced by the benchmark and therefore uninformative about a specific fine-tune. Several of these
 works do report in-distribution versus out-of-distribution blocks --- Llama~Guard's own test set against
 zero-shot ToxicChat and OpenAI-Mod, WildGuard's and LoRA-Guard's ID/OOD splits --- so the
-represented/transfer \emph{distinction} is not ours. What none of them reports is the \emph{paired}
-base$\to$guard change on identical rows with identical scoring, decomposed into those two regimes with
-per-checkpoint intervals; and none treats a \emph{retraining-free composition} as a
-measurable design axis. We reuse the LoRA-Guard recipe not to beat
+represented/transfer \emph{distinction} is not ours. Our narrower claim, stated once and not widened
+anywhere else in this report, is:
+
+\begin{quote}
+a same-checkpoint \emph{paired} measurement of LoRA-induced change across represented and
+source-held-out regimes, together with a calibrated base-plus-adapter composition test under matched
+false-alarm budgets.
+\end{quote}
+
+\noindent An earlier version of this passage said instead that ``none of them reports'' the paired
+change and that ``none treats retraining-free composition as a measurable design axis.'' Both were
+overclaims that survived because the comparison was made in prose rather than against a table; the
+per-component comparison in \Cref{tab:closest} is what replaces them. We reuse the LoRA-Guard recipe not to beat
 these guards on a leaderboard --- we score four small open checkpoints, not the gated production guards
 --- but to isolate what the fine-tune itself does. GuardBench and its peers are the backdrop against
-which our thesis (``the benchmark chooses the winner'') is stated: they normalize the very comparison we
+which \Cref{sec:actI}'s question is posed: they normalize the single-suite comparison whose fragility we
 show is fragile.
 
 \subsection{Fine-tuning degradation and policy / benchmark transfer}
@@ -155,6 +164,13 @@ stronger expert-labeled tier but as a \emph{single-label} transfer probe, not a 
 therefore pair one domain built in depth (mortgage, dual-label plus fairness gate) with three external
 verticals for breadth (finance/health/law via ExpGuard), all scored on the same fixed panel used in
 Acts~I--II so the specialization question can be asked identically across domains.
+
+% The component-by-component comparison (tab:closest) and its discussion were moved into the
+% Introduction (sec:related-closest): the novelty claim is made there, so the table that bounds
+% it has to be visible there too rather than 50 pages later.
+\noindent The component-by-component comparison against the six closest contributions, and the
+narrowed novelty statement it forces, are in \Cref{sec:related-closest} and \Cref{tab:closest} ---
+placed in the Introduction beside the claim they bound.
 
 \begin{takeaway}{The gap this report fills}
 Prior work establishes, separately, that guards can be built cheaply from small LLMs, that fine-tuning can

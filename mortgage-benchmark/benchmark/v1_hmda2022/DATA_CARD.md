@@ -1,7 +1,7 @@
 # Mortgage Guardrail Benchmark — Data Card
 
 **Version:** 0.1.0-agentic
-**Built:** deterministic (seed 20260714) by the agentic HMDA-grounded generator in this folder.
+**Built:** by the agentic HMDA-grounded generator in this folder under seed 20260714. The seed fixes sampling and split assignment, but the generation calls run at nonzero temperature (default 0.7, `magen/llm.py`), so a rebuild reproduces the *design* and the splits, **not** the exact row text. Treat the committed JSONL as the artifact of record.
 
 ## What this is
 A request-screening benchmark for a mortgage-specific safety guardrail. Each row is one
@@ -16,13 +16,13 @@ grounding uses aggregate/de-identified fields only.
   recipes. `contains_real_pii=false` is a hard schema constant.
 - Labels are **policy-card-consistent, not legally authoritative**. `legal_review_status`
   records this. Confirmatory fair-lending claims require the SME-adjudicated subset (not yet done).
-- The `private_test` split is **sealed**: it is not in this bundle; only its text-free index is.
+- The `private_test` split was **intended** to be sealed, but the committed release directory includes `private_test.jsonl` with full text, and the GPT baseline has already scored it (241 = 146 + 95 rows). Treat it as dataset-held-out by convention, **not** as a sealed cohort.
 
 ## Splits
 - `train`: 604 rows
 - `dev`: 149 rows
 - `public_test`: 146 rows
-- `private_test` (sealed, not distributed): 95 rows
+- `private_test` (committed here with text; intended-sealed, already spent): 95 rows
 
 ## License
 **CC BY 4.0**, selected 2026-07-27 by Reza Rahimi, PhD (JazzX AI). Redistribution — including
@@ -51,4 +51,4 @@ there. **No data file changed**: `dev.jsonl`, `public_test.jsonl`, `private_test
 digests, so the frozen benchmark itself is untouched and every published number still stands.
 
 ## Reproduce
-See the folder README. `make all` rebuilds the whole benchmark from the frozen design + seed.
+See the folder README. There is no `make all` target; the build is driven by the `magen` pipeline steps documented there, and see the determinism note above before expecting byte-identical output.

@@ -40,8 +40,8 @@ The build also **asserts its float numbering against the built PDF**: it extract
 so `Table 4` in the HTML is `Table 4` in the paper. That check caught four tables that pandoc
 had silently dropped, and it is the reason the two editions can be cited interchangeably.
 
-Current state: **22 tables, 16 figures, 10 numbered equations, 224 cross-references, 44
-references** — all resolving, zero mismatches against the PDF.
+The builder emits the current table, figure, equation, cross-reference, and bibliography counts on each
+run and fails if they disagree with the PDF. No second hand-maintained count is kept here.
 
 ## Pipeline
 

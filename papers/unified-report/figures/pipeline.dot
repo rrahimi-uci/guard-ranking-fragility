@@ -1,0 +1,61 @@
+// Unified report — the agentic mortgage-benchmark construction pipeline.
+// Render: dot -Tpng -Gdpi=170 pipeline.dot -o pipeline.png   (make_figures.py does this)
+//
+// This replaces a committed PNG that had no source and two defects the report now corrects:
+// it was 1:2.9 tall (forced onto a full page, so every label rendered tiny), and its split
+// node still read "sealed private test" -- a claim the report withdrew.
+//
+// Labels are deliberately terse. A figure printed at \linewidth is only legible if its text
+// is a large fraction of its own width, so the detail lives in the LaTeX caption and the
+// surrounding prose; the nodes carry the step, not the explanation.
+digraph pipeline {
+  rankdir=TB;
+  graph [fontname="Helvetica", fontsize=15, nodesep=0.26, ranksep=0.46, bgcolor="white",
+         compound=true];
+  node  [fontname="Helvetica", fontsize=14, shape=box, style="rounded,filled",
+         fillcolor="#eef2ff", color="#334155", penwidth=1.3, margin="0.16,0.10"];
+  edge  [fontname="Helvetica", fontsize=13, color="#475569", penwidth=1.2];
+
+  src   [label="HMDA 2022 snapshot\n(public FFIEC / CFPB)", shape=cylinder, fillcolor="#e2e8f0"];
+  facts [label="De-identified banded fact sheets\nmarginal sampling — no verbatim row,\nno tract, no real field combination"];
+
+  subgraph cluster_loop {
+    label="Agentic loop, once per coverage cell";
+    labeljust=l; labelloc=t; fontname="Helvetica-Bold"; fontsize=14;
+    color="#94a3b8"; style="rounded,filled"; fillcolor="#f8fafc";
+    s1 [label="1. Planner\ncoverage cells"];
+    s2 [label="2. HMDA-grounder\npick a fact sheet"];
+    s3 [label="3. Generator\nauthor in a role voice"];
+    s4 [label="4. Adversarial mutator\nlabel-preserving tactics"];
+    s5 [label="5. Rubric-bound judge\nG, D vs. 24 policy cards"];
+    {rank=same; s1; s2; s3; s4; s5;}
+    s1 -> s2 -> s3 -> s4 -> s5;
+  }
+
+  gate  [label="Accept iff judged label == cell target",
+         shape=diamond, style=filled, fillcolor="#fef9c3", color="#a16207", margin="0.06,0.01"];
+  prov  [label="Provenance + decontamination\nMinHash near-duplicate families,\naudited against the Act I sources"];
+  split [label="content_family-isolated split\n0 of 958 families cross — but pairs were\nnever a grouping key, so 1 of 39 does",
+         fillcolor="#fef2f2", color="#b91c1c", penwidth=1.6];
+  priv  [label="private_test (95 rows)\ncommitted with text, already scored:\nheld out by convention, NOT sealed",
+         fillcolor="#fef2f2", color="#b91c1c", penwidth=1.6];
+  rel   [label="Frozen release  v1_hmda2022\n994 rows · dual labels G × D · 39 pairs\ntext-free index · SHA-256 checksums",
+         fillcolor="#dcfce7", color="#15803d", penwidth=1.9];
+  eval  [label="Evaluation harness (score_guards.py)\nmacro-AP for G / D / final,\nper-quadrant miss rate, Δ_context",
+         fillcolor="#e0e7ff", color="#4338ca", penwidth=1.9];
+
+  src -> facts;
+  facts -> s1 [lhead=cluster_loop];
+  s5 -> gate [ltail=cluster_loop];
+  gate -> s3 [label=" retry (≤N) / drop", style=dashed, color="#b91c1c",
+              fontcolor="#b91c1c", constraint=false];
+  gate -> prov [label=" accepted"];
+  prov -> split;
+  split -> rel;
+  split -> priv [style=dashed];
+  rel  -> eval;
+  // `priv` sat beside `split` on one rank; two three-line nodes side by side were the widest
+  // thing in the graph and set its whole width. Stacked, the figure is ~40% narrower and its
+  // labels print correspondingly larger.
+  {rank=same; rel; priv;}
+}

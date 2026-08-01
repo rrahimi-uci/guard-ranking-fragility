@@ -45,7 +45,8 @@ DESCRIPTION = (
     "study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling "
     "but not transfer, and at an equal false-alarm budget it catches less than half of what "
     "its own untuned base catches off-source. Plus a retraining-free composition repair, a "
-    "preregistered ten-checkpoint replication, and a dual-labeled mortgage benchmark."
+    "preregistered ten-checkpoint replication, a dual-labeled mortgage benchmark, and a "
+    "hosted-frontier comparison that reverses direction by traffic regime."
 )
 KEYWORDS = (
     "AI safety, safety guard, LLM guardrail, prompt safety classifier, small language model, "
@@ -233,6 +234,32 @@ def redact_restricted_rows(tex: str) -> str:
     return tex
 
 
+def _edb(tex: str) -> str:
+    r"""\edb{Evidence}{Decision}{Boundary} -> the same quote block the named callouts use.
+
+    The preamble shim used to declare this as a ONE-argument no-op, so pandoc consumed the
+    Evidence clause and dropped it, then emitted Decision and Boundary as bare unlabelled prose.
+    Every E/D/B summary in the HTML edition was missing its numbers -- invisibly, because the
+    remaining two clauses still read as a paragraph.
+    """
+    pat = re.compile(r"\\edb\s*(?=\{)")
+    while (m := pat.search(tex)):
+        # the three groups are separated by newlines in the sources, and _balanced requires
+        # its start index to be exactly on the opening brace
+        _skip = lambda k: k + len(tex[k:]) - len(tex[k:].lstrip())  # noqa: E731
+        ev, j = _balanced(tex, _skip(m.end()))
+        de, j = _balanced(tex, _skip(j))
+        bo, j = _balanced(tex, _skip(j))
+        body = (f"\\textbf{{Evidence.}} {ev}\n\n"
+                f"\\textbf{{Decision.}} {de}\n\n"
+                f"\\textbf{{Boundary.}} {bo}")
+        tex = (tex[:m.start()]
+               + f"\n\n\\begin{{quote}}\n{BOX}editor:What this establishes{CLOSE}\n\n{body}"
+                 f"\n\n{ENDBOX}\n\\end{{quote}}\n\n"
+               + tex[j:])
+    return tex
+
+
 def _boxes(tex: str) -> str:
     """\\begin{takeaway}{Title} ... \\end{takeaway}  ->  sentinel-delimited quote block."""
     for env, kind in (("takeaway", "takeaway"), ("background", "background"),
@@ -260,7 +287,6 @@ PREAMBLE_SHIM = r"""\documentclass{article}
 \newcommand{\citealp}[1]{&CITE;#1&CLOSE;}
 \newcommand{\cite}[1]{&CITE;#1&CLOSE;}
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\edb}[1]{}
 \newcommand{\draftwarning}{}
 """
 
@@ -289,6 +315,23 @@ def macro_shim() -> str:
     return "\n".join(out)
 
 
+def gen_values() -> dict[str, str]:
+    r"""{macro name without the backslash: plain-text body} for every generated/*.tex macro.
+
+    `macro_shim` hands the macros to pandoc; this hands them to Python, for the two TikZ
+    floats that are re-drawn as HTML after pandoc has already run and so never see the shim.
+    Values come back in the paper's own printed form ("+0.083", "[+0.013, +0.157]").
+    """
+    out: dict[str, str] = {}
+    for f in sorted(GEN.glob("*.tex")):
+        for line in f.read_text().splitlines():
+            m = re.match(r"\\newcommand\{\\(\w+)\}\{(.*)\}\s*$", line.strip())
+            if m:
+                v = re.sub(r"\\code\{([^}]*)\}", r"\1", m.group(2))
+                out[m.group(1)] = v.replace("\\_", "_").replace("\\%", "%").replace("$", "").strip()
+    return out
+
+
 def flatten(redact: bool = True) -> tuple[str, dict]:
     root = (SRC / "unified_report.tex").read_text()
 
@@ -307,12 +350,34 @@ def flatten(redact: bool = True) -> tuple[str, dict]:
         abstract = m.group(1)
         body = body[:m.start()] + body[m.end():]
 
-    # --- The tikz workflow flowchart is re-drawn as semantic HTML (accessible, selectable,
-    #     and it reflows on a phone). Replace the WHOLE enclosing float: leaving the LaTeX
-    #     figure wrapper in place would nest a <figure> in a <figure>, duplicating both the
-    #     caption and the fig:gating id.
-    body = re.sub(r"\\begin\{figure\}[^\n]*\n\s*\\begin\{tikzpicture\}.*?\\end\{figure\}",
-                  f"\n\n{RAW}gating{CLOSE}\n\n", body, flags=re.S)
+    # --- TikZ floats are re-drawn as semantic HTML (accessible, selectable, and they reflow
+    #     on a phone). Replace the WHOLE enclosing float: leaving the LaTeX figure wrapper in
+    #     place would nest a <figure> in a <figure>, duplicating both the caption and the id.
+    #
+    #     Dispatch is by \label, NOT by position. This substitution used to assume there was
+    #     exactly one TikZ float and hard-coded `gating`; when a second one (the regime map)
+    #     was added earlier in the document, the non-greedy match silently rendered the
+    #     regime map as the gating flowchart. An unknown TikZ label now fails the build.
+    def _tikz(m):
+        block = m.group(0)
+        lab = re.search(r"\\label\{(fig:[\w-]+)\}", block)
+        key = {"fig:gating": "gating", "fig:regime-map": "regime"}.get(lab.group(1) if lab else "")
+        if not key:
+            raise SystemExit(f"build.py: TikZ float with no HTML rendering: {lab and lab.group(1)}")
+        return f"\n\n{RAW}{key}{CLOSE}\n\n"
+
+    # `(?:\s*%[^\n]*\n)*` skips comment lines between the float opener and the picture. Without
+    # it the regime-map float did not match (its opener is followed by two comment lines), pandoc
+    # silently dropped the tikzpicture it could not render, and the page shipped a <figcaption>
+    # with no figure above it. The assertion below is what makes that failure loud.
+    # NB `[ \t]*`, not `\s*`, inside the comment-line group: `\s*` can match a newline, which
+    # makes the group ambiguous with its own repetition and sends this pattern into exponential
+    # backtracking on any float that does not match.
+    body = re.sub(r"\\begin\{figure\}[^\n]*\n(?:[ \t]*%[^\n]*\n)*[ \t]*\\begin\{tikzpicture\}"
+                  r".*?\\end\{figure\}", _tikz, body, flags=re.S)
+    if r"\begin{tikzpicture}" in body:
+        raise SystemExit("build.py: a tikzpicture survived the float substitution -- pandoc will "
+                         "drop it and leave a caption with no figure. Check the float opener.")
 
     # --- print-only commands with no HTML meaning
     for cmd in ("noindent", "smallskip", "medskip", "bigskip", "clearpage", "newpage",
@@ -347,7 +412,7 @@ def flatten(redact: bool = True) -> tuple[str, dict]:
 
     if redact:
         body = redact_restricted_rows(body)
-    body = _boxes(body)
+    body = _edb(_boxes(body))
 
     tex = (PREAMBLE_SHIM + macro_shim()
            + "\n\\begin{document}\n" + body + "\n\\end{document}\n")
@@ -446,12 +511,13 @@ def postprocess(frag: str, meta: dict) -> str:
         div.append(body)
         q.replace_with(div)
 
-    # ---- 4b. raw blocks (the workflow flowchart)
+    # ---- 4b. raw blocks (the TikZ floats, re-drawn as semantic HTML)
+    RAW_HTML = {"gating": GATING_HTML, "regime": _regime_html()}
     for node in soup.find_all(string=re.compile(re.escape(RAW))):
         name = re.search(re.escape(RAW) + r"(\w+)" + re.escape(CLOSE), node)
-        if name and name.group(1) == "gating":
+        if name and name.group(1) in RAW_HTML:
             holder = node.find_parent(["p", "div", "figure"]) or node.parent
-            holder.replace_with(BeautifulSoup(GATING_HTML, "html.parser"))
+            holder.replace_with(BeautifulSoup(RAW_HTML[name.group(1)], "html.parser"))
 
     # ---- 4c. section numbering.
     # pandoc maps \section->h1, \subsection->h2, \subsubsection->h3, \paragraph->h4.
@@ -684,6 +750,56 @@ an empty feasible set is a deliberate no-ship, not a relaxed cutoff.</figcaption
 </figure>
 """
 
+# The regime map (fig:regime-map). A 2x2 in the PDF; an ARIA grid of divs here, so a screen
+# reader still reads it as a table and a phone reflows it. NOT a real <table>: the float
+# numbering pass wraps every <table> in its own <figure>, and a <table> already inside one
+# sent BeautifulSoup's replace_with into an infinite loop. Numbers come from generated/.
+_REGIME_TEMPLATE = """
+<figure id="fig:regime-map" class="figwrap regimemap">
+<div class="regime" role="table" aria-label="Which guard ranks better, by traffic regime">
+  <div role="row" class="regime-head">
+    <span role="columnheader"></span>
+    <span role="columnheader"><b>Small tuned guard</b><i>1.5&ndash;4B, self-hosted</i></span>
+    <span role="columnheader"><b>Hosted frontier</b><i>{ref}</i></span>
+  </div>
+  <div role="row">
+    <span role="rowheader"><b>Traffic your manifest <em>represents</em></b>
+      <i>held-out rows, named sources</i></span>
+    <span role="cell" class="win"><b>wins</b> by {agg}<i>{aggci} &mdash; recall at a matched
+      {budget} budget</i></span>
+    <span role="cell" class="lose">reference<i>the left cell is post hoc and descriptive; not
+      robust to reweighting</i></span>
+  </div>
+  <div role="row">
+    <span role="rowheader"><b>Traffic it does <em>not</em></b>
+      <i>held out at the source level</i></span>
+    <span role="cell" class="lose">loses<i>the best transfer guard on the panel is an
+      <em>untuned</em> base</i></span>
+    <span role="cell" class="win"><b>wins</b> by {gain}<i>{gainci} &mdash; vs. the best small
+      base, ExpGuard</i></span>
+  </div>
+</div>
+<p class="regime-note">The deployment question is therefore not <em>which guard</em> but
+<b>what share of your traffic sits in the top row</b> &mdash; and how you route the rest.</p>
+<figcaption><b>The frontier gap is a property of the regime, not of the model.</b> The same
+comparison, at the same matched {budget} false-alarm budget, points in opposite directions on the two
+regimes: a hosted frontier model is the better ranker on prompts from sources nobody trained on, and
+the panel's small <em>tuned</em> guards are the better rankers on sources the training manifest names.
+The top-left cell is a post-hoc descriptive summary over three purposively chosen corpora and is
+<em>not</em> robust to reweighting; the bottom-right is a paired comparison on external
+expert-annotated rows. The two cells sit at the same evidence flavor (retrospective) but on different
+data, and are never pooled.</figcaption>
+</figure>
+"""
+
+
+def _regime_html() -> str:
+    g = gen_values()
+    return _REGIME_TEMPLATE.format(
+        ref=g["HtwoRef"], budget=g["HtwoBudget"],
+        agg=g["HtwoAggDeltaTpr"], aggci=g["HtwoAggDeltaTprCI"],
+        gain=g["FrontierGainOverBase"], gainci=g["FrontierGainOverBaseCI"])
+
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
@@ -718,9 +834,8 @@ def main(argv=None) -> int:
     abstract_html = asoup.decode()
 
     page = (HERE / "template.html").read_text()
-    for k, v in {"{{TITLE}}": "The Safety-Guard Benchmark Chooses the Winner",
-                 "{{SUBTITLE}}": ("Measuring, Tuning, and Composing Small Safety Guards "
-                                  "in High-Compliance Regulated Domains"),
+    for k, v in {"{{TITLE}}": "Benchmark Gains Do Not Guarantee Transfer",
+                 "{{SUBTITLE}}": "Fine-Tuning Small Language Model Safety Guards",
                  "{{ABSTRACT}}": abstract_html, "{{TOC}}": toc,
                  "{{BODY}}": body, "{{BIB}}": bib,
                  "{{SITE_URL}}": SITE_URL, "{{DESCRIPTION}}": DESCRIPTION,

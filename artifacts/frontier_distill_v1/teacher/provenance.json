@@ -1,0 +1,69 @@
+{
+  "counts": {
+    "gpt54_high": 4185,
+    "gpt54_low": 4188,
+    "gpt54_medium": 4188,
+    "gpt54mini_high": 4187,
+    "gpt54mini_low": 4184,
+    "gpt54mini_medium": 4187
+  },
+  "held_clean_and_why": {
+    "expguard": "the report's only external expert-annotated evaluation surface",
+    "jailbreak_classification": "already represented in Act~I train.jsonl",
+    "jailbreakbench": "Act~I transfer_test",
+    "prompt_injections": "already represented in Act~I train.jsonl",
+    "toxicchat": "already represented in Act~I train.jsonl",
+    "wildguardtest": "Act~I transfer_test",
+    "wildjailbreak": "Act~I transfer_test",
+    "xstest": "Act~I transfer_test"
+  },
+  "key": "content_sha256 = sha256(normalize_text(prompt)), the local pipeline's convention",
+  "license_encumbrance": {
+    "beavertails": "CC-BY-NC-4.0, commercial_use false, derived_output_license CC-BY-NC-4.0_inherited -- weights trained on it inherit a noncommercial encumbrance",
+    "openai_moderation": "MIT_upstream_unverified, derived_output_license none_until_decision",
+    "teacher_outputs": "distilling provider model outputs into a competing classifier is governed by the provider's terms; this is a human licensing decision and is a blocking gate in the claim registry"
+  },
+  "n_rows_labelled": 4188,
+  "pool": [
+    "beavertails",
+    "openai_moderation"
+  ],
+  "role": "teacher signal for the distillation arms -- TRAINING input, not evaluation",
+  "source_of_predictions": "gpt-baseline/raw/ (gitignored working state), lifted here so a LOCK can bind the teacher signal",
+  "study_id": "frontier_distill_v1",
+  "teacher_quality": {
+    "beavertails": {
+      "n": 2525,
+      "prevalence": 0.5667,
+      "teacher_auc_gpt54_high": 0.7321,
+      "teacher_auc_gpt54_low": 0.7343,
+      "teacher_auc_gpt54_medium": 0.7332,
+      "teacher_auc_gpt54mini_high": 0.7216,
+      "teacher_auc_gpt54mini_low": 0.7252,
+      "teacher_auc_gpt54mini_medium": 0.724,
+      "teacher_n_gpt54_high": 2522,
+      "teacher_n_gpt54_low": 2525,
+      "teacher_n_gpt54_medium": 2525,
+      "teacher_n_gpt54mini_high": 2524,
+      "teacher_n_gpt54mini_low": 2521,
+      "teacher_n_gpt54mini_medium": 2524
+    },
+    "openai_moderation": {
+      "n": 1663,
+      "prevalence": 0.3085,
+      "teacher_auc_gpt54_high": 0.9605,
+      "teacher_auc_gpt54_low": 0.9512,
+      "teacher_auc_gpt54_medium": 0.9548,
+      "teacher_auc_gpt54mini_high": 0.9474,
+      "teacher_auc_gpt54mini_low": 0.9325,
+      "teacher_auc_gpt54mini_medium": 0.9474,
+      "teacher_n_gpt54_high": 1663,
+      "teacher_n_gpt54_low": 1663,
+      "teacher_n_gpt54_medium": 1663,
+      "teacher_n_gpt54mini_high": 1663,
+      "teacher_n_gpt54mini_low": 1663,
+      "teacher_n_gpt54mini_medium": 1663
+    }
+  },
+  "text_free": "both pool sources are text_free_only in the distribution ledger; this directory stores digests, integer risk scores and labels only"
+}

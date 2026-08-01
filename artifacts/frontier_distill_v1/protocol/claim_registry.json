@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "study_id": "frontier_distill_v1",
+  "contract_role": "subordinate_phase_b_preflight",
+  "finalization_status": "dev_nonfinal",
+  "normative_source": {
+    "path": "papers/unified-report/proposal.md",
+    "section": "20. Prospective companion proposal -- frontier-distilled SLM under a fixed latency budget",
+    "relationship": "This file is NOT an independent protocol and carries no confirmatory claim. Proposal Section 20 is normative for the study design, the panel, the confirmatory hypothesis, the release gates, and the phase gates. This file records only Phase B preflight material (Section 20.17) and the licensing gate that Phase A must resolve."
+  },
+  "why_this_is_not_a_standalone_protocol": {
+    "superseded_by": "proposal Section 20.3 fixes the sole confirmatory hypothesis as H_frontier: TPR_student@5%FPR - TPR_gpt54_low@5%FPR > 0 on a SEALED expert-adjudicated cohort. An earlier draft of this file proposed AP-on-transfer predicates over the 4-checkpoint Act I panel, which conflicts with Section 20.5 (primary student SmolLM3-3B base) and with Section 20.6 (sealed D_fresh). Those predicates are withdrawn rather than left to compete.",
+    "arm_mapping": "the teacher-only arm this file was drafted around is Section 20.10's D2_kd rung, and the gold-label control is nearest to D1_gold. Section 20.4 argues explicitly that a student trained only to reproduce teacher verdicts can approach but not systematically cross the teacher, so D2_kd is a ladder rung and not a candidate for the primary claim.",
+    "authorization": "proposal Section 20.1 states the study is not authorized for claim-bearing training or data collection, and Section 20.17 Phase A gates all external teacher collection and all GPU training behind a reviewed and hashed preregistration. No training has been run."
+  },
+  "phase_b_preflight_contributions": {
+    "teacher_pool_candidate": {
+      "path": "artifacts/frontier_distill_v1/teacher/",
+      "sources": ["beavertails", "openai_moderation"],
+      "n_rows_with_teacher": 4188,
+      "teacher": "gpt-5.4 (low), self-reported integer 0-100 risk",
+      "role": "a candidate D_teacher pool assembled from teacher calls ALREADY MADE for the evaluation baseline, so it required no new external collection and does not trip the Phase A gate",
+      "provenance_fix": "gpt-baseline/raw/ is gitignored working state that exists only on the machine that ran the baseline. Nothing bound by a LOCK could read it, so the signal was lifted into a committed text-free artifact by gpt-baseline/export_distill_teacher.py.",
+      "text_free": "both sources are text_free_only in the distribution ledger; the directory stores digests, integer risk scores and labels only"
+    },
+    "measured_teacher_quality": {
+      "finding": "teacher quality is strongly heterogeneous across the candidate pool and must not be averaged away",
+      "openai_moderation": {"n": 1663, "prevalence": 0.308, "teacher_auc_gpt54_low": 0.9512},
+      "beavertails": {"n": 2525, "prevalence": 0.567, "teacher_auc_gpt54_low": 0.7343},
+      "implication": "roughly 60% of the candidate pool by row count carries a teacher signal at AUC .734, which is label-convention disagreement rather than teacher capability. Section 20.7's teacher annotation contract and Section 20.6's quota design should treat these two sources as different tiers, not one pool."
+    },
+    "proposed_weak_teacher_gate": {
+      "rule": "a pool source whose measured teacher AUC is below 0.80 may not carry a primary claim alone and its contribution must be reported separately",
+      "tripped_in_advance_by": "beavertails at 0.7343",
+      "status": "proposed for adoption into the Section 20 lock at Phase A; recorded here before any distilled score exists so it can never become a post hoc exclusion"
+    },
+    "proposed_hold_clean_rule": {
+      "rule": "No row from expguard, xstest, jailbreakbench, wildguardtest or wildjailbreak may enter any arm's training or selection data, at any weight.",
+      "reason": "expguard is the report's only external expert-annotated evaluation surface and the other four are Act I's transfer_test. Training on any of them converts the evaluation surface into a represented source and destroys the estimand rather than improving it.",
+      "relationship_to_normative_source": "operationalizes proposal Section 20.6's requirement that no ExpGuard evaluation text enter any training or selection role, and extends it to the Act I transfer suite",
+      "status": "proposed for adoption into the Section 20 lock at Phase A"
+    }
+  },
+  "licensing_gate": {
+    "status": "OPEN -- unresolved, and blocking for any released artifact",
+    "rule": "no distilled weights may be released, and no commercial deployment claim may be made, until both decisions below are recorded in benchmarks/registry/distribution.yaml",
+    "decisions_required": [
+      {
+        "id": "beavertails_noncommercial_inheritance",
+        "detail": "beavertails is CC-BY-NC-4.0 with commercial_use false and derived_output_license CC-BY-NC-4.0_inherited. Weights trained on it inherit a noncommercial encumbrance, which bears directly on a study whose motivation is a deployable low-cost guard.",
+        "options_for_the_human": "drop beavertails from the pool, accept a noncommercial research-only artifact, or obtain terms that permit the derived use"
+      },
+      {
+        "id": "teacher_output_terms",
+        "detail": "distilling a provider's model outputs into a competing safety classifier is governed by that provider's terms of use.",
+        "note": "measuring the effect and publishing the measurement is a different posture from shipping the weights; this gate governs the latter and does not block the former"
+      }
+    ],
+    "precedent": "the ledger's default_decision local_only already treats redistribution decisions as a human's call and not a script's"
+  },
+  "motivating_evidence_committed_this_session": {
+    "path": "artifacts/frontier_general_h2h/h2h.json",
+    "script": "experiments/eval_frontier_general_h2h.py",
+    "finding": "the frontier gap is a property of the regime, not of model size. On represented sources the Act I panel's small tuned guards beat gpt-5.4 (low): Qwen2.5-1.5B SFT on prompt_injections reaches TPR@5%FPR .948 (AUROC .9928) against the reference's .741 (AUROC .8731), a paired delta of +0.185 [+0.065, +0.423] with 5 of 12 panel-SFT cells clearing zero at the 95% level. On Act I transfer sources the same guards lose to the reference and tuning is what costs them.",
+    "bearing_on_section_20": "adds a regime dimension to the Section 20.2 target-to-beat table, which currently reads the gap off ExpGuard alone -- an external source the panel never trained on, and therefore the transfer regime only. It also supplies direct evidence for the Section 20.4 premise that the remaining gap is a transfer gap rather than a capacity gap.",
+    "flavor": "retrospective, estimation-only; these rows and this panel were inspected during development"
+  },
+  "forbidden": {
+    "promoting_this_file": "this file may not be cited as preregistration for any claim; only a Phase-A-reviewed and hashed Section 20 lock can carry one",
+    "training_before_phase_a": "forbidden by proposal Section 20.17"
+  }
+}

@@ -1,4 +1,4 @@
-/* The Safety-Guard Benchmark Chooses the Winner — HTML edition.
+/* Benchmark Gains Do Not Guarantee Transfer — HTML edition.
    Palette is lifted from the PDF's own tcolorbox colours so the two editions read as
    one document: hdgmaroon accents, bgblue background boxes, tkgreen takeaways. */
 
@@ -320,6 +320,41 @@ table.plaintable thead th { border-bottom-width: 1px; }
 .flow-ship b { color: var(--green); }
 .flow-stop { background: color-mix(in srgb, var(--red) 10%, var(--page)); border-color: var(--red); }
 .flow-stop b { color: var(--red); }
+
+/* --------------------------------------------------------------- regime map */
+/* fig:regime-map is a TikZ 2x2 in the PDF and an ARIA grid of divs here (a real <table>
+   inside a <figure> breaks the float-numbering pass). Three columns on a wide screen; one
+   column on a phone, where the row headers become section labels above their cells. */
+.regimemap .regime {
+  display: grid; grid-template-columns: minmax(8rem, 1fr) 1.35fr 1.35fr;
+  gap: .5rem; padding: 1.3rem 1.2rem .4rem; font-family: var(--sans); font-size: .8125rem;
+}
+.regimemap [role="row"] { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; gap: .5rem; }
+.regimemap [role="columnheader"] { text-align: center; padding: 0 .3rem .1rem; }
+.regimemap [role="columnheader"] b { color: var(--ink); }
+.regimemap [role="rowheader"] { text-align: right; align-self: center; padding-right: .2rem; }
+.regimemap [role="rowheader"] b { color: var(--ink); }
+.regimemap [role="cell"] {
+  border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet);
+  padding: .65rem .8rem; text-align: center; align-self: stretch;
+}
+.regimemap .win { background: var(--green-bg); border-color: var(--green); }
+.regimemap .win b { color: var(--green); }
+.regimemap .lose { color: var(--muted); }
+.regimemap i { display: block; font-style: normal; color: var(--muted); font-size: .71875rem;
+               line-height: 1.4; margin-top: .2rem; }
+.regimemap .regime-note {
+  margin: .5rem 1.2rem 1.2rem; padding: .6rem .9rem; background: var(--blue-bg);
+  border: 1px solid var(--blue); border-radius: 8px; font-family: var(--sans);
+  font-size: .78125rem; text-align: center; color: var(--muted);
+}
+.regimemap .regime-note b { color: var(--ink); }
+@media (max-width: 46rem) {
+  .regimemap .regime { grid-template-columns: 1fr; }
+  .regimemap [role="row"] { grid-template-columns: 1fr; }
+  .regimemap .regime-head { display: none; }
+  .regimemap [role="rowheader"] { text-align: left; padding-top: .5rem; }
+}
 
 /* ---------------------------------------------------------------- bibliography */
 .bib { list-style: none; padding: 0; margin: 0; }

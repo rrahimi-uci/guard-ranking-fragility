@@ -1,18 +1,20 @@
 {
   "RQ1": {
-    "H_conc_lcb": 0.18924467275509202,
-    "H_gain_lcb": 0.12917415910635147,
+    "H_conc_lcb": 0.13663641470197663,
+    "H_gain_lcb": 0.07003723119153021,
     "criterion": "LCB(H_gain) > 0 AND LCB(H_conc) > 0",
     "interpretation": "Our ordinary SFT protocol further specialized these released guards toward represented sources, with a bound-confirmed adaptation-held-out loss (fixed-panel, this recipe).",
     "supported": true
   },
   "RQ2": {
-    "H_cost_lcb": -0.060223852872809375,
-    "H_preserve_lcb": 0.0346823349326446,
+    "H_cost_lcb": -0.0616250539799489,
+    "H_preserve_lcb": 0.03197049079820846,
     "criterion": "LCB(H_preserve) > 0 AND LCB(H_cost) > -0.02",
     "interpretation": "KL-SFT trades adaptation gain for retention; it preserved held-out transfer but the represented-source non-inferiority margin was not met -- it is not a free improvement.",
     "supported": false
   },
+  "confirmatory_status": "NOT CONFIRMATORY. The gates below are evaluated on the registered purpose-built panel, but four protocol deviations prevent the outcome from carrying a confirmatory verdict: the claim registry is finalization_status=dev_nonfinal and no LOCK binds it; all ten preflight artifacts record eligible=false, with the training-dependent checks (including the nonconstant-margin rule) skipped, so the eligibility gate never ran; the degenerate Llama-Guard cell was retained against that rule; and this panel-split analysis was itself written AFTER the outcomes were known, to repair an analyzer that computed a different estimand. Read every number here as an analysis-preregistered fixed-panel ESTIMATE.",
+  "estimand_panel": "purpose_built",
   "interpretation_source": "locked claim-registry keyed by bootstrap-bound predicates; NO point-estimate sign was consulted to select wording (non-HARKing).",
   "multiplicity": "Bonferroni across the two RQ families: one-sided 97.5% per-family lower bounds control familywise alpha = 0.05.",
   "non_inferiority_margin_m": 0.02,

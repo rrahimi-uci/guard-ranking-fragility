@@ -1,9 +1,9 @@
-\section{Background you'll need}
+\section{Background: what the four questions rest on}
 \label{sec:background}
 
 This report is written to be read by someone with a first course in statistics, a working idea of
 what fine-tuning a small language model means, and a lay familiarity with mortgage lending. Everything
-technical the three acts rely on is defined once here, from the ground up, with the exact equations and
+technical the four questions rely on is defined once here, from the ground up, with the exact equations and
 a worked example wherever a number would otherwise be mysterious. Nothing in this section reports a
 result; it is the vocabulary. Almost every subtlety below exists to make one comparison honest --- a
 tuned guard against the \emph{same model before tuning}, on identical rows, split into sources the
@@ -88,7 +88,7 @@ unsafe prompts on top) would score $1.00$; ranking the safe prompts first would 
 
 \emph{Macro}-AP computes AP separately on each benchmark and then averages those per-benchmark values
 with \emph{equal weight}, so one large benchmark cannot dominate a handful of small ones; this is the
-primary metric in every act.
+primary metric behind every one of the four questions.
 
 \begin{takeaway}{Why not just report accuracy?}
 On a test set that is $95\%$ safe, a guard that blindly answers \code{safe} to everything scores $95\%$
@@ -139,10 +139,12 @@ both measure (\Cref{sec:actI-op,sec:actIII-operating}).
 
 \begin{background}{Three terms that appear in the verdicts, in plain words}
 \textbf{Lower confidence bound (LCB).} A one-sided version of an interval. Saying ``the gain is
-$+0.174$, LCB $+0.129$'' means: the estimate is $+0.174$, and under resampling the value stayed above
-$+0.129$ in $97.5\%$ of the redraws. A criterion of the form ``LCB $>0$'' is therefore a demand that even
+\AdaHGain{}, LCB \AdaHGainLCB'' --- the actual RQ1 result of \Cref{sec:adaptation} --- means: the
+estimate is \AdaHGain{}, and under resampling the value stayed above \AdaHGainLCB{} in $97.5\%$ of the
+redraws. A criterion of the form ``LCB $>0$'' is therefore a demand that even
 the pessimistic end of the range still be a gain. (UCB is the mirror image, used for quantities we want
-to bound from \emph{above}, such as a loss.)
+to bound from \emph{above}, such as a loss.) This example is the generated macro rather than a typed
+number, because an earlier revision left it quoting a superseded panel's value.
 
 \textbf{Non-inferiority margin.} How much you are willing to lose on one axis to win on another, fixed
 \emph{before} looking. A margin of $-0.02$ says: a drop of up to two AP points is acceptable, more is

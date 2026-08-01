@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Reproduce EVERY number/table/figure in the unified report from committed per-row scores.
 
-One entry point (`make reproduce` calls this). For each study it re-derives the generated LaTeX
+Two entry points call this: `make regenerate` (rewrite) and `make verify` (--check, read-only). For each study it re-derives the generated LaTeX
 tables the report `\\input`s, copies the canonical outputs into `generated/`, and (with --check)
 asserts byte-identity with the committed copies. It needs NO GPU and NO network; only committed
 scores + the pinned analysis environment.
@@ -20,6 +20,7 @@ Usage:  python reproduce.py [--check] [--build]
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
@@ -27,6 +28,12 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
+# Three study paths (expguard, frontier, sftsft) import guard_research, and the mortgage
+# subprocess silently switches metric backend without it. Put the repo root on sys.path so a
+# check does not depend on how this venv happens to be installed -- an editable install that
+# still points at the pre-rename path was enough to turn the coverage tally into a crash.
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
 GEN = HERE / "generated"
 PY = REPO / ".venv" / "bin" / "python"
 PYS = str(PY) if PY.exists() else sys.executable
@@ -49,6 +56,110 @@ def _copy_into_generated(src: Path, dst_name: str, results: dict, check: bool):
     else:
         dst.write_text(content)
         results[dst_name] = "regenerated"
+
+
+def _emitter(results, check, script: str, names: tuple[str, ...], tag: str,
+             rel: str = "experiments"):
+    """Run one experiments/emit_*.py and byte-check what it writes.
+
+    These four emitters used to be outside the harness, so ten generated inputs -- including
+    BOTH head-to-head outputs, the paper's most prominent frontier claim -- were reported as
+    "not covered" while the reproducibility section claimed every table was byte-checked. They
+    all read committed analysis JSON, so there was never a reason they could not be verified.
+
+    In check mode the emitter is pointed at a scratch directory through PAPER_GEN_DIR and the
+    result is compared, so verification writes nothing into the tracked tree.
+    """
+    import os as _os
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        target = tmp if check else str(GEN)
+        env = {**_os.environ, "PAPER_GEN_DIR": target,
+               "PYTHONPATH": _os.pathsep.join([str(REPO), str(REPO / "experiments")])}
+        r = _run([PYS, f"{rel}/{script}"], env=env)
+        if r.returncode != 0:
+            last = (r.stderr.strip().splitlines() or [""])[-1][:90]
+            for n in names:
+                results[n] = f"FAIL ({tag}): {last}"
+            return
+        for n in names:
+            produced = Path(target) / n
+            if not produced.exists():
+                results[n] = f"FAIL ({tag}: emitter wrote no {n})"
+            elif not check:
+                results[n] = "regenerated"
+            else:
+                dst = GEN / n
+                results[n] = ("OK (byte-identical)"
+                              if dst.exists() and dst.read_text() == produced.read_text()
+                              else "DRIFT!")
+
+
+def adaptation(results, check):
+    """Starting-type adaptation tables from the committed analysis JSON."""
+    _emitter(results, check, "emit_adaptation_tex.py",
+             ("adaptation_macros.tex", "tab_adaptation_gen.tex"), "adaptation")
+
+
+def ensembling(results, check):
+    """Guard-committee tables from the committed ensembling JSON."""
+    _emitter(results, check, "emit_ensembling_tex.py",
+             ("ensembling_macros.tex", "tab_ensembling_gen.tex",
+              "tab_ensembling_committee.tex"), "ensembling")
+
+
+def cascade(results, check):
+    """Escalation-curve macros from the committed ExpGuard per-row scores."""
+    _emitter(results, check, "emit_cascade_tex.py", ("cascade_macros.tex",), "cascade")
+
+
+def h2h(results, check):
+    """Frontier/local head-to-head, from the committed artifacts/frontier_general_h2h/h2h.json.
+
+    The TeX is byte-checked here. Re-deriving h2h.json itself runs a 2,000-replicate joint
+    bootstrap and takes minutes, so it is a separate opt-in target (`make verify-heavy`)
+    rather than part of the default check -- but it is now possible offline, from the committed
+    text-free per-row artifact, which it was not before.
+    """
+    _emitter(results, check, "emit_frontier_general_h2h_tex.py",
+             ("h2h_macros.tex", "tab_h2h_gen.tex"), "h2h")
+
+
+def klsft(results, check):
+    """KL-SFT control tables, from the committed klsft_v1 per-row scores."""
+    import os as _os
+    import tempfile
+
+    names = ("klsft_macros.tex", "tab_klsft_gen.tex")
+    with tempfile.TemporaryDirectory() as tmp:
+        target = tmp if check else str(GEN)
+        r = _run([PYS, "experiments/analyze_klsft.py",
+                  "--klsft-dir", "artifacts/klsft_v1/scores", "--emit-dir", target],
+                 env={**_os.environ, "PYTHONPATH": str(REPO)})
+        if r.returncode != 0:
+            last = (r.stderr.strip().splitlines() or [""])[-1][:90]
+            for n in names:
+                results[n] = f"FAIL (klsft): {last}"
+            return
+        for n in names:
+            produced = Path(target) / n
+            if not produced.exists():
+                results[n] = f"FAIL (klsft: no {n})"
+            elif not check:
+                results[n] = "regenerated"
+            else:
+                dst = GEN / n
+                results[n] = ("OK (byte-identical)"
+                              if dst.exists() and dst.read_text() == produced.read_text()
+                              else "DRIFT!")
+
+
+def mortgage_composition(results, check):
+    """Frozen-release composition table, derived from the release's own text-free row index."""
+    _emitter(results, check, "emit_composition_tex.py",
+             ("mortgage_composition_table.tex", "mortgage_composition_macros.tex"),
+             "composition", rel="mortgage-benchmark/tools")
 
 
 def paper_a(results, check):
@@ -87,7 +198,11 @@ def mortgage(results, check):
     import os as _os
     mb = REPO / "mortgage-benchmark"
     (mb / "generated").mkdir(exist_ok=True)
-    env = {**_os.environ, "PYTHONPATH": str(mb)}  # reeval imports `magen`; scripts assume repo-root cwd
+    # magen/evaluate.py falls back to a different metric backend when guard_research is
+    # unimportable, and then rewrites four tracked report_*.json with "metric_backend":
+    # "fallback" -- so a --check run silently degraded committed artifacts. Pass the repo root
+    # too, so the subprocess resolves the canonical tie-aware metrics.
+    env = {**_os.environ, "PYTHONPATH": _os.pathsep.join([str(mb), str(REPO)])}
     r1 = _run([PYS, "mortgage-benchmark/tools/reeval_from_scores.py"], env=env)  # per-row scores -> baseline_table.json
     r2 = _run([PYS, "mortgage-benchmark/tools/emit_baseline_tex.py",
                "mortgage-benchmark/out_eval/baseline_table.json",
@@ -383,8 +498,37 @@ def teaser_macros(results, check):
 
 
 def figures(results, check):
-    r = _run([PYS, 'figures/make_figures.py'], cwd=HERE)
-    results['figures'] = 'regenerated' if r.returncode == 0 else 'FAIL: ' + (r.stderr or '')[-80:]
+    """Render every figure and, under --check, byte-compare it against the committed PDF.
+
+    Figures used to be regenerated in place and never compared, which meant a plot could drift
+    away from the scores behind it without the check saying anything -- and it also made
+    verification write into the tracked tree. Both are fixed here: --check renders into a
+    scratch directory (PAPER_FIG_DIR) and diffs the bytes. matplotlib is asked for a null
+    CreationDate, so identical inputs give identical files.
+    """
+    import os as _os
+    import tempfile
+
+    if not check:
+        r = _run([PYS, "figures/make_figures.py"], cwd=HERE)
+        results["figures"] = ("regenerated" if r.returncode == 0
+                              else "FAIL: " + (r.stderr or "")[-80:])
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        r = _run([PYS, "figures/make_figures.py"], cwd=HERE,
+                 env={**_os.environ, "PAPER_FIG_DIR": tmp})
+        if r.returncode != 0:
+            results["figures"] = "FAIL: " + (r.stderr or "")[-80:]
+            return
+        rendered = sorted(Path(tmp).glob("*.pdf"))
+        if not rendered:
+            results["figures"] = "FAIL: no figures rendered"
+            return
+        drift = [p.name for p in rendered
+                 if not (HERE / "figures" / p.name).exists()
+                 or (HERE / "figures" / p.name).read_bytes() != p.read_bytes()]
+        results["figures"] = (f"OK (byte-identical, {len(rendered)} figures)" if not drift
+                              else f"DRIFT! ({', '.join(sorted(drift)[:4])})")
 
 def matched_fpr(results, check):
     """Matched false-alarm-budget operating point (see matched_fpr.py for the threshold rule)."""
@@ -421,6 +565,10 @@ def frontier(results, check):
         results["frontier_table.tex"] = "PENDING (frontier scores not committed)"
         return
     sys.path.insert(0, str(HERE))
+# Three study paths (expguard, frontier, sftsft) import guard_research, and the mortgage
+# subprocess silently falls back to a different metric backend without it. Put the repo
+# root on sys.path so a check does not depend on how the venv happens to be installed.
+
     import frontier as FR
 
     data = FR.compute()
@@ -448,14 +596,29 @@ def main(argv=None) -> int:
     GEN.mkdir(exist_ok=True)
     results: dict[str, str] = {}
     for fn in (paper_a, paper_b, mortgage, expguard, frontier, sftsft, matched_fpr, latency,
-               teaser_macros, figures):
+               teaser_macros, adaptation, ensembling, cascade, h2h, klsft,
+               mortgage_composition, figures):
         try:
             fn(results, args.check)
         except Exception as e:  # keep going; report per-study
             results[fn.__name__] = f"ERROR: {type(e).__name__}: {e}"
 
-    # every generated/*.tex the report \inputs -- so "not covered by the harness" is visible, not silent
-    inputs = sorted(p.name for p in GEN.glob("*.tex"))
+    # The denominator is every generated/*.tex the report ACTUALLY \inputs -- parsed out of the
+    # manuscript, not globbed from the directory. Globbing counted mortgage_composition_macros.tex,
+    # which is emitted but never \input (nothing consumes \Mort*), so the published coverage read
+    # 28/32 when the honest figure over referenced artifacts is 27/31.
+    # repro_macros.tex is this harness's own coverage report, not a claim-bearing artifact;
+    # counting it would make the denominator self-referential.
+    _src = [HERE / "unified_report.tex", *sorted((HERE / "sections").glob("*.tex"))]
+    _referenced = set()
+    for _f in _src:
+        _referenced |= {f"{m}.tex" for m in
+                        re.findall(r"\\input\{generated/([A-Za-z0-9_]+)\}", _f.read_text())}
+    _on_disk = {p.name for p in GEN.glob("*.tex")}
+    missing = sorted(_referenced - _on_disk)
+    assert not missing, f"the report \\inputs generated files that do not exist: {missing}"
+    inputs = sorted(_referenced - {"repro_macros.tex"})
+    emitted_not_input = sorted(_on_disk - _referenced - {"repro_macros.tex"})
     covered = {k.split(":")[-1] for k in results}
     uncovered = [n for n in inputs if n not in covered]
 
@@ -468,19 +631,62 @@ def main(argv=None) -> int:
         elif "byte-identical" in v or v == "regenerated":
             # `figures` is a directory, not one of the generated/*.tex inputs. Counting it in a
             # tally whose denominator is len(inputs) printed "11/22" for 10 verified .tex files.
-            (verified if k.split(":")[-1].endswith(".tex") else side).append(k)
+            # Same for an artifact that is emitted and checked but never \input by the report.
+            (verified if k.split(":")[-1] in inputs else side).append(k)
         else:                                   # PINNED-ENV REQUIRED / PENDING / anything else
             unverified.append(k)
     if uncovered:
         print("\n  not covered by the harness (committed outputs of their own locked analyses):")
         for n in uncovered:
             print(f"    - {n}")
-    assert len(verified) + len(unverified) + len(uncovered) + len(failed) == len(inputs), (
-        "coverage accounting must partition the inputs exactly: "
-        f"{len(verified)}+{len(unverified)}+{len(uncovered)}+{len(failed)} != {len(inputs)}")
+    # A study function can fail before it names any .tex (an import error, say), so `failed`
+    # may hold keys that are not inputs. Counting those against len(inputs) used to trip a bare
+    # AssertionError and abort the run -- the check crashed instead of reporting. Partition on
+    # the .tex keys only, and surface anything else as a separate, visible category.
+    failed_inputs = [k for k in failed if k.split(":")[-1] in inputs]
+    failed_other = [k for k in failed if k not in failed_inputs]
+    total = len(verified) + len(unverified) + len(uncovered) + len(failed_inputs)
+    if total != len(inputs):
+        print(f"\n  WARNING: coverage accounting does not partition the inputs: "
+              f"{len(verified)}+{len(unverified)}+{len(uncovered)}+{len(failed_inputs)} "
+              f"!= {len(inputs)}. Treat the printed coverage as unreliable.")
+    if failed_other:
+        print(f"  non-input failures (not counted in coverage): {', '.join(failed_other)}")
     print(f"\n  byte-checked {len(verified)}/{len(inputs)} inputs; "
           f"{len(unverified)} unverified; {len(uncovered)} not covered; {len(failed)} failed"
           + (f"  (+{len(side)} non-input artifact: {', '.join(side)})" if side else ""))
+
+    # The abstract and the reproducibility section quote these counts. They were hand-typed and
+    # went stale (the paper said "12 of the 24" while the manuscript imported 31), so emit them
+    # and let the prose read the macros. The denominator is stated in the file itself, because a
+    # bare "31" with no definition was one of the things a reader could not check.
+    repro_tex = "\n".join([
+        r"% GENERATED by reproduce.py -- coverage of the generated/ surface, do not hand-edit.",
+        r"% Denominator: every papers/unified-report/generated/*.tex the report \input{}s,",
+        r"% EXCLUDING this file. Counting this file would make the denominator self-referential",
+        r"% (it reports on the very set it belongs to), so \ReproNInputs is one less than the",
+        r"% number the report references, and \ReproNInputsInclSelf states that raw count.",
+        r"% The set is PARSED from \input{generated/...} in the manuscript, not globbed from the",
+        r"% directory: globbing counted an emitted-but-never-input macro file and inflated both",
+        r"% the numerator and the denominator.",
+        r"\newcommand{\ReproNInputs}{%d}" % len(inputs),
+        r"\newcommand{\ReproNInputsInclSelf}{%d}" % (len(inputs) + 1),
+        r"\newcommand{\ReproNVerified}{%d}" % len(verified),
+        r"\newcommand{\ReproNEnvGated}{%d}" % len(unverified),
+        r"\newcommand{\ReproNUncovered}{%d}" % len(uncovered),
+        r"\newcommand{\ReproNFailed}{%d}" % len(failed_inputs),
+    ]) + "\n"
+    # In check mode this file was rewritten anyway -- the one artifact a verification run
+    # always dirtied, and the one it never checked. Now it is checked like everything else.
+    rm = GEN / "repro_macros.tex"
+    if args.check and rm.exists():
+        if rm.read_text() != repro_tex:
+            print("\n  repro_macros.tex: DRIFT (committed coverage counts do not match this run)")
+            failed.append("repro_macros.tex")
+        else:
+            print("\n  repro_macros.tex: OK (byte-identical)")
+    else:
+        rm.write_text(repro_tex)
     if args.build:
         print("\n=== building PDF ===")
         b = _run(["tectonic", "--outdir", "build", "unified_report.tex"], cwd=HERE)

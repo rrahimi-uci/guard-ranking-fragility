@@ -70,13 +70,17 @@ def test_headroom_normalized_reported():
 def test_interpretation_is_predicate_driven_only():
     # Forcing the locked bound predicates deterministically selects the wording, with no data.
     def boot(gain, conc, preserve, cost, held_ucb):
-        return {"stats": {
+        stats = {
             "H_gain": {"lcb975_one_sided": gain, "ucb975_one_sided": 1.0},
             "H_conc": {"lcb975_one_sided": conc, "ucb975_one_sided": 1.0},
             "H_preserve": {"lcb975_one_sided": preserve, "ucb975_one_sided": 1.0},
             "H_cost": {"lcb975_one_sided": cost, "ucb975_one_sided": 1.0},
             "H_held_sft": {"lcb975_one_sided": -1.0, "ucb975_one_sided": held_ucb},
-        }}
+        }
+        # The gates read one panel's bounds, selected by `stats_key`. All three carry the same
+        # forced predicates here so this test isolates predicate -> wording; which panel is the
+        # DEFAULT is asserted separately below.
+        return {"stats": stats, "stats_purpose_built": stats, "stats_general": stats}
 
     not_sup = A.claim_checks(boot(-1.0, -1.0, -1.0, -1.0, 1.0))
     assert not_sup["RQ1"]["supported"] is False
@@ -101,6 +105,54 @@ def test_interpretation_is_predicate_driven_only():
     print("  [ok] interpretation strings selected ONLY by locked bound predicates (non-HARKing)")
 
 
+def test_gates_read_the_registered_purpose_built_panel():
+    """RQ1/RQ2 must be gated on the purpose-built panel, never the pooled mixed panel.
+
+    Regression lock for the defect that made every published H a six-family MIXED-panel
+    statistic: the analyzer pooled general and purpose-built checkpoints and grouped by model
+    family, so one `qwen` family spanned both starting types. Here the two panels are given
+    OPPOSITE forced predicates, so a gate reading the wrong one flips the verdict.
+    """
+    passing = {k: {"lcb975_one_sided": 0.05, "ucb975_one_sided": 1.0}
+               for k in ("H_gain", "H_conc", "H_preserve", "H_cost", "H_held_sft")}
+    failing = {k: {"lcb975_one_sided": -1.0, "ucb975_one_sided": 1.0}
+               for k in ("H_gain", "H_conc", "H_preserve", "H_cost", "H_held_sft")}
+
+    # purpose-built passes, mixed/general fail -> the default verdict must be "supported"
+    c = A.claim_checks({"stats": failing, "stats_purpose_built": passing,
+                        "stats_general": failing})
+    assert c["estimand_panel"] == "purpose_built"
+    assert c["RQ1"]["supported"] is True and c["RQ2"]["supported"] is True
+
+    # and the reverse: a passing mixed panel must NOT be able to carry the gates
+    c2 = A.claim_checks({"stats": passing, "stats_purpose_built": failing,
+                         "stats_general": passing})
+    assert c2["RQ1"]["supported"] is False and c2["RQ2"]["supported"] is False
+
+    # the outcome is never labelled confirmatory, whatever the predicates say
+    assert "NOT CONFIRMATORY" in c["confirmatory_status"]
+    print("  [ok] RQ1/RQ2 gates read the registered purpose-built panel, not the mixed panel")
+
+
+def test_panel_split_and_gamma_are_exact():
+    """The panel split is real and Gamma is the paired purpose-built-minus-general difference."""
+    df, family_map = A.make_synthetic_scores()
+    type_map = {k: ("purpose_built" if k != "ckptS" else "general") for k in family_map}
+    res = A.analyze(df, family_map=family_map, type_map=type_map, reps=120)
+    cfg, pe = res["config"], res["point_estimates"]
+    assert cfg["registered_primary_panel"] == "purpose_built"
+    assert cfg["n_checkpoints_purpose_built"] + cfg["n_checkpoints_general"] == cfg["n_checkpoints"]
+    assert cfg["model_families_general"] == ["famS"]
+    # Gamma is a difference of the two panels' H, taken on the SAME draw (not two independent runs)
+    for k, tag in (("Gamma_gain", "H_gain"), ("Gamma_conc", "H_conc"),
+                   ("Gamma_preserve", "H_preserve"), ("Gamma_cost", "H_cost")):
+        assert abs(pe["Gamma"][k] - (pe["H_purpose_built"][tag] - pe["H_general"][tag])) < 1e-12
+        assert k in res["bootstrap"]["stats_gamma"]
+    # the superseded mixed panel is retained, and labelled as superseded
+    assert "superseded" in res["claim_checks_mixed_panel_superseded"]
+    print("  [ok] registered panels separated; Gamma exact and bootstrapped on shared draws")
+
+
 def test_beta0_identity_preserve_zero_exact():
     df0, fmap0 = A.make_synthetic_scores(kl_equals_sft_heldout=True, kl_beta=0.0)
     res0 = A.analyze(df0, family_map=fmap0, primary_beta=0.0, reps=REPS,
@@ -122,5 +174,7 @@ if __name__ == "__main__":
     test_predicates_and_gates_supported()
     test_headroom_normalized_reported()
     test_interpretation_is_predicate_driven_only()
+    test_gates_read_the_registered_purpose_built_panel()
+    test_panel_split_and_gamma_are_exact()
     test_beta0_identity_preserve_zero_exact()
     print("ALL PASSED")

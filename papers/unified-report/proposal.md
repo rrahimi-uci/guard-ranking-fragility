@@ -1040,3 +1040,604 @@ with the same three conditions repeated for the report's general instruction che
 That design directly tests whether an already purpose-built guard specializes again under the report's adaptation pressure and whether a KL anchor to the released guard preserves more of its prior behavior. It also keeps the practical question—how the released and adapted guards rank across benchmarks and native contracts—without confusing that leaderboard with the controlled adaptation estimand.
 
 If ordinary SFT further specializes the purpose-built guards and rankings still flip, the report's thesis becomes materially stronger. If purpose-built guards remain broad, or KL-SFT prevents the loss, the result provides an equally valuable boundary and remedy. Either outcome strengthens the report, provided the study keeps within-checkpoint adaptation effects, fixed-panel interactions, native-product comparisons, and vendor-lineage context visibly separate.
+
+---
+
+## 20. Prospective companion proposal — frontier-distilled SLM under a fixed latency budget
+
+### 20.1 Status, scope, and relationship to the current report
+
+**Status:** proposed, unrun, and not authorized for claim-bearing training or data collection by this document.
+
+**Working title:**
+
+> **Can a single-pass small guard beat a frontier guard at a fixed false-alarm and latency budget?**
+
+This is a prospective companion study, not a result of the current unified report and not an extension of the completed starting-type adaptation analysis above. The present report establishes the size of the frontier gap and shows that ordinary SFT, scale alone, and retrospective ensembling do not close it. The proposed study changes the learning problem itself: it combines independent expert gold, offline frontier-teacher supervision, policy counterfactuals, a loss targeted at the low-FPR region, and a one-pass serving constraint.
+
+The primary task remains narrow:
+
+- English prompt-only safety classification;
+- binary `safe`/`unsafe` ranking under an explicit policy;
+- finance, healthcare, and law as the initial domain surface;
+- one local forward pass at deployment; and
+- no claim about response moderation, multi-turn conversations, agent actions, mortgage-policy compliance, legal compliance, or fair-lending certification.
+
+The existing 2,275 ExpGuard rows and their model scores have already been inspected. They may motivate the design and support retrospective diagnostics, but they must not be used for training, hyperparameter selection, arm selection, early stopping, threshold selection, or a prospective confirmation claim. A new source-, policy-, and family-separated cohort is required.
+
+### 20.2 Current evidence and the target to beat
+
+The relevant committed ExpGuard comparison is generated in [`frontier_table.tex`](generated/frontier_table.tex), with the measured serving comparison in [`frontier_serving_table.tex`](generated/frontier_serving_table.tex):
+
+| Guard | Parameters | TPR@5%FPR | AP | P50 serving latency | Runtime cost |
+|---|---:|---:|---:|---:|---:|
+| SmolLM3-3B base | 3B | 0.787 | 0.9561 | approximately 20.1 ms | self-hosted |
+| SmolLM3-3B ordinary SFT | 3B | 0.727 | 0.9353 | approximately 20.1 ms | self-hosted |
+| Qwen3-32B base | 32B | 0.830 | 0.9633 | not measured in the small-guard serving table | self-hosted, outside the intended envelope |
+| GPT-5.4 low | hosted | 0.896 | 0.9773 | approximately 1,553 ms | approximately $0.80/1,000 prompts |
+
+These figures come from identical expert-annotated rows, but `TPR@5%FPR` is the primary comparison—not generic accuracy. A method that improves overall accuracy while losing recall in the 0–5% FPR region does not solve the deployment problem.
+
+A retrospective recomputation from the committed [`SmolLM3-3B`](../../artifacts/expguard_external/scores_smollm3_3b_base.json), [`GPT-5.4-low`](../../artifacts/expguard_external/scores_gpt54_low.json), and [`label`](../../artifacts/expguard_external/labels_index.json) files shows that the local and hosted errors are not nested. At each model's conservative 5% FPR threshold, SmolLM3-3B catches 38 unsafe rows that GPT-5.4 low misses, while GPT catches 175 that SmolLM3 misses. A naive OR rule is invalid: it raises the false-positive count to 89 of 1,019 negatives. This is motivation for learning a better representation from complementary signals, not evidence that a simple ensemble can beat GPT.
+
+#### The gap is regime-specific, not size-specific
+
+The table above reads the gap off ExpGuard alone, which is the one source both runs deliberately row-aligned. But ExpGuard is an *external breadth probe*—a corpus the panel never trained on—so it measures the transfer regime only, and the resulting figure is therefore the transfer gap rather than the gap. Five of the general-safety corpora the GPT baseline scored are also scored by the Act I panel, and they can be joined: the two sides simply hash their row identities differently, and re-deriving both digests from the local corpus recovers the mapping for 100% of the panel's rows. The comparison is generated in [`tab_h2h_gen.tex`](generated/tab_h2h_gen.tex) from [`h2h.json`](../../artifacts/frontier_general_h2h/h2h.json) by [`eval_frontier_general_h2h.py`](../../experiments/eval_frontier_general_h2h.py), at the same matched 5% false-alarm budget.
+
+The regime split is read from Act I's own manifest rather than asserted—`train.jsonl` is exactly `{toxicchat, prompt_injections, jailbreak_classification}`, so `id_test` rows are held-out *rows* from a *represented* source, while `transfer_test` sources are held out at the source level.
+
+| Regime | Source | Best panel guard | GPT-5.4 low | Paired ΔTPR@5%FPR |
+|---|---|---:|---:|---:|
+| Represented | `prompt_injections` (n=67) | 0.948 — Qwen2.5-**1.5B** SFT | 0.741 | +0.207 [+0.043, +0.390] nominal; **[−0.033, +0.475] Holm** |
+| Represented | `jailbreak_classification` (n=159) | 0.995 — Qwen3-4B SFT | 0.924 | **+0.076** [+0.011, +0.216] |
+| Represented | `toxicchat` (n=451) | 0.889 — Qwen3-4B SFT | 0.836 | +0.077 [−0.042, +0.148] |
+| Transfer | `xstest` (n=240) | 0.917 — Qwen3-4B **base** | 0.967 | −0.050 [−0.138, +0.009] |
+
+**Correction (2026-07-31, supersedes the 2026-07-30 note).** An earlier version of this section reported these deltas from an estimator that averaged the five seed score vectors before computing the metric, which measures a five-run ensemble rather than one trained guard and made the displayed arithmetic fail (`.948 − .741 = .207`, not the `+0.185` printed). The estimator is now the mean of per-seed paired differences, with near-duplicate evaluation *families* and training seeds both resampled. Three consequences matter for §20.
+
+First, the per-cell intervals widen and the nominal count moves: **3** of 12 represented-source SFT cells clear zero nominally, and **0** survive a Holm step-down on the bootstrap *p*-values. The numbers in the table above are the pre-family-clustering values and are retained only as a record of what this section previously asserted; the current values are in [`h2h.json`](../../artifacts/frontier_general_h2h/h2h.json) and in the report's Table 18.
+
+Second — and this corrects the previous note rather than the numbers — the equal-source aggregate ΔTPR@5%FPR = **+0.083 [+0.013, +0.157]**, ΔAP = +0.039 [+0.015, +0.072] is **NOT pre-specified and is not claim-bearing.** It did not exist before the per-cell headline failed multiplicity; it was added in the same revision that found the failure. `h2h.json` records `selection_status: POST HOC`, and the report states the same. It is also not robust to reweighting: weighting sources by row count gives +0.049 [−0.031, +0.112], which straddles zero, and including the base arms reverses the sign. Only a summary frozen before a fresh cohort is scored could carry a frontier-beating claim, and no such summary exists yet.
+
+Third, the argument §20.12 makes — that per-cell post-selection intervals cannot carry a claim at this sample size — is *strengthened*, and it now applies to the aggregate as well.
+
+On represented sources the small tuned guards rank better than the frontier reference on average — but that aggregate is post hoc and reweighting-sensitive (above), so it is a descriptive fixed-panel summary and not a result this proposal may build a claim on. The `prompt_injections` cell is a ranking rather than a threshold advantage (AUROC 0.9928 against 0.8731), and it is the largest of twelve and exploratory only. On transfer sources the ordering reverses and ordinary SFT is what costs the guard its position; the strongest transfer guard in the panel is an *untuned* base. The `jailbreakbench` column supports no comparison at all: the reference's own TPR there is collapsed inside a tie block of its coarse integer risk score, so differences against it are uninterpretable.
+
+Four caveats bound this. Per-source *n* is 67–451, so the intervals are wide and no per-cell ordering is a ranking. The evidence is retrospective and estimation-only—these rows and this panel were inspected during development. A represented-source win is not a claim about novel traffic: it says a guard beats the frontier on distributions an operator can enumerate in training, which is a deployment property, not a capability claim.
+
+Fourth, `id_test` is held-out by *row*, not by content, and the overlap audit in [`overlap_audit.json`](../../artifacts/overlap_audit/overlap_audit.json) quantifies how much that matters. Measured as maximum character-5-gram Jaccard against any single training row, the fraction of represented-split rows that are near-duplicates of a training row is 2 of 67 for `prompt_injections` (max 0.778), 8 of 159 for `jailbreak_classification` (max 0.855, all in long rows), and 7 of 451 for `toxicchat` (max 0.822). So between 1.6% and 5.0% of each represented split is near-templated reuse—jailbreak corpora being templated by nature. That qualifies the represented margins rather than overturning them, and it bears most on `jailbreak_classification`, whose interval is the narrowest of the three.
+
+The same audit closes the report's outstanding decontamination caveat in the favorable direction: against the Act I training manifest, the v2 transfer suite has **zero** rows at Jaccard ≥ 0.70 and **zero** at 5-gram containment ≥ 0.80, with maximum per-source Jaccard of 0.139 (`jailbreakbench`), 0.101 (`wildjailbreak`), 0.214 (`xstest`) and 0.538 (`wildguardtest`), and no exact, normalized, or lineage-identifier collisions anywhere. No leakage was found, so the transfer estimates require no downward revision.
+
+#### The target, restated
+
+The target is therefore demanding but bounded, and narrower than the ExpGuard figure alone suggests: recover the frontier model's approximately 0.109 recall advantage over the realistic 3B inline baseline **in the transfer regime**—and then exceed it—without giving up the approximately two-order-of-magnitude median-latency advantage, and without surrendering the represented-source margin the panel already holds. The represented half of the problem appears to be solved by ordinary supervision; what remains unsolved is generalization to sources the operator did not anticipate. That is what §20.4 onward is designed to attack, and it is the reason a richer training signal—rather than a larger student—is the proposed route.
+
+One panel note for §20.5: SmolLM3-3B base is the strongest at-most-4B checkpoint *on ExpGuard* (0.787 against Qwen3-4B's 0.768), but on the Act I transfer suite the ordering flips—Qwen3-4B base leads on `xstest` (0.917 against 0.867) and on `jailbreakbench` (0.867 against 0.767). If the primary claim is a transfer claim, the primary-student choice deserves to be settled on transfer evidence rather than on ExpGuard alone. This is raised as a locking decision, not a substitution.
+
+### 20.3 Primary research question and hypotheses
+
+Primary research question:
+
+> **Can a single-pass, at-most-4B student trained with independent gold labels, frontier-teacher supervision, policy counterfactuals, and a low-FPR ranking objective exceed GPT-5.4-low recall at a matched 5% false-positive rate on a genuinely sealed expert-adjudicated cohort while preserving local-guard latency and held-out transfer?**
+
+Secondary questions:
+
+1. How much of any gain comes from teacher supervision versus additional independently labeled data?
+2. Do policy counterfactuals improve policy-held-out and domain-held-out transfer rather than only the represented task?
+3. Does directly optimizing the low-FPR region outperform completion-only verdict cross-entropy?
+4. Can base-to-student weight interpolation recover transfer with no second inference pass?
+5. Are domain-specific adapters useful when the domain is trusted request metadata rather than a predicted test label?
+6. Does quantization preserve the winning operating point on the target serving hardware?
+
+The sole confirmatory accuracy hypothesis is:
+
+```text
+H_frontier:
+  TPR_student@5%FPR - TPR_gpt54_low@5%FPR > 0
+```
+
+Support requires the lower bound of a prespecified paired 95% interval to exceed zero on the sealed test cohort. A positive point estimate with an interval crossing zero is unresolved, not a win.
+
+Accuracy alone is insufficient for promotion. The selected student must also pass all of the following locked release gates:
+
+```text
+G_latency:       P50 <= 30 ms and P99 <= 100 ms
+G_transfer:      held-out macro-AP delta vs the unmodified student base >= -0.02
+G_operating:     calibration-frozen test FPR satisfies the locked 5% tolerance rule
+G_reliability:   no malformed, missing, or non-finite verdict is silently mapped to safe
+G_cost:          no hosted call is required in the primary deployment path
+G_provenance:    all training, teacher, policy, model, and evaluation identities are lock-bound
+```
+
+Latency thresholds above are proposed for the existing batch-16 A100 comparison. They must be changed before locking if a different deployment device or concurrency regime is primary; they must not be changed after model results are inspected.
+
+### 20.4 Why pure imitation is not enough
+
+A student trained only to reproduce GPT labels is expected to approach the teacher on the teacher's policy, but it has no principled basis for systematically correcting the teacher. To cross the teacher line, the study needs information not contained in a single GPT verdict:
+
+- independent expert labels that can correct teacher errors;
+- counterfactual pairs that identify which semantic or policy change should flip the decision;
+- student–teacher disagreements that reveal non-nested error regions;
+- policy/category supervision richer than one binary token;
+- a ranking objective aligned to the 0–5% FPR region; and
+- a broad replay/anchor distribution that prevents the specialization already observed under ordinary SFT.
+
+GPT is therefore an offline weak supervisor and hard-example generator, not gold, a compliance authority, or an online dependency of the primary student.
+
+### 20.5 Proposed student and comparator panel
+
+The primary student should be **SmolLM3-3B base**, because it is the strongest existing at-most-4B local checkpoint on ExpGuard and already has a measured approximately 20 ms serving point. The ordinary-SFT SmolLM3 adapter is a required negative control, not the starting point, because its ExpGuard recall and AP are both below the base.
+
+Proposed panel:
+
+| Role | Checkpoint | Purpose |
+|---|---|---|
+| Primary student | SmolLM3-3B base | Best current low-latency starting point |
+| Family sensitivity | Qwen3-4B base | Tests whether the method is checkpoint-specific |
+| Compact guard sensitivity | Granite Guardian 3.1-2B | Tests a purpose-built, lower-parameter starting point if its native contract remains eligible |
+| Local negative control | Existing completion-only ordinary SFT recipe | Shows whether additional compute alone explains gains |
+| Scale reference | Qwen3-32B base | Accuracy reference, not a latency-qualified candidate |
+| Hosted comparator | GPT-5.4 low | Frontier target under the frozen prompt and risk-score contract |
+
+Model and tokenizer revisions, prompt renderings, decision-token identities, and licenses must be pinned in the new lock. The primary claim may be carried by the prespecified SmolLM3-3B student alone; secondary checkpoints test transportability and must not be substituted after results are seen.
+
+### 20.6 Data architecture and sealing
+
+The study requires five data roles with non-overlapping identities:
+
+1. **Independent gold (`D_gold`)** — expert-adjudicated examples used for supervised training and development.
+2. **Teacher pool (`D_teacher`)** — licensed, initially unlabeled prompts assigned structured weak labels by GPT-5.4 low.
+3. **Counterfactual pool (`D_cf`)** — paired examples in which one policy clause or semantic fact changes and the expected label is independently verified.
+4. **General replay (`D_replay`)** — broad safety examples used only to retain non-target behavior and estimate forgetting.
+5. **Fresh evaluation (`D_fresh`)** — independently annotated calibration and test partitions sealed from all model and method development.
+
+Splitting must occur by source, near-duplicate family, policy family, and generation lineage before teacher calls or training. Random row splitting is insufficient because paraphrases, templated generations, or policy variants can otherwise cross partitions.
+
+The proposed data-size ladder is `2k -> 8k -> 32k` eligible training examples, balanced by locked source, policy, and label quotas. It is a development scaling curve, not permission to generate 32,000 rows. Exact counts may be narrowed after the licensing, annotation-capacity, and power preflight, but must be frozen before teacher labeling begins.
+
+Required controls:
+
+- exact, normalized, n-gram, embedding, and provenance-lineage overlap audits;
+- quarantine of conflicting duplicates—never an unsafe-wins merge;
+- no ExpGuard evaluation text in any training or selection role;
+- independent human review of all gold rows and a stratified sample of teacher-only rows;
+- inter-annotator agreement by policy/domain and adjudication reason;
+- explicit researcher-visibility status for every partition;
+- license and redistribution class per source; and
+- a text-free public release when raw text cannot be redistributed.
+
+The current ExpGuard result can be retained as a development-era external reference after the method is frozen, but it cannot replace `D_fresh`.
+
+### 20.7 Teacher annotation contract
+
+The teacher request must ask for a short, auditable classification record—not hidden chain-of-thought. A proposed record is:
+
+```json
+{
+  "sample_id": "stable content-derived identifier",
+  "policy_id": "locked policy identifier",
+  "policy_version": "immutable policy snapshot",
+  "verdict": "safe | unsafe | review",
+  "risk_score": 0,
+  "risk_categories": ["locked category IDs"],
+  "evidence_spans": [
+    {"start": 0, "end": 0, "reason_code": "locked reason code"}
+  ],
+  "uncertainty_code": "none | ambiguous_text | policy_ambiguity | insufficient_context",
+  "teacher_model": "exact API model string",
+  "teacher_prompt_sha256": "...",
+  "request_metadata_sha256": "..."
+}
+```
+
+`review` is a teacher-data quality state, not automatically an unsafe training label. The binary training target for a reviewed example is assigned only by the locked adjudication rule.
+
+The teacher's `risk_score` is a coarse ordinal signal, not a calibrated probability. Use it for pairwise ordering or curriculum construction only after a development-set fidelity check. The primary teacher target is the hard verdict because safety-guard distillation evidence has found hard teacher labels competitive with or better than softened teacher distributions in its own setting; this choice remains an ablation here, not a borrowed conclusion.
+
+To control labeling expense:
+
+- call GPT once on clear eligible rows;
+- repeat only teacher-near-threshold, student–teacher-disagreement, or schema-invalid rows;
+- send a stratified sample and every unresolved disagreement to independent human review;
+- record actual input/output/reasoning tokens and billed cost; and
+- never infer a stable teacher revision from the API model name alone.
+
+A fixed drift-sentinel set should be rescored at the beginning and end of teacher collection. If verdict/risk drift exceeds a locked tolerance, stop collection or split it into separately identified teacher vintages.
+
+### 20.8 Counterfactual and policy augmentation
+
+The counterfactual arm should force the student to attend to meaning and policy rather than dataset surface cues. Four transformation families are proposed:
+
+1. **Policy-category deletion:** remove irrelevant categories while preserving the label; remove the governing category only when the independently verified target should change.
+2. **Guideline editing:** minimally modify or add a policy clause so a previously safe prompt becomes unsafe, or vice versa where a qualified annotator can support the change.
+3. **Semantic minimal pairs:** change one intent-bearing fact, requested action, role, target, or authorization condition while holding style and most tokens constant.
+4. **Adversarial paraphrases:** preserve the gold policy status while changing politeness, obfuscation, jargon, spelling, or jailbreak framing.
+
+Every pair must record:
+
+- parent and child IDs;
+- transformation family and generator;
+- changed spans;
+- old/new policy versions;
+- expected relation: `same_label` or `flip_label`;
+- independent validation status; and
+- source/policy/family split identity.
+
+Before training, run the candidate-identifiability check learned from the stopped Paper C study:
+
+- byte identity of candidate inputs and targets across treatment arms;
+- verdict-change rate;
+- risk-order change rate;
+- policy/category-change coverage; and
+- number of non-identical, independently validated pairs.
+
+If the supposedly different data arms produce nearly identical candidates or targets, stop or redesign before training. A null result from non-identical method names applied to the same effective supervision is not an identified comparison.
+
+### 20.9 Training objective
+
+The proposed student objective is multi-component:
+
+```text
+L_total =
+    lambda_gold   * CE(y_gold, p_student)
+  + lambda_kd     * CE(y_teacher, p_student)
+  + lambda_pauc   * L_partial_AUC(FPR in [0, 0.05])
+  + lambda_cf     * L_counterfactual_relation
+  + lambda_aux    * L_category_and_evidence
+  + lambda_anchor * KL(p_student || p_base on D_replay)
+```
+
+Interpretation:
+
+- `CE(y_gold, ...)` is authoritative when expert gold exists.
+- `CE(y_teacher, ...)` provides scalable weak supervision but receives lower weight on unaudited rows.
+- `L_partial_AUC` emphasizes positives confused with the highest-scoring negatives, aligning training with the primary low-FPR metric.
+- `L_counterfactual_relation` requires same-label pairs to remain close and flip-label pairs to cross a locked margin.
+- `L_category_and_evidence` is an auxiliary training signal; the primary serving path need not decode a rationale.
+- `KL(... || p_base)` and `D_replay` limit catastrophic specialization away from broad base behavior.
+
+All loss weights, pair-mining rules, batch composition, teacher/gold precedence, and hard-negative refresh cadence must be selected using training/development roles only and frozen before `D_fresh` is scored.
+
+Do not add long chain-of-thought generation to the serving path. It directly conflicts with the latency objective, and recent safety-classification evidence warns that reasoning can improve aggregate accuracy while hurting recall at strict low-FPR operating points. If short structured reasons help training, treat them as an auxiliary target and score the final verdict from a forced classification head without runtime explanation generation.
+
+### 20.10 Candidate arms and ablation ladder
+
+Use a staged, prespecified ladder so the experiment can identify where a gain comes from:
+
+| Arm | Gold | GPT teacher | Counterfactual/APT | Low-FPR loss | Replay anchor | Inference passes |
+|---|---:|---:|---:|---:|---:|---:|
+| `B0_base` | no | no | no | no | n/a | 1 |
+| `B1_current_sft` | current 1,200 rows | no | no | no | no | 1 |
+| `D1_gold` | yes | no | no | no | yes | 1 |
+| `D2_kd` | yes | yes | no | no | yes | 1 |
+| `D3_policy_cf` | yes | yes | yes | no | yes | 1 |
+| `D4_low_fpr` | yes | yes | yes | yes | yes | 1 |
+| `D5_weight_interp` | `D4` | `D4` | `D4` | `D4` | base interpolation | 1 |
+| `D6_sparse_domain` | `D4` | `D4` | domain-specific | yes | shared general adapter | 1 backbone pass |
+
+`D4_low_fpr` is the primary algorithmic candidate. `D5_weight_interp` applies a locked development-selected coefficient:
+
+```text
+W_final(alpha) = W_base + alpha * Delta_W_D4
+alpha in {0.00, 0.25, 0.50, 0.75, 1.00}
+```
+
+This is the one-pass weight-space analogue of retaining the base view. It must be compared with the report's two-pass output composition, but it is eligible for the latency-constrained primary path because the selected weights or LoRA update can be merged before serving.
+
+`D6_sparse_domain` is secondary. It combines a shared general adapter with one small finance, healthcare, or law adapter. Domain selection is valid only when the domain is trusted deployment metadata, such as a fixed product endpoint. If the domain is predicted from the test prompt, the router becomes part of the evaluated system; its errors, latency, and training data must be included. Gold domain labels may never be injected at evaluation as if they were deployment metadata.
+
+Within each arm, compare the current verdict-token margin with a learned two-logit classification head over the final representation. The head changes the scoring contract and must be labeled as a separate sub-arm; it may improve objective alignment but is not assumed to reduce backbone latency materially.
+
+Use five seeds for every promotable trained arm. A data-size or loss arm may be eliminated only by a prespecified development rule. Sealed-test results cannot rescue or replace an eliminated arm.
+
+**Bound the development-selection budget, not just the test-time discipline.** §20.9 leaves six loss weights, pair-mining rules, batch composition, teacher/gold precedence, and hard-negative refresh cadence to be "selected using training/development roles only," and this ladder adds eight arms times three data sizes times five seeds. The prohibitions elsewhere in §20 are all directed at the sealed test, which is correct but insufficient: with an unbounded development search this size, the selected student will be fitted to the development split, and the sealed cohort will then measure a smaller effect than development suggested—not a biased one, but a disappointing one, which is the failure mode most likely to render `H_frontier` unresolved given the power figures in §20.12. Two additions close it: a locked coarse grid with a stated maximum number of evaluated configurations, and a held-out development *validation* partition, distinct from both the selection split and `D_fresh`, used once to estimate the optimism of the development-selected configuration. The size of that optimism gap is itself worth reporting, since it is the quantity that determines whether the sealed cohort was sized adequately.
+
+### 20.11 End-to-end workflow
+
+```mermaid
+flowchart LR
+    A[Licensed source and policy pool] --> B[Deduplicate and split by source, policy, family, lineage]
+    B --> C[Training and development roles]
+    B --> S[Sealed fresh calibration and test]
+
+    C --> G[Independent expert gold]
+    C --> T[GPT-5.4-low structured weak labels]
+    G --> H[Disagreement and hard-case audit]
+    T --> H
+    H --> P[Policy edits, semantic minimal pairs, adversarial paraphrases]
+    P --> I{Candidate supervision identifiable?}
+    I -->|No| X[Stop or redesign before training]
+    I -->|Yes| R[Train locked student arms]
+    R --> D[Development-only selection and calibration]
+    D --> F[Freeze one primary student and serving build]
+
+    F --> E[Score student and GPT on sealed rows]
+    S --> E
+    E --> Q{Accuracy, operating point, transfer, latency, and provenance gates pass?}
+    Q -->|Yes| Y[Qualified cohort-specific frontier win]
+    Q -->|No| N[Report unresolved result or failed constraint]
+```
+
+### 20.12 Evaluation and statistical protocol
+
+#### Confirmatory evaluation
+
+The sealed cohort must include a separate calibration partition and test partition. Human gold is sealed before the selected student or GPT comparator is run. The selected student, its quantized build if primary, all thresholds, and the GPT prompt contract are frozen before test outputs are unsealed.
+
+Report two views:
+
+1. **Discrimination view:** TPR at a matched 5% FPR computed on identical sealed test rows, using the same conservative tie convention for every model. This is the confirmatory student-versus-GPT ranking contrast.
+2. **Operational view:** select thresholds using sealed calibration negatives only, then report realized test FPR, TPR, precision, review rate, and failure rate without test-label threshold adjustment.
+
+The discrimination view answers whether the student ranks unsafe prompts above hard negatives better than GPT at the matched budget. The operational view answers whether a deployable calibration rule actually holds that budget under shift. Neither substitutes for the other.
+
+Two degrees of freedom in that comparison must be closed in the preregistration, because both are currently unspecified and both could otherwise be resolved after inspection.
+
+**The three-way-to-binary collapse rule.** §20.13 serves `ALLOW | REVIEW | INTERVENE` and §20.7 lets the teacher emit `safe | unsafe | review`, but `H_frontier` is a binary `TPR@5%FPR`. Whether `REVIEW` counts as a caught positive or an uncaught one changes the confirmatory statistic directly, and it must be fixed in advance for the student and the comparator *identically*. §20.7 already locks an adjudication rule for reviewed *training* targets; the evaluation-side collapse rule is the missing counterpart. Note that the discrimination view is computed from a continuous score and so is unaffected—only the operational view and any verdict-based reporting depend on this rule, which is a reason to state explicitly that the confirmatory contrast is score-based and not verdict-based.
+
+**A comparator tie-degeneracy pre-check.** The frontier reference is scored by a self-reported integer risk with heavy ties, and a matched-FPR threshold can land *inside* a tie block, collapsing the reference's measured TPR far below what its ranking supports. This is not hypothetical: in [`h2h.json`](../../artifacts/frontier_general_h2h/h2h.json) the GPT-5.4-low cell on `jailbreakbench` records `TPR@5%FPR` of 0.100 against an AUROC of 0.9526, from 35 distinct risk values over 200 rows. Had that been the sealed cohort, `H_frontier` would have "passed" for an artifactual reason. The preregistration should therefore include a locked pre-check—computed before unsealing, on the comparator's score distribution alone—that voids or flags the comparison when the reference threshold falls within a tie block, together with the tie convention already required above. Reporting the comparator's distinct-score count alongside its TPR is the minimum disclosure.
+
+#### Metrics
+
+Primary:
+
+- paired `Delta TPR@5%FPR = student - GPT-5.4-low`.
+
+Required release-gate metrics:
+
+- one-way partial AUC over FPR `[0, 0.05]`—noting that §20.9 also *trains* on this region via `lambda_pauc`, so a passing pAUC gate is a check that the objective transferred to sealed data, not independent corroboration of it, and must not be reported as the latter;
+- tie-aware AP and AUROC;
+- calibration-frozen test FPR and TPR;
+- precision and false alerts at proposed unsafe prevalences of 10%, 1%, and 0.1%;
+- source-, domain-, policy-, and attack-family-held-out macro-AP;
+- counterfactual same-label consistency and flip-label success;
+- maximum and macro subgroup false-negative rates where sample support is adequate;
+- malformed/missing/timeout rate;
+- P50/P90/P99 latency, throughput, peak memory, and energy or GPU-seconds per 1,000 prompts; and
+- teacher-collection tokens, dollars, human-review hours, and training GPU-hours.
+
+#### Resampling and multiplicity
+
+- Resample near-duplicate or generation families, not isolated rows.
+- Use the identical draw for student and GPT.
+- Stratify only as fixed in the preregistration; do not repair an unfavorable sample after inspection.
+- The single confirmatory hypothesis uses a paired two-sided 95% interval and requires its lower bound above zero.
+- Domain and policy-family results are secondary and receive simultaneous intervals or a locked false-discovery procedure.
+- Report per-domain and per-policy effects even when the macro effect passes.
+
+#### How large the sealed cohort has to be
+
+The sealed sample-size target must be set by simulation before collection completion, using a range of plausible paired disagreement rates rather than the optimistic current point estimate, and it must include enough negative families to estimate behavior near 5% FPR. That requirement is quantifiable now rather than deferred, and the answer materially affects the study's cost.
+
+`TPR@5%FPR` is a quantile-thresholded statistic: the threshold is fixed by the upper 5% of the negative score distribution, so its sampling variability is driven by the *number of negatives near that quantile*, not by total row count. On the 2,275 committed ExpGuard rows there are 1,019 negatives, which means roughly **51 negatives** determine where the threshold falls. A paired row bootstrap of `Delta TPR@5%FPR` (SmolLM3-3B base against GPT-5.4 low, observed −0.1091) gives:
+
+| Sealed rows | Negatives | 95% CI half-width of ΔTPR@5%FPR |
+|---|---|---|
+| 250 | 111 | ±0.097 |
+| 500 | 223 | ±0.071 |
+| 1,000 | 447 | ±0.045 |
+| 2,275 | 1,019 | ±0.031 |
+| 5,000 | 2,239 | ±0.020 |
+| 10,000 | 4,479 | ±0.013 |
+
+The half-width tracks `c/sqrt(n)` with `c` approximately 1.49, and the fitted curve is confirmed by direct measurement at 5,000 and 10,000 rather than assumed. Inverting it gives the cohort size needed to *resolve* a given winning margin:
+
+| Winning margin to resolve | Sealed rows required |
+|---|---|
+| +0.08 | approximately 390 |
+| +0.05 | approximately 990 |
+| +0.03 | approximately 2,750 |
+| +0.02 | approximately 6,200 |
+
+This has a direct consequence for §20.6. The data ladder there sizes the *training* set at `2k -> 8k -> 32k`, but the binding cost constraint is the **sealed evaluation cohort**, which §20.6 requires to be expert-adjudicated. If the student is expected to cross the frontier by a small margin—which is the realistic expectation, since the gap to close is 0.109 and the interesting outcomes sit just past it—then `H_frontier` needs thousands of independently adjudicated sealed rows to return anything other than "unresolved." A 500-row sealed cohort cannot resolve any margin below about +0.07, and would leave the most likely successful outcome statistically indistinguishable from failure.
+
+Two honest limits on the table above. The large-`n` rows resample with replacement from only 2,275 distinct rows, so they understate variance at 5,000 and 10,000 and are optimistic. And because §20.12 requires resampling by near-duplicate or generation *family* rather than by row, the effective `n` is the number of independent families, not the row count—which pushes the requirement further up. The preregistered simulation should therefore treat these figures as a floor.
+
+### 20.13 Serving and cost protocol
+
+The primary student serving path is:
+
+```text
+input -> locked prompt renderer -> one local backbone forward pass
+      -> unsafe/safe score -> calibrator -> ALLOW | REVIEW | INTERVENE
+```
+
+The guard performs communication or content-risk triage. In a regulated workflow, `REVIEW` or `INTERVENE` routes a communication or proposed action for regeneration/human review; it does not approve or deny the underlying regulated decision.
+
+Serving requirements:
+
+- no autoregressive rationale generation;
+- no second full-model pass;
+- merge the selected LoRA/weight interpolation before benchmarking;
+- include tokenization and calibration in end-to-end latency;
+- benchmark batch 1 and the report-comparable batch 16 separately;
+- fix prompt-length buckets and report their mix;
+- warmup, concurrency, hardware, dtype, compiler, and runtime versions locked;
+- no comparison between local batch latency and hosted under-load tails without labeling the regimes; and
+- report P99 and timeout behavior, not P50 alone.
+
+Quantization is a serving optimization, not an accuracy method. Select the floating-point student first, then evaluate:
+
+- BF16 reference;
+- INT8 primary efficiency candidate; and
+- INT4 exploratory sensitivity.
+
+Promote a quantized build only if its paired low-FPR degradation stays within a locked non-inferiority margin and every latency/memory measurement is taken on the actual deployment runtime.
+
+### 20.14 Selective cascade as a fallback, not the primary claim
+
+If no pure student clears the frontier gate, retain the report's selective-routing option as a deployment fallback:
+
+```text
+every request -> local SLM
+uncertain fraction q -> GPT-5.4-low second opinion
+```
+
+Under the current retrospective curve, escalating 10%, 20%, and 30% of rows increases TPR@5%FPR from 0.787 to approximately 0.819, 0.842, and 0.856 respectively—still below the full GPT result. At 20% escalation, a simple expected-cost approximation is approximately `$0.16/1,000` hosted cost plus local compute, and expected sequential latency is roughly `20.1 + 0.20 * 1,553 = 330.7 ms` before queueing/retries. The median may remain local, but the escalated tail remains hosted-like.
+
+**The cascade's false-alarm budget must be defined before its TPR is quoted.** "TPR@5%FPR of a cascade" is ambiguous as written, because a two-branch system can hold the 5% budget *globally* across all traffic or *per branch*, and the two give materially different curves at the same escalation rate. An independent recomputation escalating the band nearest the local decision boundary and ranking each branch on its own score reached 0.822, 0.856 and 0.877 at 10%, 20% and 30%, and required roughly 50% escalation for parity with the hosted reference—higher than the figures above at matched escalation, because the splice convention differs. The discrepancy is the point: the numbers in this subsection are convention-dependent, so the preregistration must fix (i) whether the budget is global or per-branch, (ii) how the two branches' scores are placed on a common scale, and (iii) whether the escalated branch's threshold is refit or inherited. Until those are fixed, no cascade figure here should be treated as an estimate rather than an illustration.
+
+The router must be calibrated on permitted development data and evaluated end-to-end. It may use margin, calibrated error probability, counterfactual inconsistency, or policy-coverage uncertainty. Report coverage–risk and cost–quality curves rather than selecting one favorable escalation percentage after test inspection.
+
+One structural note that makes the cascade more attractive than the curve above suggests: the head-to-head in §20.2 shows the local guard's deficit is concentrated in the *transfer* regime, so a router keyed to whether a request resembles a represented source—rather than to score margin alone—should escalate far less traffic for the same recovery. On represented sources the local guard already exceeds the reference and the correct escalation rate there is near zero. That reframes the router's job from "detect uncertainty" to "detect unfamiliarity," which is a different and better-posed estimation problem, and it is worth an explicit arm rather than being left to the margin heuristic.
+
+A cascade result must never be described as a single SLM beating GPT. It is a hybrid system trading a smaller hosted share for partial frontier recovery.
+
+### 20.15 Interpretation and stop matrix
+
+| Outcome | Allowed interpretation |
+|---|---|
+| `H_frontier` and every release gate pass | “On this sealed cohort and locked policy, the selected single-pass student exceeded GPT-5.4 low at matched 5% FPR while meeting the stated local serving constraints.” |
+| Student point estimate exceeds GPT but interval crosses zero | “The comparison is unresolved; no frontier-beating claim is licensed.” |
+| Accuracy gate passes but transfer gate fails | “The student is a benchmark/domain specialist; it did not provide the required robust low-cost replacement.” |
+| Accuracy and transfer pass but latency fails | “The method improved quality but missed the small-inline deployment target.” |
+| Only teacher-labeled evaluation is available | “The student reproduced or differed from its teacher on teacher-defined labels”; no teacher-beating claim. |
+| Current inspected ExpGuard rows are the only evaluation | Retrospective development result only. |
+| Counterfactual arms are near-identical | The augmentation contrast is unidentified; stop before training. |
+| Teacher drift exceeds tolerance | Split teacher vintages or stop; do not pool them silently. |
+| No threshold satisfies the false-alarm gate | Emit `NO_FEASIBLE_THRESHOLD`; do not optimize the requirement away after inspection. |
+
+Even if the student beats GPT on `D_fresh`, the claim remains policy-, cohort-, language-, modality-, and task-specific. It does not establish universal model superiority or compliance certification.
+
+### 20.16 Reproducibility and artifact contract
+
+Use a separate namespace so this study cannot mutate or inherit authorization from Paper A, the starting-type study, Paper C, or the current frontier baseline:
+
+```text
+configs/frontier_distilled_slm_v1.yaml
+docs/frontier-distilled-slm-prereg.md
+experiments/frontier_distill_common.py
+experiments/prepare_frontier_distill_data.py
+experiments/collect_frontier_teacher.py
+experiments/preflight_frontier_distill.py
+experiments/lock_frontier_distill.py
+experiments/train_frontier_student.py
+experiments/eval_frontier_student.py
+experiments/analyze_frontier_student.py
+experiments/package_frontier_distill.py
+tests/test_frontier_distill.py
+
+artifacts/frontier_distilled_slm_v1/
+  LOCK.json
+  RELEASE.json
+  protocol/
+    model_registry.json
+    policy_registry.json
+    teacher_contract.json
+    data_roles.json
+    loss_contract.json
+    candidate_arms.json
+    serving_contract.json
+    primary_contrasts.json
+    claim_registry.json
+  manifests/
+  teacher/                  # local-only raw responses unless distribution is authorized
+  runs/                     # local-only weights/adapters
+  scores/
+    scores.parquet
+    metadata.json
+  analysis/
+    results.json
+    claim_checks.json
+    sensitivity.json
+  provenance/
+    execution-source-snapshot.json
+    execution-evidence.json
+    teacher-collection-evidence.json
+```
+
+`LOCK.json` must bind at minimum:
+
+- preregistration and claim-registry bytes;
+- every model/tokenizer revision and the teacher API model string;
+- teacher prompt, policy packet, output schema, retry, refusal, and drift rules;
+- all data source revisions, licenses, content hashes, family graphs, lineage graphs, and split roles;
+- expert annotation rubric, qualification, agreement, and adjudication rules;
+- candidate-identifiability thresholds;
+- training arms, loss equations/weights, data quotas, batch sampler, seeds, optimizer, update budget, and early-stop rule;
+- student prompt/scoring heads and base-anchor definition;
+- weight-interpolation grid and selection rule;
+- quantization candidates and non-inferiority gate;
+- calibration, threshold, tie, partial-AUC, prevalence, bootstrap, multiplicity, and sample-size rules;
+- serving hardware/runtime/concurrency/length buckets and latency gates;
+- expected score cardinality and fail-closed missing-row behavior;
+- source commit, execution-source hashes, environment, and hardware; and
+- release allowlist and prohibited raw artifacts.
+
+The score schema must retain sample/family/source/policy IDs, gold provenance, teacher vintage, teacher outputs, student arm/seed/checkpoint, raw margin, calibrated score, threshold decision, parse/failure status, latency, token counts, dtype/runtime fingerprint, and all lock hashes needed to reconstruct a row's identity. Public packaging should prefer text-free per-row scores keyed by stable hashes and must reject raw gated data, unsafe generated text not authorized for release, model weights, adapters, credentials, request payloads, and provider tokens.
+
+### 20.17 Execution phases and authorization gates
+
+#### Phase A — Protocol and source feasibility
+
+- Freeze the task, policy, primary student, comparator, candidate arms, and claims.
+- Audit source licenses, annotation capacity, teacher availability, and target hardware.
+- Build the overlap and lineage audit on metadata/fixtures.
+- Perform a literature refresh before claiming novelty.
+
+**Gate:** no external teacher collection and no GPU training until the preregistration and schemas are reviewed and hashed.
+
+#### Phase B — Nonfinal data and teacher preflight
+
+- Run a small local/mock schema test.
+- Collect only an explicitly nonfinal teacher sample sufficient to validate parsing, refusals, cost accounting, and drift sentinels.
+- Validate expert rubric agreement on a small qualification set.
+- Measure candidate identity and transformation validity.
+
+**Gate:** teacher records are auditable, expert agreement is acceptable, transformations are identifiable, and no evaluation text has entered development.
+
+#### Phase C — Development collection and training
+
+- Build `D_gold`, `D_teacher`, `D_cf`, and `D_replay` under the frozen roles.
+- Train the prespecified arm/data-size ladder and five seeds.
+- Select one primary arm using development-only predicates.
+- Choose any interpolation coefficient, calibrator, and quantized candidate using development data.
+
+**Gate:** freeze one student artifact and one serving artifact before any fresh test output is visible.
+
+#### Phase D — Sealed comparison
+
+- Score the frozen student and GPT comparator on the sealed calibration/test cohort.
+- Unseal only after cardinality, hashes, and failures are validated.
+- Run the paired confirmatory analysis and every release gate without changing code or thresholds.
+
+**Gate:** claim wording is emitted only by the locked claim registry.
+
+#### Phase E — Release and manuscript decision
+
+- Package text-free scores and provenance.
+- Reproduce analysis without model or teacher access.
+- Conduct an adversarial claim audit.
+- Decide whether the result belongs in a companion paper, a future unified-report section, or only a negative-results appendix.
+
+No outcome requires integration into the existing manuscript. A failed or unresolved frontier comparison is still scientifically useful if the low-FPR, transfer, and latency trade-offs are completely reported.
+
+### 20.18 Related methods motivating—but not proving—the design
+
+- [HarmAug: Effective Data Augmentation for Knowledge Distillation of Safety Guard Models](https://arxiv.org/abs/2410.01524) motivates offline teacher labeling and targeted harmful-example augmentation; its reported guard/model/datasets differ from this proposal.
+- [Domain Generalizable AI Guardrails with Augmented Policy Training](https://aclanthology.org/2026.acl-long.748/) motivates category deletion and guideline editing for unseen-policy generalization.
+- [When AUC Meets DRO: Optimizing Partial AUC for Deep Learning](https://proceedings.mlr.press/v162/zhu22g.html) motivates an end-to-end objective focused on a restricted FPR region.
+- [Robust Fine-Tuning of Zero-Shot Models](https://openaccess.thecvf.com/content/CVPR2022/html/Wortsman_Robust_Fine-Tuning_of_Zero-Shot_Models_CVPR_2022_paper.html) motivates one-pass base/fine-tuned weight interpolation; transferring the result from vision to decoder guards is an experiment, not an assumption.
+- [LS-Guard: Adaptive Safety Guardrails Tailored to Individual LLMs](https://aclanthology.org/2026.findings-acl.989/) motivates shared-plus-specific LoRA experts; this proposal uses trusted domain metadata rather than target-LLM identity.
+- [Reasoning's Razor](https://aclanthology.org/2026.eacl-long.190/) motivates evaluating reasoning methods specifically at low-FPR operating points rather than assuming an aggregate-accuracy improvement helps the deployment target.
+
+The proposed contribution is not any one component in isolation. The candidate contribution is a prospectively sealed test of whether independent gold plus frontier distillation, policy counterfactuals, low-FPR optimization, anti-specialization anchoring, and a hard one-pass latency constraint can jointly cross the hosted frontier reference. Any “first” or novelty statement requires a fresh literature review at lock time.
+
+### 20.19 Bottom line for the companion study
+
+The highest-probability route to a genuinely low-cost frontier-beating result is not a larger local model, more ordinary SFT, or a many-member committee. It is a **single-pass 3B student whose training signal is richer than the teacher's final verdict and whose objective is aligned to the false-alarm budget used to judge it**.
+
+The most informative primary sequence is:
+
+```text
+SmolLM3-3B base
+  -> independent gold + GPT weak supervision
+  -> validated policy/semantic counterfactuals
+  -> partial-AUC hard-negative training
+  -> broad replay/base anchoring
+  -> one-pass weight interpolation
+  -> BF16/INT8 sealed serving evaluation
+```
+
+This study can credibly establish a cohort-specific frontier win only if the student beats GPT on independent expert gold, on unseen sealed rows, at the same false-positive budget, while retaining transfer and the measured local serving envelope. Anything weaker should be reported as a useful accuracy–latency trade-off, not as “the SLM beats GPT.”

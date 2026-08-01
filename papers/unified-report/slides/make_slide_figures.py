@@ -32,37 +32,56 @@ OUT = HERE / "assets"
 OUT.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------- deck identity
-INK = "#12263A"       # headline / axis text
-SLATE = "#5A6B7C"     # secondary text
-RULE = "#D8DEE4"      # gridlines, spines
-BLUE = "#2563EB"      # represented-source
-ORANGE = "#EA580C"    # dataset-held-out transfer
-GREEN = "#15803D"     # composition / recovered
-RED = "#A02128"       # regression / accent
-GOLD = "#B7791F"
-PURPLE = "#6D28D9"
+# Tokens come from deck_theme, the same module the PowerPoint generators use, so a figure
+# cannot drift from the slide it sits on. Critically, figures render on the CONTENT-SLIDE
+# background: there is no figure panel, so a figure saved on white reads as a bright
+# rectangle and breaks the deck.
+import deck_theme as T  # noqa: E402
 
+INK = T.hexc(T.TEXT)          # headline / axis text
+SLATE = T.hexc(T.BODY)        # secondary text
+DIM = T.hexc(T.DIM)
+RULE = T.hexc(T.CARD_LINE)    # gridlines, spines
+CARD = T.hexc(T.CARD)         # raised surface for shaded bands and legend patches
+BG = T.hexc(T.BG_SLIDE)
+BLUE = T.hexc(T.DATA_REPRESENTED)    # represented-source
+ORANGE = T.hexc(T.DATA_TRANSFER)     # dataset-held-out transfer
+GREEN = T.hexc(T.DATA_COMPOSITION)   # composition / recovered
+RED = T.hexc(T.ACCENT)               # regression / accent
+GOLD = T.hexc(T.DATA_GOLD)
+PURPLE = T.hexc(T.DATA_KL)
+WARN_BAND = T.hexc(T.WARN_CARD)      # replaces the light "#FDF0EC" regression bands
+
+# Four categorical hues. The redesign's own palette carries only two accents, which cannot
+# separate a four-series legend, so the two derived tokens fill in: BLUE / GOLD / GREEN / RED
+# stay mutually distinguishable on the dark surface. Using ORANGE here collapsed SmolLM2 and
+# Qwen3-4B into two nearly identical reds.
 MODEL_COLOR = {
     "Qwen2.5-1.5B": BLUE,
-    "SmolLM2-1.7B": ORANGE,
+    "SmolLM2-1.7B": GOLD,
     "SmolLM3-3B": GREEN,
     "Qwen3-4B": RED,
 }
 
 plt.rcParams.update({
     "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
+    "font.sans-serif": T.FIG_FONT_STACK,
     "font.size": 13,
     "text.color": INK,
-    "axes.labelcolor": INK,
+    "axes.labelcolor": SLATE,
     "axes.edgecolor": RULE,
+    "axes.facecolor": BG,
+    "axes.titlecolor": INK,
+    "xtick.labelcolor": SLATE,
+    "ytick.labelcolor": SLATE,
+    "legend.labelcolor": SLATE,
     "axes.labelsize": 13,
     "axes.titlesize": 14,
     "axes.spines.top": False,
     "axes.spines.right": False,
     "axes.grid": True,
     "grid.color": RULE,
-    "grid.alpha": 0.7,
+    "grid.alpha": 1.0,          # the dark gridline is already low-contrast; alpha would erase it
     "grid.linewidth": 0.8,
     "grid.linestyle": "-",
     "xtick.color": SLATE,
@@ -76,7 +95,11 @@ plt.rcParams.update({
     "savefig.bbox": "tight",
     "savefig.pad_inches": 0.04,
     "savefig.transparent": False,
-    "figure.facecolor": "white",
+    "figure.facecolor": BG,
+    # savefig.facecolor does NOT inherit from figure.facecolor. Omitting it is exactly how a
+    # dark figure gets saved with a white canvas.
+    "savefig.facecolor": BG,
+    "savefig.edgecolor": BG,
 })
 
 
@@ -219,16 +242,24 @@ SHORT = {"Qwen2.5-1.5B": "Qwen2.5\n1.5B", "SmolLM2-1.7B": "SmolLM2\n1.7B",
 
 # =============================================================== FIGURE BUILDERS
 def fig_teaser():
-    """Three panels: the split, the rank flip, the missed violation."""
-    # 4.4in, not 4.1: panel 3 carries a footnote below its x-axis, and tight_layout would
-    # otherwise pay for it by shortening all three panels -- which pushed panel 2's "1st"
-    # row annotations up into its own title.
-    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.4))
+    """Four panels, keyed Q1..Q4 to the report's Table 1 -- the same figure as the paper's Figure 1.
 
-    # -- panel 1: represented gain vs transfer change, with the 20 seeds ---------
+    This was three panels for the three "acts" (the split, the rank flip, the missed violation).
+    The report is now organised around four questions and its Figure 1 has one panel each, so this
+    slide follows: covering Q1 and Q3 twice while omitting Q2 and Q4 made the deck and the paper
+    disagree about the headline structure. The missed-violation panel moves to its own slide, where
+    it can carry the caveat that its two rows are not a controlled pair.
+
+    Q2 and Q4 read the generated macro files rather than hard-coded numbers -- the old panel 3 had
+    its eight counts typed in, which is exactly the drift this module exists to prevent.
+    """
+    fig, axes = plt.subplots(1, 4, figsize=(16.4, 4.3))
+
+    # -- Q1: represented gain vs transfer change, with the 20 seeds ---------------
     ax = axes[0]
     mac = macros("results_macros_gen.tex")
     rep_d, tr_d = float(mac["RepDelta"]), float(mac["TransferDelta"])
+    mfpr = macros("matched_fpr_macros.tex")
     seeds = seed_rows()
     ax.bar([0], [rep_d], 0.62, color=BLUE, zorder=3)
     ax.bar([1], [tr_d], 0.62, color=ORANGE, zorder=3)
@@ -238,23 +269,49 @@ def fig_teaser():
         jit = rng.uniform(-0.13, 0.13, len(vals))
         ax.scatter(np.full(len(vals), j) + jit, vals, s=16, c=INK, alpha=0.55,
                    zorder=4, linewidths=0)
-    ax.axhline(0, color=INK, lw=1.1, zorder=2)
-    ax.text(0, rep_d / 2, f"{rep_d:+.2f}", ha="center", va="center", color="white",
+    ax.axhline(0, color=SLATE, lw=1.1, zorder=2)
+    ax.text(0, rep_d / 2, f"{rep_d:+.2f}", ha="center", va="center", color=INK,
             fontsize=19, fontweight="bold", zorder=5)
     # left of the bar, not below it: the seed cloud occupies the space under the bar
     ax.text(0.60, tr_d, f"{tr_d:+.2f}", ha="right", va="center", color=ORANGE,
             fontsize=19, fontweight="bold", zorder=5)
+    ax.text(0.985, 0.97, f"at an equal alarm budget\ntransfer recall "
+                         f"{mfpr['MatchedTransferBase']}$\\to${mfpr['MatchedTransferSft']}",
+            transform=ax.transAxes, ha="right", va="top", fontsize=10, color=RED, style="italic")
     ax.set_xlim(-0.48, 1.48)
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["represented\n(trained-on)", "transfer\n(held-out)"], fontsize=12)
     ax.set_ylabel("base $\\to$ SFT $\\Delta$ macro-AP", fontsize=12)
     ax.set_ylim(-0.30, 0.62)
-    ax.set_title("Tuning buys the benchmark,\nnot transfer", fontsize=13.5,
+    ax.set_title("Q1  The benchmark gain\ndoes not transfer", fontsize=13.5,
                  fontweight="bold", color=INK, pad=10)
     tidy(ax)
 
-    # -- panel 2: the top-ranked guard changes with the benchmark ---------------
+    # -- Q2: what a retraining-free base+adapter average recovers on transfer -----
     ax = axes[1]
+    pil = macros("pilot_macros.tex")
+    dec = lambda s: float(("0" + s) if s.startswith(".") else s.lstrip("+"))  # noqa: E731
+    vals = [dec(pil["PilotBaseTransfer"]), dec(pil["PilotSFTTransfer"]),
+            dec(pil["PilotCompositionTransfer"])]
+    ax.bar(range(3), vals, 0.58, color=[SLATE, ORANGE, GREEN], zorder=3)
+    for i2, v in enumerate(vals):
+        ax.text(i2, v + 0.003, f"{v:.3f}", ha="center", va="bottom", fontsize=13,
+                fontweight="bold", color=INK, zorder=5)
+    ax.annotate("", xy=(2, vals[2] - 0.004), xytext=(1, vals[1] + 0.004),
+                arrowprops=dict(arrowstyle="->", color=GREEN, lw=2.2), zorder=6)
+    ax.text(1.66, (vals[1] + vals[2]) / 2 - 0.011, f"{pil['PilotTransferDeltaSFT']}\nvs. SFT",
+            ha="right", va="top", fontsize=11.5, fontweight="bold", color=GREEN, zorder=6)
+    ax.axhline(vals[0], color=SLATE, lw=1.4, ls="--", zorder=2)
+    ax.set_xticks(range(3))
+    ax.set_xticklabels(["base", "SFT", "base +\nadapter"], fontsize=12)
+    ax.set_ylim(0.77, 0.91)
+    ax.set_ylabel("transfer macro-AP", fontsize=12)
+    ax.set_title("Q2  Composition recovers most\nof it, without retraining", fontsize=13.5,
+                 fontweight="bold", color=INK, pad=10)
+    tidy(ax)
+
+    # -- Q3: the top-ranked guard changes with the benchmark ---------------------
+    ax = axes[2]
     prim = {r[0]: r[4] for r in primary_rows()}          # transfer base AP
     mort = {r[0]: r[2] for r in mortgage_rows()}          # AP.D
     expg = {r[0]: r[1] for r in expguard_rows()}          # AP all
@@ -267,7 +324,7 @@ def fig_teaser():
             ax.annotate(f"{arms[j][1][model]:.2f}", (j, y), textcoords="offset points",
                         xytext=(0, 12), ha="center", fontsize=10,
                         color=MODEL_COLOR[model], fontweight="bold", zorder=6,
-                        bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none",
+                        bbox=dict(boxstyle="round,pad=0.12", fc=BG, ec="none",
                                   alpha=0.92))
         ax.text(2.10, ys[2], model.replace("Qwen2.5-", "Q2.5-").replace("Qwen3-", "Q3-")
                 .replace("SmolLM2-", "SL2-").replace("SmolLM3-", "SL3-"),
@@ -279,44 +336,41 @@ def fig_teaser():
     ax.set_yticks([1, 2, 3, 4])
     ax.set_yticklabels(["1st", "2nd", "3rd", "4th"])
     ax.invert_yaxis()
-    ax.set_title("The top-ranked guard\nchanges with the benchmark", fontsize=13.5,
+    ax.set_title("Q3  The top-ranked guard\nchanges with the benchmark", fontsize=13.5,
                  fontweight="bold", color=INK, pad=10)
     tidy(ax, ygrid=False)
     ax.grid(axis="y", visible=True)
 
-    # -- panel 3: the violation ranked below the benign median ------------------
-    ax = axes[2]
-    coded = {"Qwen2.5-1.5B": 46, "SmolLM2-1.7B": 57, "SmolLM3-3B": 65, "Qwen3-4B": 44}
-    named = {"Qwen2.5-1.5B": 1, "SmolLM2-1.7B": 7, "SmolLM3-3B": 0, "Qwen3-4B": 15}
-    x = np.arange(4)
-    labels = ["Q2.5-1.5B", "SL2-1.7B", "SL3-3B", "Q3-4B"]
-    keys = ["Qwen2.5-1.5B", "SmolLM2-1.7B", "SmolLM3-3B", "Qwen3-4B"]
-    ax.bar(x - 0.20, [coded[k] for k in keys], 0.38, color=RED, label="coded proxy", zorder=3)
-    ax.bar(x + 0.20, [named[k] for k in keys], 0.38, color=GREEN, label="traits named", zorder=3)
-    for i, k in enumerate(keys):
-        ax.text(i - 0.20, coded[k] + 1.5, coded[k], ha="center", fontsize=10.5,
-                fontweight="bold", color=RED)
-        ax.text(i + 0.20, named[k] + 1.5, named[k], ha="center", fontsize=10.5,
-                fontweight="bold", color=GREEN)
-    ax.axhline(32.5, color=INK, ls="--", lw=1.4, zorder=4)
-    ax.text(3.45, 34.5, "median\nbenign row", ha="right", va="bottom", fontsize=10,
-            color=INK, style="italic")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=11)
-    ax.set_ylabel("benign rows ranked above\nthe violation (of 65)", fontsize=11.5)
-    ax.set_ylim(0, 78)
-    ax.legend(loc="upper left", fontsize=11, ncols=1)
-    ax.set_title("Coded, the violation ranks\nbelow the benign median", fontsize=13.5,
+    # -- Q4: the regime reversal, both bars as (local - hosted) -------------------
+    ax = axes[3]
+    h2h, fro = macros("h2h_macros.tex"), macros("frontier_macros.tex")
+    ci = lambda s: [dec(x) for x in re.findall(r"[+-]?[\d.]+", s)]  # noqa: E731
+    rep_v, rep_c = dec(h2h["HtwoAggDeltaTpr"]), ci(h2h["HtwoAggDeltaTprCI"])
+    tr_v = -dec(fro["FrontierGainOverBase"])
+    tr_c = [-x for x in reversed(ci(fro["FrontierGainOverBaseCI"]))]
+    for y, v, c, col, note in ((1, rep_v, rep_c, GREEN, "tuned panel ahead"),
+                               (0, tr_v, tr_c, BLUE, "hosted ahead")):
+        ax.barh([y], [v], 0.40, color=col, zorder=3)
+        ax.errorbar([v], [y], xerr=[[v - c[0]], [c[1] - v]], fmt="none", ecolor=INK,
+                    elinewidth=1.8, capsize=5, zorder=5)
+        side = 1 if v > 0 else -1
+        ax.text(v + 0.014 * side, y + 0.25, f"{v:+.3f}", fontsize=15, fontweight="bold",
+                color=col, ha="left" if v > 0 else "right", va="bottom", zorder=6)
+        ax.text(v + 0.014 * side, y - 0.28, note, fontsize=10.5, color=SLATE, style="italic",
+                ha="left" if v > 0 else "right", va="top", zorder=6)
+    ax.axvline(0, color=INK, lw=1.6, zorder=4)
+    ax.set_yticks([1, 0])
+    ax.set_yticklabels(["sources your\nmanifest names", "sources it\ndoes not name"], fontsize=12)
+    ax.set_xlim(-0.28, 0.28)
+    ax.set_ylim(-0.75, 1.75)
+    ax.set_xlabel("$\\Delta$ recall at a matched 5% budget\n(local guard $-$ hosted frontier)",
+                  fontsize=11.5)
+    ax.set_title("Q4  Which is better reverses\nwith the traffic", fontsize=13.5,
                  fontweight="bold", color=INK, pad=10)
-    # The two arms are DIFFERENT rows, not a controlled protected-trait swap: they differ in
-    # fact sheet, domain, cited cards and request type, and v1 contains no protected pair on
-    # which a violation is scored. Stated on the panel so the bars cannot be read as a
-    # measured surface-form effect.
-    ax.text(0.5, -0.205, "different rows — not a controlled pair", transform=ax.transAxes,
-            ha="center", va="top", fontsize=10, color=RED, style="italic")
-    tidy(ax)
+    tidy(ax, ygrid=False)
+    ax.grid(axis="x", visible=True)
 
-    fig.tight_layout(w_pad=2.4)
+    fig.tight_layout(w_pad=2.2)
     save(fig, "teaser")
 
 
@@ -328,7 +382,7 @@ def fig_act1_bars():
     tr = [r[6] for r in rows]
     ax.bar(x - 0.20, rep, 0.38, color=BLUE, label="represented-source $\\Delta$", zorder=3)
     ax.bar(x + 0.20, tr, 0.38, color=ORANGE, label="held-out transfer $\\Delta$", zorder=3)
-    ax.axhline(0, color=INK, lw=1.2, zorder=4)
+    ax.axhline(0, color=SLATE, lw=1.2, zorder=4)
     for i, v in enumerate(rep):
         ax.text(i - 0.20, v + 0.015, f"{v:+.2f}", ha="center", va="bottom",
                 fontsize=12, fontweight="bold", color=BLUE)
@@ -349,16 +403,16 @@ def fig_act1_bars():
 def fig_spec_plane():
     seeds = seed_rows()
     fig, ax = plt.subplots(figsize=(6.6, 4.9))
-    ax.axhspan(-0.28, 0, xmin=0.0, xmax=1.0, color="#FDF0EC", zorder=0)
+    ax.axhspan(-0.28, 0, xmin=0.0, xmax=1.0, color=WARN_BAND, alpha=0.55, zorder=0)
     for model, color in MODEL_COLOR.items():
         pts = [(r[2], r[3]) for r in seeds if r[0] == model]
         ax.scatter([p[0] for p in pts], [p[1] for p in pts], s=95, color=color,
-                   label=model, zorder=4, edgecolors="white", linewidths=1.3)
+                   label=model, zorder=4, edgecolors=BG, linewidths=1.3)
     mac = macros("results_macros_gen.tex")
     ax.scatter([float(mac["RepDelta"])], [float(mac["TransferDelta"])], s=340, marker="X",
-               color=INK, zorder=5, edgecolors="white", linewidths=1.8)
-    ax.axhline(0, color=INK, lw=1.2, zorder=2)
-    ax.axvline(0, color=INK, lw=1.2, zorder=2)
+               color=INK, zorder=5, edgecolors=BG, linewidths=1.8)
+    ax.axhline(0, color=SLATE, lw=1.2, zorder=2)
+    ax.axvline(0, color=SLATE, lw=1.2, zorder=2)
     ax.text(0.56, -0.262, "SPECIALIZE\nrepresented $\\uparrow$, transfer $\\downarrow$",
             ha="right", va="bottom", fontsize=11.5, color=RED, fontweight="bold")
     ax.text(0.015, 0.098, "UNIFORM GAIN", ha="left", va="top", fontsize=11.5,
@@ -419,7 +473,7 @@ def fig_operating():
             ax.annotate("", xy=(s, y), xytext=(b, y),
                         arrowprops=dict(arrowstyle="-|>,head_width=0.30,head_length=0.62",
                                         color=col, lw=3.0, shrinkA=7, shrinkB=2))
-        ax.scatter([b], [y], s=115, color="white", edgecolors=SLATE, linewidths=2.2, zorder=5)
+        ax.scatter([b], [y], s=115, color=BG, edgecolors=SLATE, linewidths=2.2, zorder=5)
         # place the two values on opposite sides of the motion so they never collide
         going_right = s >= b
         ax.text(b + (-1.6 if going_right else 1.6), y, f"{b:.1f}",
@@ -449,7 +503,7 @@ def fig_operating():
     ax.set_xlabel("recall / false-alarm rate   (%)")
     ax.set_xlim(-4, 92)
     ax.set_ylim(-1.15, 8.25)
-    handles = [Line2D([], [], color="white", marker="o", ms=10, mec=SLATE, mew=2.2,
+    handles = [Line2D([], [], color=BG, marker="o", ms=10, mec=SLATE, mew=2.2,
                       ls="none", label="untuned base"),
                Line2D([], [], color=GREEN, lw=3, label="SFT guard — improves"),
                Line2D([], [], color=RED, lw=3, label="SFT guard — regresses")]
@@ -490,7 +544,7 @@ def fig_klsft():
                     arrowprops=dict(arrowstyle="-|>,head_width=0.22,head_length=0.5",
                                     color=RED, lw=2.0), zorder=6)
         a2.text(i + 0.14, r[6] - 0.008, f"{r[6]:.2f}", ha="center", va="top",
-                fontsize=10.5, fontweight="bold", color="white", zorder=7)
+                fontsize=10.5, fontweight="bold", color=INK, zorder=7)
     a2.set_ylim(0.85, 1.005)
     a2.set_xticks(x); a2.set_xticklabels(labels, fontsize=11.5)
     a2.set_ylabel("represented macro-AP")
@@ -512,7 +566,7 @@ def fig_adapt_plane():
            "Qwen3Guard-0.6B": (-3, -21), "Qwen3Guard-4B": (12, 3),
            "ShieldGemma-2B": (11, -14), "WildGuard-7B": (12, 6)}
     fig, ax = plt.subplots(figsize=(8.1, 4.9))
-    ax.axhspan(-0.19, 0, color="#FDF0EC", zorder=0)
+    ax.axhspan(-0.19, 0, color=WARN_BAND, alpha=0.55, zorder=0)
     for name, kind, sr, st, kr, kt in rows:
         col = BLUE if kind == "general" else GREEN
         degenerate = (sr == 0.0 and st == 0.0)
@@ -523,15 +577,15 @@ def fig_adapt_plane():
         ax.add_patch(FancyArrowPatch((sr, st), (kr, kt), arrowstyle="-|>",
                                      mutation_scale=15, color=col, lw=1.7,
                                      alpha=0.85, zorder=3, shrinkA=5, shrinkB=2))
-        ax.scatter([sr], [st], s=88, color=col, zorder=4, edgecolors="white", linewidths=1.2)
+        ax.scatter([sr], [st], s=88, color=col, zorder=4, edgecolors=BG, linewidths=1.2)
         ax.scatter([kr], [kt], s=95, color=col, marker="^", zorder=4,
-                   edgecolors="white", linewidths=1.2)
+                   edgecolors=BG, linewidths=1.2)
         dx, dy = lbl.get(name, (9, -13))
         ax.annotate(name, (sr, st), textcoords="offset points", xytext=(dx, dy),
                     ha="right" if dx < 0 else "left",
                     fontsize=9.5, color=col, fontweight="bold", zorder=6)
-    ax.axhline(0, color=INK, lw=1.2, zorder=2)
-    ax.axvline(0, color=INK, lw=1.2, zorder=2)
+    ax.axhline(0, color=SLATE, lw=1.2, zorder=2)
+    ax.axvline(0, color=SLATE, lw=1.2, zorder=2)
     ax.set_xlabel("represented-source macro-AP $\\Delta$  (vs. the same checkpoint)")
     ax.set_ylabel("held-out transfer macro-AP $\\Delta$")
     ax.set_xlim(-0.035, 0.60)
@@ -585,7 +639,7 @@ def fig_sftsft():
     fig, ax = plt.subplots(figsize=(7.0, 4.4))
     ax.bar(x - 0.19, [r[3] for r in rows], 0.36, color=GREEN,
            label="base + SFT  (keeps the base)", zorder=3)
-    ax.bar(x + 0.19, [r[4] for r in rows], 0.36, color="#9CA3AF",
+    ax.bar(x + 0.19, [r[4] for r in rows], 0.36, color=DIM,
            label="SFT + SFT  (same 2-pass cost, no base)", zorder=3)
     for i, r in enumerate(rows):
         gap = r[3] - r[4]
@@ -699,10 +753,10 @@ def fig_prevalence():
         at1[mk], at50[mk] = ap_prev(f, 0.01), ap_prev(f, 0.5)
     for p in (1, 50):
         ax.axvline(p, color=SLATE, lw=1.0, ls=":", alpha=0.6, zorder=1)
-    bbox = dict(boxstyle="round,pad=0.16", fc="white", ec="none", alpha=0.94)
+    bbox = dict(boxstyle="round,pad=0.16", fc=BG, ec="none", alpha=0.94)
     for mk in ("qwen3_4b", "smollm2_17b", "qwen25_15b"):
         ax.scatter([1], [at1[mk]], s=80, color=cols[mk], zorder=5,
-                   edgecolors="white", linewidths=1.6)
+                   edgecolors=BG, linewidths=1.6)
         ax.annotate(f"{at1[mk]:.2f}", (1, at1[mk]), textcoords="offset points",
                     xytext=(-9, 9), ha="right", fontsize=11.5, fontweight="bold",
                     color=cols[mk], zorder=6, bbox=bbox)

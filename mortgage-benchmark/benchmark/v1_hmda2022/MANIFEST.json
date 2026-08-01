@@ -7,6 +7,8 @@
     "dev": 149,
     "public_test": 146
   },
+  "held_out_by_convention_rows": 95,
+  "held_out_note": "NOT a sealed cohort: in v1 this split is committed with text and has already been scored. Kept as a named split only.",
   "sealed_rows": 95,
   "public_index": "public_index.json"
 }
