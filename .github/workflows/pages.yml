@@ -54,7 +54,10 @@ jobs:
   #    emits class="odd" on table rows where a newer one emits data-latex-placement, so the
   #    two differ by ~2 KB of markup nobody had looked at. `make check-report-html` is the
   #    place for build reproducibility (one pandoc, locally); what CI must enforce is that
-  #    the bytes about to be served are redacted and within budget.
+  #    the bytes about to be served are within the quotation budget the ledger authorized.
+  #    ("redacted" was the old wording, from when v1_hmda2022 was unlicensed and the case
+  #    study was withheld. The licence was decided on 2026-07-27, the redaction is off, and
+  #    the header above already says so -- so the two comments contradicted each other.)
   build:
     needs: authorize
     runs-on: ubuntu-latest
@@ -69,15 +72,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pyyaml pytest
 
-      - name: The bytes to be served must be the redacted edition, within budget
+      - name: The bytes to be served must be within the ledger-authorized quotation budget
         run: python -m pytest tests/test_no_unlicensed_publication.py tests/test_pages_gate.py -q
 
       # Stage the site, not the source directory. Uploading papers/unified-report-html/
       # wholesale also served build.py, template.html, README.md and
       # PUBLICATION_REQUIREMENTS.json at the site root -- repository artifacts, not site
-      # content. The PDF is deliberately NOT staged: it carries the case-study row this
-      # edition withholds, and a link to the repository copy is not the same as the site
-      # serving it.
+      # content. The PDF is deliberately NOT staged, and the reason is auditability rather
+      # than withholding: this edition withholds nothing (the redaction has been off since
+      # the 2026-07-27 licence decision), but the text probes in
+      # tests/test_no_unlicensed_publication.py cannot see inside a PDF, so serving one
+      # would be publication the quotation budget could not check. Link to the repository
+      # copy instead.
       - name: Stage only the site files
         run: |
           mkdir -p _site

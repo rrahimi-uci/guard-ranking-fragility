@@ -195,3 +195,63 @@ SERIES = {           # convenience for figure code that keys off the report's se
     "card_line": hexc(CARD_LINE),
     "bg": hexc(BG_SLIDE),
 }
+
+
+# ------------------------------------------------------------ document properties
+# Both generators start from python-pptx's default template, whose docProps say the deck has
+# no title, no author, "Steve Canny" as last modifier, and an on-screen 4:3 format. None of
+# that is true of these decks, and all of it is visible in PowerPoint's File > Properties and
+# to anything that indexes the file. The two helpers below correct it at save time.
+#
+# Timestamps are deliberately left alone. Writing a fresh `modified` date on every build would
+# make the output non-deterministic, and the README's contract is that re-running the
+# generators is idempotent.
+
+AUTHOR = "Reza Rahimi"
+COMPANY = "JazzX AI"
+REPO_URL = "https://github.com/rrahimi-uci/safety-guard-dynamics"
+
+
+def stamp_properties(prs, title: str, subject: str = "") -> None:
+    """Replace the default-template document properties with this deck's own."""
+    cp = prs.core_properties
+    cp.title = title
+    cp.author = AUTHOR
+    cp.last_modified_by = AUTHOR
+    cp.subject = subject
+    cp.category = "Research presentation"
+    cp.comments = f"Generated from code; sources and data at {REPO_URL}"
+    cp.keywords = ("AI safety; safety guard; LLM guardrail; small language model; "
+                   "fine-tuning; specialization; out-of-distribution transfer")
+
+
+def fix_presentation_format(path) -> None:
+    """Rewrite docProps/app.xml's inherited `<PresentationFormat>` to match the slide size.
+
+    python-pptx copies app.xml from its template verbatim and never revises it, so a 16:9
+    deck shipped claiming "On-screen Show (4:3)". Rewriting one element means rebuilding the
+    zip, which is why this runs after `Presentation.save` rather than through python-pptx.
+    """
+    import re
+    import shutil
+    import zipfile
+    from pathlib import Path
+
+    path = Path(path)
+    part = "docProps/app.xml"
+    with zipfile.ZipFile(path) as z:
+        if part not in z.namelist():
+            return
+        items = [(i, z.read(i.filename)) for i in z.infolist()]
+
+    def patch(data: bytes) -> bytes:
+        text = data.decode("utf-8")
+        new = re.sub(r"<PresentationFormat>[^<]*</PresentationFormat>",
+                     "<PresentationFormat>Widescreen</PresentationFormat>", text)
+        return new.encode("utf-8")
+
+    tmp = path.with_suffix(".tmp.pptx")
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as out:
+        for info, data in items:
+            out.writestr(info, patch(data) if info.filename == part else data)
+    shutil.move(str(tmp), str(path))

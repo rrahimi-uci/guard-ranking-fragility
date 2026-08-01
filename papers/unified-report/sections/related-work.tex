@@ -60,8 +60,8 @@ overclaims that survived because the comparison was made in prose rather than ag
 per-component comparison in \Cref{tab:closest} is what replaces them. We reuse the LoRA-Guard recipe not to beat
 these guards on a leaderboard --- we score four small open checkpoints, not the gated production guards
 --- but to isolate what the fine-tune itself does. GuardBench and its peers are the backdrop against
-which \Cref{sec:actI}'s question is posed: they normalize the single-suite comparison whose fragility we
-show is fragile.
+which \Cref{sec:actI}'s question is posed: they normalize the single-suite comparison whose fragility
+this report measures.
 
 \subsection{Fine-tuning degradation and policy / benchmark transfer}
 \label{sec:related-transfer}
@@ -125,8 +125,10 @@ base's and the adapter's \emph{calibrated scores} with fixed equal weights, retr
 tradeoff versus WiSE-FT/soups is explicit --- output-space composition needs only comparable scores,
 not interpolable weights, so it is portable across checkpoints that could never be weight-averaged, but
 it pays for two inference passes. We position composition as a \emph{transfer-recovery remedy for guard
-specialization} specifically (represented cost small, transfer recovered relative to SFT and landing
-above base; \Cref{tab:pilot-summary,tab:pilot-models}), and we are explicit about what the pilot does
+specialization} specifically (represented cost small, transfer recovered relative to SFT; the aggregate
+edge over the \emph{base} is nominally positive but sits inside the reproduction envelope of
+\Cref{sec:actI-klsft} and is unresolved --- \Cref{tab:pilot-summary,tab:pilot-models}), and we are
+explicit about what the pilot does
 \emph{not} include --- an actual WiSE-FT weight-space rescoring is
 left as a control in the roadmap, and the logit-average variant is reported only as a non-promotable
 ablation. The equal-cost SFT+SFT control \emph{is} run (\Cref{tab:sftsft}): base+SFT beats SFT+SFT on every

@@ -154,15 +154,23 @@ def para(tf, first=False, align=PP_ALIGN.LEFT, space_before=0, space_after=6,
 
 
 def run(p, text, size=14, bold=False, color=INK, font=SANS, italic=False, spc=None):
-    r = p.add_run()
-    r.text = text
-    r.font.size = Pt(size)
-    r.font.bold = bold
-    r.font.italic = italic
-    r.font.name = font
-    r.font.color.rgb = color
-    if spc is not None:
-        _spacing(r, spc)
+    # A literal "\n" is not a line break in OOXML -- it lands raw inside <a:t>, where the
+    # spec says nothing about it and each renderer guesses (PowerPoint rewrote every one of
+    # them on open). The markup that actually breaks a line is <a:br/>, so emit one
+    # identically-formatted run per line with a break between them.
+    r = None
+    for i, segment in enumerate(str(text).split("\n")):
+        if i:
+            p.add_line_break()
+        r = p.add_run()
+        r.text = segment
+        r.font.size = Pt(size)
+        r.font.bold = bold
+        r.font.italic = italic
+        r.font.name = font
+        r.font.color.rgb = color
+        if spc is not None:
+            _spacing(r, spc)
     return r
 
 
@@ -235,7 +243,16 @@ class Deck:
         s.notes_slide.notes_text_frame.text = text.strip()
 
     def save(self):
+        # Without this the published deck carried python-pptx's default-template metadata:
+        # no title, no author, and "Steve Canny" (python-pptx's author) as last modifier.
+        # Timestamps are deliberately NOT set -- writing them would make the build
+        # non-deterministic and break byte-comparison against the committed copy.
+        T.stamp_properties(
+            self.prs, "Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small "
+                      "Language Model Safety Guards",
+            subject="Research talk accompanying the unified report of the same name")
         self.prs.save(OUT)
+        T.fix_presentation_format(OUT)
         return OUT
 
 
@@ -466,8 +483,8 @@ run(p, "   ·   ", size=11.5, color=SLATE)
 run(p, "Should you run a small guard at all?", size=11.5, color=ACCENT, bold=True)
 
 d.notes(s, """
-Open here, not on the method. All three numbers are from Table 4 and Figure 8 of the
-report and are recomputed from committed per-row scores.
+Open here, not on the method. All three numbers are from the report's Act I operating-point table
+(per-benchmark deltas and the 5%-FPR point) and its worked G0/D1 case-study figure and are recomputed from committed per-row scores.
 
 The 17.0% is the POOLED transfer false-positive rate; the benchmark-macro rate goes
 8.1% -> 15.5%. Both are at the operating point chosen for a 5% FPR target on a
@@ -477,7 +494,7 @@ threshold anyone tuned badly.
 If someone objects that transfer recall does rise (51.7% -> 58.1%), that is the right
 question and the answer is on slide 7: the rise is bought with alarms. Equalize the
 alarm budget and it reverses to 21.7% on all four checkpoints. Do not concede the
-point as a caveat — it is measured, and it is Table 4.
+point as a caveat — it is measured, and it is the report's matched-false-alarm-budget table.
 """)
 
 # ------------------------------------------------------------- 3 · one figure
@@ -688,7 +705,7 @@ d.notes(s, """
 The lower block of the chart is the fair comparison, and it is the one to spend time on.
 Recall measured at unequal false-alarm rates is not a comparison of discriminative power,
 so we rethreshold each SFT seed to its OWN base's pooled transfer false-alarm rate (the
-budget column of report Table 4) and re-read the same rows. The apparent gain does not
+budget column of the report's matched-false-alarm-budget table) and re-read the same rows. The apparent gain does not
 merely shrink — it reverses, on all four checkpoints and on both instruments: transfer
 recall 0.517 -> 0.217, HarmBench recall 0.780 -> 0.203. At an equal budget the tuned
 guard catches LESS THAN HALF of what its own untuned base catches off-source.
@@ -699,8 +716,9 @@ regenerated and byte-checked by `make verify` like any other covered artifact. A
 direction is stable across the three quantile conventions we tried (panel mean -0.300 to
 -0.290), so it is not an artifact of one tie-breaking rule.
 
-If asked why the paper reports both rows: Table 3 is what a practitioner who calibrated
-each guard separately would actually deploy, and Table 4 is what the comparison means.
+If asked why the paper reports both rows: the calibration-targeted operating-point table is
+what a practitioner who calibrated each guard separately would actually deploy, and the
+matched-budget table is what the comparison means.
 Earlier drafts called the matched version a "direction" that needed the pinned
 environment. That was wrong on both counts, and the measured result is stronger than the
 hedge it replaced.
@@ -855,9 +873,11 @@ bullets(s, rx, y + Inches(2.90), rw, Inches(1.5), [
      "+0.139 — released guards move the same way."),
     # The pruned-head explanation was wrong and is superseded: the null cell is a harness
     # artifact (two rendering/read-position bugs), not a property of that model.
+    # \AdaNullDilution's body is math ("$5/4 = 1.25\times$"); the ADA loader returns macro
+    # bodies verbatim, so interpolating it raw printed the literal "1.25\times" on the slide.
     ("One null cell — our bug, not their model.", "Llama-Guard-3-1B returned one score for "
      "every row: two harness bugs, since fixed. Retained at zero, which dilutes every number "
-     f"here by {A['NullDilution']} and only makes the verdicts harder to reach."),
+     f"here by {FN.plain(A['NullDilution'])} and only makes the verdicts harder to reach."),
 ], size=11.5, gap=9)
 
 d.notes(s, f"""
@@ -1250,10 +1270,13 @@ bullets(s, rx, y - Inches(0.02), rw, Inches(2.2), [
      "flatter them for alarming less, not for discriminating better."),
 ], size=11, gap=8)
 
-callout(s, rx, y + Inches(2.30), rw, Inches(1.30), "The gap is a floor, not a ceiling",
+# "A floor, not a ceiling" was withdrawn from the report: coarse ties bound how finely the
+# hosted ranking can be resolved, but they do not fix a direction -- a finer score could order
+# a tie block either way -- so the gap is not conservative, only coarsely resolved.
+callout(s, rx, y + Inches(2.30), rw, Inches(1.30), "The gap is coarsely resolved",
         "The hosted score is a coarse integer 0–100 risk — 47–65 distinct values over 2,275 "
-        "rows. Heavy ties cap AP resolution, so this comparison handicaps the hosted model. "
-        "A frontier number above a local one is conservative.",
+        "rows. Heavy ties cap how finely its ranking resolves, which bounds precision without "
+        "fixing a direction: read the gap as coarse, not as conservative.",
         color=BLUE, body_size=10.5)
 
 d.notes(s, f"""

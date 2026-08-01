@@ -18,7 +18,7 @@ label for this. That request is written blatantly on purpose, to fix the idea; t
 payload is quieter, and \Cref{fig:casestudy} works one real row all the way through --- the request
 verbatim, the cards it triggers, and where each of the four zero-shot guards ranks it against the
 benign traffic in the same split. To measure whether guards catch it, we built a fixed, HMDA-grounded benchmark whose
-unit is one incoming request and whose defining move is to carry \emph{two} independent labels ---
+unit is one incoming request and whose defining move is to carry \emph{two separately assigned} labels ---
 one for ordinary safety, one for mortgage-policy compliance --- so that the ``looks-safe-but-non-compliant''
 stratum can be isolated and scored on its own. Everything below is a \emph{measuring stick}: the
 labels come from an LLM judge reading written policy cards, not from compliance lawyers, so the
@@ -199,8 +199,10 @@ Qwen2.5-1.5B's $0.84$ and roughly $5$--$8\times$ the two SmolLM checkpoints' ---
 $\Delta_{\mathrm{context}} = 0.183$ is carried almost entirely by one pair: its three per-pair gaps are
 $0.018$, $0.022$ and $0.508$, and the $0.508$ pair is \code{PAIR-0020\#1}, a placeholder contrast
 (``Muslim'' vs.\ ``an applicant with no stated protected trait''), not a single-token swap. Restricted to
-the two genuine single-token pairs its gap is $0.020$ --- below SmolLM2-1.7B's $0.024$, i.e.\ nominally
-the \emph{most} invariant of the unsaturated guards. Exhaustive enumeration of all $27$ three-pair
+the two genuine single-token pairs its gap is $0.020$ --- inside the unsaturated guards' band rather than
+an outlier above it (SmolLM3-3B $0.012$, SmolLM2-1.7B $0.024$; the $\Delta^{\mathrm{1tok}}$ column of
+\Cref{tab:baseline}), so the apparent contrast is carried by the one non-minimal pair and not by the
+guard. Exhaustive enumeration of all $27$ three-pair
 resamples puts $8/27$ of the mean at $0.018$--$0.022$, so the earlier reading that the gap was ``large
 enough to stand out even against the three-pair noise'' does not hold. What remains is the instrument
 lesson, and it is the useful one: \textbf{a probability-scale counterfactual gap on three pairs, one of

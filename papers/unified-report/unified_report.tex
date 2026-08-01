@@ -91,7 +91,7 @@
 % ---- generated macros bound to the locked results (numbers are never hand-typed) ----
 \input{generated/results_macros_gen} % Paper A: \Rep*, \Transfer*, \HarmBench*, \SpecializationSeedCount, ...
 \input{generated/pilot_macros}       % Paper B: \Pilot*
-\input{generated/klsft_macros}       % KL-SFT anti-forgetting control: \KL* (placeholder until run completes)
+\input{generated/klsft_macros}       % KL-SFT anti-forgetting control: \KL* (run complete; see tab:klsft)
 \input{generated/adaptation_macros}  % Starting-type adaptation study: \Ada* (H values + LCBs + verdicts)
 \input{generated/ensembling_macros}  % Ensembling appendix: \Ens* (point estimates + bootstrap + committee)
 \input{generated/matched_fpr_macros} % Act I matched-FPR operating point: \Matched*
@@ -197,8 +197,10 @@ overlap, so the claim is that the \emph{leaderboard's answer moves}, not that th
 $5\%$ alarm budget, so right of zero is a local win: the ordering \emph{reverses} between traffic a
 training manifest names and traffic it does not (\Cref{sec:actIII-h2h}). The \HtwoAggDeltaTpr{} bar
 (sources your manifest names) is a \emph{post-hoc} descriptive summary over \HtwoNRepSources{}
-purposively chosen corpora, and resampling that source set gives \HtwoAggSrcResampledCI{}; the
-\FrontierGainOverBase{} bar below it is a paired comparison on external expert-annotated rows. Two
+purposively chosen corpora, and resampling that source set gives \HtwoAggSrcResampledCI{}; the bar
+below it --- drawn \emph{left} of zero, because on this axis a hosted win is negative --- is the hosted
+model leading the best small base by \FrontierGainOverBase{} in a paired comparison on external
+expert-annotated rows. Two
 different comparisons on different data --- reported side by side, never pooled. Every value is parsed from the same committed
 artifacts the tables \code{\textbackslash input}, so no panel can drift from its row.}
 \label{fig:teaser}
@@ -259,7 +261,7 @@ Q3. Does a general-safety score cover a regulated domain? &
 Zero-shot ranking of a dual-labeled mortgage policy label $D$ (994-row benchmark, scored on its
 146-row public-test split) and of three external verticals (2{,}275 rows) &
 \textbf{No.} AP$\cdot$D $0.67$--$0.85$ against a $0.555$ chance floor, and the guard ordering does
-not carry across the two arms (mortgage does not separate the panel at all) &
+not carry across the two arms (on mortgage, five of the six pairwise AP$\cdot$D intervals overlap) &
 LLM-judge; external & \S\ref{sec:actIV} \\
 Q4. Should you run a small guard at all? &
 Recall at a matched $5\%$ budget against a hosted frontier model on identical rows, by regime &
@@ -330,8 +332,10 @@ measurements were made on.
 
 \begin{background}{Three ways to read this report}
 This is a long document, and not every reader needs all of it.
-\textbf{If you have five minutes:} \Cref{fig:teaser} (p.~\cpageref{fig:teaser}) is the four answers as
-one picture, and \Cref{tab:glance} (p.~\cpageref{tab:glance}) is every headline number with its
+% \cpageref already prints the word "page", and the `capitalize' option makes it "Page", so the
+% "p.~" prefix rendered as "(p. Page 2)". \pageref gives the bare number this wants.
+\textbf{If you have five minutes:} \Cref{fig:teaser} (p.~\pageref{fig:teaser}) is the four answers as
+one picture, and \Cref{tab:glance} (p.~\pageref{tab:glance}) is every headline number with its
 estimand and evidence tier.
 \textbf{If you are choosing a guard:} read \Cref{tab:guidelines} --- one row per finding, with the
 guideline it implies --- then \Cref{fig:gating} for the gating procedure and
@@ -422,8 +426,11 @@ guards.
 $\circ$ = partially. ``Paired base$\to$tune'' means the same checkpoint measured before and after on
 identical rows; ``source-held-out'' means transfer measured at the \emph{source} level, not the row
 level; ``matched-FPR'' means metrics compared at a common false-alarm budget rather than at each
-model's self-chosen operating point. The rightmost two columns are where this report's remaining
-claim lives; the columns to their left are where it does not.}
+model's self-chosen operating point. The \emph{leftmost three} columns are where this report's
+remaining claim lives --- it is the only row with all three, and their conjunction is the estimand
+\Cref{sec:actI} defines. Routing, policy grounding and the fairness construct are where it does not:
+each carries a $\circ$ against a row that does it properly. Eight works are listed --- the six
+discussed above plus the two general-guard baselines already cited in this section.}
 \label{tab:closest}
 \setlength{\tabcolsep}{3.2pt}\renewcommand{\arraystretch}{1.12}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.155\textwidth}cccccccc@{}}
@@ -468,7 +475,7 @@ LLM judge, not human adjudication; and the fairness construct is a 39-pair prote
 \input{generated/mortgage_composition_table}   % tab:composition
 \begin{figure}[htbp]\centering
 \includegraphics[width=0.72\linewidth]{fig_mortgage_quadrant.pdf}
-\caption{The mortgage benchmark's two independent labels $G$ (general safety) $\times$ $D$ (mortgage policy) and the 994-row quadrant counts. The load-bearing \textbf{G0/D1} cell (reads safe, is a violation) is the largest non-benign block; \textbf{G1/D0} is empty (a stated limitation).}
+\caption{The mortgage benchmark's two \emph{separately assigned} labels $G$ (general safety) $\times$ $D$ (mortgage policy) and the 994-row quadrant counts. The load-bearing \textbf{G0/D1} cell (reads safe, is a violation) is the largest non-benign block; \textbf{G1/D0} is empty (a stated limitation), so in v1 the two labels are \emph{nested}, not independent: every $G$-positive row is also $D$-positive.}
 \label{fig:quadrant}
 \end{figure}
 
@@ -499,8 +506,8 @@ and benchmark rank are distinct axes. AP is shown on a zoomed $[0.80,1.00]$ scal
 
 \subsection{External breadth: finance, healthcare and law (ExpGuard)}
 \label{sec:actIV-expguard}
-\noindent These are the four \emph{base} checkpoints
-scored \emph{zero-shot} (no domain fine-tuning), so this act is a thematic breadth test --- does the
+\noindent The ExpGuard arm scores the same four \emph{base} checkpoints as the mortgage arm above,
+again \emph{zero-shot} (no domain fine-tuning), so this act is a thematic breadth test --- does the
 benchmark-co-production thesis recur across domains? --- rather than a re-run of the Act~I/II SFT
 mechanism. On ExpGuard's expert-annotated prompts, all four bases already rank domain violations well
 (aggregate AP $0.88$--$0.96$ across the panel; \Cref{tab:expguard}, \Cref{fig:expguard-domains}). The
@@ -508,10 +515,11 @@ ordering echoes Act~I's lesson rather than raw capacity: \textbf{SmolLM3-3B rank
 $95\%$ CI $[.949,.963]$, near-uniform across its own three verticals), with Qwen3-4B close
 just behind ($0.951$, $[.943,.958]$). Those \emph{marginal} CIs overlap, but that is the wrong test on
 paired data: scoring both guards on identical rows lets a paired bootstrap cancel row-difficulty
-variance, and it resolves one vertical. SmolLM3-3B $-$ Qwen3-4B is $+0.017$ on \textbf{health} with a CI
-excluding zero, while finance ($+0.001$) and law ($+0.001$) are genuine ties (\Cref{tab:expguard}). The
-honest statement is therefore sharper than ``unresolved at this sample size'': the sample resolves health
-and shows the other two verticals are level. One caveat belongs with that word ``resolves.'' Four paired
+variance, and it separates one vertical. SmolLM3-3B $-$ Qwen3-4B is $+0.017$ on \textbf{health} with a CI
+excluding zero, while finance ($+0.001$) and law ($+0.001$) sit essentially on zero with intervals that
+contain it (\Cref{tab:expguard}). Those two are \emph{not} demonstrated equivalences --- an interval
+containing zero is not evidence of no difference, and no equivalence margin was registered --- only
+differences too small for this sample to sign. One caveat belongs with that word ``resolves.'' Four paired
 comparisons are reported (overall plus three verticals) with \emph{no} multiplicity adjustment, and the
 health interval clears zero only narrowly ($+0.0026$ at its lower end). Under a Bonferroni split across
 the three verticals it would not clear. We therefore treat health as the one vertical where the data
@@ -531,8 +539,9 @@ moderately (AP$\cdot$D $0.67$--$0.85$; AUROC$\cdot$D $0.60$--$0.78$) against a $
 --- i.e.\ $0.12$--$0.30$ above chance --- and one worked G0/D1 row is ranked below the median benign
 inquiry by \emph{all four} (\Cref{fig:casestudy}). On external expert-annotated finance/health/law
 rows the same four bases rank well ($0.88$--$0.96$). \emph{The guard ordering does not carry across
-the two arms}: the mortgage AP$\cdot$D intervals do not separate the panel at all, while on ExpGuard
-SmolLM3-3B is highest (\Cref{tab:baseline,tab:expguard}).}
+the two arms}: on mortgage, five of the six pairwise AP$\cdot$D intervals overlap and only Qwen3-4B
+vs.\ SmolLM2-1.7B separates, while on ExpGuard SmolLM3-3B is highest
+(\Cref{tab:baseline,tab:expguard}).}
 {In a regulated domain, build a domain-grounded, dual-labeled instrument and a protected-pair
 invariance check \emph{before} trusting any guard, and read AP against the split's own chance floor
 rather than against zero. Do not carry a guard ranking across domain arms.}
@@ -564,8 +573,9 @@ $5\%$ false-alarm budget, not each model's own verdict --- the same discipline A
 base-vs-SFT (\Cref{tab:matchedfpr}), and it matters here because the frontier configs sit at a
 self-chosen $2.3$--$3.4\%$ FPR and would otherwise be compared at an operating point nobody
 selected. Second, the frontier ranking signal is a self-reported integer $0$--$100$ risk, the only
-graded output the Responses API exposes for reasoning models; it takes roughly $50$--$65$ distinct
-values over $2{,}275$ rows, and those ties cap how finely AP can resolve a ranking. That bounds
+graded output the Responses API exposes for reasoning models; across the six configurations it takes
+only $47$--$65$ distinct values over $2{,}275$ rows, and those ties cap how finely AP can resolve a
+ranking. That bounds
 precision without fixing a direction --- a finer score could resolve a tie block either way --- so a
 frontier number above a local one should not be read as conservative, only as coarsely resolved.
 
@@ -591,7 +601,7 @@ least sure about. The subsections that follow derive each bar and state what it 
 expert-annotated rows; recall at a matched $5\%$ false-alarm budget so no model is read at an operating
 point nobody chose). \textbf{Left:} each in-house route, with the share of the base$\to$hosted gap it
 closes. Tuning the small guard and buying a released one land \emph{below} the best small base;
-scale, seed-ensembling and a fitted stack move up but stall around $40$--$60\%$ of the way, and the
+scale, seed-ensembling and a fitted stack move up but stall at $39$--$58\%$ of the way, and the
 stack additionally needs labelled in-domain data to fit its weights. The committee bar is above the
 best small base but \emph{below its own best member} --- equal weights dilute the strong members.
 \textbf{Right:} the selective cascade of \Cref{sec:frontier-licenses}. Escalating the least-confident
@@ -608,11 +618,13 @@ scored on (\Cref{sec:frontier-licenses}).}
 \label{sec:frontier-size}
 \paragraph{The gain is real and it is large.} The best hosted configuration
 (\FrontierBestName) reaches \FrontierBestTpr{} recall at the matched budget against
-\FrontierBestBaseTpr{} for the strongest Act~I base checkpoint (\FrontierBestBaseName): a
+\FrontierBestBaseTpr{} for the best-performing Act~I base checkpoint \emph{on these rows}
+(\FrontierBestBaseName{} --- the panel's strongest base elsewhere in this report is Qwen3-4B, and
+the two swap places between instruments, which is the report's own thesis): a
 paired row bootstrap on identical rows puts the difference at \FrontierGainOverBase{}
-\FrontierGainOverBaseCI, an interval comfortably clear of zero. Roughly one unsafe prompt in
-ten that the best panel base guard waves through at a $5\%$ alarm budget, the frontier model
-catches. On evidence this is the largest single accuracy gap anywhere in this report, and it is
+\FrontierGainOverBaseCI, an interval comfortably clear of zero. In every hundred unsafe prompts,
+about eleven that the best panel base guard waves through at a $5\%$ alarm budget the frontier
+model catches --- roughly half of the $21.3$ it misses. On evidence this is the largest single accuracy gap anywhere in this report, and it is
 measured on the strongest label tier we have.
 
 \paragraph{And the accuracy is bought at two orders of magnitude.} \Cref{tab:frontier-serving}
@@ -625,7 +637,7 @@ request, that is a budget line and a latency budget, not a rounding error. Three
 appear in no column of either table. Prompts leave the operator's infrastructure, which for the
 mortgage setting of \Cref{sec:actIV} is a GLBA question before it is an engineering one.
 The operating point is only coarsely selectable: a continuous logit margin can be placed at any
-false-alarm budget exactly, while $50$--$65$ distinct integer scores can only land near one.
+false-alarm budget exactly, while $47$--$65$ distinct integer scores can only land near one.
 And the provider's own input filter refused a subset of ExpGuard prompts outright, before the
 guard saw them --- \emph{non-deterministically}, with no row refused under all six configurations
 and most refused under four of six. A guardrail whose input filter intermittently declines to
@@ -687,7 +699,13 @@ vendor gap is an ensemble: we hold \FrontierEnsMembers{} open guards with ExpGua
 bases, SFT seed-ensembles, released purpose-built guards --- so combining them costs no new
 training. Three combination rules, priced against the strongest single open guard
 (\FrontierEnsBestSingle) and using the same rule the ensembling appendix fixes (margins average
-directly within a checkpoint, rank-percentile across them):
+directly within a checkpoint, rank-percentile across them). One convention note, because the same
+object is quoted against two denominators in this section: the percentages \emph{in this paragraph}
+are shares of the distance from that best single member to hosted, which is the question an ensemble
+answers (``does combining beat picking the best?''), while \Cref{fig:gap-ladder} and the closing
+summary measure every route from the best small \emph{base}, which is the question a practitioner
+starts from. The stack is $\FrontierEnsStackShare\%$ of the way on the first denominator and $58\%$
+on the second; both describe the same $\FrontierEnsStack$.
 
 \emph{Seed ensembling helps, reliably and almost for free.} Averaging the five SFT seeds of a
 checkpoint gains \FrontierEnsSeedGain{} matched-budget recall on average, positive for all six
@@ -696,13 +714,14 @@ it: the seed ensemble reaches \FrontierEnsBestSingle{} against $0.830$ for its o
 
 \emph{An unweighted committee actively hurts.} Averaging all \FrontierEnsMembers{} ranks scores
 \FrontierEnsCommittee, \emph{below} the best single member --- $\FrontierEnsCommitteeShare\%$ of
-the distance to hosted, i.e.\ backwards. With members this unequal in quality, equal weights
+the distance from that member to hosted, i.e.\ backwards. With members this unequal in quality, equal weights
 dilute the strong ones; this is the \Cref{tab:frontier} spread doing exactly what one should
 expect.
 
 \emph{Even a fitted stack falls short.} A logistic stack over all \FrontierEnsMembers{} members,
 scored \FrontierEnsFolds-fold out-of-fold so it cannot grade its own homework, reaches
-\FrontierEnsStack{} --- $\FrontierEnsStackShare\%$ of the way to hosted. That is a real gain over
+\FrontierEnsStack{} --- $\FrontierEnsStackShare\%$ of the way from the best single member to hosted
+($58\%$ of the way from the best small base). That is a real gain over
 any single open guard, but it costs \FrontierEnsMembers{} forward passes per request and, less
 obviously, it needs \emph{labelled in-domain data} to fit the weights, which is the asset a team
 reaching for an ensemble usually does not have. Its largest weights also include a
@@ -1239,9 +1258,10 @@ order-of-magnitude serving estimate on this hardware, not a single-request SLA.
 A frontier hosted-API guard is disadvantaged on the two axes that decide an inline deployment, and here
 that is \emph{measured} rather than sketched: \Cref{tab:frontier-serving} reports hosted P50/P99 latency
 and \$/1k taken on the ExpGuard rows themselves at concurrency 200, against the committed batched-A100
-figures in \Cref{tab:latency}. The hosted path adds a network round-trip --- $1{,}553$\,ms median against
-tens of milliseconds --- to \emph{every} request; it bills a per-token fee that scales with traffic; and,
-decisively for a regulated domain, it sends every prompt to a third party.
+figures in \Cref{tab:latency}. The hosted path adds a network round-trip --- \FrontierBestMedianMs\,ms
+median against tens of milliseconds --- to \emph{every} request; it bills a per-token fee that scales
+with traffic; and, decisively for a regulated domain, it sends every prompt to a third party.
+\Cref{tab:deployment} sets the four axes side by side.
 
 That is a case for self-hosting the traffic you can serve well, not for self-hosting everything.
 \Cref{sec:actIII-h2h} shows the accuracy ordering inverts by regime, and \Cref{sec:frontier-licenses}
@@ -1280,7 +1300,12 @@ byte-check. Two entry points, run in \code{papers/unified-report/} and both call
 \code{make regenerate} rewrites the generated artifacts from committed per-row scores, and
 \code{make verify} recomputes them into a scratch directory and asserts byte-identity with the
 committed copies, leaving the tracked tree byte-clean. \code{make verify} is the one a reader should
-run; it exits nonzero unless every covered artifact matches. One limit is measured rather than
+run. Read its exit code carefully, because a clean checkout does not exit $0$: it exits nonzero if any
+covered artifact \emph{mismatches} \textbf{and also} if any artifact could not be checked at all. On an
+ordinary machine the \ReproNEnvGated{} Act~I artifacts fall in the second bucket, so the run ends
+\code{CHECK INCOMPLETE} with a nonzero status while reporting \code{0 failed}; the per-artifact table it
+prints, not the exit code, is what says whether anything drifted. Only the lock-pinned environment
+(\code{docs/reproducibility-environments.md}) can exit $0$. One limit is measured rather than
 assumed: three \emph{upstream} generators are not redirected to the scratch directory and rewrite
 their intermediates in place (the composition pilot's \code{generated/}, and the mortgage
 \code{out\_eval/} and \code{generated/}). The tree still ends byte-clean, because with no drift the
@@ -1306,13 +1331,20 @@ later one quoted ``8 uncovered'' while the harness was emitting eleven.
 
 \paragraph{What the previous revision could not verify, and what changed.} A prior version of this
 section conceded three defects and left them open; all three are now closed, and the concessions are
-kept here so the record shows what the numbers above are worth. \textbf{(i)} Ten generated inputs sat
+kept here so the record shows what the numbers above are worth. \textbf{(i)} Eleven generated inputs sat
 outside the harness --- the adaptation, KL-SFT, ensembling, cascade, mortgage-composition and, most
 seriously, \emph{both} head-to-head outputs, which back the report's most prominent frontier claim. All
 of their emitters read committed analysis JSON, so there was never a reason they could not be checked;
 they are now wired in, and the report no longer says ``every table is byte-checked'' while its headline
-table is uncovered. \textbf{(ii)} Figures were regenerated and never compared. They are now rendered
-into a scratch directory and byte-compared like everything else. \textbf{(iii)} Verification was not
+table is uncovered. \textbf{(ii)} Figures were regenerated and never compared. The eleven plotted
+figures are now rendered into a scratch directory and byte-compared like everything else. Two classes
+sit outside that, and both are named rather than implied: the three Graphviz diagrams
+(\Cref{fig:design,fig:splits,fig:pipeline}) are rendered from committed \code{.dot} sources but are not
+byte-compared, because \code{dot} output is not reproducible across Graphviz builds; and
+\Cref{fig:plane} ships as a committed \code{specialization\_plane.pdf} with \emph{no} generator in
+\code{make\_figures.py} at all, so it is neither regenerated nor compared. It predates the harness, and
+re-deriving it from \Cref{tab:seed-values} --- which holds the twenty points it plots --- is a stated
+gap (\Cref{sec:roadmap}). \textbf{(iii)} Verification was not
 side-effect-free: \code{make reproduce} did not pass \code{-{}-check}, and even the checking path
 rewrote \code{repro\_macros.tex} --- the one artifact it never checked. Emitters now honour a
 \code{PAPER\_GEN\_DIR} redirect, the coverage macro is checked like any other input, and a verification
@@ -1345,6 +1377,16 @@ temperature and the set is intentionally frozen, so only its \emph{evaluation} r
 generation. Raw third-party rows are referenced by pinned identifier + revision + content hash, not
 redistributed.
 
+\paragraph{Benchmark attribution.} \begin{sloppypar}The worked case study of \Cref{fig:casestudy}
+quotes rows of \textbf{MortgageGuardBench \code{v1\_hmda2022}}, Reza Rahimi, PhD (JazzX AI), licensed
+\href{https://creativecommons.org/licenses/by/4.0/}{CC BY 4.0} --- the attribution that licence
+requires, and the same notice the HTML edition carries. Its prompts are synthetic and its labels are
+LLM-judge and policy-card-consistent, \emph{not} SME-adjudicated; its release checksums cover release
+bytes only, not the generator, judge, configuration, or code. The prompts solicit policy violations by
+design, so reuse should treat them as harmful-content samples. The factual grounding is the public HMDA
+2022 loan-level snapshot, a U.S.\ Government work carrying no U.S.\ copyright. Redistribution decisions
+for every source live in \code{benchmarks/registry/distribution.yaml}.\end{sloppypar}
+
 \paragraph{Code and data availability.} \begin{sloppypar}All code, data manifests, generated tables, and
 the frozen benchmark are public at \url{https://github.com/rrahimi-uci/safety-guard-dynamics}. The
 one-command pipeline is \code{papers/unified-report/reproduce.py} (\code{make verify} for a non-mutating
@@ -1353,8 +1395,9 @@ dual-labeled mortgage benchmark ships at \code{mortgage-benchmark/benchmark/v1\_
 SHA-256-checksummed, with a text-free index); the committed per-row guard scores that regenerate every
 number live under \code{artifacts/} (the Act~I/II scores in \code{artifacts/paper\_a\_sft\_v2/}, the
 mortgage baseline in \code{mortgage-benchmark/out\_eval/}, and the finance/health/law scores in
-\code{artifacts/expguard\_external/}); and the figures are built by
-\code{papers/unified-report/figures/make\_figures.py}.\end{sloppypar}
+\code{artifacts/expguard\_external/}); and every figure except \Cref{fig:plane} is built by
+\code{papers/unified-report/figures/make\_figures.py} (that one exception is committed without a
+generator, as \Cref{sec:repro} records).\end{sloppypar}
 
 \section{Conclusion}
 \label{sec:conclusion}

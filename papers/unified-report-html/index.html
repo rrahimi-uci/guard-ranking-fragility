@@ -52,7 +52,7 @@
     "@type": "MediaObject",
     "encodingFormat": "application/pdf",
     "contentUrl": "https://github.com/rrahimi-uci/safety-guard-dynamics/blob/main/papers/unified-report/unified_report.pdf",
-    "description": "PDF edition, including the case-study prompt text withheld from this web edition."
+    "description": "PDF edition: the same report, typeset for print. Nothing is withheld from this web edition — v1_hmda2022 was licensed CC BY 4.0 on 2026-07-27, so the worked case study is published here in full."
   }
 }
 </script>
@@ -192,7 +192,7 @@ transfer moves <span class="math inline">\(-0.06\)</span>: positive for the weak
 equal alarm budget the reversal is sharper: at each base guard’s own false-alarm rate, tuned-guard
 transfer recall falls <span class="math inline">\(0.517\!\rightarrow\!0.217\)</span> and is worse on all four
 checkpoints. That is an ROC-point comparison at a common budget, not a deployable threshold
-(). The
+(<a class="xref" href="#sec:matched-fpr-limits">Section B.6</a>). The
 claim is therefore not that fine-tuning always harms transfer; it is that a represented-benchmark gain,
 by itself, does not establish transfer.</p>
 <p>Two extensions and one remedy bound that result. A directional, non-confirmatory extension to
@@ -207,7 +207,7 @@ source set widens to [-0.019, +0.220].</p>
 <p>The resulting workflow is simple: compare every tune with its own base, at a matched alarm
 budget, on represented <em>and</em> held-out sources; then apply a domain-specific gate and recalibrate.
 A frozen, dual-labeled mortgage benchmark illustrates the looks-safe-but-non-compliant stratum a general
-safety score cannot identify. Evidence tiers are never pooled (); one command
+safety score cannot identify. Evidence tiers are never pooled (<a class="xref" href="#tab:glance">Table 1</a>); one command
 byte-checks 27 of 31 generated artifacts from committed per-row scores.</p>
 
     </section>
@@ -240,8 +240,10 @@ overlap, so the claim is that the <em>leaderboard’s answer moves</em>, not tha
 <span class="math inline">\(5\%\)</span> alarm budget, so right of zero is a local win: the ordering <em>reverses</em> between traffic a
 training manifest names and traffic it does not (<a class="xref" href="#sec:actIII-h2h">Section 7.4</a>). The +0.083 bar
 (sources your manifest names) is a <em>post-hoc</em> descriptive summary over 3
-purposively chosen corpora, and resampling that source set gives [-0.019, +0.220]; the
-+0.109 bar below it is a paired comparison on external expert-annotated rows. Two
+purposively chosen corpora, and resampling that source set gives [-0.019, +0.220]; the bar
+below it — drawn <em>left</em> of zero, because on this axis a hosted win is negative — is the hosted
+model leading the best small base by +0.109 in a paired comparison on external
+expert-annotated rows. Two
 different comparisons on different data — reported side by side, never pooled. Every value is parsed from the same committed
 artifacts the tables <code>\input</code>, so no panel can drift from its row.</figcaption>
 </figure>
@@ -258,7 +260,7 @@ LLM against written policy cards, <em>not</em> SME-adjudicated. (<em>Prereg.</em
 row; it is not a fourth pool.) Intervals are bootstrap ranges conditional on the fixed panel, not
 significance tests. Rows Q1a and Q4 are read at a matched false-alarm budget <em>located on the
 evaluated negatives</em>: they compare ranking quality at a common alarm rate — ROC points — and are not
-deployable thresholds (<span class="xref-missing">Section</span>).</figcaption><div class="tablescroll"><table class="plaintable" style="width:86%;">
+deployable thresholds (<a class="xref" href="#sec:matched-fpr-limits">Section B.6</a>).</figcaption><div class="tablescroll"><table class="plaintable" style="width:86%;">
 
 <colgroup>
 <col style="width: 18%"/>
@@ -318,7 +320,7 @@ represented cost -0.034 (LCB -0.062) <strong>fails</strong> the <span class="mat
 <td style="text-align: left;">Zero-shot ranking of a dual-labeled mortgage policy label <span class="math inline">\(D\)</span> (994-row benchmark, scored on its
 146-row public-test split) and of three external verticals (2,275 rows)</td>
 <td style="text-align: left;"><strong>No.</strong> AP<span class="math inline">\(\cdot\)</span>D <span class="math inline">\(0.67\)</span>–<span class="math inline">\(0.85\)</span> against a <span class="math inline">\(0.555\)</span> chance floor, and the guard ordering does
-not carry across the two arms (mortgage does not separate the panel at all)</td>
+not carry across the two arms (on mortgage, five of the six pairwise AP<span class="math inline">\(\cdot\)</span>D intervals overlap)</td>
 <td style="text-align: left;">LLM-judge; external</td>
 <td style="text-align: left;">§<a data-reference="sec:actIV" data-reference-type="ref" href="#sec:actIV">6</a></td>
 </tr>
@@ -357,7 +359,7 @@ these failures <em>before</em> deployment: when to fine-tune, when to instead <e
 general guard is simply not enough for a regulated domain, and when to stop self-hosting and escalate.
 The front spread answers all four already; the sections below derive them.</p>
 <p>Converting a general instruction model into a safety guard with a short parameter-efficient fine-tune
-<sup class="cite">[<a href="#bib-elesedy2024loraguard">22</a>]</sup> and reporting its score on a public suite <sup class="cite">[<a href="#bib-bassani2024guardbench">12</a>]</sup>
+<sup class="cite">[<a href="#bib-elesedy2024loraguard">15</a>]</sup> and reporting its score on a public suite <sup class="cite">[<a href="#bib-bassani2024guardbench">4</a>]</sup>
 is now standard. A post-tuning leaderboard number, however, conflates two different things: raising the
 score on benchmark <em>sources represented in training</em> versus improving <em>transfer</em> to datasets
 the guard never saw. This report is organized around one thesis — <em>benchmark gains do not
@@ -402,10 +404,10 @@ Everything technical is defined once, from the ground up, in <a class="xref" hre
 </div></div>
 <h4 class="runin" id="what-is-new-here.">What is new here.</h4>
 <p>Prior work already measures safety degradation of the same checkpoint
-before and after fine-tuning <sup class="cite">[<a href="#bib-hsiung2025guardrails">31</a>]</sup>, policy-overfitting of guardrails
-<sup class="cite">[<a href="#bib-liu2026domaingeneralizable">44</a>]</sup>, and that a plain instruction model can rival a purpose-built guard
-<sup class="cite">[<a href="#bib-bassani2024guardbench">12</a>]</sup>; in-distribution versus out-of-distribution blocks are also standard in
-guard evaluations <sup class="cite">[<a href="#bib-inan2023llamaguard">34</a>, <a href="#bib-han2024wildguard">29</a>, <a href="#bib-elesedy2024loraguard">22</a>]</sup>. What is missing is a
+before and after fine-tuning <sup class="cite">[<a href="#bib-hsiung2025guardrails">25</a>]</sup>, policy-overfitting of guardrails
+<sup class="cite">[<a href="#bib-liu2026domaingeneralizable">37</a>]</sup>, and that a plain instruction model can rival a purpose-built guard
+<sup class="cite">[<a href="#bib-bassani2024guardbench">4</a>]</sup>; in-distribution versus out-of-distribution blocks are also standard in
+guard evaluations <sup class="cite">[<a href="#bib-inan2023llamaguard">27</a>, <a href="#bib-han2024wildguard">23</a>, <a href="#bib-elesedy2024loraguard">15</a>]</sup>. What is missing is a
 strictly <em>paired</em> guard-classifier estimand that holds checkpoint, manifest, seeds and scorer fixed
 while splitting the change into represented-source versus dataset-held-out transfer with per-checkpoint
 intervals from a family-aware hierarchical bootstrap — and then pushes that instrument to a composition
@@ -457,24 +459,27 @@ row does what this report does end to end</em>, but almost every column has a ro
 better, and three of our components — routing, fairness instrumentation, and adapting a released
 guard — have direct prior art we do not improve on. The full five-literature review is
 <a class="xref" href="#sec:related">Section A</a>.</p>
-<p><sup class="cite">[<a href="#bib-lee2025saferoute">40</a>]</sup> is the closest work to our cascade: it <em>learns</em> when to route from a small
+<p><a class="citet" href="#bib-lee2025saferoute">Lee et al.</a><sup class="cite">[<a href="#bib-lee2025saferoute">33</a>]</sup> is the closest work to our cascade: it <em>learns</em> when to route from a small
 guard to a large one and compares against uncertainty baselines, which is exactly the comparison
-<a class="xref" href="#sec:frontier-licenses">Section 7.5</a> proposes as future work and does not run. <sup class="cite">[<a href="#bib-achara2025watchdogs">2</a>]</sup> audit
+<a class="xref" href="#sec:frontier-licenses">Section 7.5</a> proposes as future work and does not run. <a class="citet" href="#bib-achara2025watchdogs">Achara and Chhabra</a><sup class="cite">[<a href="#bib-achara2025watchdogs">1</a>]</sup> audit
 deployed moderation classifiers for fairness and perturbation robustness, an instrument strictly more
-developed than our protected-pair gate. <sup class="cite">[<a href="#bib-cisnerosvelarde2026policy">17</a>]</sup> and <sup class="cite">[<a href="#bib-choi2026compass">15</a>]</sup>
+developed than our protected-pair gate. <a class="citet" href="#bib-cisnerosvelarde2026policy">Cisneros-Velarde</a><sup class="cite">[<a href="#bib-cisnerosvelarde2026policy">10</a>]</sup> and <a class="citet" href="#bib-choi2026compass">Choi et al.</a><sup class="cite">[<a href="#bib-choi2026compass">8</a>]</sup>
 both benchmark natural-language requests against explicit written policies — COMPASS across eight
 organization-specific scenarios — which is the construct our mortgage <span class="math inline">\(D\)</span> label reaches for with
-LLM-judge rather than human labels. <sup class="cite">[<a href="#bib-zhao2026mlbenchguard">55</a>]</sup> derive regulation-grounded
+LLM-judge rather than human labels. <a class="citet" href="#bib-zhao2026mlbenchguard">Zhao et al.</a><sup class="cite">[<a href="#bib-zhao2026mlbenchguard">55</a>]</sup> derive regulation-grounded
 multilingual data and train 1.5B/7B policy-conditioned guards, so “policy grounding” is not ours either. Most
-directly, <sup class="cite">[<a href="#bib-hossain2026safetygeometry">30</a>]</sup> study ordinary domain fine-tuning of LlamaGuard, WildGuard
+directly, <a class="citet" href="#bib-hossain2026safetygeometry">Hossain et al.</a><sup class="cite">[<a href="#bib-hossain2026safetygeometry">24</a>]</sup> study ordinary domain fine-tuning of LlamaGuard, WildGuard
 and Granite Guardian — the same manoeuvre as <a class="xref" href="#sec:adaptation">Section 4</a>, on an overlapping set of released
 guards.</p>
-<figure class="tablewrap" data-float="Table 2" id="tab:closest"><figcaption><span class="floatnum">Table 2.</span> Closest work by component. = the work reports it; = it does not;
+<figure class="tablewrap" data-float="Table 2" id="tab:closest"><figcaption><span class="floatnum">Table 2.</span> Closest work by component. ✓ = the work reports it; ✗ = it does not;
 <span class="math inline">\(\circ\)</span> = partially. “Paired base<span class="math inline">\(\to\)</span>tune” means the same checkpoint measured before and after on
 identical rows; “source-held-out” means transfer measured at the <em>source</em> level, not the row
 level; “matched-FPR” means metrics compared at a common false-alarm budget rather than at each
-model’s self-chosen operating point. The rightmost two columns are where this report’s remaining
-claim lives; the columns to their left are where it does not.</figcaption><div class="tablescroll"><table class="plaintable">
+model’s self-chosen operating point. The <em>leftmost three</em> columns are where this report’s
+remaining claim lives — it is the only row with all three, and their conjunction is the estimand
+<a class="xref" href="#sec:actI">Section 3</a> defines. Routing, policy grounding and the fairness construct are where it does not:
+each carries a <span class="math inline">\(\circ\)</span> against a row that does it properly. Eight works are listed — the six
+discussed above plus the two general-guard baselines already cited in this section.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
 <tr>
@@ -500,103 +505,103 @@ claim lives; the columns to their left are where it does not.</figcaption><div c
 <td style="text-align: center;">domains</td>
 </tr>
 <tr>
-<td style="text-align: left;"><sup class="cite">[<a href="#bib-lee2025saferoute">40</a>]</sup></td>
-<td style="text-align: center;"></td>
+<td style="text-align: left;"><a class="citet" href="#bib-lee2025saferoute">Lee et al.</a><sup class="cite">[<a href="#bib-lee2025saferoute">33</a>]</sup></td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"> learned</td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓ learned</td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;">public</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
 </tr>
 <tr>
-<td style="text-align: left;"><sup class="cite">[<a href="#bib-achara2025watchdogs">2</a>]</sup></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: left;"><a class="citet" href="#bib-achara2025watchdogs">Achara and Chhabra</a><sup class="cite">[<a href="#bib-achara2025watchdogs">1</a>]</sup></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;">public</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
 </tr>
 <tr>
-<td style="text-align: left;"><sup class="cite">[<a href="#bib-cisnerosvelarde2026policy">17</a>]</sup></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: left;"><a class="citet" href="#bib-cisnerosvelarde2026policy">Cisneros-Velarde</a><sup class="cite">[<a href="#bib-cisnerosvelarde2026policy">10</a>]</sup></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
 <td style="text-align: center;">human</td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><sup class="cite">[<a href="#bib-choi2026compass">15</a>]</sup></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: left;"><a class="citet" href="#bib-choi2026compass">Choi et al.</a><sup class="cite">[<a href="#bib-choi2026compass">8</a>]</sup></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
 <td style="text-align: center;">human</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
 </tr>
 <tr>
-<td style="text-align: left;"><sup class="cite">[<a href="#bib-zhao2026mlbenchguard">55</a>]</sup></td>
-<td style="text-align: center;"></td>
+<td style="text-align: left;"><a class="citet" href="#bib-zhao2026mlbenchguard">Zhao et al.</a><sup class="cite">[<a href="#bib-zhao2026mlbenchguard">55</a>]</sup></td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
 <td style="text-align: center;">mixed</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
 </tr>
 <tr>
-<td style="text-align: left;"><sup class="cite">[<a href="#bib-hossain2026safetygeometry">30</a>]</sup></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: left;"><a class="citet" href="#bib-hossain2026safetygeometry">Hossain et al.</a><sup class="cite">[<a href="#bib-hossain2026safetygeometry">24</a>]</sup></td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;">public</td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><sup class="cite">[<a href="#bib-elesedy2024loraguard">22</a>]</sup></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: left;"><a class="citet" href="#bib-elesedy2024loraguard">Elesedy et al.</a><sup class="cite">[<a href="#bib-elesedy2024loraguard">15</a>]</sup></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;">public</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
 </tr>
 <tr>
-<td style="text-align: left;"><sup class="cite">[<a href="#bib-hsiung2025guardrails">31</a>]</sup></td>
-<td style="text-align: center;"></td>
+<td style="text-align: left;"><a class="citet" href="#bib-hsiung2025guardrails">Hsiung et al.</a><sup class="cite">[<a href="#bib-hsiung2025guardrails">25</a>]</sup></td>
+<td style="text-align: center;">✓</td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
 <td style="text-align: center;">public</td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>This report</strong></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span> <em>margin</em></td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span> <em>card</em></td>
 <td style="text-align: center;">LLM-judge</td>
 <td style="text-align: center;"><span class="math inline">\(\circ\)</span> <em>pairs</em></td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✓</td>
 </tr>
 </tbody>
 </table></div></figure>
@@ -654,10 +659,10 @@ zero-shot — so “base” throughout means “before the guard fine-tune,” n
 <em>Supervised fine-tuning</em> (SFT) then trains that model on labeled examples: for each training
 prompt we know the correct verdict, and we nudge the model to raise the probability it assigns to that
 verdict word. Rather than update all of the model’s weights, we use <em>LoRA</em> (Low-Rank Adaptation)
-<sup class="cite">[<a href="#bib-hu2021lora">32</a>]</sup>: we freeze the original weights and insert a small number of extra trainable
+<sup class="cite">[<a href="#bib-hu2021lora">26</a>]</sup>: we freeze the original weights and insert a small number of extra trainable
 parameters (a low-rank “adapter”) into selected weight matrices. LoRA is cheap, fast, and reversible
 — you can ship the tiny adapter on top of the frozen base — and it is the standard way guards are
-built in practice <sup class="cite">[<a href="#bib-elesedy2024loraguard">22</a>]</sup>. The precise adapter size and which matrices it touches
+built in practice <sup class="cite">[<a href="#bib-elesedy2024loraguard">15</a>]</sup>. The precise adapter size and which matrices it touches
 are part of the frozen recipe in <a class="xref" href="#sec:setup">Section B</a>.</p>
 <h2 data-num="2.3" id="sec:bg-ap"><span class="secnum">2.3</span>Average precision, macro-AP, and the accuracy trap</h2>
 <p>Because <span class="math inline">\(s(x)\)</span> is a continuous score, we can grade a guard <em>without</em> committing to a cutoff, by
@@ -706,7 +711,7 @@ it trades two error rates against each other: the <em>true-positive rate</em> (T
 fraction of genuinely unsafe prompts the guard flags, and the <em>false-positive rate</em> (FPR) is the
 fraction of genuinely safe prompts it wrongly flags. Raising the cutoff lowers both; lowering it raises
 both. Before thresholding we <em>calibrate</em>: we fit a single positive <em>temperature</em> that rescales
-the logits (temperature scaling <sup class="cite">[<a href="#bib-guo2017calibration">27</a>]</sup>) so the derived probabilities in
+the logits (temperature scaling <sup class="cite">[<a href="#bib-guo2017calibration">21</a>]</sup>) so the derived probabilities in
 <a class="xref" href="#eq:prob">Equation 2</a> are better behaved. Crucially, both the temperature and the cutoff are fit only on a
 separate held-back <em>calibration</em> split — never on the transfer or stress data we report on — so
 the threshold is not quietly tuned to the test.</p>
@@ -777,7 +782,7 @@ require the models to be weight-compatible. The exact composition rule is given 
 break the law. The mortgage vocabulary below is what the benchmark encodes.</p>
 <div class="callout callout-background"><div class="callout-title">Mortgage terms, in plain words</div><div class="callout-body">
 
-<p><strong>HMDA</strong> — the U.S. Home Mortgage Disclosure Act <sup class="cite">[<a href="#bib-hmda2022">1</a>]</sup>: lenders publicly report
+<p><strong>HMDA</strong> — the U.S. Home Mortgage Disclosure Act <sup class="cite">[<a href="#bib-hmda2022">16</a>]</sup>: lenders publicly report
 loan-level records (purpose, amount band, action taken, denial reason), which we use only as
 <em>de-identified, banded fact sheets</em>, never verbatim. <strong>Fair lending</strong> bars credit
 discrimination on protected traits. <strong>Redlining</strong> is refusing or worsening credit across a whole
@@ -1297,7 +1302,7 @@ point plus single-class stress diagnostics (lower). Generated from the lock-boun
 </tr>
 </tbody>
 </table></div></figure>
-<figure class="tablewrap" data-float="Table 6" id="tab:matchedfpr"><figcaption><span class="floatnum">Table 6.</span> <strong>The same operating point read at an equal false-alarm budget.</strong> <a class="xref" href="#tab:sensitivity">Table 5</a> compares recalls at each guard’s <em>own</em> calibrated threshold, where the tuned guard alarms far more often (17.0% vs 4.3% pooled transfer FPR) — so it buys recall with alarms, and the two recalls are not comparable. Here each SFT seed is instead thresholded so its pooled transfer false-alarm rate <em>matches its own base’s</em> (the budget column), which makes the recalls directly comparable. At an equal budget the tuned guard is worse on <strong>all four</strong> checkpoints and on both instruments: transfer recall 0.517<span class="math inline">\(\rightarrow\)</span>0.217 (-0.300) and <code>HarmBench</code> recall 0.780<span class="math inline">\(\rightarrow\)</span>0.203 (-0.577). The direction is stable across the three quantile conventions we tried (panel-mean transfer delta -0.300 to -0.290). Same committed rows and same scorer as <a class="xref" href="#tab:sensitivity">Table 5</a>; only the threshold rule changes, so this needs no GPU and is byte-checked by <code>make verify</code>. <strong>This is a retrospective ROC point, not a deployable threshold</strong>: the quantile is read off the <em>same</em> labelled negatives the recall is then measured on, so a production system without labels could not place it. Read the row as “recall at an empirical matched-FPR ROC point”, and see <span class="xref-missing">Section</span> for what an operational version would require.</figcaption><div class="tablescroll"><table class="plaintable">
+<figure class="tablewrap" data-float="Table 6" id="tab:matchedfpr"><figcaption><span class="floatnum">Table 6.</span> <strong>The same operating point read at an equal false-alarm budget.</strong> <a class="xref" href="#tab:sensitivity">Table 5</a> compares recalls at each guard’s <em>own</em> calibrated threshold, where the tuned guard alarms far more often (17.0% vs 4.3% pooled transfer FPR) — so it buys recall with alarms, and the two recalls are not comparable. Here each SFT seed is instead thresholded so its pooled transfer false-alarm rate <em>matches its own base’s</em> (the budget column), which makes the recalls directly comparable. At an equal budget the tuned guard is worse on <strong>all four</strong> checkpoints and on both instruments: transfer recall 0.517<span class="math inline">\(\rightarrow\)</span>0.217 (-0.300) and <code>HarmBench</code> recall 0.780<span class="math inline">\(\rightarrow\)</span>0.203 (-0.577). The direction is stable across the three quantile conventions we tried (panel-mean transfer delta -0.300 to -0.290). Same committed rows and same scorer as <a class="xref" href="#tab:sensitivity">Table 5</a>; only the threshold rule changes, so this needs no GPU and is byte-checked by <code>make verify</code>. <strong>This is a retrospective ROC point, not a deployable threshold</strong>: the quantile is read off the <em>same</em> labelled negatives the recall is then measured on, so a production system without labels could not place it. Read the row as “recall at an empirical matched-FPR ROC point”, and see <a class="xref" href="#sec:matched-fpr-limits">Section B.6</a> for what an operational version would require.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
 <tr>
@@ -1375,8 +1380,9 @@ raises more false alarms on what it didn’t, and misses more hard attacks</em>.
 on represented sources would advertise only the first of these three.</p>
 <p>And the apparent consolation — “at least transfer recall went up” — does not survive a fair
 comparison. That <span class="math inline">\(+0.06\)</span> was bought with alarms. Give the tuned guard the same alarm budget as its own
-base and its transfer recall <em>halves</em> (0.517 to 0.217) on all four
-checkpoints. The threshold that looked safe in calibration is not the threshold you get in the field —
+base and its transfer recall drops on all four checkpoints — the panel mean roughly <em>halves</em>
+(0.517 to 0.217), and per checkpoint the fall runs from <span class="math inline">\(39\%\)</span> of the
+base’s recall (Qwen2.5-1.5B) to <span class="math inline">\(72\%\)</span> of it (SmolLM3-3B). The threshold that looked safe in calibration is not the threshold you get in the field —
 a theme Acts II and III return to.</p>
 
 </div></div>
@@ -1518,7 +1524,7 @@ a partial re-order, not a wholesale winner-flip — but it is enough that a sing
 guards’ apparent order at deployment prevalence. Reporting each headline guard as a curve <span class="math inline">\(\mathrm{AP}(\pi_+)\)</span>
 rather than a single balanced number is a zero-cost recompute (roadmap), and it is the honest way to state a
 deployment precision.</p>
-<div class="callout callout-editor"><div class="callout-title">What this establishes</div><div class="callout-body">
+<div class="callout callout-result"><div class="callout-title">What this establishes</div><div class="callout-body">
 
 <p><strong>Evidence.</strong> Represented AP <span class="math inline">\(+0.3234\)</span> (LCB <span class="math inline">\(+0.2725\)</span>) vs. transfer <span class="math inline">\(-0.0589\)</span> (UCB <span class="math inline">\(-0.0362\)</span>);
 specialization in <span class="math inline">\(15/20\)</span> seeds (<a class="xref" href="#tab:primary">Table 3</a>). A base-anchored
@@ -1529,7 +1535,8 @@ represented <em>and</em> held-out sets, and if you must SFT while caring about O
 — but as a dial, not a default: the preregistered test in <a class="xref" href="#sec:adaptation">Section 4</a> finds its
 represented-source cost fails the non-inferiority margin, and it leaves the two hardest specializers below
 their own base on transfer.</p>
-<p><strong>Boundary.</strong> Retrospective on a fixed four-checkpoint panel with an inspected manifest (overlap audit pending); a
+<p><strong>Boundary.</strong> Retrospective on a fixed four-checkpoint panel with an inspected manifest (the lexical overlap audit is
+run and clean; the embedding-space check is not — <a class="xref" href="#sec:decontamination">Section E.1</a>); a
 description of this recipe on these runs, not a population or causal law.</p>
 
 </div></div>
@@ -1762,7 +1769,7 @@ every cell and no adaptation can move it. (An earlier revision said “one uniqu
 parquet holds three distinct values — though the consequence is the same, since the constancy that
 makes the cell uninformative is <em>within</em> each condition.) <strong>The cause is not a
 property of that model.</strong> It was two independent harness bugs, diagnosed after this study was scored
-and described in full in <span class="xref-missing">Section</span>: the native template rendered its conversation
+and described in full in <a class="xref" href="#sec:llama-guard-harness">Section 7.2</a>: the native template rendered its conversation
 wrapper with the user turn missing while still satisfying every marker, and the verdict was read at a
 prompt position that carries the distribution over a two-newline prefix rather than over
 <code>safe</code>/<code>unsafe</code>. Its output head is intact and both decision tokens carry full-norm rows. An
@@ -2210,7 +2217,7 @@ significance claim (all numbers are descriptive contrasts on a fixed four-checkp
 manifest inspected during development). Finally, we compose only the SFT adapter here; whether the same
 operator recovers transfer for guards tuned with <em>other objectives</em> (e.g. preference optimization)
 is left open.</p>
-<div class="callout callout-editor"><div class="callout-title">What this establishes</div><div class="callout-body">
+<div class="callout callout-result"><div class="callout-title">What this establishes</div><div class="callout-body">
 
 <p><strong>Evidence.</strong> Output-space base<span class="math inline">\(+\)</span>SFT averaging recovers transfer relative to SFT (<span class="math inline">\(+0.076\)</span>) and
 beats an equal-cost SFT<span class="math inline">\(+\)</span>SFT ensemble (<a class="xref" href="#tab:sftsft">Table 11</a>), so the gain is the base’s, not generic
@@ -2240,7 +2247,7 @@ label for this. That request is written blatantly on purpose, to fix the idea; t
 payload is quieter, and <a class="xref" href="#fig:casestudy">Figure 8</a> works one real row all the way through — the request
 verbatim, the cards it triggers, and where each of the four zero-shot guards ranks it against the
 benign traffic in the same split. To measure whether guards catch it, we built a fixed, HMDA-grounded benchmark whose
-unit is one incoming request and whose defining move is to carry <em>two</em> independent labels —
+unit is one incoming request and whose defining move is to carry <em>two separately assigned</em> labels —
 one for ordinary safety, one for mortgage-policy compliance — so that the “looks-safe-but-non-compliant”
 stratum can be isolated and scored on its own. Everything below is a <em>measuring stick</em>: the
 labels come from an LLM judge reading written policy cards, not from compliance lawyers, so the
@@ -2313,8 +2320,8 @@ requests identical in every slot — same fact sheet, same role, same ask — ex
 protected-class mention, both members benign (G0/D0, so a fair
 guard must PASS both), sharing a <code>pair_id</code>. The release contains <strong>39 protected pairs (78 rows)</strong>, of which 38 have both arms inside one split
 (see the correction above). This is the established <em>counterfactual token fairness</em> construction
-<sup class="cite">[<a href="#bib-garg2019counterfactual">24</a>, <a href="#bib-kusner2017counterfactual">39</a>]</sup>, and it reframes the manipulation of
-<sup class="cite">[<a href="#bib-bowen2024mortgage">33</a>]</sup> — who varied
+<sup class="cite">[<a href="#bib-garg2019counterfactual">18</a>, <a href="#bib-kusner2017counterfactual">32</a>]</sup>, and it reframes the manipulation of
+<a class="citet" href="#bib-bowen2024mortgage">Bowen III et al.</a><sup class="cite">[<a href="#bib-bowen2024mortgage">6</a>]</sup> — who varied
 race on real applications to audit an <em>underwriter</em> — as a guard <em>invariance</em> test: we do
 not ask whether the decision is right, only whether the guard’s <em>score</em> moves when nothing but the
 protected mention changes.</p>
@@ -2325,7 +2332,7 @@ meta-descriptive placeholder</strong> — “I’m Muslim” versus “I’m an 
 trait” — a seven-word substitution rather than one token. Only the 21 single-token pairs meet the
 strict minimal-pair definition; the placeholder arm additionally risks changing what a reader (or a
 guard) takes the request to be, the known failure mode of counterfactual token tests
-<sup class="cite">[<a href="#bib-garg2019counterfactual">24</a>]</sup>. We report both arms and flag which pairs drive any result.</p>
+<sup class="cite">[<a href="#bib-garg2019counterfactual">18</a>]</sup>. We report both arms and flag which pairs drive any result.</p>
 <p>The gate is a single number, the mean absolute within-pair score gap:</p>
 <div class="eqwrap" id="eq:delta-context"><p><span class="math display">\[\Delta_{\mathrm{context}} \;=\; \frac{1}{|\mathcal{P}|}\sum_{(a,b)\in\mathcal{P}} \big|\,p(x_a)-p(x_b)\,\big|,\]</span></p><span class="eqnum">(7)</span></div>
 
@@ -2366,8 +2373,8 @@ from <a class="xref" href="#eq:delta-context">Equation 7</a>. Because the G1/D0
 composed label <span class="math inline">\(\text{final}=G\lor D\)</span> equals <span class="math inline">\(D\)</span> row-for-row; consequently <span class="math inline">\(\text{AP}\cdot\text{final}\equiv
 \text{AP}\cdot D\)</span> — the final column in <a class="xref" href="#tab:baseline">Table 14</a> duplicates <span class="math inline">\(\text{AP}\cdot D\)</span> by construction,
 not by coincidence. We score the four base instruction checkpoints from the companion study
-<sup class="cite">[<a href="#bib-rahimi2026benchmark">48</a>]</sup> — the same panel used throughout this report — <em>zero-shot</em>, i.e. exactly as shipped, driven only by a prompt with no mortgage-specific fine-tuning. Gated off-the-shelf
-guards <sup class="cite">[<a href="#bib-inan2023llamaguard">34</a>, <a href="#bib-han2024wildguard">29</a>]</sup> were not scored in this earlier mortgage run (their
+<sup class="cite">[<a href="#bib-rahimi2026benchmark">49</a>]</sup> — the same panel used throughout this report — <em>zero-shot</em>, i.e. exactly as shipped, driven only by a prompt with no mortgage-specific fine-tuning. Gated off-the-shelf
+guards <sup class="cite">[<a href="#bib-inan2023llamaguard">27</a>, <a href="#bib-han2024wildguard">23</a>]</sup> were not scored in this earlier mortgage run (their
 licenses had not yet been accepted; they were accepted in time for the analysis-preregistered adaptation study of
 <a class="xref" href="#sec:adaptation">Section 4</a>, which does score both), and a domain-fine-tuned arm is future work.</p>
 <h4 class="runin" id="results.">Results.</h4>
@@ -2397,8 +2404,10 @@ Qwen2.5-1.5B’s <span class="math inline">\(0.84\)</span> and roughly <span cla
 <span class="math inline">\(\Delta_{\mathrm{context}} = 0.183\)</span> is carried almost entirely by one pair: its three per-pair gaps are
 <span class="math inline">\(0.018\)</span>, <span class="math inline">\(0.022\)</span> and <span class="math inline">\(0.508\)</span>, and the <span class="math inline">\(0.508\)</span> pair is <code>PAIR-0020#1</code>, a placeholder contrast
 (“Muslim” vs. “an applicant with no stated protected trait”), not a single-token swap. Restricted to
-the two genuine single-token pairs its gap is <span class="math inline">\(0.020\)</span> — below SmolLM2-1.7B’s <span class="math inline">\(0.024\)</span>, i.e. nominally
-the <em>most</em> invariant of the unsaturated guards. Exhaustive enumeration of all <span class="math inline">\(27\)</span> three-pair
+the two genuine single-token pairs its gap is <span class="math inline">\(0.020\)</span> — inside the unsaturated guards’ band rather than
+an outlier above it (SmolLM3-3B <span class="math inline">\(0.012\)</span>, SmolLM2-1.7B <span class="math inline">\(0.024\)</span>; the <span class="math inline">\(\Delta^{\mathrm{1tok}}\)</span> column of
+<a class="xref" href="#tab:baseline">Table 14</a>), so the apparent contrast is carried by the one non-minimal pair and not by the
+guard. Exhaustive enumeration of all <span class="math inline">\(27\)</span> three-pair
 resamples puts <span class="math inline">\(8/27\)</span> of the mean at <span class="math inline">\(0.018\)</span>–<span class="math inline">\(0.022\)</span>, so the earlier reading that the gap was “large
 enough to stand out even against the three-pair noise” does not hold. What remains is the instrument
 lesson, and it is the useful one: <strong>a probability-scale counterfactual gap on three pairs, one of
@@ -2605,8 +2614,8 @@ re-decontaminating against the v2 general sources, and adding a domain-fine-tune
 </tbody>
 </table></div></figure>
 <figure class="figwrap" data-float="Figure 9" data-latex-placement="htbp" id="fig:quadrant">
-<img alt="Figure 9. The mortgage benchmark’s two independent labels \(G\) (general safety) \(\times\) \(D\) (mortgage policy) and the 994-row quadrant counts. The load-bearing G0/D1 cell (re" loading="lazy" src="assets/fig/fig_mortgage_quadrant.svg"/>
-<figcaption><span class="floatnum">Figure 9.</span> The mortgage benchmark’s two independent labels <span class="math inline">\(G\)</span> (general safety) <span class="math inline">\(\times\)</span> <span class="math inline">\(D\)</span> (mortgage policy) and the 994-row quadrant counts. The load-bearing <strong>G0/D1</strong> cell (reads safe, is a violation) is the largest non-benign block; <strong>G1/D0</strong> is empty (a stated limitation).</figcaption>
+<img alt="Figure 9. The mortgage benchmark’s two separately assigned labels \(G\) (general safety) \(\times\) \(D\) (mortgage policy) and the 994-row quadrant counts. The load-bearing G0/D1 " loading="lazy" src="assets/fig/fig_mortgage_quadrant.svg"/>
+<figcaption><span class="floatnum">Figure 9.</span> The mortgage benchmark’s two <em>separately assigned</em> labels <span class="math inline">\(G\)</span> (general safety) <span class="math inline">\(\times\)</span> <span class="math inline">\(D\)</span> (mortgage policy) and the 994-row quadrant counts. The load-bearing <strong>G0/D1</strong> cell (reads safe, is a violation) is the largest non-benign block; <strong>G1/D0</strong> is empty (a stated limitation), so in v1 the two labels are <em>nested</em>, not independent: every <span class="math inline">\(G\)</span>-positive row is also <span class="math inline">\(D\)</span>-positive.</figcaption>
 </figure>
 <figure class="tablewrap" data-float="Table 14" id="tab:baseline"><figcaption><span class="floatnum">Table 14.</span> Baseline zero-shot instruction guards on the frozen benchmark (<code>public_test</code>, 146 rows: 75 G0/D1, 6 G1, 3 protected pairs). AP is recomputed in the repo canonical environment from the committed per-row scores (exactly reproducible); the AP<span class="math inline">\(\cdot\)</span>D column carries a 2,000-resample bootstrap 95% CI. Threshold-free AP<span class="math inline">\(\cdot\)</span>D is moderate (0.67–0.85) against a <em>chance floor of 0.555</em> (81/146 rows are <span class="math inline">\(D\)</span>-positive), i.e. only 0.12–0.30 above chance; AUROC<span class="math inline">\(\cdot\)</span>D is the base-rate-free companion. Five of the six pairwise AP<span class="math inline">\(\cdot\)</span>D CI comparisons overlap (only Qwen3-4B vs. SmolLM2-1.7B separates), so we do not rank guards by it. <span class="math inline">\(G\)</span> and <span class="math inline">\(D\)</span> are also not independent in v1: the G1/D0 cell is empty, so <span class="math inline">\(G\)</span> is nested inside <span class="math inline">\(D\)</span>. <span class="math inline">\(\Delta_{\mathrm{context}}\)</span> is the mean absolute protected-pair gap on the <em>probability</em> scale (lower is more invariant); <span class="math inline">\(\Delta^{\mathrm{margin}}\)</span> is the same gap on the raw margin <span class="math inline">\(z_{\text{unsafe}}-z_{\text{safe}}\)</span> (log-odds, scale-free), which exposes saturation — Qwen3-4B’s <span class="math inline">\(0.000\)</span> becomes <span class="math inline">\(0.80\)</span>, the second largest on the panel; <span class="math inline">\(\Delta^{\mathrm{1tok}}\)</span> restricts to pairs that swap a single token (2 of 3 here; 18 of the 39 release pairs use a multi-word placeholder arm instead), which removes Qwen2.5-1.5B’s apparent outlier. All three rest on only <span class="math inline">\(n=3\)</span> pairs, so they are read as a direction, not a calibrated fairness estimate — and on this split they do not rank guards. AP<span class="math inline">\(\cdot\)</span>final equals AP<span class="math inline">\(\cdot\)</span>D on this frozen set because the G1/D0 cell is empty (every <span class="math inline">\(G\)</span>-positive row is also <span class="math inline">\(D\)</span>-positive), so the composed label reduces to <span class="math inline">\(D\)</span>. The fixed 5%-FPR operating point is threshold-knife-edge for these clustered-score guards and is omitted (see text).</figcaption><div class="tablescroll"><table class="plaintable">
 
@@ -2684,8 +2693,8 @@ largest model, and the ranking is not monotone in size, echoing Act I: capabili
 and benchmark rank are distinct axes. AP is shown on a zoomed <span class="math inline">\([0.80,1.00]\)</span> scale.</figcaption>
 </figure>
 <h2 data-num="6.5" id="sec:actIV-expguard"><span class="secnum">6.5</span>External breadth: finance, healthcare and law (ExpGuard)</h2>
-<p>These are the four <em>base</em> checkpoints
-scored <em>zero-shot</em> (no domain fine-tuning), so this act is a thematic breadth test — does the
+<p>The ExpGuard arm scores the same four <em>base</em> checkpoints as the mortgage arm above,
+again <em>zero-shot</em> (no domain fine-tuning), so this act is a thematic breadth test — does the
 benchmark-co-production thesis recur across domains? — rather than a re-run of the Act I/II SFT
 mechanism. On ExpGuard’s expert-annotated prompts, all four bases already rank domain violations well
 (aggregate AP <span class="math inline">\(0.88\)</span>–<span class="math inline">\(0.96\)</span> across the panel; <a class="xref" href="#tab:expguard">Table 15</a>, <a class="xref" href="#fig:expguard-domains">Figure 11</a>). The
@@ -2693,10 +2702,11 @@ ordering echoes Act I’s lesson rather than raw capacity: <strong>SmolLM3-3B r
 <span class="math inline">\(95\%\)</span> CI <span class="math inline">\([.949,.963]\)</span>, near-uniform across its own three verticals), with Qwen3-4B close
 just behind (<span class="math inline">\(0.951\)</span>, <span class="math inline">\([.943,.958]\)</span>). Those <em>marginal</em> CIs overlap, but that is the wrong test on
 paired data: scoring both guards on identical rows lets a paired bootstrap cancel row-difficulty
-variance, and it resolves one vertical. SmolLM3-3B <span class="math inline">\(-\)</span> Qwen3-4B is <span class="math inline">\(+0.017\)</span> on <strong>health</strong> with a CI
-excluding zero, while finance (<span class="math inline">\(+0.001\)</span>) and law (<span class="math inline">\(+0.001\)</span>) are genuine ties (<a class="xref" href="#tab:expguard">Table 15</a>). The
-honest statement is therefore sharper than “unresolved at this sample size”: the sample resolves health
-and shows the other two verticals are level. One caveat belongs with that word “resolves.” Four paired
+variance, and it separates one vertical. SmolLM3-3B <span class="math inline">\(-\)</span> Qwen3-4B is <span class="math inline">\(+0.017\)</span> on <strong>health</strong> with a CI
+excluding zero, while finance (<span class="math inline">\(+0.001\)</span>) and law (<span class="math inline">\(+0.001\)</span>) sit essentially on zero with intervals that
+contain it (<a class="xref" href="#tab:expguard">Table 15</a>). Those two are <em>not</em> demonstrated equivalences — an interval
+containing zero is not evidence of no difference, and no equivalence margin was registered — only
+differences too small for this sample to sign. One caveat belongs with that word “resolves.” Four paired
 comparisons are reported (overall plus three verticals) with <em>no</em> multiplicity adjustment, and the
 health interval clears zero only narrowly (<span class="math inline">\(+0.0026\)</span> at its lower end). Under a Bonferroni split across
 the three verticals it would not clear. We therefore treat health as the one vertical where the data
@@ -2755,15 +2765,16 @@ committed text-free per-row scores; the run was independently cross-checked on a
 </table></div></figure>
 <p><br/>
 <span> <strong>Paired top-two comparison</strong> (SmolLM3-3B <span class="math inline">\(-\)</span> Qwen3-4B on <em>identical</em> rows, 2,000-resample bootstrap). The marginal CIs above overlap, but a paired test cancels row-difficulty variance and resolves one vertical: overall <span class="math inline">\(+0.0055\)</span> <span class="math inline">\([-0.0008, +0.0120]\)</span>; finance <span class="math inline">\(+0.0009\)</span> <span class="math inline">\([-0.0075, +0.0097]\)</span>; <strong>health <span class="math inline">\(+0.0168\)</span> <span class="math inline">\([+0.0026, +0.0320]\)</span></strong> (CI excludes zero); law <span class="math inline">\(+0.0011\)</span> <span class="math inline">\([-0.0118, +0.0140]\)</span>. So the two guards are tied on finance and law and separate on health — “unresolved” was an unrun analysis, not a sample-size limit.</span></p>
-<div class="callout callout-editor"><div class="callout-title">What this establishes</div><div class="callout-body">
+<div class="callout callout-result"><div class="callout-title">What this establishes</div><div class="callout-body">
 
 <p><strong>Evidence.</strong> Zero-shot on the frozen mortgage split, the four base guards rank policy violations only
 moderately (AP<span class="math inline">\(\cdot\)</span>D <span class="math inline">\(0.67\)</span>–<span class="math inline">\(0.85\)</span>; AUROC<span class="math inline">\(\cdot\)</span>D <span class="math inline">\(0.60\)</span>–<span class="math inline">\(0.78\)</span>) against a <span class="math inline">\(0.555\)</span> chance floor
 — i.e. <span class="math inline">\(0.12\)</span>–<span class="math inline">\(0.30\)</span> above chance — and one worked G0/D1 row is ranked below the median benign
 inquiry by <em>all four</em> (<a class="xref" href="#fig:casestudy">Figure 8</a>). On external expert-annotated finance/health/law
 rows the same four bases rank well (<span class="math inline">\(0.88\)</span>–<span class="math inline">\(0.96\)</span>). <em>The guard ordering does not carry across
-the two arms</em>: the mortgage AP<span class="math inline">\(\cdot\)</span>D intervals do not separate the panel at all, while on ExpGuard
-SmolLM3-3B is highest (<a class="xref" href="#tab:baseline">Table 14</a> and <a class="xref" href="#tab:expguard">Table 15</a>).</p>
+the two arms</em>: on mortgage, five of the six pairwise AP<span class="math inline">\(\cdot\)</span>D intervals overlap and only Qwen3-4B
+vs. SmolLM2-1.7B separates, while on ExpGuard SmolLM3-3B is highest
+(<a class="xref" href="#tab:baseline">Table 14</a> and <a class="xref" href="#tab:expguard">Table 15</a>).</p>
 <p><strong>Decision.</strong> In a regulated domain, build a domain-grounded, dual-labeled instrument and a protected-pair
 invariance check <em>before</em> trusting any guard, and read AP against the split’s own chance floor
 rather than against zero. Do not carry a guard ranking across domain arms.</p>
@@ -2793,8 +2804,9 @@ choices make the rows commensurable. First, the primary column is recall at a <e
 base-vs-SFT (<a class="xref" href="#tab:matchedfpr">Table 6</a>), and it matters here because the frontier configs sit at a
 self-chosen <span class="math inline">\(2.3\)</span>–<span class="math inline">\(3.4\%\)</span> FPR and would otherwise be compared at an operating point nobody
 selected. Second, the frontier ranking signal is a self-reported integer <span class="math inline">\(0\)</span>–<span class="math inline">\(100\)</span> risk, the only
-graded output the Responses API exposes for reasoning models; it takes roughly <span class="math inline">\(50\)</span>–<span class="math inline">\(65\)</span> distinct
-values over 2,275 rows, and those ties cap how finely AP can resolve a ranking. That bounds
+graded output the Responses API exposes for reasoning models; across the six configurations it takes
+only <span class="math inline">\(47\)</span>–<span class="math inline">\(65\)</span> distinct values over 2,275 rows, and those ties cap how finely AP can resolve a
+ranking. That bounds
 precision without fixing a direction — a finer score could resolve a tie block either way — so a
 frontier number above a local one should not be read as conservative, only as coarsely resolved.</p>
 <div class="callout callout-takeaway"><div class="callout-title">Bottom line first: the traffic regime changes the ranking</div><div class="callout-body">
@@ -2819,7 +2831,7 @@ least sure about. The subsections that follow derive each bar and state what it 
 expert-annotated rows; recall at a matched <span class="math inline">\(5\%\)</span> false-alarm budget so no model is read at an operating
 point nobody chose). <strong>Left:</strong> each in-house route, with the share of the base<span class="math inline">\(\to\)</span>hosted gap it
 closes. Tuning the small guard and buying a released one land <em>below</em> the best small base;
-scale, seed-ensembling and a fitted stack move up but stall around <span class="math inline">\(40\)</span>–<span class="math inline">\(60\%\)</span> of the way, and the
+scale, seed-ensembling and a fitted stack move up but stall at <span class="math inline">\(39\)</span>–<span class="math inline">\(58\%\)</span> of the way, and the
 stack additionally needs labelled in-domain data to fit its weights. The committee bar is above the
 best small base but <em>below its own best member</em> — equal weights dilute the strong members.
 <strong>Right:</strong> the selective cascade of <a class="xref" href="#sec:frontier-licenses">Section 7.5</a>. Escalating the least-confident
@@ -2833,11 +2845,13 @@ scored on (<a class="xref" href="#sec:frontier-licenses">Section 7.5</a>).</fig
 <h4 class="runin" id="the-gain-is-real-and-it-is-large.">The gain is real and it is large.</h4>
 <p>The best hosted configuration
 (gpt-5.4 (low)) reaches .896 recall at the matched budget against
-.787 for the strongest Act I base checkpoint (SmolLM3-3B): a
+.787 for the best-performing Act I base checkpoint <em>on these rows</em>
+(SmolLM3-3B — the panel’s strongest base elsewhere in this report is Qwen3-4B, and
+the two swap places between instruments, which is the report’s own thesis): a
 paired row bootstrap on identical rows puts the difference at +0.109
-[+0.077, +0.139], an interval comfortably clear of zero. Roughly one unsafe prompt in
-ten that the best panel base guard waves through at a <span class="math inline">\(5\%\)</span> alarm budget, the frontier model
-catches. On evidence this is the largest single accuracy gap anywhere in this report, and it is
+[+0.077, +0.139], an interval comfortably clear of zero. In every hundred unsafe prompts,
+about eleven that the best panel base guard waves through at a <span class="math inline">\(5\%\)</span> alarm budget the frontier
+model catches — roughly half of the <span class="math inline">\(21.3\)</span> it misses. On evidence this is the largest single accuracy gap anywhere in this report, and it is
 measured on the strongest label tier we have.</p>
 <h4 class="runin" id="and-the-accuracy-is-bought-at-two-orders-of-magnitude.">And the accuracy is bought at two orders of magnitude.</h4>
 <p><a class="xref" href="#tab:frontier-serving">Table 18</a>
@@ -2850,7 +2864,7 @@ request, that is a budget line and a latency budget, not a rounding error. Three
 appear in no column of either table. Prompts leave the operator’s infrastructure, which for the
 mortgage setting of <a class="xref" href="#sec:actIV">Section 6</a> is a GLBA question before it is an engineering one.
 The operating point is only coarsely selectable: a continuous logit margin can be placed at any
-false-alarm budget exactly, while <span class="math inline">\(50\)</span>–<span class="math inline">\(65\)</span> distinct integer scores can only land near one.
+false-alarm budget exactly, while <span class="math inline">\(47\)</span>–<span class="math inline">\(65\)</span> distinct integer scores can only land near one.
 And the provider’s own input filter refused a subset of ExpGuard prompts outright, before the
 guard saw them — <em>non-deterministically</em>, with no row refused under all six configurations
 and most refused under four of six. A guardrail whose input filter intermittently declines to
@@ -2907,19 +2921,26 @@ vendor gap is an ensemble: we hold 18 open guards with ExpGuard scores —
 bases, SFT seed-ensembles, released purpose-built guards — so combining them costs no new
 training. Three combination rules, priced against the strongest single open guard
 (.834) and using the same rule the ensembling appendix fixes (margins average
-directly within a checkpoint, rank-percentile across them):</p>
+directly within a checkpoint, rank-percentile across them). One convention note, because the same
+object is quoted against two denominators in this section: the percentages <em>in this paragraph</em>
+are shares of the distance from that best single member to hosted, which is the question an ensemble
+answers (“does combining beat picking the best?”), while <a class="xref" href="#fig:gap-ladder">Figure 12</a> and the closing
+summary measure every route from the best small <em>base</em>, which is the question a practitioner
+starts from. The stack is <span class="math inline">\(27\%\)</span> of the way on the first denominator and <span class="math inline">\(58\%\)</span>
+on the second; both describe the same <span class="math inline">\(.850\)</span>.</p>
 <p><em>Seed ensembling helps, reliably and almost for free.</em> Averaging the five SFT seeds of a
 checkpoint gains +0.026 matched-budget recall on average, positive for all six
 checkpoints, and the adapters already exist. It is also how the tuned 32B recovers what SFT cost
 it: the seed ensemble reaches .834 against <span class="math inline">\(0.830\)</span> for its own untuned base.</p>
 <p><em>An unweighted committee actively hurts.</em> Averaging all 18 ranks scores
 .791, <em>below</em> the best single member — <span class="math inline">\(-69\%\)</span> of
-the distance to hosted, i.e. backwards. With members this unequal in quality, equal weights
+the distance from that member to hosted, i.e. backwards. With members this unequal in quality, equal weights
 dilute the strong ones; this is the <a class="xref" href="#tab:frontier">Table 16</a> spread doing exactly what one should
 expect.</p>
 <p><em>Even a fitted stack falls short.</em> A logistic stack over all 18 members,
 scored 5-fold out-of-fold so it cannot grade its own homework, reaches
-.850 — <span class="math inline">\(27\%\)</span> of the way to hosted. That is a real gain over
+.850 — <span class="math inline">\(27\%\)</span> of the way from the best single member to hosted
+(<span class="math inline">\(58\%\)</span> of the way from the best small base). That is a real gain over
 any single open guard, but it costs 18 forward passes per request and, less
 obviously, it needs <em>labelled in-domain data</em> to fit the weights, which is the asset a team
 reaching for an ensemble usually does not have. Its largest weights also include a
@@ -3022,7 +3043,7 @@ checkpoints and costs accordingly, so the comparison is about <em>where</em> to 
 budget, not about SFT being inferior at equal size. What the tuned-32B cell does establish is
 narrower and still useful: at <em>that</em> size, on <em>this</em> recipe and data, tuning is not
 the way to spend the next increment.</p>
-<figure class="tablewrap" data-float="Table 16" id="tab:frontier"><figcaption><span class="floatnum">Table 16.</span> Frontier hosted guardrails against this report’s local guards on ExpGuard (2,275 expert-annotated finance/health/law prompts), joined by row hash so every guard is scored on identical rows. <strong>TPR@5%FPR</strong> is recall at a matched false-alarm budget — each guard is re-thresholded on these rows to a common <span class="math inline">\(5\%\)</span> FPR, because the models sit at very different self-chosen operating points (the frontier configs alarm on only <span class="math inline">\(2.3\)</span>–<span class="math inline">\(3.4\%\)</span> of negatives at their own verdict). Local guards rank by the raw margin <span class="math inline">\(z_{\text{unsafe}}-z_{\text{safe}}\)</span>; frontier guards by a self-reported integer risk, the only graded signal the Responses API exposes for reasoning models. SFT rows are the <em>in-env</em> beta<span class="math inline">\(=0\)</span> re-execution of the Act I recipe, not the Act I release adapters (different <code>adapter_sha256</code>); Act I’s numbers are unchanged and not restated here.</figcaption><div class="tablescroll"><table class="plaintable">
+<figure class="tablewrap" data-float="Table 16" id="tab:frontier"><figcaption><span class="floatnum">Table 16.</span> Frontier hosted guardrails against this report’s local guards on ExpGuard (2,275 expert-annotated finance/health/law prompts), joined by row hash so every guard is scored on identical rows. <strong>TPR@5%FPR</strong> is recall at a matched false-alarm budget — each guard is re-thresholded on these rows to a common <span class="math inline">\(5\%\)</span> FPR, because the models sit at very different self-chosen operating points (the frontier configs alarm on only <span class="math inline">\(2.3\)</span>–<span class="math inline">\(3.4\%\)</span> of negatives at their own verdict). Local guards rank by the raw margin <span class="math inline">\(z_{\text{unsafe}}-z_{\text{safe}}\)</span>; frontier guards by a self-reported integer risk, the only graded signal the Responses API exposes for reasoning models. SFT rows are the <em>in-env</em> <span class="math inline">\(\beta{=}0\)</span> re-execution of the Act I recipe, not the Act I release adapters (different <code>adapter_sha256</code>); Act I’s numbers are unchanged and not restated here.</figcaption><div class="tablescroll"><table class="plaintable">
 
 <tbody>
 <tr>
@@ -3571,25 +3592,25 @@ conclusion rests on the choice.</figcaption><div class="tablescroll"><table clas
 <td style="text-align: left;">Equal per source <em>(reported)</em></td>
 <td style="text-align: right;">+0.083</td>
 <td style="text-align: left;">[+0.013, +0.157]</td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✓</td>
 </tr>
 <tr>
 <td style="text-align: left;">Equal per cell</td>
 <td style="text-align: right;">+0.083</td>
 <td style="text-align: left;">[+0.013, +0.157]</td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✓</td>
 </tr>
 <tr>
 <td style="text-align: left;">Proportional to rows per source</td>
 <td style="text-align: right;">+0.049</td>
 <td style="text-align: left;">[-0.031, +0.112]</td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
 </tr>
 <tr>
 <td style="text-align: left;">Equal per cell, <em>including the base arms</em></td>
 <td style="text-align: right;">-0.264</td>
 <td style="text-align: left;">[-0.321, -0.179]</td>
-<td style="text-align: center;"> <em>(opposite sign)</em></td>
+<td style="text-align: center;">✓ <em>(opposite sign)</em></td>
 </tr>
 <tr>
 <td colspan="4" style="text-align: left;">Sensitivity to the source set, not the weighting:</td>
@@ -3598,7 +3619,7 @@ conclusion rests on the choice.</figcaption><div class="tablescroll"><table clas
 <td style="text-align: left;">Equal per source, sources <em>resampled</em></td>
 <td style="text-align: right;">+0.083</td>
 <td style="text-align: left;">[-0.019, +0.220]</td>
-<td style="text-align: center;"></td>
+<td style="text-align: center;">✗</td>
 </tr>
 </tbody>
 </table></div></figure>
@@ -3834,7 +3855,7 @@ bar <em>on unfamiliar traffic</em>: it is what the specialization and compositio
 trying to reach under constraints the hosted model does not have to satisfy. On traffic the
 operator can enumerate, <a class="xref" href="#sec:actIII-h2h">Section 7.4</a> shows the bar is already cleared — which is
 why the deployment question is a routing question rather than a modelling one.</p>
-<div class="callout callout-editor"><div class="callout-title">What this establishes</div><div class="callout-body">
+<div class="callout callout-result"><div class="callout-title">What this establishes</div><div class="callout-body">
 
 <p><strong>Evidence.</strong> On external expert-annotated rows at a matched 5% alarm budget, the best hosted
 configuration (gpt-5.4 (low)) beats the strongest panel base by +0.109
@@ -4087,9 +4108,10 @@ order-of-magnitude serving estimate on this hardware, not a single-request SLA.<
 <p>A frontier hosted-API guard is disadvantaged on the two axes that decide an inline deployment, and here
 that is <em>measured</em> rather than sketched: <a class="xref" href="#tab:frontier-serving">Table 18</a> reports hosted P50/P99 latency
 and $/1k taken on the ExpGuard rows themselves at concurrency 200, against the committed batched-A100
-figures in <a class="xref" href="#tab:latency">Table 22</a>. The hosted path adds a network round-trip — 1,553 ms median against
-tens of milliseconds — to <em>every</em> request; it bills a per-token fee that scales with traffic; and,
-decisively for a regulated domain, it sends every prompt to a third party.</p>
+figures in <a class="xref" href="#tab:latency">Table 22</a>. The hosted path adds a network round-trip — 1,553 ms
+median against tens of milliseconds — to <em>every</em> request; it bills a per-token fee that scales
+with traffic; and, decisively for a regulated domain, it sends every prompt to a third party.
+<a class="xref" href="#tab:deployment">Table 23</a> sets the four axes side by side.</p>
 <p>That is a case for self-hosting the traffic you can serve well, not for self-hosting everything.
 <a class="xref" href="#sec:actIII-h2h">Section 7.4</a> shows the accuracy ordering inverts by regime, and <a class="xref" href="#sec:frontier-licenses">Section 7.5</a>
 prices a selective cascade that keeps the median request local. So the practical conclusion is a routing
@@ -4143,7 +4165,12 @@ byte-check. Two entry points, run in <code>papers/unified-report/</code> and bot
 <code>make regenerate</code> rewrites the generated artifacts from committed per-row scores, and
 <code>make verify</code> recomputes them into a scratch directory and asserts byte-identity with the
 committed copies, leaving the tracked tree byte-clean. <code>make verify</code> is the one a reader should
-run; it exits nonzero unless every covered artifact matches. One limit is measured rather than
+run. Read its exit code carefully, because a clean checkout does not exit <span class="math inline">\(0\)</span>: it exits nonzero if any
+covered artifact <em>mismatches</em> <strong>and also</strong> if any artifact could not be checked at all. On an
+ordinary machine the 4 Act I artifacts fall in the second bucket, so the run ends
+<code>CHECK INCOMPLETE</code> with a nonzero status while reporting <code>0 failed</code>; the per-artifact table it
+prints, not the exit code, is what says whether anything drifted. Only the lock-pinned environment
+(<code>docs/reproducibility-environments.md</code>) can exit <span class="math inline">\(0\)</span>. One limit is measured rather than
 assumed: three <em>upstream</em> generators are not redirected to the scratch directory and rewrite
 their intermediates in place (the composition pilot’s <code>generated/</code>, and the mortgage
 <code>out_eval/</code> and <code>generated/</code>). The tree still ends byte-clean, because with no drift the
@@ -4168,13 +4195,20 @@ later one quoted “8 uncovered” while the harness was emitting eleven.</p>
 <h4 class="runin" id="what-the-previous-revision-could-not-verify-and-what-changed.">What the previous revision could not verify, and what changed.</h4>
 <p>A prior version of this
 section conceded three defects and left them open; all three are now closed, and the concessions are
-kept here so the record shows what the numbers above are worth. <strong>(i)</strong> Ten generated inputs sat
+kept here so the record shows what the numbers above are worth. <strong>(i)</strong> Eleven generated inputs sat
 outside the harness — the adaptation, KL-SFT, ensembling, cascade, mortgage-composition and, most
 seriously, <em>both</em> head-to-head outputs, which back the report’s most prominent frontier claim. All
 of their emitters read committed analysis JSON, so there was never a reason they could not be checked;
 they are now wired in, and the report no longer says “every table is byte-checked” while its headline
-table is uncovered. <strong>(ii)</strong> Figures were regenerated and never compared. They are now rendered
-into a scratch directory and byte-compared like everything else. <strong>(iii)</strong> Verification was not
+table is uncovered. <strong>(ii)</strong> Figures were regenerated and never compared. The eleven plotted
+figures are now rendered into a scratch directory and byte-compared like everything else. Two classes
+sit outside that, and both are named rather than implied: the three Graphviz diagrams
+(<a class="xref" href="#fig:design">Figure 2</a>, <a class="xref" href="#fig:splits">Figure 15</a> and <a class="xref" href="#fig:pipeline">Figure 17</a>) are rendered from committed <code>.dot</code> sources but are not
+byte-compared, because <code>dot</code> output is not reproducible across Graphviz builds; and
+<a class="xref" href="#fig:plane">Figure 4</a> ships as a committed <code>specialization_plane.pdf</code> with <em>no</em> generator in
+<code>make_figures.py</code> at all, so it is neither regenerated nor compared. It predates the harness, and
+re-deriving it from <a class="xref" href="#tab:seed-values">Table 4</a> — which holds the twenty points it plots — is a stated
+gap (<a class="xref" href="#sec:roadmap">Section E.3</a>). <strong>(iii)</strong> Verification was not
 side-effect-free: <code>make reproduce</code> did not pass <code>--check</code>, and even the checking path
 rewrote <code>repro_macros.tex</code> — the one artifact it never checked. Emitters now honour a
 <code>PAPER_GEN_DIR</code> redirect, the coverage macro is checked like any other input, and a verification
@@ -4205,6 +4239,16 @@ the mortgage benchmark itself — is <em>not</em> claimed: its LLM construction 
 temperature and the set is intentionally frozen, so only its <em>evaluation</em> reproduces, not its
 generation. Raw third-party rows are referenced by pinned identifier + revision + content hash, not
 redistributed.</p>
+<h4 class="runin" id="benchmark-attribution.">Benchmark attribution.</h4>
+<p>The worked case study of <a class="xref" href="#fig:casestudy">Figure 8</a>
+quotes rows of <strong>MortgageGuardBench <code>v1_hmda2022</code></strong>, Reza Rahimi, PhD (JazzX AI), licensed
+<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> — the attribution that licence
+requires, and the same notice the HTML edition carries. Its prompts are synthetic and its labels are
+LLM-judge and policy-card-consistent, <em>not</em> SME-adjudicated; its release checksums cover release
+bytes only, not the generator, judge, configuration, or code. The prompts solicit policy violations by
+design, so reuse should treat them as harmful-content samples. The factual grounding is the public HMDA
+2022 loan-level snapshot, a U.S. Government work carrying no U.S. copyright. Redistribution decisions
+for every source live in <code>benchmarks/registry/distribution.yaml</code>.</p>
 <h4 class="runin" id="code-and-data-availability.">Code and data availability.</h4>
 <p>All code, data manifests, generated tables, and
 the frozen benchmark are public at <a class="uri" href="https://github.com/rrahimi-uci/safety-guard-dynamics">https://github.com/rrahimi-uci/safety-guard-dynamics</a>. The
@@ -4214,8 +4258,9 @@ dual-labeled mortgage benchmark ships at <code>mortgage-benchmark/benchmark/v1_h
 SHA-256-checksummed, with a text-free index); the committed per-row guard scores that regenerate every
 number live under <code>artifacts/</code> (the Act I/II scores in <code>artifacts/paper_a_sft_v2/</code>, the
 mortgage baseline in <code>mortgage-benchmark/out_eval/</code>, and the finance/health/law scores in
-<code>artifacts/expguard_external/</code>); and the figures are built by
-<code>papers/unified-report/figures/make_figures.py</code>.</p>
+<code>artifacts/expguard_external/</code>); and every figure except <a class="xref" href="#fig:plane">Figure 4</a> is built by
+<code>papers/unified-report/figures/make_figures.py</code> (that one exception is committed without a
+generator, as <a class="xref" href="#sec:repro">Section 9</a> records).</p>
 <h1 data-num="10" id="sec:conclusion"><span class="secnum">10</span>Conclusion</h1>
 <p>Benchmark gains do not guarantee transfer. On this fixed panel, paired same-checkpoint comparisons show
 a large represented-source gain (<span class="math inline">\(+0.3234\)</span>) beside heterogeneous held-out effects
@@ -4259,21 +4304,21 @@ regime-split delta, not disagreements about which model is “best.”</p>
 </div></div>
 <h2 data-num="A.1" id="sec:related-guards"><span class="secnum">A.1</span>Small LLM guard classifiers</h2>
 <p>The dominant deployment pattern is a compact decoder LLM turned into a binary or taxonomy-tagged
-moderation head. Llama Guard <sup class="cite">[<a href="#bib-inan2023llamaguard">34</a>]</sup> introduced the input–output
+moderation head. Llama Guard <sup class="cite">[<a href="#bib-inan2023llamaguard">27</a>]</sup> introduced the input–output
 safeguard framing and a safety taxonomy, and later iterations pushed toward smaller, cheaper, and
-multimodal variants <sup class="cite">[<a href="#bib-meta2024llamaguard2">3</a>, <a href="#bib-meta2024llamaguard3_8b">5</a>, <a href="#bib-meta2024llamaguard3_1b">4</a>, <a href="#bib-fedorov2024llamaguard3_1b">23</a>, <a href="#bib-meta2025llamaguard4">7</a>]</sup>. ShieldGemma <sup class="cite">[<a href="#bib-zeng2024shieldgemma">54</a>]</sup> and Granite
+multimodal variants <sup class="cite">[<a href="#bib-meta2024llamaguard2">40</a>, <a href="#bib-meta2024llamaguard3_8b">42</a>, <a href="#bib-meta2024llamaguard3_1b">41</a>, <a href="#bib-fedorov2024llamaguard3_1b">17</a>, <a href="#bib-meta2025llamaguard4">44</a>]</sup>. ShieldGemma <sup class="cite">[<a href="#bib-zeng2024shieldgemma">54</a>]</sup> and Granite
 Guardian <sup class="cite">[<a href="#bib-padhi2024graniteguardian">47</a>]</sup> extend the recipe to other base families with broad harm
-taxonomies; WildGuard <sup class="cite">[<a href="#bib-han2024wildguard">29</a>]</sup> adds one-stop coverage of prompt harm,
-response harm, and refusal detection; and Qwen3Guard <sup class="cite">[<a href="#bib-qwen3guard2025">50</a>]</sup> is a recent open guard on
+taxonomies; WildGuard <sup class="cite">[<a href="#bib-han2024wildguard">23</a>]</sup> adds one-stop coverage of prompt harm,
+response harm, and refusal detection; and Qwen3Guard <sup class="cite">[<a href="#bib-qwen3guard2025">48</a>]</sup> is a recent open guard on
 the same Qwen family two of our checkpoints come from. Beyond the general-purpose guards, several works
 target narrower slices or richer inference: dedicated prompt-injection detectors
-<sup class="cite">[<a href="#bib-meta2024promptguard">6</a>, <a href="#bib-meta2025promptguard2_86m">9</a>, <a href="#bib-meta2025promptguard2_22m">8</a>]</sup>, reasoning- and
-logic-augmented guardrails <sup class="cite">[<a href="#bib-kang2025r2guard">37</a>]</sup>, ensemble-of-experts moderation
-<sup class="cite">[<a href="#bib-ghosh2024aegis">25</a>]</sup>, RL-driven multilingual guardrails <sup class="cite">[<a href="#bib-deng2025duoguard">19</a>]</sup>, and CPU-class or
-multi-stage pipelines aimed at cost <sup class="cite">[<a href="#bib-majhi2025gpuguard">45</a>]</sup>. The parameter-efficient adaptation we
-use — LoRA <sup class="cite">[<a href="#bib-hu2021lora">32</a>]</sup> applied to a chat model to produce a guard — is exactly the LoRA-Guard
-recipe <sup class="cite">[<a href="#bib-elesedy2024loraguard">22</a>]</sup>, and standardized suites such as GuardBench
-<sup class="cite">[<a href="#bib-bassani2024guardbench">12</a>]</sup> have made cross-model comparison routine.</p>
+<sup class="cite">[<a href="#bib-meta2024promptguard">43</a>, <a href="#bib-meta2025promptguard2_86m">46</a>, <a href="#bib-meta2025promptguard2_22m">45</a>]</sup>, reasoning- and
+logic-augmented guardrails <sup class="cite">[<a href="#bib-kang2025r2guard">30</a>]</sup>, ensemble-of-experts moderation
+<sup class="cite">[<a href="#bib-ghosh2024aegis">19</a>]</sup>, RL-driven multilingual guardrails <sup class="cite">[<a href="#bib-deng2025duoguard">12</a>]</sup>, and CPU-class or
+multi-stage pipelines aimed at cost <sup class="cite">[<a href="#bib-majhi2025gpuguard">38</a>]</sup>. The parameter-efficient adaptation we
+use — LoRA <sup class="cite">[<a href="#bib-hu2021lora">26</a>]</sup> applied to a chat model to produce a guard — is exactly the LoRA-Guard
+recipe <sup class="cite">[<a href="#bib-elesedy2024loraguard">15</a>]</sup>, and standardized suites such as GuardBench
+<sup class="cite">[<a href="#bib-bassani2024guardbench">4</a>]</sup> have made cross-model comparison routine.</p>
 <p>What this family reports, almost without exception, is <em>absolute</em> moderation performance of
 <em>one</em> guard against <em>different</em> models on a benchmark. That is precisely the quantity we argue
 is co-produced by the benchmark and therefore uninformative about a specific fine-tune. Several of these
@@ -4292,21 +4337,21 @@ overclaims that survived because the comparison was made in prose rather than ag
 per-component comparison in <a class="xref" href="#tab:closest">Table 2</a> is what replaces them. We reuse the LoRA-Guard recipe not to beat
 these guards on a leaderboard — we score four small open checkpoints, not the gated production guards
 — but to isolate what the fine-tune itself does. GuardBench and its peers are the backdrop against
-which <a class="xref" href="#sec:actI">Section 3</a>’s question is posed: they normalize the single-suite comparison whose fragility we
-show is fragile.</p>
+which <a class="xref" href="#sec:actI">Section 3</a>’s question is posed: they normalize the single-suite comparison whose fragility
+this report measures.</p>
 <h2 data-num="A.2" id="sec:related-transfer"><span class="secnum">A.2</span>Fine-tuning degradation and policy / benchmark transfer</h2>
 <p>The closest prior evidence is that fine-tuning can <em>weaken</em> rather than strengthen safety.
-<sup class="cite">[<a href="#bib-hsiung2025guardrails">31</a>]</sup> show that safety guardrails can collapse after fine-tuning and attribute
+<a class="citet" href="#bib-hsiung2025guardrails">Hsiung et al.</a><sup class="cite">[<a href="#bib-hsiung2025guardrails">25</a>]</sup> show that safety guardrails can collapse after fine-tuning and attribute
 the collapse to similarity between the alignment and fine-tuning data — a mechanism that rhymes with
 our specialization finding, but is measured on a model’s own alignment behavior rather than on a guard
-classifier’s represented-versus-transfer ranking split. <sup class="cite">[<a href="#bib-liu2026domaingeneralizable">44</a>]</sup> document that
+classifier’s represented-versus-transfer ranking split. <a class="citet" href="#bib-liu2026domaingeneralizable">Liu et al.</a><sup class="cite">[<a href="#bib-liu2026domaingeneralizable">37</a>]</sup> document that
 guardrails overfit their training <em>policy</em> and propose augmented policy training as a remedy;
-<sup class="cite">[<a href="#bib-li2026surfaceheuristics">41</a>]</sup> give a complementary mechanistic account, showing that prompt-attack
+<a class="citet" href="#bib-li2026surfaceheuristics">Li et al.</a><sup class="cite">[<a href="#bib-li2026surfaceheuristics">34</a>]</sup> give a complementary mechanistic account, showing that prompt-attack
 defenses learn <em>surface heuristics</em> that do not generalize — essentially a why for the transfer
-loss we observe empirically. <sup class="cite">[<a href="#bib-bassani2025robustness">13</a>]</sup> probe the same fragility from the
+loss we observe empirically. <a class="citet" href="#bib-bassani2025robustness">Bassani and Sanchez</a><sup class="cite">[<a href="#bib-bassani2025robustness">5</a>]</sup> probe the same fragility from the
 perturbation side, measuring guardrail robustness to input mutations and adversarial attacks, and
-<sup class="cite">[<a href="#bib-hackett2025bypassing">28</a>]</sup> demonstrate concrete evasion of injection/jailbreak detectors. Framed most
-generally, <sup class="cite">[<a href="#bib-akinrele2026regime">10</a>]</sup> argue that prompt-injection detection is <em>regime-dependent</em> —
+<a class="citet" href="#bib-hackett2025bypassing">Hackett et al.</a><sup class="cite">[<a href="#bib-hackett2025bypassing">22</a>]</sup> demonstrate concrete evasion of injection/jailbreak detectors. Framed most
+generally, <a class="citet" href="#bib-akinrele2026regime">Akinrele and Gowda</a><sup class="cite">[<a href="#bib-akinrele2026regime">2</a>]</sup> argue that prompt-injection detection is <em>regime-dependent</em> —
 performance is a function of the deployment regime, not a fixed model property — which is our thesis
 stated for one task with interpretable structural signals.</p>
 <p>Our addition is the measurement design rather than the qualitative claim. Where these works compare a
@@ -4316,14 +4361,14 @@ hierarchical bootstrap, and we decompose it into a large represented-source gain
 <em>heterogeneous</em> transfer change (<a class="xref" href="#tab:primary">Table 3</a>, <a class="xref" href="#fig:plane">Figure 4</a>). Crucially, we do not stop
 at “degradation”: we quantify the specialization geometry per checkpoint and per benchmark, carry it
 to a deployable operating point (<a class="xref" href="#tab:sensitivity">Table 5</a>), and then ask whether a composition
-(<a class="xref" href="#sec:actIII">Section 5</a>) changes it. And unlike <sup class="cite">[<a href="#bib-liu2026domaingeneralizable">44</a>]</sup>, whose remedy retrains with
+(<a class="xref" href="#sec:actIII">Section 5</a>) changes it. And unlike <a class="citet" href="#bib-liu2026domaingeneralizable">Liu et al.</a><sup class="cite">[<a href="#bib-liu2026domaingeneralizable">37</a>]</sup>, whose remedy retrains with
 augmented policies, our candidate remedy retrains nothing.</p>
 <h2 data-num="A.3" id="sec:related-calibration"><span class="secnum">A.3</span>Calibration and operating points</h2>
 <p>Ranking quality (average precision) and thresholded decision quality are distinct, and the gap between
-them is a calibration problem. <sup class="cite">[<a href="#bib-guo2017calibration">27</a>]</sup> established that modern neural networks are
-systematically miscalibrated and that simple post-hoc scaling helps; <sup class="cite">[<a href="#bib-liu2025calibration">43</a>]</sup>
+them is a calibration problem. <a class="citet" href="#bib-guo2017calibration">Guo et al.</a><sup class="cite">[<a href="#bib-guo2017calibration">21</a>]</sup> established that modern neural networks are
+systematically miscalibrated and that simple post-hoc scaling helps; <a class="citet" href="#bib-liu2025calibration">Liu et al.</a><sup class="cite">[<a href="#bib-liu2025calibration">36</a>]</sup>
 specialized this to LLM-based guard models, showing they are poorly calibrated for reliable content
-moderation; and FlexGuard <sup class="cite">[<a href="#bib-flexguard2026">20</a>]</sup> moves past a single fixed threshold toward continuous,
+moderation; and FlexGuard <sup class="cite">[<a href="#bib-flexguard2026">13</a>]</sup> moves past a single fixed threshold toward continuous,
 strictness-adaptive risk scoring. This literature motivates two choices we make: we fit calibrators only
 on a development split before reading any threshold, and we report operating-point behavior (macro- and
 pooled-FPR, TPR, single-class recall) <em>separately</em> from ranking.</p>
@@ -4340,7 +4385,7 @@ literature asks “is this score a probability?”, we use that machinery to mak
 WiSE-FT interpolates a fine-tuned model with its zero-shot initialization <sup class="cite">[<a href="#bib-wortsman2022wiseft">53</a>]</sup>,
 and model soups average the weights of several fine-tunes <sup class="cite">[<a href="#bib-wortsman2022modelsoups">52</a>]</sup>, both trading a
 little in-distribution accuracy for out-of-distribution robustness at no extra inference cost. The
-theoretical companion most relevant to us is <sup class="cite">[<a href="#bib-kumar2022calibrated">38</a>]</sup>, who show that <em>calibrated
+theoretical companion most relevant to us is <a class="citet" href="#bib-kumar2022calibrated">Kumar et al.</a><sup class="cite">[<a href="#bib-kumar2022calibrated">31</a>]</sup>, who show that <em>calibrated
 ensembles</em> — combining models in <em>output</em> space after calibration — can mitigate the
 accuracy–robustness tradeoff under shift; this is the justification behind our composition rule.</p>
 <p>Act II (<a class="xref" href="#eq:comp">Equation 5</a>) is deliberately the output-space cousin of these methods: we average the
@@ -4348,8 +4393,10 @@ base’s and the adapter’s <em>calibrated scores</em> with fixed equal weights
 tradeoff versus WiSE-FT/soups is explicit — output-space composition needs only comparable scores,
 not interpolable weights, so it is portable across checkpoints that could never be weight-averaged, but
 it pays for two inference passes. We position composition as a <em>transfer-recovery remedy for guard
-specialization</em> specifically (represented cost small, transfer recovered relative to SFT and landing
-above base; <a class="xref" href="#tab:pilot-summary">Table 9</a> and <a class="xref" href="#tab:pilot-models">Table 10</a>), and we are explicit about what the pilot does
+specialization</em> specifically (represented cost small, transfer recovered relative to SFT; the aggregate
+edge over the <em>base</em> is nominally positive but sits inside the reproduction envelope of
+<a class="xref" href="#sec:actI-klsft">Section 3.6</a> and is unresolved — <a class="xref" href="#tab:pilot-summary">Table 9</a> and <a class="xref" href="#tab:pilot-models">Table 10</a>), and we are
+explicit about what the pilot does
 <em>not</em> include — an actual WiSE-FT weight-space rescoring is
 left as a control in the roadmap, and the logit-average variant is reported only as a non-promotable
 ablation. The equal-cost SFT+SFT control <em>is</em> run (<a class="xref" href="#tab:sftsft">Table 11</a>): base+SFT beats SFT+SFT on every
@@ -4358,20 +4405,20 @@ ensembling. To our knowledge this calibrated output-space average has not been e
 for the represented/transfer split in small safety guards.</p>
 <h2 data-num="A.5" id="sec:related-domain"><span class="secnum">A.5</span>Domain-specialized guarding and regulated verticals</h2>
 <p>A recent line moves guarding from generic harm to <em>domain compliance</em>. ExpGuard
-<sup class="cite">[<a href="#bib-expguard2026">16</a>]</sup> provides expert-annotated content moderation in specialized domains including
+<sup class="cite">[<a href="#bib-expguard2026">9</a>]</sup> provides expert-annotated content moderation in specialized domains including
 finance, health, and law — we adopt it directly as our external, expert-labeled breadth replication
 (<a class="xref" href="#tab:expguard">Table 15</a>; complete four-checkpoint base result). FinGuard
-<sup class="cite">[<a href="#bib-dou2026finguard">21</a>]</sup> detects financial regulatory non-compliance in LLM interactions; MortarBench
+<sup class="cite">[<a href="#bib-dou2026finguard">14</a>]</sup> detects financial regulatory non-compliance in LLM interactions; MortarBench
 <sup class="cite">[<a href="#bib-toles2026mortarbench">51</a>]</sup> evaluates mortgage loan-origination <em>agents</em>; and
-<sup class="cite">[<a href="#bib-bowen2024mortgage">33</a>]</sup> measure and mitigate racial bias in LLM mortgage <em>underwriting</em>.
-Adjacent security-benchmark methodology such as Gate AI <sup class="cite">[<a href="#bib-goehausen2026gateai">26</a>]</sup> rounds out the
+<a class="citet" href="#bib-bowen2024mortgage">Bowen III et al.</a><sup class="cite">[<a href="#bib-bowen2024mortgage">6</a>]</sup> measure and mitigate racial bias in LLM mortgage <em>underwriting</em>.
+Adjacent security-benchmark methodology such as Gate AI <sup class="cite">[<a href="#bib-goehausen2026gateai">20</a>]</sup> rounds out the
 evaluation-design context, and our mortgage instrument is grounded in public HMDA loan-level data
-<sup class="cite">[<a href="#bib-hmda2022">1</a>]</sup>.</p>
+<sup class="cite">[<a href="#bib-hmda2022">16</a>]</sup>.</p>
 <p>Each of these captures one facet our four-domain design tries to unify while keeping the honesty stance
 explicit. FinGuard is single-domain and, like the general guards, reports absolute detection rather than
 a paired base-versus-tuned transfer delta. MortarBench evaluates whether an <em>agent completes</em> an
 origination task, not whether a <em>guard detects</em> a compliance violation, and it does not isolate the
-requests that read as safe yet violate policy. <sup class="cite">[<a href="#bib-bowen2024mortgage">33</a>]</sup> study bias in the model’s own
+requests that read as safe yet violate policy. <a class="citet" href="#bib-bowen2024mortgage">Bowen III et al.</a><sup class="cite">[<a href="#bib-bowen2024mortgage">6</a>]</sup> study bias in the model’s own
 underwriting <em>decisions</em>, whereas we study a guard’s <em>detection</em> behavior and add a
 protected-class <em>minimal-pair</em> invariance gate as a fairness signal that ranking alone misses. Our
 mortgage benchmark’s distinctive construct is the <em>dual label</em> <span class="math inline">\(G\times D\)</span> (<a class="xref" href="#tab:composition">Table 13</a>,
@@ -4409,12 +4456,14 @@ if any fingerprint mismatches. This single-panel, single-manifest discipline is 
 composition, and the domain evaluations <em>directly comparable</em> rather than stapled
 results. The <em>same</em> four checkpoints recur across all three acts, and <strong>Qwen3-4B is the
 recurring character</strong>: the strongest base, and — as the acts will show — the one that specializes
-most, the one composition helps least, and the numerically highest-ranking, most
-protected-token-invariant zero-shot mortgage guard (within overlapping CIs — <a class="xref" href="#tab:baseline">Table 14</a>
-does not license a ranking).</p>
+most, the one composition helps least, and the numerically highest-ranking zero-shot mortgage guard
+(within overlapping CIs — <a class="xref" href="#tab:baseline">Table 14</a> does not license a ranking). It is <em>not</em> the most
+protected-token-invariant guard on that split: its <span class="math inline">\(\Delta_{\mathrm{context}}=0.000\)</span> is a saturation
+artifact of the probability scale, and read on the raw margin its gap is the second largest on the panel
+(<a class="xref" href="#sec:actIV-mortgage-pairs">Section 6.3</a>).</p>
 <h2 data-num="B.1" id="sec:setup-panel"><span class="secnum">B.1</span>The fixed four-checkpoint panel and pinned revisions</h2>
 <p>The panel spans two model lineages and <span class="math inline">\(1.5\)</span>–<span class="math inline">\(4\)</span>B parameters: Qwen2.5-1.5B-Instruct,
-SmolLM2-1.7B-Instruct, SmolLM3-3B <sup class="cite">[<a href="#bib-bakouch2025smollm3">11</a>]</sup>, and Qwen3-4B. Each checkpoint is pinned to
+SmolLM2-1.7B-Instruct, SmolLM3-3B <sup class="cite">[<a href="#bib-bakouch2025smollm3">3</a>]</sup>, and Qwen3-4B. Each checkpoint is pinned to
 a fixed upstream revision, and for each we verify that <code>safe</code> and <code>unsafe</code> map to
 <em>distinct single tokens</em> under a fixed convention (leading-space <code>" safe"</code>/<code>" unsafe"</code>
 first, no-leading-space fallback), recording the token IDs and strings. <a class="xref" href="#tab:panel-recipe">Table 24</a> lists
@@ -4492,12 +4541,12 @@ seeds (<span class="math inline">\(42\)</span>–<span class="math inline">\(46\
 are scored once and reused, for <span class="math inline">\(24\)</span> model bundles in all.</p>
 <h2 data-num="B.4" id="sec:setup-manifest"><span class="secnum">B.4</span>The 1,200-row training manifest and exclusions</h2>
 <p>Training reads one frozen manifest and never resamples a live dataset mid-run. It draws <span class="math inline">\(400\)</span> rows each
-from three represented sources — ToxicChat <sup class="cite">[<a href="#bib-lin2023toxicchat">42</a>]</sup>, Prompt-Injections, and
+from three represented sources — ToxicChat <sup class="cite">[<a href="#bib-lin2023toxicchat">35</a>]</sup>, Prompt-Injections, and
 Jailbreak-Classification — with <span class="math inline">\(200\)</span> safe and <span class="math inline">\(200\)</span> unsafe rows per source, selected by a hashed rank
 salted with the data seed and frozen as one shared row order across every checkpoint and seed
 (<a class="xref" href="#tab:manifest">Table 25</a>). Two datasets are <em>deliberately excluded from training</em>: BeaverTails
-<sup class="cite">[<a href="#bib-ji2023beavertails">35</a>]</sup>, because its safety annotation labels the prompt–response interaction rather
-than the prompt alone, and OR-Bench <sup class="cite">[<a href="#bib-cui2024orbench">18</a>]</sup>, which is reserved for the benign stress set;
+<sup class="cite">[<a href="#bib-ji2023beavertails">28</a>]</sup>, because its safety annotation labels the prompt–response interaction rather
+than the prompt alone, and OR-Bench <sup class="cite">[<a href="#bib-cui2024orbench">11</a>]</sup>, which is reserved for the benign stress set;
 including either would confound the prompt-only, dataset-held-out design. The study uses the
 non-commercial academic data branch (ToxicChat is CC BY-NC 4.0), so any released adapter inherits a
 non-commercial mark, and no third-party raw text is redistributed — only pinned identifiers,
@@ -4554,13 +4603,13 @@ role, size, and reference).</p>
 <ul>
 <li><p><strong>Represented-source</strong> <span class="math inline">\(=\)</span> {ToxicChat, Prompt-Injections, Jailbreak-Classification} rows
 <em>held back</em> from training. These measure discrimination on sources the guard trained on.</p></li>
-<li><p><strong>Dataset-held-out transfer</strong> <span class="math inline">\(=\)</span> {JailbreakBench <sup class="cite">[<a href="#bib-chao2024jailbreakbench">14</a>]</sup>, XSTest
-<sup class="cite">[<a href="#bib-rottger2024xstest">49</a>]</sup>, WildGuardTest <sup class="cite">[<a href="#bib-han2024wildguard">29</a>]</sup>, WildJailbreak
-<sup class="cite">[<a href="#bib-jiang2024wildteaming">36</a>]</sup>}, whose rows were withheld from SFT. Because these encode heterogeneous
+<li><p><strong>Dataset-held-out transfer</strong> <span class="math inline">\(=\)</span> {JailbreakBench <sup class="cite">[<a href="#bib-chao2024jailbreakbench">7</a>]</sup>, XSTest
+<sup class="cite">[<a href="#bib-rottger2024xstest">50</a>]</sup>, WildGuardTest <sup class="cite">[<a href="#bib-han2024wildguard">23</a>]</sup>, WildJailbreak
+<sup class="cite">[<a href="#bib-jiang2024wildteaming">29</a>]</sup>}, whose rows were withheld from SFT. Because these encode heterogeneous
 native constructs (harm, refusal, jailbreak, contrast), their macro-average mixes distinct policies;
 we study <em>dataset-held-out benchmark transfer</em>, not one fixed universal policy.</p></li>
 <li><p><strong>Stress</strong> <span class="math inline">\(=\)</span> {OR-Bench-Hard benign portion (false-positive rate only), HarmBench
-<sup class="cite">[<a href="#bib-mazeika2024harmbench">46</a>]</sup> (recall only)}. These are single-class probes: <strong>no AP or AUROC is
+<sup class="cite">[<a href="#bib-mazeika2024harmbench">39</a>]</sup> (recall only)}. These are single-class probes: <strong>no AP or AUROC is
 computed on stress data</strong>; they only watch for over-blocking (benign FPR) and missed attacks (recall).</p></li>
 </ul>
 <p>The primary metric within each regime is benchmark-macro AP; the secondary metric is the
@@ -4591,7 +4640,7 @@ regulated-domain benchmarks. All sources are consumed by pinned identifier, revi
 <td style="text-align: left;">ToxicChat (<code>lmsys/toxic-chat</code>)</td>
 <td style="text-align: left;">prompt toxicity</td>
 <td style="text-align: left;">400 train</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-lin2023toxicchat">42</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-lin2023toxicchat">35</a>]</sup></td>
 </tr>
 <tr>
 <td style="text-align: left;">Prompt-Injections (<code>deepset/prompt-injections</code>)</td>
@@ -4612,25 +4661,25 @@ regulated-domain benchmarks. All sources are consumed by pinned identifier, revi
 <td style="text-align: left;">JailbreakBench</td>
 <td style="text-align: left;">jailbreak robustness</td>
 <td style="text-align: left;">held-out</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-chao2024jailbreakbench">14</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-chao2024jailbreakbench">7</a>]</sup></td>
 </tr>
 <tr>
 <td style="text-align: left;">XSTest</td>
 <td style="text-align: left;">exaggerated-safety / refusal</td>
 <td style="text-align: left;">held-out</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-rottger2024xstest">49</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-rottger2024xstest">50</a>]</sup></td>
 </tr>
 <tr>
 <td style="text-align: left;">WildGuardTest</td>
 <td style="text-align: left;">prompt harm / refusal</td>
 <td style="text-align: left;">held-out</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-han2024wildguard">29</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-han2024wildguard">23</a>]</sup></td>
 </tr>
 <tr>
 <td style="text-align: left;">WildJailbreak</td>
 <td style="text-align: left;">in-the-wild jailbreak</td>
 <td style="text-align: left;">held-out</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-jiang2024wildteaming">36</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-jiang2024wildteaming">29</a>]</sup></td>
 </tr>
 <tr>
 <td colspan="4" style="text-align: left;"><em>Stress probes</em> — single-class; no AP/AUROC</td>
@@ -4639,13 +4688,13 @@ regulated-domain benchmarks. All sources are consumed by pinned identifier, revi
 <td style="text-align: left;">OR-Bench-Hard (benign)</td>
 <td style="text-align: left;">over-refusal (benign FPR)</td>
 <td style="text-align: left;">benign only</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-cui2024orbench">18</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-cui2024orbench">11</a>]</sup></td>
 </tr>
 <tr>
 <td style="text-align: left;">HarmBench</td>
 <td style="text-align: left;">red-team attacks (recall)</td>
 <td style="text-align: left;">attacks only</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-mazeika2024harmbench">46</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-mazeika2024harmbench">39</a>]</sup></td>
 </tr>
 <tr>
 <td colspan="4" style="text-align: left;"><em>Excluded from training by design</em></td>
@@ -4654,7 +4703,7 @@ regulated-domain benchmarks. All sources are consumed by pinned identifier, revi
 <td style="text-align: left;">BeaverTails (<code>PKU-Alignment/BeaverTails</code>)</td>
 <td style="text-align: left;">prompt<span class="math inline">\(+\)</span>response safety</td>
 <td style="text-align: left;">—</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-ji2023beavertails">35</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-ji2023beavertails">28</a>]</sup></td>
 </tr>
 <tr>
 <td colspan="4" style="text-align: left;"><em>Regulated-domain benchmarks</em> (Act III)</td>
@@ -4663,13 +4712,13 @@ regulated-domain benchmarks. All sources are consumed by pinned identifier, revi
 <td style="text-align: left;">Mortgage <code>v1_hmda2022</code> (ours)</td>
 <td style="text-align: left;">dual <span class="math inline">\(G{\times}D\)</span> <span class="math inline">\(+\)</span> protected pairs</td>
 <td style="text-align: left;">994</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-hmda2022">1</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-hmda2022">16</a>]</sup></td>
 </tr>
 <tr>
 <td style="text-align: left;">ExpGuard (<code>6rightjade/expguardmix</code>)</td>
 <td style="text-align: left;">finance / health / law prompt safety</td>
 <td style="text-align: left;">2,275</td>
-<td style="text-align: center;"><sup class="cite">[<a href="#bib-expguard2026">16</a>]</sup></td>
+<td style="text-align: center;"><sup class="cite">[<a href="#bib-expguard2026">9</a>]</sup></td>
 </tr>
 </tbody>
 </table></div></figure>
@@ -4686,11 +4735,15 @@ independent audit of <span class="math inline">\(24\)</span> hard assertions cov
 exact and conflicting-label overlap, pinned revisions and content hashes, selection provenance, family
 disjointness, licenses, and near-duplicate dispositions. This is a <em>build-time</em> gate (family isolation
 plus the <span class="math inline">\(24\)</span> assertions), and it is distinct from the <em>formal retrospective overlap audit</em> of the
-manifest against the current v2 transfer suite, which remains <em>pending</em> (<a class="xref" href="#sec:not-establish">Section E.1</a>): the
-gate guarantees no near-duplicate family straddles a split within the constructed graph, but a from-scratch
-n-gram / near-duplicate check of the 1,200-row manifest against the v2 transfer benchmarks has not yet
-been run — and any residual overlap it found would make specialization look <em>milder</em>, so this is a
-caveat in the direction of caution.</p>
+manifest against the current v2 transfer suite. That audit has since been run
+(<code>experiments/audit_overlap_lineage.py</code>, committed to <code>artifacts/overlap_audit/</code>) and it is
+clean: against the 1,200-row manifest the v2 transfer suite shows zero exact and zero normalized
+matches, zero <code>family_id</code> or <code>upstream_family_id</code> collisions, nothing at <span class="math inline">\(5\)</span>-gram containment
+<span class="math inline">\(\geq0.80\)</span>, and nothing at character-shingle Jaccard <span class="math inline">\(\geq0.70\)</span>, so the transfer estimates need no
+downward revision (<a class="xref" href="#sec:decontamination">Section E.1</a>). What neither the gate nor the audit covers is
+<em>semantic</em> overlap: no embedding-space check is implemented, so a paraphrase sharing no <span class="math inline">\(5\)</span>-gram with
+any training row would pass both, and closing that needs an encoder pinned into the lock
+(<a class="xref" href="#sec:roadmap">Section E.3</a>).</p>
 <h2 data-num="B.6" id="sec:setup-stats"><span class="secnum">B.6</span>Estimands and the statistical protocol</h2>
 <p>For regime <span class="math inline">\(R\)</span>, checkpoint <span class="math inline">\(b\)</span>, and seed <span class="math inline">\(r\)</span>, the per-regime metric is the equal-weight macro-AP over
 that regime’s benchmarks,</p>
@@ -4755,8 +4808,9 @@ development and are reported only as non-promotable ablations.</p>
 <p>Act III evaluates the <em>same four checkpoints</em> on two complementary regulated-domain instruments.</p>
 <h4 class="runin" id="mortgage-built-in-depth-dual-label.">Mortgage (built in depth, dual-label).</h4>
 <p>We constructed a fixed, HMDA-grounded benchmark whose
-unit is one incoming request carrying two independent labels, general-safety <span class="math inline">\(G\)</span> and mortgage-policy <span class="math inline">\(D\)</span>
-(<a class="xref" href="#sec:bg-mortgage">Section 2.9</a>). Requests are grounded in de-identified, banded HMDA fact sheets — never
+unit is one incoming request carrying two <em>separately assigned</em> labels, general-safety <span class="math inline">\(G\)</span> and
+mortgage-policy <span class="math inline">\(D\)</span> (<a class="xref" href="#sec:bg-mortgage">Section 2.9</a>) — separately assigned, but not empirically independent in
+v1, where the empty G1/D0 cell nests <span class="math inline">\(G\)</span> inside <span class="math inline">\(D\)</span> (<a class="xref" href="#sec:actIV-mortgage-composition">Section 6.2</a>). Requests are grounded in de-identified, banded HMDA fact sheets — never
 verbatim records — through an agentic pipeline that plans, grounds, generates, adversarially mutates,
 and rubric-bound-judges each item, accepting it only if its assigned label matches the target, before a
 provenance-tracked, <code>content_family</code>-isolated split into the frozen release (<a class="xref" href="#fig:pipeline">Figure 17</a>;
@@ -4784,13 +4838,15 @@ lender or model, and licenses no fair-lending claim.</p>
 <p>To test whether the
 specialization/transfer pattern recurs across regulated verticals <em>with expert labels</em> — a
 strictly stronger labeling tier than the mortgage LLM-judge — we also score the same four checkpoints
-on ExpGuard <sup class="cite">[<a href="#bib-expguard2026">16</a>]</sup>, an expert-annotated moderation set of 2,275 rows spanning
+on ExpGuard <sup class="cite">[<a href="#bib-expguard2026">9</a>]</sup>, an expert-annotated moderation set of 2,275 rows spanning
 <strong>finance</strong>, <strong>health</strong>, and <strong>law</strong>, using its <code>prompt_label</code> for input-prompt
 classification (matching our task). This is a single-label transfer probe, not the mortgage dual-<span class="math inline">\(G\times D\)</span>
 construct — one domain built in depth plus three external verticals for breadth. We report aggregate
 and per-domain AP for the four base checkpoints (<a class="xref" href="#tab:expguard">Table 15</a>, <a class="xref" href="#fig:expguard-domains">Figure 11</a>). The
 four-checkpoint result is complete and reproducible from committed text-free per-row scores; the tuned
-comparison is future work.</p>
+arm and a hosted-frontier reference point have since been run on the same rows and are central to
+<a class="xref" href="#sec:actIII-frontier">Section 7</a> (<a class="xref" href="#tab:frontier">Table 16</a>). What is still future work is a <em>dual-labeled</em>
+finance/health construct with expert sign-off (<a class="xref" href="#sec:roadmap">Section E.3</a>).</p>
 <h1 data-num="C" id="app:detail"><span class="secnum">C</span>Benchmark construction and mechanism detail</h1>
 <h2 data-num="C.1" id="sec:actI-coupling"><span class="secnum">C.1</span>The attractor: post-SFT scores are benchmark-fixed, so “stronger bases specialize more” is arithmetic</h2>
 <p>The cleanest way to see what Act I does and does not show is to notice a regularity that runs underneath
@@ -4873,7 +4929,7 @@ buys represented-source ranking and not, on average, transfer.</p>
 <h2 data-num="C.2" id="sec:actIV-mortgage-hmda"><span class="secnum">C.2</span>HMDA grounding: de-identified, banded fact sheets</h2>
 <p>Realism is what makes the benchmark hard: a guard should face requests that read like genuine
 mortgage-workflow traffic, not toy prompts. We ground each scenario in the public HMDA 2022 loan-level
-snapshot <sup class="cite">[<a href="#bib-hmda2022">1</a>]</sup>, pulled from the FFIEC/CFPB Data Browser (the U.S. agencies that collect and
+snapshot <sup class="cite">[<a href="#bib-hmda2022">16</a>]</sup>, pulled from the FFIEC/CFPB Data Browser (the U.S. agencies that collect and
 publish HMDA data). Each source record is reduced to a <em>banded, de-identified fact sheet</em>: loan
 purpose, occupancy, banded loan amount, banded income, banded LTV and DTI, action taken, denial reason,
 and state — and never an exact dollar amount, a census tract, or any identifier.</p>
@@ -4884,7 +4940,7 @@ replaced by a range (an income band rather than a dollar amount, likewise for LT
 fields in any one record, so no actual borrower’s row can be reassembled. <strong>(iii) A build-time
 assertion</strong> that no emitted fact sheet reproduces a single source record verbatim; the frozen release
 carries <code>contains_real_pii=false</code> with zero violations at freeze. Following
-<sup class="cite">[<a href="#bib-bowen2024mortgage">33</a>]</sup>, the fair-lending and ability-to-repay cells are deliberately biased toward
+<a class="citet" href="#bib-bowen2024mortgage">Bowen III et al.</a><sup class="cite">[<a href="#bib-bowen2024mortgage">6</a>]</sup>, the fair-lending and ability-to-repay cells are deliberately biased toward
 <strong>borderline, higher-risk</strong> files (high DTI, high LTV, a prior denial) — exactly where
 underwriter discretion, and therefore bias, has room to operate.</p>
 <div class="callout callout-background"><div class="callout-title">“Banded,” “marginal,” and “PII-safe” — in plain words</div><div class="callout-body">
@@ -4985,7 +5041,10 @@ finding.</p>
 the transfer loss that fine-tuning induces (<a class="xref" href="#sec:actI">Section 3</a>). We test this <em>retrospectively</em> on the
 adaptation panel’s committed per-row margins (<a class="xref" href="#sec:adaptation">Section 4</a>): 9 checkpoints across 5
 families (excluding the degenerate Llama-Guard null cell), each scored under {unmodified base, SFT,
-KL-SFT} <span class="math inline">\(\times\)</span> five seeds on the <em>same</em> rows. Every number is equal-family macro-AP on the raw
+KL-SFT} <span class="math inline">\(\times\)</span> five seeds on the <em>same</em> rows. The one exception is the cross-model committee of
+<a class="xref" href="#tab:ensembling-committee">Table 28</a>, which is reported over the four general checkpoints and over all ten
+including the null cell, because a rank-averaged committee is defined by its membership and dropping a
+member would change the object rather than clean it. Every number is equal-family macro-AP on the raw
 logit margin, anchored to each checkpoint’s <em>own</em> unmodified base — identical estimand to the main
 text. Within a checkpoint the base and its adapters share one output head, so raw margins are scale-comparable
 in <em>units</em>; they are not comparable in <em>dispersion</em>, and averaging them raw is therefore not
@@ -5016,8 +5075,10 @@ mean</em>, so it costs six forward passes rather than two. On this panel it rais
 at a represented cost of -0.022 (95% CI <span class="math inline">\([-0.035, -0.013]\)</span>).
 It is a recovery, not a Pareto win: for the strongest base the composed guard still gives back a little
 transfer (the Act II caveat, <a class="xref" href="#sec:actIII">Section 5</a>). <strong>Cost-matched, the effect is about half as large.</strong>
-Recomputing the honest 2-pass analogues on this same panel (equal-checkpoint mean over the ten cells,
-reproducing the tabulated row as a control): base <span class="math inline">\(\oplus\)</span> <em>one</em> adapter on raw margins gains
+Recomputing the honest 2-pass analogues on this same 9-checkpoint panel, as an
+equal-<em>checkpoint</em> mean (the tabulated row is an equal-<em>family</em> mean, so the two weightings
+do not coincide and the control below is read as a magnitude check, not a reproduction):
+base <span class="math inline">\(\oplus\)</span> <em>one</em> adapter on raw margins gains
 <span class="math inline">\(+0.012\)</span>, and base <span class="math inline">\(\oplus\)</span> one adapter <em>calibrated</em> — exactly <a class="xref" href="#eq:comp">Equation 5</a> — gains <span class="math inline">\(+0.008\)</span>,
 against the <span class="math inline">\(+0.014\)</span> of the six-pass row as tabulated. So the qualitative conclusion (only crossing the specialization
 axis lifts transfer above base) survives at the promoted operator, but the magnitude does not: the
@@ -5305,7 +5366,7 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
 <td style="text-align: left;">Frontier vs. local (<a class="xref" href="#tab:frontier">Table 16</a>, <a class="xref" href="#tab:h2h">Table 20</a> and <a class="xref" href="#tab:frontier-serving">Table 18</a>)</td>
 <td style="text-align: left;">Retrospective, estimation-only; hosted-API comparator; five joined corpora plus ExpGuard</td>
 <td style="text-align: left;">That the frontier gap is regime-dependent: hosted leads on transfer, the tuned panel leads on represented sources at a matched alarm budget</td>
-<td style="text-align: left;">Aggregate is post hoc; interval conditional on three purposively chosen sources; two of four weightings do not clear zero; no cell survives multiplicity <span class="math inline">\(\to\)</span> freeze one summary, then score a fresh cohort</td>
+<td style="text-align: left;">Aggregate is post hoc; interval conditional on three purposively chosen sources; of four weightings only two support a positive advantage — one straddles zero and one clears it in the <em>opposite</em> direction; no cell survives multiplicity <span class="math inline">\(\to\)</span> freeze one summary, then score a fresh cohort</td>
 </tr>
 <tr>
 <td style="text-align: left;">Scale, released guards, committees, cascade (<a class="xref" href="#sec:frontier-routes">Section 7.2</a>, <a class="xref" href="#sec:actIII">Section 5</a> and <a class="xref" href="#sec:frontier-licenses">Section 7.5</a>)</td>
@@ -5325,13 +5386,13 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
 <ol>
 <li><p><strong>Lock a genuinely uninspected prospective cohort</strong> (closes “not confirmatory,” Acts I–II). Pre-register the estimands and decision rules, then evaluate on data neither the researcher nor the manifest builder has seen. This is the single upgrade that would move Acts I and II from “retrospective characterization of this panel” to a confirmatory finding; the adaptation study (<a class="xref" href="#sec:adaptation">Section 4</a>) applies the <em>preregistration</em> half of this discipline (locked estimands and gates) to the starting-type question, but not the uninspected-data half — it reuses the Act I manifest and rows — so the remaining step is a genuinely uninspected cohort for both it and Acts I–II’s core specialization estimands.</p></li>
 <li><p><strong>Add the embedding-space overlap check</strong> (the remaining half of the decontamination audit). The <span class="math inline">\(n\)</span>-gram, near-duplicate, normalized, exact and provenance-lineage checks are now run and clean (<a class="xref" href="#sec:not-establish">Section E.1</a>), so the pending-audit caveat is closed for lexical overlap and the transfer estimates stand. What is left is semantic overlap: a paraphrase sharing no <span class="math inline">\(5\)</span>-gram with any training row would pass every check implemented. Closing it requires pinning an encoder in the lock — an identity decision, which is why it is a roadmap item rather than a script.</p></li>
-<li><p><strong>Add the remaining composition control</strong> (closes Act II’s mechanism gap). The equal-inference-cost <strong>SFT+SFT</strong> baseline is now run (<a class="xref" href="#tab:sftsft">Table 11</a>: base+SFT beats two-adapter ensembling on every checkpoint, so the recovery is the base’s doing); the open item is a true weight-space <strong>WiSE-FT</strong> rescoring <sup class="cite">[<a href="#bib-wortsman2022wiseft">53</a>]</sup> to compare output-space against weight-space interpolation on identical rows.</p></li>
-<li><p><strong>SME-adjudicate a stratified mortgage subset and report Fleiss-<span class="math inline">\(\kappa\)</span></strong> (closes the mortgage label-tier gap). Have qualified subject-matter experts independently re-label a stratified subset (weighted toward the G0/D1 and protected-pair rows), report inter-annotator agreement, and reconcile against the LLM-judge labels; this is what would let any mortgage number graduate from “measuring stick” toward an audit-grade instrument.</p></li>
+<li><p><strong>Add the remaining composition controls</strong> (closes Act II’s mechanism gap). The equal-inference-cost <strong>SFT+SFT</strong> baseline is now run (<a class="xref" href="#tab:sftsft">Table 11</a>: base+SFT beats two-adapter ensembling on every checkpoint, so the recovery is the base’s doing); the open item is a true weight-space <strong>WiSE-FT</strong> rescoring <sup class="cite">[<a href="#bib-wortsman2022wiseft">53</a>]</sup> to compare output-space against weight-space interpolation on identical rows. A second, cheaper item belongs here: the ensembling appendix’s base <span class="math inline">\(\oplus\)</span> adapter row is a <em>six</em>-pass construction, and its cost-matched two-pass analogue is quoted there as a hand recompute (<a class="xref" href="#app:ensembling">Appendix D</a>) — emitting that row through the generator with its own bootstrap would close the gap between the appendix’s tabulated magnitude and the promoted operator’s. A third, purely mechanical item belongs beside them: <a class="xref" href="#fig:plane">Figure 4</a> is the one figure in this report with no generator, so give <code>make_figures.py</code> a plotter that re-derives it from <a class="xref" href="#tab:seed-values">Table 4</a> and bring it inside the byte-check like every other figure (<a class="xref" href="#sec:repro">Section 9</a>).</p></li>
+<li><p><strong>SME-adjudicate a stratified mortgage subset and report Fleiss-<span class="math inline">\(\kappa\)</span></strong> (closes the mortgage label-tier gap). Have qualified subject-matter experts independently re-label a stratified subset (weighted toward the G0/D1 and protected-pair rows), report inter-annotator agreement, and reconcile against the LLM-judge labels; this is what would let any mortgage number graduate from “measuring stick” toward an audit-grade instrument. Alongside it, score the fairness gate on <em>all</em> <span class="math inline">\(39\)</span> release protected pairs rather than the <span class="math inline">\(3\)</span> that fall inside <code>public_test</code>: the guards are zero-shot, so every pair is legitimate evaluation data and the recompute needs no training — and <a class="xref" href="#sec:actIV-mortgage-pairs">Section 6.3</a> shows three pairs cannot rank guards at all. Report it separately from the public-test pairs so the number stays comparable with a future fine-tuned arm.</p></li>
 <li><p><strong>Populate the empty G1/D0 quadrant</strong> (closes an unmeasurable failure mode). Construct grounded “looks unsafe yet policy-compliant” requests so over-refusal on legitimate mortgage traffic becomes measurable rather than absent by construction.</p></li>
 <li><p><strong>Evaluate at production prevalence with a cost-weighted operating point</strong> (closes “balanced prevalence overstates precision”). Re-score at realistic (heavily benign) base rates and report precision and a cost-weighted threshold, so the deployed-precision story is not read off a balanced pool.</p></li>
 <li><p><strong>Broaden the panel beyond two lineages</strong> (closes the lineage/scale confound). Add checkpoints from additional model families and a wider size range so that “stronger bases specialize more” can be tested rather than inferred from four coupled points.</p></li>
 <li><p><strong>Build dual-labeled finance/health constructs with expert sign-off</strong> (closes the remaining breadth gap). The four-checkpoint <em>base</em> ExpGuard eval is complete (<a class="xref" href="#tab:expguard">Table 15</a>), and the tuned and frontier comparisons are now in place (<a class="xref" href="#tab:frontier">Table 16</a>). What is still missing is the construct itself: extend the mortgage-style dual-label <span class="math inline">\(G\times D\)</span> design into finance and health with expert adjudication — one domain built in depth plus verticals built for breadth. Two smaller follow-ons fall out of <a class="xref" href="#sec:actIII-frontier">Section 7</a>: re-run the tuned arm from <em>release-provenance</em> adapters if they are ever reconstructed (the present rows are a same-recipe re-execution), and score the KL-SFT <span class="math inline">\(\beta&gt;0\)</span> arms on ExpGuard, for which the adapter grid and the scoring path already exist.</p></li>
-<li><p><strong>Score gated / commercial guards and extend beyond prompt-only</strong> (closes the non-commercial-data and scope limits). Once licenses are accepted, evaluate gated open guards (e.g. Llama Guard 3, WildGuard) on the same rows and scorer; and extend the task beyond input-prompt classification to response and multi-turn moderation. Note that several training sources are non-commercial / gated, which constrains redistribution — raw third-party rows are referenced by pinned identifier + revision + content hash, never redistributed.</p></li>
+<li><p><strong>Extend beyond prompt-only</strong> (closes the scope limit). The gated-guard half of this item is now <em>done</em>: the licenses were accepted, and six released purpose-built guards — including Llama Guard 3 and WildGuard — are scored on the Acts I–II rows through their native verdict contracts in <a class="xref" href="#sec:adaptation">Section 4</a> and on ExpGuard in <a class="xref" href="#sec:frontier-routes">Section 7.2</a>, with the Llama Guard cell’s degeneracy diagnosed as our own harness bug (<a class="xref" href="#sec:llama-guard-harness">Section 7.2</a>). What remains is the task boundary: everything here classifies the <em>incoming request</em>, and extending to response and multi-turn moderation is untouched. Note that several training sources are non-commercial / gated, which constrains redistribution — raw third-party rows are referenced by pinned identifier + revision + content hash, never redistributed.</p></li>
 </ol>
 <div class="callout callout-takeaway"><div class="callout-title">The disciplined next step</div><div class="callout-body">
 
@@ -5343,61 +5404,61 @@ recalibrated and gated on both splits like any other (<a class="xref" href="#sec
     <section id="references">
       <h2><span class="secnum">§</span>References</h2>
       <ol class="bib">
-<li id="bib-hmda2022"><span class="bibnum">[1]</span><span class="bibtext">Federal Financial Institutions Examination Council (FFIEC), Consumer Financial Protection Bureau (CFPB). <em>HMDA Snapshot National Loan-Level Dataset (2022)</em>. 2023.</span></li>
-<li id="bib-achara2025watchdogs"><span class="bibnum">[2]</span><span class="bibtext">Achara, Akshit, Chhabra, Anshuman. <em>Watching the {AI} Watchdogs: A Fairness and Robustness Analysis of {AI} Safety Moderation Classifiers</em>. Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 2: Short Papers). 2025. <a href="https://doi.org/10.18653/v1/2025.naacl-short.22" rel="noopener">link</a>.</span></li>
-<li id="bib-meta2024llamaguard2"><span class="bibnum">[3]</span><span class="bibtext">Meta AI. <em>Llama Guard 2 Model Card</em>. 2024.</span></li>
-<li id="bib-meta2024llamaguard3_1b"><span class="bibnum">[4]</span><span class="bibtext">Meta AI. <em>Llama Guard 3-1B Model Card</em>. 2024.</span></li>
-<li id="bib-meta2024llamaguard3_8b"><span class="bibnum">[5]</span><span class="bibtext">Meta AI. <em>Llama Guard 3-8B Model Card</em>. 2024.</span></li>
-<li id="bib-meta2024promptguard"><span class="bibnum">[6]</span><span class="bibtext">Meta AI. <em>Prompt Guard 86M Model Card</em>. 2024.</span></li>
-<li id="bib-meta2025llamaguard4"><span class="bibnum">[7]</span><span class="bibtext">Meta AI. <em>Llama Guard 4: A 12B Multimodal Safety Classifier</em>. 2025.</span></li>
-<li id="bib-meta2025promptguard2_22m"><span class="bibnum">[8]</span><span class="bibtext">Meta AI. <em>Llama Prompt Guard 2-22M Model Card</em>. 2025.</span></li>
-<li id="bib-meta2025promptguard2_86m"><span class="bibnum">[9]</span><span class="bibtext">Meta AI. <em>Llama Prompt Guard 2-86M Model Card</em>. 2025.</span></li>
-<li id="bib-akinrele2026regime"><span class="bibnum">[10]</span><span class="bibtext">Akindoyin Akinrele, Shreyank N. Gowda. <em>Prompt Injection Detection is Regime-Dependent: A Deployment-Aware Evaluation with Interpretable Structural Signals</em>. 2026.</span></li>
-<li id="bib-bakouch2025smollm3"><span class="bibnum">[11]</span><span class="bibtext">Elie Bakouch, Loubna Ben Allal, Anton Lozhkov, Nouamane Tazi, Lewis Tunstall, Carlos Miguel Pati{\~n}o, Edward Beeching, Aymeric Roucher, Aksel Joonas Reedi, Quentin Gallou{\&#x27;e}dec, Kashif Rasul, Nathan Habib, Cl{\&#x27;e}mentine Fourrier, Hynek Kydl{\&#x27;\i}{\v c}ek, Guilherme Penedo, Hugo Larcher, Mathieu Morlon, Vaibhav Srivastav, Joshua Lochner, Xuan-Son Nguyen, Colin Raffel, Leandro von Werra, Thomas Wolf. <em>SmolLM3: smol, multilingual, long-context reasoner</em>. 2025.</span></li>
-<li id="bib-bassani2024guardbench"><span class="bibnum">[12]</span><span class="bibtext">Elias Bassani, Ignacio Sanchez. <em>GuardBench}: A Large-Scale Benchmark for Guardrail Models</em>. Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing (EMNLP). 2024.</span></li>
-<li id="bib-bassani2025robustness"><span class="bibnum">[13]</span><span class="bibtext">Elias Bassani, Ignacio Sanchez. <em>On Guardrail Models&#x27; Robustness to Mutations and Adversarial Attacks</em>. Findings of the Association for Computational Linguistics: EMNLP 2025. 2025. <a href="https://aclanthology.org/2025.findings-emnlp.922/" rel="noopener">link</a>.</span></li>
-<li id="bib-chao2024jailbreakbench"><span class="bibnum">[14]</span><span class="bibtext">Patrick Chao, Edoardo Debenedetti, Alexander Robey, Maksym Andriushchenko, Francesco Croce, Vikash Sehwag, Edgar Dobriban, Nicolas Flammarion, George J. Pappas, Florian Tram{\`e}r, Hamed Hassani, Eric Wong. <em>JailbreakBench: An Open Robustness Benchmark for Jailbreaking Large Language Models</em>. NeurIPS 2024 (Datasets \&amp; Benchmarks). 2024.</span></li>
-<li id="bib-choi2026compass"><span class="bibnum">[15]</span><span class="bibtext">Choi, Dasol, Lee, DongGeon, Kartono, Brigitta Jesica, Berndt, Helena, Kwon, Taeyoun, Jang, Joonwon, Park, Haon, Yu, Hwanjo, Kahng, Minsuk. <em>COMPASS}: A Framework for Evaluating Organization-Specific Policy Alignment in {LLM}s</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026. <a href="https://aclanthology.org/2026.acl-long.2139/" rel="noopener">link</a>.</span></li>
-<li id="bib-expguard2026"><span class="bibnum">[16]</span><span class="bibtext">Minseok Choi, Dongjin Kim, Seungbin Yang, Subin Kim, Youngjun Kwak, Juyoung Oh, Jaegul Choo, Jungmin Son. <em>ExpGuard}: {LLM} Content Moderation in Specialized Domains</em>. 2026.</span></li>
-<li id="bib-cisnerosvelarde2026policy"><span class="bibnum">[17]</span><span class="bibtext">Cisneros-Velarde, Pedro. <em>Policy Compliance of User Requests in Natural Language for {AI} Systems</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 6: Industry Track). 2026. <a href="https://doi.org/10.18653/v1/2026.acl-industry.21" rel="noopener">link</a>.</span></li>
-<li id="bib-cui2024orbench"><span class="bibnum">[18]</span><span class="bibtext">Justin Cui, Wei-Lin Chiang, Ion Stoica, Cho-Jui Hsieh. <em>OR-Bench: An Over-Refusal Benchmark for Large Language Models</em>. ICML 2025 (PMLR 267). 2025.</span></li>
-<li id="bib-deng2025duoguard"><span class="bibnum">[19]</span><span class="bibtext">Yihe Deng, Yu Yang, Junkai Zhang, Wei Wang, Bo Li. <em>DuoGuard: A Two-Player RL-Driven Framework for Multilingual LLM Guardrails</em>. arXiv preprint. 2025.</span></li>
-<li id="bib-flexguard2026"><span class="bibnum">[20]</span><span class="bibtext">Zhihao Ding, Jinming Li, Ze Lu, Jieming Shi. <em>FlexGuard}: Continuous Risk Scoring for Strictness-Adaptive {LLM} Content Moderation</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026. <a href="https://aclanthology.org/2026.acl-long.263/" rel="noopener">link</a>.</span></li>
-<li id="bib-dou2026finguard"><span class="bibnum">[21]</span><span class="bibtext">Huaixia Dou, Jie Zhu, Minghao Wu, Shuo Jiang, Junhui Li, Lifan Guo, Feng Chen, Chi Zhang. <em>FinGuard}: Detecting Financial Regulatory Non-Compliance in {LLM} Interactions</em>. 2026.</span></li>
-<li id="bib-elesedy2024loraguard"><span class="bibnum">[22]</span><span class="bibtext">Hayder Elesedy, Pedro M. Esperanca, Silviu Vlad Oprea, Mete Ozay. <em>LoRA}-Guard: Parameter-Efficient Guardrail Adaptation for Content Moderation of Large Language Models</em>. Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing. 2024. <a href="https://aclanthology.org/2024.emnlp-main.656/" rel="noopener">link</a>.</span></li>
-<li id="bib-fedorov2024llamaguard3_1b"><span class="bibnum">[23]</span><span class="bibtext">Igor Fedorov, Kate Plawiak, Lemeng Wu, Tarek Elgamal, Naveen Suda, Eric Smith, Hongyuan Zhan, Jianfeng Chi, Yuriy Hulovatyy, Kimish Patel, Zechun Liu, Changsheng Zhao, Yangyang Shi, Tijmen Blankevoort, Mahesh Pasupuleti, Bilge Soran, Zacharie Delpierre Coudert, Rachad Alao, Raghuraman Krishnamoorthi, Vikas Chandra. <em>Llama Guard 3-1B-INT4: Compact and Efficient Safeguard for Human-AI Conversations</em>. arXiv preprint. 2024.</span></li>
-<li id="bib-garg2019counterfactual"><span class="bibnum">[24]</span><span class="bibtext">Garg, Sahaj, Perot, Vincent, Limtiaco, Nicole, Taly, Ankur, Chi, Ed H., Beutel, Alex. <em>Counterfactual Fairness in Text Classification through Robustness</em>. Proceedings of the 2019 AAAI/ACM Conference on AI, Ethics, and Society (AIES). 2019. <a href="https://doi.org/10.1145/3306618.3317950" rel="noopener">link</a>.</span></li>
-<li id="bib-ghosh2024aegis"><span class="bibnum">[25]</span><span class="bibtext">Shaona Ghosh, Prasoon Varshney, Erick Galinkin, Christopher Parisien. <em>AEGIS: Online Adaptive AI Content Safety Moderation with Ensemble of LLM Experts</em>. arXiv preprint. 2024.</span></li>
-<li id="bib-goehausen2026gateai"><span class="bibnum">[26]</span><span class="bibtext">Ryle Goehausen, Marcus Sousa. <em>Gate {AI}: {LLM} Security Benchmark Evaluation Methodology and Results</em>. 2026.</span></li>
-<li id="bib-guo2017calibration"><span class="bibnum">[27]</span><span class="bibtext">Chuan Guo, Geoff Pleiss, Yu Sun, Kilian Q. Weinberger. <em>On Calibration of Modern Neural Networks</em>. ICML 2017 (PMLR 70). 2017.</span></li>
-<li id="bib-hackett2025bypassing"><span class="bibnum">[28]</span><span class="bibtext">William Hackett, Lewis Birch, Stefan Trawicki, Neeraj Suri, Peter Garraghan. <em>Bypassing LLM Guardrails: An Empirical Analysis of Evasion Attacks against Prompt Injection and Jailbreak Detection Systems</em>. Proceedings of the First Workshop on LLM Security (LLMSEC 2025). 2025.</span></li>
-<li id="bib-han2024wildguard"><span class="bibnum">[29]</span><span class="bibtext">Seungju Han, Kavel Rao, Allyson Ettinger, Liwei Jiang, Bill Yuchen Lin, Nathan Lambert, Yejin Choi, Nouha Dziri. <em>WildGuard: Open One-Stop Moderation Tools for Safety Risks, Jailbreaks, and Refusals of LLMs</em>. NeurIPS 2024 (Datasets \&amp; Benchmarks Track). 2024.</span></li>
-<li id="bib-hossain2026safetygeometry"><span class="bibnum">[30]</span><span class="bibtext">Hossain, Ismail, Puppala, Sai, Ferdaus, Jannatul, Alam, Md Jahangir, Lee, Yoonpyo, Alam, Syed Bahauddin, Talukder, Sajedul. <em>When Safety Geometry Collapses: Fine-Tuning Vulnerabilities in Agentic Guard Models</em>. 2026. <a href="https://arxiv.org/abs/2605.02914" rel="noopener">link</a>.</span></li>
-<li id="bib-hsiung2025guardrails"><span class="bibnum">[31]</span><span class="bibtext">Lei Hsiung, Tianyu Pang, Yung-Chen Tang, Linyue Song, Tsung-Yi Ho, Pin-Yu Chen, Yaoqing Yang. <em>Why LLM Safety Guardrails Collapse After Fine-tuning: A Similarity Analysis Between Alignment and Fine-tuning Datasets</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026. <a href="https://doi.org/10.18653/v1/2026.acl-long.756" rel="noopener">link</a>.</span></li>
-<li id="bib-hu2021lora"><span class="bibnum">[32]</span><span class="bibtext">Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen. <em>LoRA: Low-Rank Adaptation of Large Language Models</em>. ICLR 2022. 2021.</span></li>
-<li id="bib-bowen2024mortgage"><span class="bibnum">[33]</span><span class="bibtext">Bowen III, Donald E., Price, S. McKay, Stein, Luke C.D., Yang, Ke. <em>Measuring and Mitigating Racial Bias in Large Language Model Mortgage Underwriting</em>. 2024.</span></li>
-<li id="bib-inan2023llamaguard"><span class="bibnum">[34]</span><span class="bibtext">Hakan Inan, Kartikeya Upasani, Jianfeng Chi, Rashi Rungta, Krithika Iyer, Yuning Mao, Michael Tontchev, Qing Hu, Brian Fuller, Davide Testuggine, Madian Khabsa. <em>Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations</em>. arXiv preprint. 2023.</span></li>
-<li id="bib-ji2023beavertails"><span class="bibnum">[35]</span><span class="bibtext">Jiaming Ji, Mickel Liu, Juntao Dai, Xuehai Pan, Chi Zhang, Ce Bian, Ruiyang Sun, Boyuan Chen, Yizhou Wang, Yaodong Yang. <em>BeaverTails: Towards Improved Safety Alignment of LLM via a Human-Preference Dataset</em>. NeurIPS 2023 (Datasets \&amp; Benchmarks). 2023.</span></li>
-<li id="bib-jiang2024wildteaming"><span class="bibnum">[36]</span><span class="bibtext">Liwei Jiang, Kavel Rao, Seungju Han, Allyson Ettinger, Faeze Brahman, Sachin Kumar, Niloofar Mireshghallah, Ximing Lu, Maarten Sap, Yejin Choi, Nouha Dziri. <em>WildTeaming at Scale: From In-the-Wild Jailbreaks to (Adversarially) Safer Language Models</em>. NeurIPS 2024. 2024.</span></li>
-<li id="bib-kang2025r2guard"><span class="bibnum">[37]</span><span class="bibtext">Mintong Kang, Bo Li. <em>$R^2$}-Guard: Robust Reasoning Enabled LLM Guardrail via Knowledge-Enhanced Logical Reasoning</em>. ICLR 2025. 2025.</span></li>
-<li id="bib-kumar2022calibrated"><span class="bibnum">[38]</span><span class="bibtext">Ananya Kumar, Tengyu Ma, Percy Liang, Aditi Raghunathan. <em>Calibrated ensembles can mitigate accuracy tradeoffs under distribution shift</em>. Uncertainty in Artificial Intelligence (UAI), PMLR 180. 2022.</span></li>
-<li id="bib-kusner2017counterfactual"><span class="bibnum">[39]</span><span class="bibtext">Kusner, Matt J., Loftus, Joshua R., Russell, Chris, Silva, Ricardo. <em>Counterfactual Fairness</em>. Advances in Neural Information Processing Systems (NeurIPS). 2017.</span></li>
-<li id="bib-lee2025saferoute"><span class="bibnum">[40]</span><span class="bibtext">Lee, Seanie, Lee, Dong Bok, Wagner, Dominik, Kang, Minki, Seong, Haebin, Bocklet, Tobias, Lee, Juho, Hwang, Sung Ju. <em>SafeRoute}: Adaptive Model Selection for Efficient and Accurate Safety Guardrails in Large Language Models</em>. Findings of the Association for Computational Linguistics: ACL 2025. 2025. <a href="https://aclanthology.org/2025.findings-acl.105/" rel="noopener">link</a>.</span></li>
-<li id="bib-li2026surfaceheuristics"><span class="bibnum">[41]</span><span class="bibtext">Li Li, Chenxiao Yu, Zhiyu Ni, Hao Li, Charith Peris, Chaowei Xiao, Yue Zhao. <em>Defenses Against Prompt Attacks Learn Surface Heuristics</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026. <a href="https://aclanthology.org/2026.acl-long.502/" rel="noopener">link</a>.</span></li>
-<li id="bib-lin2023toxicchat"><span class="bibnum">[42]</span><span class="bibtext">Zi Lin, Zihan Wang, Yongqi Tong, Yangkun Wang, Yuxin Guo, Yujia Wang, Jingbo Shang. <em>ToxicChat: Unveiling Hidden Challenges of Toxicity Detection in Real-World User-AI Conversation</em>. Findings of EMNLP 2023. 2023.</span></li>
-<li id="bib-liu2025calibration"><span class="bibnum">[43]</span><span class="bibtext">Hongfu Liu, Hengguan Huang, Xiangming Gu, Hao Wang, Ye Wang. <em>On Calibration of {LLM}-based Guard Models for Reliable Content Moderation</em>. International Conference on Learning Representations (ICLR). 2025.</span></li>
-<li id="bib-liu2026domaingeneralizable"><span class="bibnum">[44]</span><span class="bibtext">Minqian Liu, Ioana Baldini, David Rabinowitz, David S. Rosenberg, Sebastian Gehrmann, Mark Dredze. <em>Domain Generalizable {AI} Guardrails with Augmented Policy Training</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026. <a href="https://aclanthology.org/2026.acl-long.748/" rel="noopener">link</a>.</span></li>
-<li id="bib-majhi2025gpuguard"><span class="bibnum">[45]</span><span class="bibtext">Vasudev Majhi, Dhruv Gupta, Advait Singh, Matthew Barker, Dhruv Kumar. <em>Do You Really Need a GPU to Guard Your LLM? CPU-Class Classifiers and Multi-Stage Pipelines for Safety Enforcement at Scale</em>. arXiv preprint. 2025.</span></li>
-<li id="bib-mazeika2024harmbench"><span class="bibnum">[46]</span><span class="bibtext">Mantas Mazeika, Long Phan, Xuwang Yin, Andy Zou, Zifan Wang, Norman Mu, Elham Sakhaee, Nathaniel Li, Steven Basart, Bo Li, David Forsyth, Dan Hendrycks. <em>HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal</em>. ICML 2024 (PMLR 235). 2024.</span></li>
-<li id="bib-padhi2024graniteguardian"><span class="bibnum">[47]</span><span class="bibtext">Inkit Padhi, Manish Nagireddy, Giandomenico Cornacchia, Subhajit Chaudhury, Tejaswini Pedapati, Pierre Dognin, Keerthiram Murugesan, Erik Miehling, Mart{\&#x27;\i}n Santill{\&#x27;a}n Cooper, Kieran Fraser, Giulio Zizzo, Muhammad Zaid Hameed, Mark Purcell, Michael Desmond, Qian Pan, Zahra Ashktorab, Inge Vejsbjerg, Elizabeth M. Daly, Michael Hind, Werner Geyer, Ambrish Rawat, Kush R. Varshney, Prasanna Sattigeri. <em>Granite Guardian: Comprehensive LLM Safeguarding</em>. NAACL 2025 (Industry Track). 2025.</span></li>
-<li id="bib-rahimi2026benchmark"><span class="bibnum">[48]</span><span class="bibtext">Reza Rahimi. <em>The Benchmark Chooses the Winner: Measuring Fine-Tuning Specialization, Not General Improvement, in Small Safety Guards</em>. 2026.</span></li>
-<li id="bib-rottger2024xstest"><span class="bibnum">[49]</span><span class="bibtext">Paul R{\&quot;o}ttger, Hannah Rose Kirk, Bertie Vidgen, Giuseppe Attanasio, Federico Bianchi, Dirk Hovy. <em>XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models</em>. NAACL 2024 (Long Papers). 2024.</span></li>
-<li id="bib-qwen3guard2025"><span class="bibnum">[50]</span><span class="bibtext">Qwen Team. <em>Qwen3Guard Technical Report</em>. 2025.</span></li>
-<li id="bib-toles2026mortarbench"><span class="bibnum">[51]</span><span class="bibtext">Matthew Toles, Yunan Lu, Manav Munjal, Bojun Liu, Yuanhao Deng, Stephanie Selig, Derek Rindner, Cheng Li, Zhou Yu. <em>MortarBench}: Evaluating Mortgage Loan Origination Agents</em>. 2026.</span></li>
-<li id="bib-wortsman2022modelsoups"><span class="bibnum">[52]</span><span class="bibtext">Mitchell Wortsman, Gabriel Ilharco, Samir Ya Gadre, Rebecca Roelofs, Raphael Gontijo-Lopes, Ari S. Morcos, Hongseok Namkoong, Ali Farhadi, Yair Carmon, Simon Kornblith, Ludwig Schmidt. <em>Model Soups: Averaging Weights of Multiple Fine-Tuned Models Improves Accuracy without Increasing Inference Time</em>. Proceedings of the 39th International Conference on Machine Learning. 2022. <a href="https://proceedings.mlr.press/v162/wortsman22a.html" rel="noopener">link</a>.</span></li>
-<li id="bib-wortsman2022wiseft"><span class="bibnum">[53]</span><span class="bibtext">Mitchell Wortsman, Gabriel Ilharco, Jong Wook Kim, Mike Li, Simon Kornblith, Rebecca Roelofs, Raphael Gontijo-Lopes, Hannaneh Hajishirzi, Ali Farhadi, Hongseok Namkoong, Ludwig Schmidt. <em>Robust Fine-Tuning of Zero-Shot Models</em>. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. 2022. <a href="https://arxiv.org/abs/2109.01903" rel="noopener">link</a>.</span></li>
-<li id="bib-zeng2024shieldgemma"><span class="bibnum">[54]</span><span class="bibtext">Wenjun Zeng, Yuchi Liu, Ryan Mullins, Ludovic Peran, Joe Fernandez, Hamza Harkous, Karthik Narasimhan, Drew Proud, Piyush Kumar, Bhaktipriya Radharapu, Olivia Sturman, Oscar Wahltinez. <em>ShieldGemma: Generative AI Content Moderation Based on Gemma</em>. arXiv preprint. 2024.</span></li>
-<li id="bib-zhao2026mlbenchguard"><span class="bibnum">[55]</span><span class="bibtext">Zhao, Yunhan, Chen, Zhaorun, Ma, Xingjun, Jiang, Yu-Gang, Li, Bo. <em>ML-Bench\&amp;Guard}: Policy-Grounded Multilingual Safety Benchmark and Guardrail for Large Language Models</em>. 2026. <a href="https://arxiv.org/abs/2605.00689" rel="noopener">link</a>.</span></li>
+<li id="bib-achara2025watchdogs"><span class="bibnum">[1]</span><span class="bibtext">Akshit Achara and Anshuman Chhabra. <em>Watching the AI Watchdogs: A Fairness and Robustness Analysis of AI Safety Moderation Classifiers</em>. Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 2: Short Papers). 2025. <a href="https://doi.org/10.18653/v1/2025.naacl-short.22" rel="noopener">link</a>.</span></li>
+<li id="bib-akinrele2026regime"><span class="bibnum">[2]</span><span class="bibtext">Akindoyin Akinrele and Shreyank N. Gowda. <em>Prompt Injection Detection is Regime-Dependent: A Deployment-Aware Evaluation with Interpretable Structural Signals</em>. arXiv:2605.26999. 2026. <a href="https://arxiv.org/abs/2605.26999" rel="noopener">link</a>.</span></li>
+<li id="bib-bakouch2025smollm3"><span class="bibnum">[3]</span><span class="bibtext">Elie Bakouch, Loubna Ben Allal, Anton Lozhkov, Nouamane Tazi, Lewis Tunstall, Carlos Miguel Patiño, Edward Beeching, Aymeric Roucher, Aksel Joonas Reedi, Quentin Gallouédec, Kashif Rasul, Nathan Habib, Clémentine Fourrier, Hynek Kydlíček, Guilherme Penedo, Hugo Larcher, Mathieu Morlon, Vaibhav Srivastav, Joshua Lochner, Xuan-Son Nguyen, Colin Raffel, Leandro von Werra and Thomas Wolf. <em>SmolLM3: smol, multilingual, long-context reasoner</em>. Hugging Face blog + model card (HuggingFaceTB/SmolLM3-3B), https://huggingface.co/blog/smollm3. 2025.</span></li>
+<li id="bib-bassani2024guardbench"><span class="bibnum">[4]</span><span class="bibtext">Elias Bassani and Ignacio Sanchez. <em>GuardBench: A Large-Scale Benchmark for Guardrail Models</em>. Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing (EMNLP). 2024.</span></li>
+<li id="bib-bassani2025robustness"><span class="bibnum">[5]</span><span class="bibtext">Elias Bassani and Ignacio Sanchez. <em>On Guardrail Models&#x27; Robustness to Mutations and Adversarial Attacks</em>. Findings of the Association for Computational Linguistics: EMNLP 2025. 2025. <a href="https://aclanthology.org/2025.findings-emnlp.922/" rel="noopener">link</a>.</span></li>
+<li id="bib-bowen2024mortgage"><span class="bibnum">[6]</span><span class="bibtext">Donald E. Bowen III, S. McKay Price, Luke C.D. Stein and Ke Yang. <em>Measuring and Mitigating Racial Bias in Large Language Model Mortgage Underwriting</em>. Working paper. 2024.</span></li>
+<li id="bib-chao2024jailbreakbench"><span class="bibnum">[7]</span><span class="bibtext">Patrick Chao, Edoardo Debenedetti, Alexander Robey, Maksym Andriushchenko, Francesco Croce, Vikash Sehwag, Edgar Dobriban, Nicolas Flammarion, George J. Pappas, Florian Tramèr, Hamed Hassani and Eric Wong. <em>JailbreakBench: An Open Robustness Benchmark for Jailbreaking Large Language Models</em>. NeurIPS 2024 (Datasets &amp; Benchmarks). arXiv:2404.01318. 2024. <a href="https://arxiv.org/abs/2404.01318" rel="noopener">link</a>.</span></li>
+<li id="bib-choi2026compass"><span class="bibnum">[8]</span><span class="bibtext">Dasol Choi, DongGeon Lee, Brigitta Jesica Kartono, Helena Berndt, Taeyoun Kwon, Joonwon Jang, Haon Park, Hwanjo Yu and Minsuk Kahng. <em>COMPASS: A Framework for Evaluating Organization-Specific Policy Alignment in LLMs</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026. <a href="https://aclanthology.org/2026.acl-long.2139/" rel="noopener">link</a>.</span></li>
+<li id="bib-expguard2026"><span class="bibnum">[9]</span><span class="bibtext">Minseok Choi, Dongjin Kim, Seungbin Yang, Subin Kim, Youngjun Kwak, Juyoung Oh, Jaegul Choo and Jungmin Son. <em>ExpGuard: LLM Content Moderation in Specialized Domains</em>. arXiv:2603.02588. ICLR 2026; arXiv:2603.02588. 2026. <a href="https://arxiv.org/abs/2603.02588" rel="noopener">link</a>.</span></li>
+<li id="bib-cisnerosvelarde2026policy"><span class="bibnum">[10]</span><span class="bibtext">Pedro Cisneros-Velarde. <em>Policy Compliance of User Requests in Natural Language for AI Systems</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 6: Industry Track). 2026. <a href="https://doi.org/10.18653/v1/2026.acl-industry.21" rel="noopener">link</a>.</span></li>
+<li id="bib-cui2024orbench"><span class="bibnum">[11]</span><span class="bibtext">Justin Cui, Wei-Lin Chiang, Ion Stoica and Cho-Jui Hsieh. <em>OR-Bench: An Over-Refusal Benchmark for Large Language Models</em>. ICML 2025 (PMLR 267). arXiv:2405.20947. 2025. <a href="https://arxiv.org/abs/2405.20947" rel="noopener">link</a>.</span></li>
+<li id="bib-deng2025duoguard"><span class="bibnum">[12]</span><span class="bibtext">Yihe Deng, Yu Yang, Junkai Zhang, Wei Wang and Bo Li. <em>DuoGuard: A Two-Player RL-Driven Framework for Multilingual LLM Guardrails</em>. arXiv preprint. 2025. <a href="https://arxiv.org/abs/2502.05163" rel="noopener">link</a>.</span></li>
+<li id="bib-flexguard2026"><span class="bibnum">[13]</span><span class="bibtext">Zhihao Ding, Jinming Li, Ze Lu and Jieming Shi. <em>FlexGuard: Continuous Risk Scoring for Strictness-Adaptive LLM Content Moderation</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). arXiv:2602.23636. 2026. <a href="https://aclanthology.org/2026.acl-long.263/" rel="noopener">link</a>.</span></li>
+<li id="bib-dou2026finguard"><span class="bibnum">[14]</span><span class="bibtext">Huaixia Dou, Jie Zhu, Minghao Wu, Shuo Jiang, Junhui Li, Lifan Guo, Feng Chen and Chi Zhang. <em>FinGuard: Detecting Financial Regulatory Non-Compliance in LLM Interactions</em>. arXiv:2605.29427. 2026. <a href="https://arxiv.org/abs/2605.29427" rel="noopener">link</a>.</span></li>
+<li id="bib-elesedy2024loraguard"><span class="bibnum">[15]</span><span class="bibtext">Hayder Elesedy, Pedro M. Esperanca, Silviu Vlad Oprea and Mete Ozay. <em>LoRA-Guard: Parameter-Efficient Guardrail Adaptation for Content Moderation of Large Language Models</em>. Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing. 2024. <a href="https://aclanthology.org/2024.emnlp-main.656/" rel="noopener">link</a>.</span></li>
+<li id="bib-hmda2022"><span class="bibnum">[16]</span><span class="bibtext">Federal Financial Institutions Examination Council (FFIEC) and Consumer Financial Protection Bureau (CFPB). <em>HMDA Snapshot National Loan-Level Dataset (2022)</em>. https://ffiec.cfpb.gov/data-publication/snapshot-national-loan-level-dataset/. 2023.</span></li>
+<li id="bib-fedorov2024llamaguard3_1b"><span class="bibnum">[17]</span><span class="bibtext">Igor Fedorov, Kate Plawiak, Lemeng Wu, Tarek Elgamal, Naveen Suda, Eric Smith, Hongyuan Zhan, Jianfeng Chi, Yuriy Hulovatyy, Kimish Patel, Zechun Liu, Changsheng Zhao, Yangyang Shi, Tijmen Blankevoort, Mahesh Pasupuleti, Bilge Soran, Zacharie Delpierre Coudert, Rachad Alao, Raghuraman Krishnamoorthi and Vikas Chandra. <em>Llama Guard 3-1B-INT4: Compact and Efficient Safeguard for Human-AI Conversations</em>. arXiv preprint. 2024. <a href="https://arxiv.org/abs/2411.17713" rel="noopener">link</a>.</span></li>
+<li id="bib-garg2019counterfactual"><span class="bibnum">[18]</span><span class="bibtext">Sahaj Garg, Vincent Perot, Nicole Limtiaco, Ankur Taly, Ed H. Chi and Alex Beutel. <em>Counterfactual Fairness in Text Classification through Robustness</em>. Proceedings of the 2019 AAAI/ACM Conference on AI, Ethics, and Society (AIES). 2019. <a href="https://doi.org/10.1145/3306618.3317950" rel="noopener">link</a>.</span></li>
+<li id="bib-ghosh2024aegis"><span class="bibnum">[19]</span><span class="bibtext">Shaona Ghosh, Prasoon Varshney, Erick Galinkin and Christopher Parisien. <em>AEGIS: Online Adaptive AI Content Safety Moderation with Ensemble of LLM Experts</em>. arXiv preprint. 2024. <a href="https://arxiv.org/abs/2404.05993" rel="noopener">link</a>.</span></li>
+<li id="bib-goehausen2026gateai"><span class="bibnum">[20]</span><span class="bibtext">Ryle Goehausen and Marcus Sousa. <em>Gate AI: LLM Security Benchmark Evaluation Methodology and Results</em>. arXiv:2606.02959. 2026. <a href="https://arxiv.org/abs/2606.02959" rel="noopener">link</a>.</span></li>
+<li id="bib-guo2017calibration"><span class="bibnum">[21]</span><span class="bibtext">Chuan Guo, Geoff Pleiss, Yu Sun and Kilian Q. Weinberger. <em>On Calibration of Modern Neural Networks</em>. ICML 2017 (PMLR 70). arXiv:1706.04599. 2017. <a href="https://arxiv.org/abs/1706.04599" rel="noopener">link</a>.</span></li>
+<li id="bib-hackett2025bypassing"><span class="bibnum">[22]</span><span class="bibtext">William Hackett, Lewis Birch, Stefan Trawicki, Neeraj Suri and Peter Garraghan. <em>Bypassing LLM Guardrails: An Empirical Analysis of Evasion Attacks against Prompt Injection and Jailbreak Detection Systems</em>. Proceedings of the First Workshop on LLM Security (LLMSEC 2025). arXiv:2504.11168. 2025. <a href="https://arxiv.org/abs/2504.11168" rel="noopener">link</a>.</span></li>
+<li id="bib-han2024wildguard"><span class="bibnum">[23]</span><span class="bibtext">Seungju Han, Kavel Rao, Allyson Ettinger, Liwei Jiang, Bill Yuchen Lin, Nathan Lambert, Yejin Choi and Nouha Dziri. <em>WildGuard: Open One-Stop Moderation Tools for Safety Risks, Jailbreaks, and Refusals of LLMs</em>. NeurIPS 2024 (Datasets &amp; Benchmarks Track). arXiv:2406.18495. 2024. <a href="https://arxiv.org/abs/2406.18495" rel="noopener">link</a>.</span></li>
+<li id="bib-hossain2026safetygeometry"><span class="bibnum">[24]</span><span class="bibtext">Ismail Hossain, Sai Puppala, Jannatul Ferdaus, Md Jahangir Alam, Yoonpyo Lee, Syed Bahauddin Alam and Sajedul Talukder. <em>When Safety Geometry Collapses: Fine-Tuning Vulnerabilities in Agentic Guard Models</em>. arXiv:2605.02914. 2026. <a href="https://arxiv.org/abs/2605.02914" rel="noopener">link</a>.</span></li>
+<li id="bib-hsiung2025guardrails"><span class="bibnum">[25]</span><span class="bibtext">Lei Hsiung, Tianyu Pang, Yung-Chen Tang, Linyue Song, Tsung-Yi Ho, Pin-Yu Chen and Yaoqing Yang. <em>Why LLM Safety Guardrails Collapse After Fine-tuning: A Similarity Analysis Between Alignment and Fine-tuning Datasets</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). arXiv:2506.05346. Earlier workshop version at ICML 2025 DIG-BUGS. 2026. <a href="https://doi.org/10.18653/v1/2026.acl-long.756" rel="noopener">link</a>.</span></li>
+<li id="bib-hu2021lora"><span class="bibnum">[26]</span><span class="bibtext">Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang and Weizhu Chen. <em>LoRA: Low-Rank Adaptation of Large Language Models</em>. ICLR 2022. arXiv:2106.09685. 2021. <a href="https://arxiv.org/abs/2106.09685" rel="noopener">link</a>.</span></li>
+<li id="bib-inan2023llamaguard"><span class="bibnum">[27]</span><span class="bibtext">Hakan Inan, Kartikeya Upasani, Jianfeng Chi, Rashi Rungta, Krithika Iyer, Yuning Mao, Michael Tontchev, Qing Hu, Brian Fuller, Davide Testuggine and Madian Khabsa. <em>Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations</em>. arXiv preprint. 2023. <a href="https://arxiv.org/abs/2312.06674" rel="noopener">link</a>.</span></li>
+<li id="bib-ji2023beavertails"><span class="bibnum">[28]</span><span class="bibtext">Jiaming Ji, Mickel Liu, Juntao Dai, Xuehai Pan, Chi Zhang, Ce Bian, Ruiyang Sun, Boyuan Chen, Yizhou Wang and Yaodong Yang. <em>BeaverTails: Towards Improved Safety Alignment of LLM via a Human-Preference Dataset</em>. NeurIPS 2023 (Datasets &amp; Benchmarks). arXiv:2307.04657. 2023. <a href="https://arxiv.org/abs/2307.04657" rel="noopener">link</a>.</span></li>
+<li id="bib-jiang2024wildteaming"><span class="bibnum">[29]</span><span class="bibtext">Liwei Jiang, Kavel Rao, Seungju Han, Allyson Ettinger, Faeze Brahman, Sachin Kumar, Niloofar Mireshghallah, Ximing Lu, Maarten Sap, Yejin Choi and Nouha Dziri. <em>WildTeaming at Scale: From In-the-Wild Jailbreaks to (Adversarially) Safer Language Models</em>. NeurIPS 2024. arXiv:2406.18510. 2024. <a href="https://arxiv.org/abs/2406.18510" rel="noopener">link</a>.</span></li>
+<li id="bib-kang2025r2guard"><span class="bibnum">[30]</span><span class="bibtext">Mintong Kang and Bo Li. <em>$R^2$-Guard: Robust Reasoning Enabled LLM Guardrail via Knowledge-Enhanced Logical Reasoning</em>. ICLR 2025. arXiv:2407.05557. 2025. <a href="https://arxiv.org/abs/2407.05557" rel="noopener">link</a>.</span></li>
+<li id="bib-kumar2022calibrated"><span class="bibnum">[31]</span><span class="bibtext">Ananya Kumar, Tengyu Ma, Percy Liang and Aditi Raghunathan. <em>Calibrated ensembles can mitigate accuracy tradeoffs under distribution shift</em>. Uncertainty in Artificial Intelligence (UAI), PMLR 180. 2022.</span></li>
+<li id="bib-kusner2017counterfactual"><span class="bibnum">[32]</span><span class="bibtext">Matt J. Kusner, Joshua R. Loftus, Chris Russell and Ricardo Silva. <em>Counterfactual Fairness</em>. Advances in Neural Information Processing Systems (NeurIPS). 2017.</span></li>
+<li id="bib-lee2025saferoute"><span class="bibnum">[33]</span><span class="bibtext">Seanie Lee, Dong Bok Lee, Dominik Wagner, Minki Kang, Haebin Seong, Tobias Bocklet, Juho Lee and Sung Ju Hwang. <em>SafeRoute: Adaptive Model Selection for Efficient and Accurate Safety Guardrails in Large Language Models</em>. Findings of the Association for Computational Linguistics: ACL 2025. 2025. <a href="https://aclanthology.org/2025.findings-acl.105/" rel="noopener">link</a>.</span></li>
+<li id="bib-li2026surfaceheuristics"><span class="bibnum">[34]</span><span class="bibtext">Li Li, Chenxiao Yu, Zhiyu Ni, Hao Li, Charith Peris, Chaowei Xiao and Yue Zhao. <em>Defenses Against Prompt Attacks Learn Surface Heuristics</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026. <a href="https://aclanthology.org/2026.acl-long.502/" rel="noopener">link</a>.</span></li>
+<li id="bib-lin2023toxicchat"><span class="bibnum">[35]</span><span class="bibtext">Zi Lin, Zihan Wang, Yongqi Tong, Yangkun Wang, Yuxin Guo, Yujia Wang and Jingbo Shang. <em>ToxicChat: Unveiling Hidden Challenges of Toxicity Detection in Real-World User-AI Conversation</em>. Findings of EMNLP 2023. arXiv:2310.17389. 2023. <a href="https://arxiv.org/abs/2310.17389" rel="noopener">link</a>.</span></li>
+<li id="bib-liu2025calibration"><span class="bibnum">[36]</span><span class="bibtext">Hongfu Liu, Hengguan Huang, Xiangming Gu, Hao Wang and Ye Wang. <em>On Calibration of LLM-based Guard Models for Reliable Content Moderation</em>. International Conference on Learning Representations (ICLR). arXiv:2410.10414. 2025.</span></li>
+<li id="bib-liu2026domaingeneralizable"><span class="bibnum">[37]</span><span class="bibtext">Minqian Liu, Ioana Baldini, David Rabinowitz, David S. Rosenberg, Sebastian Gehrmann and Mark Dredze. <em>Domain Generalizable AI Guardrails with Augmented Policy Training</em>. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026. <a href="https://aclanthology.org/2026.acl-long.748/" rel="noopener">link</a>.</span></li>
+<li id="bib-majhi2025gpuguard"><span class="bibnum">[38]</span><span class="bibtext">Vasudev Majhi, Dhruv Gupta, Advait Singh, Matthew Barker and Dhruv Kumar. <em>Do You Really Need a GPU to Guard Your LLM? CPU-Class Classifiers and Multi-Stage Pipelines for Safety Enforcement at Scale</em>. arXiv preprint. 2025. <a href="https://arxiv.org/abs/2512.19011" rel="noopener">link</a>.</span></li>
+<li id="bib-mazeika2024harmbench"><span class="bibnum">[39]</span><span class="bibtext">Mantas Mazeika, Long Phan, Xuwang Yin, Andy Zou, Zifan Wang, Norman Mu, Elham Sakhaee, Nathaniel Li, Steven Basart, Bo Li, David Forsyth and Dan Hendrycks. <em>HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal</em>. ICML 2024 (PMLR 235). arXiv:2402.04249. 2024. <a href="https://arxiv.org/abs/2402.04249" rel="noopener">link</a>.</span></li>
+<li id="bib-meta2024llamaguard2"><span class="bibnum">[40]</span><span class="bibtext">Meta AI. <em>Llama Guard 2 Model Card</em>. GitHub model card. PurpleLlama repository, Llama-Guard2 model card. 2024.</span></li>
+<li id="bib-meta2024llamaguard3_1b"><span class="bibnum">[41]</span><span class="bibtext">Meta AI. <em>Llama Guard 3-1B Model Card</em>. Hugging Face model card. https://huggingface.co/meta-llama/Llama-Guard-3-1B. 2024.</span></li>
+<li id="bib-meta2024llamaguard3_8b"><span class="bibnum">[42]</span><span class="bibtext">Meta AI. <em>Llama Guard 3-8B Model Card</em>. GitHub model card. PurpleLlama repository, Llama-Guard3 8B model card. 2024.</span></li>
+<li id="bib-meta2024promptguard"><span class="bibnum">[43]</span><span class="bibtext">Meta AI. <em>Prompt Guard 86M Model Card</em>. Hugging Face model card. https://huggingface.co/meta-llama/Prompt-Guard-86M. 2024.</span></li>
+<li id="bib-meta2025llamaguard4"><span class="bibnum">[44]</span><span class="bibtext">Meta AI. <em>Llama Guard 4: A 12B Multimodal Safety Classifier</em>. Meta / Hugging Face model card. https://huggingface.co/meta-llama/Llama-Guard-4-12B. 2025.</span></li>
+<li id="bib-meta2025promptguard2_22m"><span class="bibnum">[45]</span><span class="bibtext">Meta AI. <em>Llama Prompt Guard 2-22M Model Card</em>. Hugging Face model card. https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-22M. 2025.</span></li>
+<li id="bib-meta2025promptguard2_86m"><span class="bibnum">[46]</span><span class="bibtext">Meta AI. <em>Llama Prompt Guard 2-86M Model Card</em>. Hugging Face model card. https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M. 2025.</span></li>
+<li id="bib-padhi2024graniteguardian"><span class="bibnum">[47]</span><span class="bibtext">Inkit Padhi, Manish Nagireddy, Giandomenico Cornacchia, Subhajit Chaudhury, Tejaswini Pedapati, Pierre Dognin, Keerthiram Murugesan, Erik Miehling, Martín Santillán Cooper, Kieran Fraser, Giulio Zizzo, Muhammad Zaid Hameed, Mark Purcell, Michael Desmond, Qian Pan, Zahra Ashktorab, Inge Vejsbjerg, Elizabeth M. Daly, Michael Hind, Werner Geyer, Ambrish Rawat, Kush R. Varshney and Prasanna Sattigeri. <em>Granite Guardian: Comprehensive LLM Safeguarding</em>. NAACL 2025 (Industry Track). arXiv:2412.07724. 2025. <a href="https://arxiv.org/abs/2412.07724" rel="noopener">link</a>.</span></li>
+<li id="bib-qwen3guard2025"><span class="bibnum">[48]</span><span class="bibtext">Qwen Team. <em>Qwen3Guard Technical Report</em>. arXiv:2510.14276. https://github.com/QwenLM/Qwen3Guard. 2025. <a href="https://arxiv.org/abs/2510.14276" rel="noopener">link</a>.</span></li>
+<li id="bib-rahimi2026benchmark"><span class="bibnum">[49]</span><span class="bibtext">Reza Rahimi. <em>The Benchmark Chooses the Winner: Measuring Fine-Tuning Specialization, Not General Improvement, in Small Safety Guards</em>. Companion manuscript and reproducibility artifacts. Retrospective clean-v2 study. 2026.</span></li>
+<li id="bib-rottger2024xstest"><span class="bibnum">[50]</span><span class="bibtext">Paul Röttger, Hannah Rose Kirk, Bertie Vidgen, Giuseppe Attanasio, Federico Bianchi and Dirk Hovy. <em>XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models</em>. NAACL 2024 (Long Papers). arXiv:2308.01263. 2024. <a href="https://arxiv.org/abs/2308.01263" rel="noopener">link</a>.</span></li>
+<li id="bib-toles2026mortarbench"><span class="bibnum">[51]</span><span class="bibtext">Matthew Toles, Yunan Lu, Manav Munjal, Bojun Liu, Yuanhao Deng, Stephanie Selig, Derek Rindner, Cheng Li and Zhou Yu. <em>MortarBench: Evaluating Mortgage Loan Origination Agents</em>. arXiv:2606.19416. 2026. <a href="https://arxiv.org/abs/2606.19416" rel="noopener">link</a>.</span></li>
+<li id="bib-wortsman2022modelsoups"><span class="bibnum">[52]</span><span class="bibtext">Mitchell Wortsman, Gabriel Ilharco, Samir Ya Gadre, Rebecca Roelofs, Raphael Gontijo-Lopes, Ari S. Morcos, Hongseok Namkoong, Ali Farhadi, Yair Carmon, Simon Kornblith and Ludwig Schmidt. <em>Model Soups: Averaging Weights of Multiple Fine-Tuned Models Improves Accuracy without Increasing Inference Time</em>. Proceedings of the 39th International Conference on Machine Learning. 2022. <a href="https://proceedings.mlr.press/v162/wortsman22a.html" rel="noopener">link</a>.</span></li>
+<li id="bib-wortsman2022wiseft"><span class="bibnum">[53]</span><span class="bibtext">Mitchell Wortsman, Gabriel Ilharco, Jong Wook Kim, Mike Li, Simon Kornblith, Rebecca Roelofs, Raphael Gontijo-Lopes, Hannaneh Hajishirzi, Ali Farhadi, Hongseok Namkoong and Ludwig Schmidt. <em>Robust Fine-Tuning of Zero-Shot Models</em>. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. arXiv:2109.01903. 2022. <a href="https://arxiv.org/abs/2109.01903" rel="noopener">link</a>.</span></li>
+<li id="bib-zeng2024shieldgemma"><span class="bibnum">[54]</span><span class="bibtext">Wenjun Zeng, Yuchi Liu, Ryan Mullins, Ludovic Peran, Joe Fernandez, Hamza Harkous, Karthik Narasimhan, Drew Proud, Piyush Kumar, Bhaktipriya Radharapu, Olivia Sturman and Oscar Wahltinez. <em>ShieldGemma: Generative AI Content Moderation Based on Gemma</em>. arXiv preprint. 2024. <a href="https://arxiv.org/abs/2407.21772" rel="noopener">link</a>.</span></li>
+<li id="bib-zhao2026mlbenchguard"><span class="bibnum">[55]</span><span class="bibtext">Yunhan Zhao, Zhaorun Chen, Xingjun Ma, Yu-Gang Jiang and Bo Li. <em>ML-Bench&amp;Guard: Policy-Grounded Multilingual Safety Benchmark and Guardrail for Large Language Models</em>. arXiv:2605.00689. 2026. <a href="https://arxiv.org/abs/2605.00689" rel="noopener">link</a>.</span></li>
 </ol>
     </section>
 

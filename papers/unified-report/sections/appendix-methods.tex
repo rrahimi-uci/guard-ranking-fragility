@@ -10,9 +10,11 @@ if any fingerprint mismatches. This single-panel, single-manifest discipline is 
 composition, and the domain evaluations \emph{directly comparable} rather than stapled
 results. The \emph{same} four checkpoints recur across all three acts, and \textbf{Qwen3-4B is the
 recurring character}: the strongest base, and --- as the acts will show --- the one that specializes
-most, the one composition helps least, and the numerically highest-ranking, most
-protected-token-invariant zero-shot mortgage guard (within overlapping CIs --- \Cref{tab:baseline}
-does not license a ranking).
+most, the one composition helps least, and the numerically highest-ranking zero-shot mortgage guard
+(within overlapping CIs --- \Cref{tab:baseline} does not license a ranking). It is \emph{not} the most
+protected-token-invariant guard on that split: its $\Delta_{\mathrm{context}}=0.000$ is a saturation
+artifact of the probability scale, and read on the raw margin its gap is the second largest on the panel
+(\Cref{sec:actIV-mortgage-pairs}).
 
 \subsection{The fixed four-checkpoint panel and pinned revisions}
 \label{sec:setup-panel}
@@ -196,11 +198,15 @@ independent audit of $24$ hard assertions covers the source exclusions, schema a
 exact and conflicting-label overlap, pinned revisions and content hashes, selection provenance, family
 disjointness, licenses, and near-duplicate dispositions. This is a \emph{build-time} gate (family isolation
 plus the $24$ assertions), and it is distinct from the \emph{formal retrospective overlap audit} of the
-manifest against the current v2 transfer suite, which remains \emph{pending} (\Cref{sec:not-establish}): the
-gate guarantees no near-duplicate family straddles a split within the constructed graph, but a from-scratch
-n-gram / near-duplicate check of the $1{,}200$-row manifest against the v2 transfer benchmarks has not yet
-been run --- and any residual overlap it found would make specialization look \emph{milder}, so this is a
-caveat in the direction of caution.
+manifest against the current v2 transfer suite. That audit has since been run
+(\code{experiments/audit\_overlap\_lineage.py}, committed to \code{artifacts/overlap\_audit/}) and it is
+clean: against the $1{,}200$-row manifest the v2 transfer suite shows zero exact and zero normalized
+matches, zero \code{family\_id} or \code{upstream\_family\_id} collisions, nothing at $5$-gram containment
+$\geq0.80$, and nothing at character-shingle Jaccard $\geq0.70$, so the transfer estimates need no
+downward revision (\Cref{sec:decontamination}). What neither the gate nor the audit covers is
+\emph{semantic} overlap: no embedding-space check is implemented, so a paraphrase sharing no $5$-gram with
+any training row would pass both, and closing that needs an encoder pinned into the lock
+(\Cref{sec:roadmap}).
 
 \subsection{Estimands and the statistical protocol}
 \label{sec:setup-stats}
@@ -282,8 +288,9 @@ development and are reported only as non-promotable ablations.
 Act~III evaluates the \emph{same four checkpoints} on two complementary regulated-domain instruments.
 
 \paragraph{Mortgage (built in depth, dual-label).} We constructed a fixed, HMDA-grounded benchmark whose
-unit is one incoming request carrying two independent labels, general-safety $G$ and mortgage-policy $D$
-(\Cref{sec:bg-mortgage}). Requests are grounded in de-identified, banded HMDA fact sheets --- never
+unit is one incoming request carrying two \emph{separately assigned} labels, general-safety $G$ and
+mortgage-policy $D$ (\Cref{sec:bg-mortgage}) --- separately assigned, but not empirically independent in
+v1, where the empty G1/D0 cell nests $G$ inside $D$ (\Cref{sec:actIV-mortgage-composition}). Requests are grounded in de-identified, banded HMDA fact sheets --- never
 verbatim records --- through an agentic pipeline that plans, grounds, generates, adversarially mutates,
 and rubric-bound-judges each item, accepting it only if its assigned label matches the target, before a
 provenance-tracked, \code{content\_family}-isolated split into the frozen release (\Cref{fig:pipeline};
@@ -316,4 +323,6 @@ classification (matching our task). This is a single-label transfer probe, not t
 construct --- one domain built in depth plus three external verticals for breadth. We report aggregate
 and per-domain AP for the four base checkpoints (\Cref{tab:expguard}, \Cref{fig:expguard-domains}). The
 four-checkpoint result is complete and reproducible from committed text-free per-row scores; the tuned
-comparison is future work.
+arm and a hosted-frontier reference point have since been run on the same rows and are central to
+\Cref{sec:actIII-frontier} (\Cref{tab:frontier}). What is still future work is a \emph{dual-labeled}
+finance/health construct with expert sign-off (\Cref{sec:roadmap}).

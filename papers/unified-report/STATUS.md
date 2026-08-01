@@ -1,19 +1,35 @@
 # Unified report — build status
 
-> **Paper C correction, 2026-07-25.** Paper C is unrun. Its original DPO/GRPO protocol and TRL
-> runner are superseded; the old runner now fails closed. A partial v2 development scaffold exists,
-> but there is no claim-bearing lock, adapter matrix, complete reference/dev scoring path, or result
-> artifact. The current protocol candidate is `docs/paper-c-prereg-v2.md`. The GPU runbook formerly
-> recorded here must not be used.
+> **Paper C, as of 2026-08-01.** Paper C contributes **nothing** to this report and is not
+> integrated into the manuscript at any evidence tier. Its lineage, as recorded in
+> `studies/registry.yaml` — which is the authority, not this file — runs:
+> `paper_c_reference_centering` (stopped) → `paper_c_matched_dpo_scaffold` (never run; the v2
+> protocol candidate `docs/paper-c-prereg-v2.md`, now superseded) →
+> `paper_c_specialize_align_mortgage_v1` (**stopped after a 44-cell pilot**, with
+> `paper_c_sta_study_package_v1` as a migrated copy of the same study, not a second one). The
+> successor's outcome is an *identifiability* finding, not a result: with a three-action head,
+> gold-based adjudication, and structured fields derived from gold, the two candidate-source
+> inventories came out 98.9%/97.7% byte-identical and the primary contrast was unidentified. The
+> 66-cell primary panel was never authorized and all five readiness gates remain false;
+> `claim_authorization: false` on every entry in the lineage. Both successor suites are declared
+> `expected_fail` (the candidate lock binds live source bytes). The GPU runbook formerly recorded
+> here must not be used.
+>
+> An earlier version of this banner described the v2 scaffold as "the current protocol candidate"
+> and listed its gates as the open work. That was two studies out of date.
 
-Snapshot of what is done / running / pending for the merged report, written during the autonomous
-window. Nothing here fabricates numbers; pending pieces await their locked runs.
+Snapshot of what is done / pending for the merged report. Nothing here fabricates numbers; pending
+pieces await their locked runs. Where this file and `studies/registry.yaml` disagree, the registry
+wins — it is validated in CI by `tools/validate_registries.py`, and this file is not.
 
 ## Present in the checkout
 
-- **Paper C protocol rewrite.** `docs/paper-c-prereg-v2.md`, the development plan, code design, and
-  rationale define the candidate matched VerdictCE/PairCE/DPO study. The v1 preregistration remains
-  as a superseded amendment record; the old unified plan remains available in Git history.
+- **Paper C lineage (all superseded or stopped).** `docs/paper-c-prereg-v2.md` and its development
+  plan / code design define the never-run matched VerdictCE/PairCE/DPO scaffold; the v1
+  preregistration remains as a superseded amendment record. Both are historical: the active
+  descendant, `papers/paper_c/specialize_then_align/` (plus its migrated copy under
+  `studies/paper-c-specialize-align-mortgage-v1/`), was itself stopped after the disjoint pilot. See
+  the banner above and `studies/registry.yaml`.
 - **Current report scaffold.** `unified_report.tex` — *Benchmark Gains Do Not Guarantee Transfer:
   Fine-Tuning Small Language Model Safety Guards* —
   is organized around four research questions (Q1 specialization, Q2 composition, Q3 regulated
@@ -45,7 +61,11 @@ window. Nothing here fabricates numbers; pending pieces await their locked runs.
   (`tab:frontier`), together with the hosted-frontier and scale-ladder arms; what remains open is a
   dual-labeled finance/health construct with expert sign-off.
 
-## Pending Paper C gates
+## Pending gates, if Paper C is ever resumed
+
+These were written against the never-run v2 scaffold. They are **not** the current blockers: the
+successor study reached a pilot and stopped on an identifiability problem that no amount of
+scaffolding work resolves. Kept as a record of what the v2 protocol still lacked.
 
 - add lock-bound reference-margin and multi-checkpoint Stage-2-development scoring plus inventory builders;
 - add tiny-model integration and pass a real three-objective GPU smoke (the focused/full CPU suites pass);
@@ -53,3 +73,8 @@ window. Nothing here fabricates numbers; pending pieces await their locked runs.
 - freeze Stage-2 family split, uncertainty selections, and reference margins;
 - close scorer/analyzer diagnostics, cache, selection-inventory, and reproduction contracts;
 - acquire a genuinely sealed cohort if confirmatory claims are desired.
+
+The blocker that actually stopped the successor is upstream of all six: with gold-derived structured
+fields and gold-based adjudication, the specialist and generalist candidate inventories were
+98.9%/97.7% byte-identical, so the primary contrast was not identified. Resuming means changing the
+*design*, not finishing the scaffold.

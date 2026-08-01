@@ -40,8 +40,10 @@ The build also **asserts its float numbering against the built PDF**: it extract
 so `Table 4` in the HTML is `Table 4` in the paper. That check caught four tables that pandoc
 had silently dropped, and it is the reason the two editions can be cited interchangeably.
 
-The builder emits the current table, figure, equation, cross-reference, and bibliography counts on each
-run and fails if they disagree with the PDF. No second hand-maintained count is kept here.
+The builder emits the current **table and figure** counts on each run and fails if they disagree
+with the PDF; it also reports how many abstract cross-references it resolved. Equations,
+cross-references and the bibliography are numbered and resolved but are not cross-checked against
+the PDF — an earlier version of this line claimed they were. No hand-maintained count is kept here.
 
 ## Pipeline
 
@@ -138,5 +140,8 @@ gate and would serve the un-redacted sources.
 Same scope and same caveats as the PDF: Acts I–II are retrospective estimation on a fixed
 four-checkpoint panel, the adaptation study is the one analysis-preregistered piece, ExpGuard is
 the one expert-annotated tier, and the mortgage labels are LLM-judge, not SME-adjudicated. This
-edition changes the typography and withholds one quoted benchmark row (above); it changes no
-number, interval, or verdict.
+edition changes the typography and **withholds nothing**: the redaction path exists
+(`build.py --redact-case-study`) but has been off since v1_hmda2022 was licensed CC BY 4.0 on
+2026-07-27, so the worked case study is published here in full, exactly as in the PDF. It changes
+no number, interval, or verdict. (An earlier version of this section still said one row was
+withheld, contradicting the Licence section above and the page itself.)

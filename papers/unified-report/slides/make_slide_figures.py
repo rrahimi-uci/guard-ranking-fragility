@@ -815,6 +815,10 @@ def fig_latency():
 
 
 if __name__ == "__main__":
+    # slides/README.md documents that the build prints the face it selected, "so a fallback is
+    # visible rather than silent". Nothing actually called the reporter, so the documented
+    # safeguard did not exist: on a box without Calibri the figures fell back in silence.
+    print(T.figure_font_report())
     print("Building deck figures from committed generated/ artifacts ...")
     fig_teaser()
     fig_act1_bars()

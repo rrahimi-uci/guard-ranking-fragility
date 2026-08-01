@@ -255,15 +255,24 @@ tbody td:first-child { color: var(--ink); font-weight: 600; }
 .callout-background .callout-title { color: var(--blue); }
 .callout-case       { border-left-color: var(--amber); background: var(--amber-bg); }
 .callout-case       .callout-title { color: var(--amber); }
-.callout-editor     { display: none; }   /* editorial notes are print-draft only */
+
+/* The end-of-question Evidence / Decision / Boundary modules. These used to be emitted with
+   class `editor` and hidden by `display: none` under the comment "editorial notes are
+   print-draft only" -- but they are not editorial notes, they are the four boxes that state
+   what each question's result licenses and what it does not. The PDF prints all four; the
+   web edition silently dropped them. */
+.callout-result     { border-left-color: var(--muted); background: var(--sheet); }
+.callout-result     .callout-title { color: var(--ink); }
 
 .callout-takeaway .callout-title::before,
-.callout-background .callout-title::before {
+.callout-background .callout-title::before,
+.callout-result .callout-title::before {
   font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase;
   display: block; margin-bottom: .25rem; opacity: .8;
 }
 .callout-takeaway .callout-title::before   { content: "Takeaway"; }
 .callout-background .callout-title::before { content: "Background"; }
+.callout-result .callout-title::before     { content: "Result"; }
 
 /* ---------------------------------------------------------------- math */
 mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding: .35rem 0; }

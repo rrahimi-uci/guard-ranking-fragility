@@ -489,10 +489,11 @@ three pairs and on a saturating scale, cannot answer.
 
 ## Citation & license
 
-[CITATION.cff](CITATION.cff) cites the unified report, and its title matches the paper's own
-(an earlier note here claimed otherwise and had it backwards: the `.tex` and the `.cff` agree on
-"High-Compliance Regulated Domains"; it was this README and the HTML edition that said
-"Business", and both are now corrected). Repository code and original content are
+[CITATION.cff](CITATION.cff) cites the unified report, and its title matches the paper's own:
+*Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards*. (This
+note previously reconciled the `.tex` and the `.cff` on the subtitle "High-Compliance Regulated
+Domains" — a fragment of the title the report was retitled away from on 2026-07-31, and which now
+appears in neither file.) Repository code and original content are
 [Apache 2.0](LICENSE); third-party datasets/models retain their own licenses. Review the mortgage
 [DATA_CARD.md](mortgage-benchmark/benchmark/v1_hmda2022/DATA_CARD.md) before redistributing generated
 prompts.
