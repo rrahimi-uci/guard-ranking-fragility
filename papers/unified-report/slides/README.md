@@ -7,8 +7,7 @@ Two decks are built from code, and only these two are current:
 - `safety_guard_exec_deck.pptx` — 13 slides, 16:9. The guardrail-sourcing decision,
   for a non-research audience.
 
-Both track the report *Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model
-Safety Guards*. Earlier hand-edited
+Both track the report *Safety Benchmark Gains Do Not Guarantee Safety Transfer: A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains*. Earlier hand-edited
 `_redesigned` and `- Repaired` copies were deleted: the redesign now lives in
 `deck_theme.py`, so the generated decks *are* the redesigned decks, and the stale copies
 still carried the withdrawn title and pre-correction numbers.
@@ -61,7 +60,7 @@ not guaranteed to be the same face.
 | 4 | How we measure — compare each guard to its own base | Background §"Estimands, the fixed panel, and the paired hierarchical bootstrap"; study-at-a-glance figure |
 | 5 | Act I — a large represented gain that does not transfer | Act I fixed-panel result table |
 | 6 | Act I — 15 of 20 guards specialize | per-seed value table; specialization plane |
-| 7 | Act I — the operating point, under both threshold rules | Act I per-benchmark/operating-point table; matched-false-alarm-budget table |
+| 7 | Act I — the operating point, under both threshold rules | Act I per-benchmark/operating-point table; matched-false-alarm-budget table; low-FPR re-reading table |
 | 8 | Act I — the deployment base rate | prevalence curve; the AP(π₊) equation |
 | 9 | Act I — KL is a tradeoff dial | anti-forgetting (KL-SFT) control table |
 | 10 | Preregistered — released guards specialize too | adaptation movement-vector table; adaptation plane |

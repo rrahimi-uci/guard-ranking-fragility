@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Benchmark Gains Do Not Guarantee Transfer — Fine-Tuning Small Language Model Safety Guards</title>
+<title>Safety Benchmark Gains Do Not Guarantee Safety Transfer — A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains</title>
 <meta name="description" content="What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, a dual-labeled mortgage benchmark, and a hosted-frontier comparison that reverses direction by traffic regime.">
 <meta name="author" content="Reza Rahimi, PhD">
 <meta name="color-scheme" content="light dark">
@@ -17,13 +17,13 @@
 
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Safety-Guard Dynamics">
-<meta property="og:title" content="Benchmark Gains Do Not Guarantee Transfer">
+<meta property="og:title" content="Safety Benchmark Gains Do Not Guarantee Safety Transfer">
 <meta property="og:description" content="What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, a dual-labeled mortgage benchmark, and a hosted-frontier comparison that reverses direction by traffic regime.">
 <meta property="og:url" content="https://rrahimi-uci.github.io/safety-guard-dynamics/">
 <meta property="og:image" content="https://rrahimi-uci.github.io/safety-guard-dynamics/assets/fig/og_teaser.png">
 <meta property="og:image:alt" content="Three panels: fine-tuning's represented gain versus flat transfer, the top-ranked guard changing with the benchmark, and a fair-lending violation ranked below benign rows.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Benchmark Gains Do Not Guarantee Transfer">
+<meta name="twitter:title" content="Safety Benchmark Gains Do Not Guarantee Safety Transfer">
 <meta name="twitter:description" content="What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, a dual-labeled mortgage benchmark, and a hosted-frontier comparison that reverses direction by traffic regime.">
 <meta name="twitter:image" content="https://rrahimi-uci.github.io/safety-guard-dynamics/assets/fig/og_teaser.png">
 
@@ -31,8 +31,8 @@
 {
   "@context": "https://schema.org",
   "@type": "ScholarlyArticle",
-  "headline": "Benchmark Gains Do Not Guarantee Transfer",
-  "alternativeHeadline": "Fine-Tuning Small Language Model Safety Guards",
+  "headline": "Safety Benchmark Gains Do Not Guarantee Safety Transfer",
+  "alternativeHeadline": "A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains",
   "description": "What does fine-tuning actually buy a compact safety guard? A paired, same-checkpoint study on a fixed four-checkpoint panel: LoRA-SFT lifts trained-on ranking to a ceiling but not transfer, and at an equal false-alarm budget it catches less than half of what its own untuned base catches off-source. Plus a retraining-free composition repair, a preregistered ten-checkpoint replication, a dual-labeled mortgage benchmark, and a hosted-frontier comparison that reverses direction by traffic regime.",
   "url": "https://rrahimi-uci.github.io/safety-guard-dynamics/",
   "image": "https://rrahimi-uci.github.io/safety-guard-dynamics/assets/fig/og_teaser.png",
@@ -72,8 +72,8 @@
 <header class="masthead">
   <div class="masthead-inner">
     <div class="eyebrow">JazzX AI · Research Report · July 2026</div>
-    <h1 class="doctitle">Benchmark Gains Do Not Guarantee Transfer</h1>
-    <p class="docsub">Fine-Tuning Small Language Model Safety Guards</p>
+    <h1 class="doctitle">Safety Benchmark Gains Do Not Guarantee Safety Transfer</h1>
+    <p class="docsub">A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains</p>
     <div class="byline">
       <b>Reza Rahimi, PhD</b> · <span class="affil">JazzX AI, Los Altos, CA · reza.rahimi@jazzx.ai</span>
     </div>
@@ -256,8 +256,9 @@ artifacts the tables <code>\input</code>, so no panel can drift from its row.</f
 <figure class="tablewrap" data-float="Table 1" id="tab:glance"><figcaption><span class="floatnum">Table 1.</span> <strong>Results at a glance — the four answers of <a class="xref" href="#fig:teaser">Figure 1</a>, with every headline
 number, its estimand, and what it licenses.</strong> This is the claim ledger, and the <strong>Q</strong> labels are
 the panels of <a class="xref" href="#fig:teaser">Figure 1</a>: Q1 <em>and</em> Q1a are its top-left panel (Q1a is the red annotation
-inside it), Q2 its top-right, Q3 its bottom-left, Q4 its bottom-right. Q1b and Q4a sharpen their
-neighbours and have no panel of their own. Nothing later in the report is claimed at a stronger
+inside it), Q2 its top-right, Q3 its bottom-left, Q4 its bottom-right. Q1b, Q1c and Q4a sharpen their
+neighbours and have no panel of their own — Q1c in particular re-prices Q1 rather than adding
+evidence to it, and is the row to read before quoting any of these deltas as a deployment number. Nothing later in the report is claimed at a stronger
 evidence tier than its row allows, and the three tiers are never pooled (<a class="xref" href="#sec:ledger">Section E.2</a>).
 <em>Retro.</em> <span class="math inline">\(=\)</span> retrospective, estimation-only on a panel inspected during development.
 <em>Prereg.</em> <span class="math inline">\(=\)</span> analysis-preregistered (locked estimands and criteria) but <em>not</em> data-blind.
@@ -301,6 +302,15 @@ in the specialize quadrant</td>
 <span class="math inline">\(0.780\!\to\!0.203\)</span>, worse on all four</td>
 <td style="text-align: left;">Retro.</td>
 <td style="text-align: left;">§<a data-reference="sec:actI-op" data-reference-type="ref" href="#sec:actI-op">3.5</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">Q1c. Does the <em>metric</em> understate it?</td>
+<td style="text-align: left;">The same eight cells re-read as partial AUC over FPR <span class="math inline">\([0,0.05]\)</span> and as recall at that
+budget, instead of over the whole ranking</td>
+<td style="text-align: left;"><strong>Yes, by two to three times — but no cell flips sign.</strong> Transfer <span class="math inline">\(-0.059\)</span> AP
+vs. <span class="math inline">\(-0.174\)</span> pAUC; represented <span class="math inline">\(+0.323\)</span> vs. <span class="math inline">\(+0.686\)</span></td>
+<td style="text-align: left;">Retro.</td>
+<td style="text-align: left;">§<a data-reference="sec:actI-lowfpr" data-reference-type="ref" href="#sec:actI-lowfpr">3.6</a></td>
 </tr>
 <tr>
 <td style="text-align: left;">Q1b. Does it hit guards that are <em>already</em> guards?</td>
@@ -4168,7 +4178,10 @@ and is not robust to reweighting (<a class="xref" href="#tab:h2h-weighting">Tabl
 <p>The four questions have one answer. A guard’s benchmark score is co-produced by the benchmark: SFT buys
 represented-source ranking, not transfer — and at an equal false-alarm budget it does not even buy the
 recall it appears to, catching 0.217 against its own base’s 0.517
-off-source (Act I); keeping the base in an output-space average
+off-source (Act I). The choice of <em>metric</em> co-produces the verdict too, in the same direction:
+averaging precision over the whole ranking makes the trade look milder than it is, and re-reading the
+identical rows inside a <span class="math inline">\(0.05\)</span> alarm budget roughly triples the transfer cost without flipping
+a single cell (<a class="xref" href="#sec:actI-lowfpr">Section 3.6</a>); keeping the base in an output-space average
 <em>recovers</em> some transfer without retraining (at a second inference pass), though not a threshold (Act II); and a change of
 domain can hide the violation entirely, so regulated domains need domain-grounded evaluation and a
 fairness gate (Act III) — and building that gate taught us that the gate itself needs the same
@@ -4235,7 +4248,9 @@ specialization in 15/20 seeds (<a class="xref" href="#tab:primary">Table 3</a>)
 -0.300, <code>HarmBench</code> recall -0.577 (<a class="xref" href="#tab:matchedfpr">Table 6</a>).</td>
 <td style="text-align: left;">Always compare a tune to its <em>own</em> base on represented <em>and</em> held-out sets, <em>and at a
 matched false-alarm rate</em> — a delta vs. other models hides the transfer cost, and a recall compared at
-unequal alarm rates hides its sign.</td>
+unequal alarm rates hides its sign. Report the trade in the region you will deploy in: the same cells
+read over FPR <span class="math inline">\([0,0.05]\)</span> give <span class="math inline">\(-0.174\)</span> transfer, not <span class="math inline">\(-0.059\)</span>
+(<a class="xref" href="#tab:lowfpr">Table 7</a>).</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>3. A base-anchored KL penalty buys back most of the transfer SFT gives up — at a represented-source cost, no extra inference.</strong></td>
@@ -4559,7 +4574,12 @@ a large represented-source gain (<span class="math inline">\(+0.3234\)</span>) b
 (<span class="math inline">\(-0.0589\)</span>): one weak base improves, while the strongest bases lose transfer. At an equal
 false-alarm budget the ambiguity disappears operationally — transfer recall falls
 <span class="math inline">\(0.517\!\rightarrow\!0.217\)</span> and <code>HarmBench</code> recall falls
-<span class="math inline">\(0.780\!\rightarrow\!0.203\)</span>, with the tuned guard worse on all four checkpoints.</p>
+<span class="math inline">\(0.780\!\rightarrow\!0.203\)</span>, with the tuned guard worse on all four checkpoints.
+Read inside that budget rather than over the whole ranking, the same paired comparison is
+<span class="math inline">\(2.1\times\)</span> larger on the represented side and <span class="math inline">\(3.0\times\)</span>
+on transfer, with 0 checkpoints changing sign — so the metric that produced the
+headline was understating it, and the one base whose transfer improves on macro-AP does not improve
+at a deployable alarm rate.</p>
 <p>The extensions sharpen the boundary rather than erase it. Released purpose-built guards move in the
 same direction in a non-confirmatory fixed-panel analysis. KL-regularized SFT retains transfer only by
 giving back represented gain, while base-plus-adapter composition recovers transfer for an additional

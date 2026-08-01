@@ -1,4 +1,4 @@
-# Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards
+# Safety Benchmark Gains Do Not Guarantee Safety Transfer: A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains
 
 Auditable experiments, papers, and benchmark artifacts for understanding how compact
 prompt-safety **guards** specialize, transfer, compose, and behave in high-compliance domains.
@@ -38,7 +38,7 @@ analyzer pooled general and purpose-built checkpoints under one `qwen` family. A
 passed, and the panel split was repaired after the outcomes were known.
 
 The **[unified research report](papers/unified-report/unified_report.pdf)** is the synthesis:
-*Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards.* Run
+*Safety Benchmark Gains Do Not Guarantee Safety Transfer: A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains.* Run
 `make -C papers/unified-report verify` to recompute the report's generated tables and figures into a
 scratch directory and byte-check them against the committed artifacts. The harness reports its own
 coverage: **28 of 32** generated inputs verify in the standard environment, the remaining **4**
@@ -490,7 +490,7 @@ three pairs and on a saturating scale, cannot answer.
 ## Citation & license
 
 [CITATION.cff](CITATION.cff) cites the unified report, and its title matches the paper's own:
-*Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards*. (This
+*Safety Benchmark Gains Do Not Guarantee Safety Transfer: A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains*. (This
 note previously reconciled the `.tex` and the `.cff` on the subtitle "High-Compliance Regulated
 Domains" — a fragment of the title the report was retitled away from on 2026-07-31, and which now
 appears in neither file.) Repository code and original content are

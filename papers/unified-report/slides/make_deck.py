@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Build the research presentation for "Benchmark Gains Do Not Guarantee Transfer".
+"""Build the research presentation for "Safety Benchmark Gains Do Not Guarantee Safety Transfer".
 
 Every figure comes from slides/assets/ (built by make_slide_figures.py from the same
 committed generated/*.tex artifacts the report \\inputs), and every number quoted in
@@ -102,7 +102,7 @@ CW = W - 2 * M                         # content width
 BODY_TOP = Inches(T.BODY_Y)
 BODY_BOT = Inches(6.70)
 
-TITLE_SHORT = "Benchmark Gains Do Not Guarantee Transfer"
+TITLE_SHORT = "Safety Benchmark Gains Do Not Guarantee Safety Transfer"
 REPO = "github.com/rrahimi-uci/safety-guard-dynamics"
 
 
@@ -251,8 +251,8 @@ class Deck:
         # Timestamps are deliberately NOT set -- writing them would make the build
         # non-deterministic and break byte-comparison against the committed copy.
         T.stamp_properties(
-            self.prs, "Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small "
-                      "Language Model Safety Guards",
+            self.prs, "Safety Benchmark Gains Do Not Guarantee Safety Transfer: "
+                      "A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains",
             subject="Research talk accompanying the unified report of the same name")
         self.prs.save(OUT)
         T.fix_presentation_format(OUT)
@@ -405,13 +405,22 @@ p = para(tf, first=True, space_after=0)
 run(p, "JAZZX AI   ·   RESEARCH REPORT   ·   JULY 2026", size=10.5, bold=True,
     color=ACCENT, spc=180)
 
-tf = tbox(s, M, Inches(1.76), Inches(9.4), Inches(1.80))
+# Title and subtitle are two boxes, not one run with a line break. The paper's subtitle is
+# ~125 characters; setting it at the 38pt hero size (as a single run would) overflows the
+# title block and crowds the stat cards below. Hero carries the claim, deck-subtitle weight
+# carries the scope clause -- the same split the LaTeX title page uses.
+tf = tbox(s, M, Inches(1.62), Inches(9.6), Inches(1.10))
 p = para(tf, first=True, space_after=0, line_spacing=1.02)
-run(p, "Benchmark Gains Do Not Guarantee Transfer:\nFine-Tuning Small Language Model Safety Guards",
-    size=T.SZ_TITLE_HERO,
-    bold=True, color=INK, font=SERIF)
+run(p, "Safety Benchmark Gains Do Not\nGuarantee Safety Transfer",
+    size=T.SZ_TITLE_HERO, bold=True, color=INK, font=SERIF)
 
-tf = tbox(s, M, Inches(3.76), Inches(8.4), Inches(0.80))
+tf = tbox(s, M, Inches(2.94), Inches(9.6), Inches(0.90))
+p = para(tf, first=True, space_after=0, line_spacing=1.14)
+run(p, "A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards "
+       "for High-Compliance and General Safety Domains",
+    size=16.5, bold=False, color=INK, font=SERIF)
+
+tf = tbox(s, M, Inches(4.00), Inches(8.4), Inches(0.60))
 p = para(tf, first=True, space_after=0, line_spacing=1.24)
 run(p, "Paired same-checkpoint evidence across represented and held-out traffic",
     size=T.SZ_SUBTITLE, color=MUTED)
