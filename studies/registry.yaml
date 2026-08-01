@@ -338,7 +338,7 @@ studies:
 
   # ─────────────────────────────────────────────────────────────── publications
   - study_id: unified_report
-    title: "Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards"
+    title: "Safety Benchmark Gains Do Not Guarantee Safety Transfer: A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains"
     question: "Synthesis: how the benchmark co-produces a guard's apparent quality."
     study_state: released
     evidence_state: retrospective_estimation

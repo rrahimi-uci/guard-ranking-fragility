@@ -38,6 +38,10 @@ ASSETS = HERE / "assets"
 sys.path.insert(0, str(HERE))
 import frontier_numbers as FN  # noqa: E402
 
+# Act I re-read over FPR [0,.05], from the macro file the paper \inputs -- so the exec deck
+# cannot quote a different amplification than Table 6 of the report.
+LFP = FN.load_named("lowfpr_macros.tex")
+
 OUT = HERE / "safety_guard_exec_deck.pptx"
 
 # ─────────────────────────────────────────────────────────── identity (shared palette)
@@ -193,7 +197,7 @@ class Deck:
         T.stamp_properties(
             self.prs, "Guardrail sourcing: buy hosted, or run our own?",
             subject="Executive briefing accompanying “Benchmark Gains Do Not Guarantee "
-                    "Transfer: Fine-Tuning Small Language Model Safety Guards”")
+                    "Safety Transfer: A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains”")
         self.prs.save(OUT)
         T.fix_presentation_format(OUT)
         return OUT
@@ -316,8 +320,8 @@ p = para(tf, first=True, space_after=0)
 run(p, "Reza Rahimi, PhD", size=12.5, bold=True, color=INK)
 tf = tbox(s, M, Inches(6.32), Inches(7.70), Inches(0.28))
 p = para(tf, first=True, space_after=0)
-run(p, "Full method, intervals and limitations: “Benchmark Gains Do Not Guarantee Transfer: "
-       "Fine-Tuning Small Language Model Safety Guards” — the technical report and research deck",
+run(p, "Full method, intervals and limitations: “Safety Benchmark Gains Do Not Guarantee Safety Transfer: "
+       "A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains” — the technical report and research deck",
     size=10.5, color=SLATE)
 d.notes(s, """
 Ninety seconds on this slide. The framing sentence is: we need a safety guardrail in front of
@@ -557,7 +561,9 @@ callout(s, M + Inches(8.45), y + Inches(2.20), CW - Inches(8.45), Inches(1.72),
         "planning consequence",
         f"Budgeting a tuning project to close a vendor gap is not supported here. The best "
         f"tuned result anywhere ({FN.pct(F['BestSftTpr'])}) still loses to hosted "
-        f"({FN.pct(F['BestTpr'])}).", color=AMBER)
+        f"({FN.pct(F['BestTpr'])}). And the cost is larger than the average metric shows: "
+        f"scored only inside the 5% false-alarm budget we would actually run at, the held-out "
+        f"loss is about {FN.bare(LFP['LowFprTransAmplification'])}x bigger.", color=AMBER)
 d.notes(s, f"""
 The headline is the sign split, not the average. If you quote only the mean change
 ({F['SftMeanDelta']}) you will mislead the room -- it is a small number sitting on top of
@@ -818,7 +824,15 @@ bullets(s, M, y + Inches(0.06), CW, Inches(3.2), [
     ("The escalation curve is optimistically tuned. ", "Its decision line and its global 5% "
      "budget are both chosen on the same rows it is then scored on, so a live deployment "
      "should expect to close somewhat less than 51% of the gap at a fifth escalated."),
-], size=13.5)
+    # The research report re-reads its own headline inside the alarm budget; an exec deck that
+    # quotes catch rates at a 5% budget should say that the underlying trade was measured that
+    # way too, otherwise it inherits an average-ranking number without saying so.
+    ("Averages hide the operating point. ", "Every catch rate here is already at a 5% "
+     "false-alarm budget, but the underlying fine-tuning research reports an average over the "
+     "whole score ranking. Re-scored inside the budget the direction is unchanged and the "
+     f"effect is {FN.bare(LFP['LowFprTransAmplification'])}x larger — so treat average-metric "
+     "results from elsewhere as understating what you would see in production."),
+], size=12.5)
 callout(s, M, y + Inches(3.35), CW, Inches(1.08), "what would change the recommendation",
         "A regulated-domain benchmark that scores whole answers against specific rules, with "
         "expert adjudication. That is the instrument we do not have, and building it is the "

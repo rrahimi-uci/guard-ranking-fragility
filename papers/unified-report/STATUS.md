@@ -30,8 +30,8 @@ wins — it is validated in CI by `tools/validate_registries.py`, and this file 
   descendant, `papers/paper_c/specialize_then_align/` (plus its migrated copy under
   `studies/paper-c-specialize-align-mortgage-v1/`), was itself stopped after the disjoint pilot. See
   the banner above and `studies/registry.yaml`.
-- **Current report scaffold.** `unified_report.tex` — *Benchmark Gains Do Not Guarantee Transfer:
-  Fine-Tuning Small Language Model Safety Guards* —
+- **Current report scaffold.** `unified_report.tex` — *Safety Benchmark Gains Do Not Guarantee Safety Transfer:
+  A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains* —
   is organized around four research questions (Q1 specialization, Q2 composition, Q3 regulated
   domains, Q4 the hosted-frontier comparison), with the original Act I/II/III labels retained in the
   section titles for continuity. Table 1 is the claim ledger: every headline number with its estimand

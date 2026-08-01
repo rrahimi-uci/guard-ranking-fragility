@@ -1002,8 +1002,8 @@ def main(argv=None) -> int:
     abstract_html = asoup.decode()
 
     page = (HERE / "template.html").read_text()
-    for k, v in {"{{TITLE}}": "Benchmark Gains Do Not Guarantee Transfer",
-                 "{{SUBTITLE}}": "Fine-Tuning Small Language Model Safety Guards",
+    for k, v in {"{{TITLE}}": "Safety Benchmark Gains Do Not Guarantee Safety Transfer",
+                 "{{SUBTITLE}}": "A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains",
                  "{{ABSTRACT}}": abstract_html, "{{TOC}}": toc,
                  "{{BODY}}": body, "{{BIB}}": bib,
                  "{{SITE_URL}}": SITE_URL, "{{DESCRIPTION}}": DESCRIPTION,
