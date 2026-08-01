@@ -10,14 +10,20 @@ Snapshot of what is done / running / pending for the merged report, written duri
 window. Nothing here fabricates numbers; pending pieces await their locked runs.
 
 ## Present in the checkout
+
 - **Paper C protocol rewrite.** `docs/paper-c-prereg-v2.md`, the development plan, code design, and
   rationale define the candidate matched VerdictCE/PairCE/DPO study. The v1 preregistration remains
   as a superseded amendment record; the old unified plan remains available in Git history.
-- **Current report scaffold.** `unified_report.tex` is a three-act article: specialization (Act I),
-  output-space composition (Act II), and regulated-domain evidence (Act III). Paper C v2 is not an
-  act or placeholder in the manuscript; it can be integrated only after locked evidence exists.
-- **Reproduce harness.** `reproduce.py` + `make reproduce` covers the evidence currently integrated
-  in the manuscript. It has no Paper C v2 hook because no Paper C score artifact exists.
+- **Current report scaffold.** `unified_report.tex` — *Benchmark Gains Do Not Guarantee Transfer:
+  Fine-Tuning Small Language Model Safety Guards* —
+  is organized around four research questions (Q1 specialization, Q2 composition, Q3 regulated
+  domains, Q4 the hosted-frontier comparison), with the original Act I/II/III labels retained in the
+  section titles for continuity. Table 1 is the claim ledger: every headline number with its estimand
+  and evidence tier. Paper C v2 is not a question or a placeholder in the manuscript; it can be
+  integrated only after locked evidence exists.
+- **Reproduce harness.** `reproduce.py` + `make verify` byte-checks the evidence currently integrated
+  in the manuscript without rewriting the tree; `make regenerate` is the separate write path. It has
+  no Paper C v2 hook because no Paper C score artifact exists.
 - **ExpGuard eval code.** `experiments/eval_expguard_external.py` — scores the 4 checkpoints on ExpGuard
   (finance/health/law) via the canonical guard head; commits only text-free per-row scores.
 - **Paper C v1 code (superseded).** `experiments/paper_c_preference.py` and
@@ -35,7 +41,9 @@ window. Nothing here fabricates numbers; pending pieces await their locked runs.
   the best domain guard is *not* the largest model. `tab:expguard` + `fig:expguard-domains` are in Act III;
   text-free per-row scores committed; `reproduce.py --check` passes. NB: the eval now stores the raw
   decision margin (not the saturating sigmoid), which is what makes AP reproducible from committed scores.
-  The *tuned* (base-vs-SFT) ExpGuard comparison remains future work.
+  The *tuned* (base-vs-SFT) ExpGuard comparison has since been run and is central to Q4
+  (`tab:frontier`), together with the hosted-frontier and scale-ladder arms; what remains open is a
+  dual-labeled finance/health construct with expert sign-off.
 
 ## Pending Paper C gates
 

@@ -9,16 +9,21 @@ Figures:
   fig_mortgage_baseline.pdf    zero-shot guards: AP.G, AP.D, and the Delta_context fairness gap <- out_eval/baseline_table.json
 """
 from __future__ import annotations
-import json, re, glob
+import json, os, re, glob
 from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-HERE = Path(__file__).resolve().parent
-REPORT = HERE.parent
+SRC = Path(__file__).resolve().parent
+REPORT = SRC.parent
 REPO = REPORT.parents[1]
 GEN = REPORT / "generated"
+# PAPER_FIG_DIR redirects the PDFs so reproduce.py --check can render into a scratch directory
+# and byte-compare. Figures were previously always regenerated in place and never compared, so
+# a figure could drift from the committed scores without the check noticing.
+HERE = Path(os.environ["PAPER_FIG_DIR"]) if os.environ.get("PAPER_FIG_DIR") else SRC
+HERE.mkdir(parents=True, exist_ok=True)
 plt.rcParams.update({"font.size": 10, "axes.spines.top": False, "axes.spines.right": False,
                      "figure.dpi": 150, "savefig.bbox": "tight", "axes.grid": True,
                      "grid.alpha": 0.25, "grid.linestyle": "--",
@@ -157,7 +162,7 @@ def prevalence():
     ax.set_xlabel("deployment prevalence of unsafe prompts (log scale)")
     ax.set_ylabel("transfer macro-AP")
     ax.set_ylim(0, 1.0)
-    ax.set_title("The prevalence also chooses the winner (measured):\ntransfer AP collapses — and the ranking re-spaces — as positives get rare")
+    ax.set_title("The deployment prevalence re-spaces the ranking (measured):\ntransfer AP collapses as positives get rare, and the lower two swap")
     ax.legend(frameon=False, fontsize=8.5, loc="upper left", ncol=2)
     fig.subplots_adjust(bottom=0.16, top=0.84, left=0.1, right=0.97)
     fig.savefig(HERE / "fig_prevalence.pdf", metadata={"CreationDate": None}); plt.close(fig)
@@ -295,12 +300,23 @@ def expguard_domains():
 
 
 def teaser():
-    """Figure 1 (above the abstract): the whole report in three panels, one per act.
+    """Figure 1: one panel per research question, keyed Q1..Q4 to the rows of tab:glance.
 
-    (1) SFT buys represented-source ranking, not transfer   <- analysis/results.json point estimates
-    (2) the numerically top-ranked guard changes with the benchmark  <- the three arms' committed scores
-    (3) in the mortgage domain the violation reads as safe  <- benchmark rows + out_eval scores
-    Panel 2 is the title claim; panel 3 is the worked row of fig:casestudy.
+    This used to be three panels labelled (1)(2)(3) for the three "acts": the paired delta, the
+    rank flip, and the worked mortgage row. That had two problems once the report was reorganised
+    around four questions. It covered Q1 and Q3 twice over and Q2 and Q4 not at all, so the
+    figure and the claim ledger disagreed about what the report's headline structure was; and the
+    third panel needed three sentences of caveat about two rows that are not a controlled pair,
+    which is not what belongs in Figure 1. The worked row is still Figure 8, where it can carry
+    its own caveats.
+
+    Panel -> question -> source, all committed:
+      Q1  paired base->SFT delta by regime          <- paper_a_sft_v2/analysis/results.json
+      Q2  transfer AP: base / SFT / base+adapter    <- generated/pilot_macros.tex
+      Q3  the rank flip across three domain arms    <- the three arms' committed score tables
+      Q4  the regime reversal against hosted        <- generated/h2h_macros + frontier_macros
+    Q2 and Q4 read the SAME generated macro files the report \\inputs, so no panel can drift from
+    the table it sits beside.
     """
     import numpy as np
     res = json.loads((REPO / "artifacts/paper_a_sft_v2/analysis/results.json").read_text())
@@ -309,39 +325,66 @@ def teaser():
         (REPO / "mortgage-benchmark/out_eval/baseline_table.json").read_text())["table"]}
     exg = {r["guard"]: r for r in json.loads(
         (REPO / "artifacts/expguard_external/baseline_expguard.json").read_text())["table"]}
+    P, H, F = (_macros("pilot_macros.tex"), _macros("h2h_macros.tex"),
+               _macros("frontier_macros.tex"))
+    M = _macros("matched_fpr_macros.tex")
 
-    # one colour per checkpoint, used wherever a checkpoint is a series (panel 2)
+    # one colour per checkpoint, used wherever a checkpoint is a series (Q3)
     KEYS = ["qwen25_15b", "smollm2_17b", "smollm3_3b", "qwen3_4b"]
     SHORT = {"qwen25_15b": "Q2.5-1.5B", "smollm2_17b": "SL2-1.7B",
              "smollm3_3b": "SL3-3B", "qwen3_4b": "Q3-4B"}
     COL = {"qwen25_15b": BLUE, "smollm2_17b": RED, "smollm3_3b": GREEN, "qwen3_4b": ORANGE}
     SLATE = "#334155"
 
-    fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(7.2, 3.0),
-                                     gridspec_kw={"width_ratios": [0.92, 1.18, 1.05]})
+    fig, ((a1, a2), (a3, a4)) = plt.subplots(2, 2, figsize=(7.0, 4.95))
 
-    # -- panel 1: the paired base->SFT delta, aggregate bars + the four per-checkpoint values
+    # -- Q1: the paired base->SFT delta, aggregate bars + the four per-checkpoint values
     agg = [pe["aggregate"]["represented"], pe["aggregate"]["transfer"]]
-    a1.bar([0, 1], agg, 0.56, color=[BLUE, ORANGE], alpha=0.85, zorder=2)
+    a1.bar([0, 1], agg, 0.5, color=[BLUE, ORANGE], alpha=0.85, zorder=2)
     for i, split in enumerate(("represented", "transfer")):
         vals = [pe["per_checkpoint"][split][k]["delta"] for k in KEYS]
-        a1.scatter([i + 0.02 + 0.075 * j for j in range(len(vals))], vals, s=14, c=SLATE,
+        a1.scatter([i + 0.02 + 0.07 * j for j in range(len(vals))], vals, s=13, c=SLATE,
                    zorder=3, edgecolors="white", linewidths=0.4)
     a1.axhline(0, color="black", lw=0.8, zorder=1)
     for i, v in enumerate(agg):  # inside tall bars, just outside thin ones (the transfer bar is thin)
         if abs(v) > 0.12:
-            a1.text(i - 0.14, v / 2, f"{v:+.2f}", ha="center", va="center", fontsize=8.5,
+            a1.text(i - 0.12, v / 2, f"{v:+.2f}", ha="center", va="center", fontsize=8.5,
                     fontweight="bold", color="white", zorder=4)
         else:
-            a1.text(i - 0.30, v - 0.035, f"{v:+.2f}", ha="center", va="top", fontsize=8.5,
+            a1.text(i - 0.27, v - 0.03, f"{v:+.2f}", ha="center", va="top", fontsize=8.5,
                     fontweight="bold", color=ORANGE, zorder=4)
-    a1.set_xticks([0, 1]); a1.set_xticklabels(["represented\n(trained-on)", "transfer\n(held-out)"], fontsize=8)
-    a1.set_ylabel("base$\\to$SFT $\\Delta$ macro-AP", fontsize=8.5)
-    a1.set_ylim(-0.22, 0.62); a1.set_xlim(-0.72, 1.45)   # room for the offset aggregate labels
-    a1.set_title("① Tuning buys the\nbenchmark, not transfer", fontsize=9)
-    a1.tick_params(labelsize=8)
+    a1.set_xticks([0, 1]); a1.set_xticklabels(["represented\n(trained-on)", "transfer\n(held-out)"],
+                                              fontsize=7.5)
+    a1.set_ylabel("base$\\to$SFT $\\Delta$ macro-AP", fontsize=8)
+    a1.set_ylim(-0.30, 0.66); a1.set_xlim(-0.66, 1.42)   # room for the offset aggregate labels
+    a1.set_title("Q1  The benchmark gain\ndoes not transfer", fontsize=8.8, loc="left")
+    a1.tick_params(labelsize=7.5)
+    # the sharper form of the same finding, stated where the bar understates it (Q1a)
+    a1.text(0.99, 0.985, f"at an equal alarm budget\ntransfer recall {M['MatchedTransferBase']}"
+                         f"$\\to${M['MatchedTransferSft']}\non all four checkpoints",
+            transform=a1.transAxes, ha="right", va="top", fontsize=6.3, color=RED,
+            linespacing=1.25)
 
-    # -- panel 2: the rank flip -- same four guards, three benchmark families, three orderings
+    # -- Q2: what a retraining-free base+adapter average recovers, on the transfer regime
+    ops = [("base", _dec(P["PilotBaseTransfer"]), GREY),
+           ("SFT", _dec(P["PilotSFTTransfer"]), ORANGE),
+           ("base $+$\nadapter", _dec(P["PilotCompositionTransfer"]), GREEN)]
+    a2.bar(range(3), [o[1] for o in ops], 0.52, color=[o[2] for o in ops], alpha=0.85, zorder=2)
+    for i, (_, v, _c) in enumerate(ops):
+        a2.text(i, v + 0.004, f"{v:.3f}", ha="center", va="bottom", fontsize=7.8, zorder=4)
+    a2.annotate("", xy=(2, _dec(P["PilotCompositionTransfer"]) - 0.004),
+                xytext=(1, _dec(P["PilotSFTTransfer"]) + 0.004),
+                arrowprops=dict(arrowstyle="->", color=GREEN, lw=1.3), zorder=5)
+    a2.text(1.5, (_dec(P["PilotSFTTransfer"]) + _dec(P["PilotCompositionTransfer"])) / 2 - 0.016,
+            f"{P['PilotTransferDeltaSFT']}\nvs. SFT", ha="center", va="top", fontsize=7,
+            color=GREEN, fontweight="bold")
+    a2.axhline(_dec(P["PilotBaseTransfer"]), color=GREY, lw=0.9, ls="--", zorder=1)
+    a2.set_xticks(range(3)); a2.set_xticklabels([o[0] for o in ops], fontsize=7.5)
+    a2.set_ylim(0.77, 0.91); a2.set_ylabel("transfer macro-AP", fontsize=8)
+    a2.set_title("Q2  Composition recovers most\nof it, without retraining", fontsize=8.8, loc="left")
+    a2.tick_params(labelsize=7.5)
+
+    # -- Q3: the rank flip -- same four guards, three benchmark families, three orderings
     arms = ["general\ntransfer", "mortgage\npolicy", "finance /\nhealth / law"]
     score = {k: [pe["per_checkpoint"]["transfer"][k]["base"],
                  mort[f"{k}_base"]["AP_D"], exg[f"{k}_base"]["overall_ap"]] for k in KEYS}
@@ -349,62 +392,189 @@ def teaser():
             for j in range(len(arms))]
     for k in KEYS:
         ys = [rank[j][k] for j in range(len(arms))]
-        a2.plot(range(len(arms)), ys, "-o", color=COL[k], lw=1.8, ms=5.5, zorder=3,
+        a3.plot(range(len(arms)), ys, "-o", color=COL[k], lw=1.7, ms=5, zorder=3,
                 markeredgecolor="white", markeredgewidth=0.6)
         for j, y in enumerate(ys):
-            a2.annotate(f"{score[k][j]:.2f}", (j, y), fontsize=6.2, color=COL[k],
-                        xytext=(0, 6.5), textcoords="offset points", ha="center")
+            a3.annotate(f"{score[k][j]:.2f}", (j, y), fontsize=6.0, color=COL[k],
+                        xytext=(0, 6.0), textcoords="offset points", ha="center")
         # name the lines on the RIGHT: the left axis already carries the rank tick labels
-        a2.annotate(SHORT[k], (len(arms) - 1, ys[-1]), fontsize=7, color=COL[k], fontweight="bold",
-                    xytext=(9, 0), textcoords="offset points", ha="left", va="center")
-    a2.set_xlim(-0.30, len(arms) - 1 + 0.95)
-    a2.set_xticks(range(len(arms))); a2.set_xticklabels(arms, fontsize=8)
-    a2.set_yticks([1, 2, 3, 4]); a2.set_yticklabels(["1st", "2nd", "3rd", "4th"], fontsize=8)
-    a2.set_ylim(4.45, 0.55)
-    a2.set_ylabel("rank on the arm (AP annotated)", fontsize=8.5)
-    a2.set_title("② The top-ranked guard\nchanges with the benchmark", fontsize=9)
+        a3.annotate(SHORT[k], (len(arms) - 1, ys[-1]), fontsize=6.8, color=COL[k], fontweight="bold",
+                    xytext=(8, 0), textcoords="offset points", ha="left", va="center")
+    a3.set_xlim(-0.28, len(arms) - 1 + 0.92)
+    a3.set_xticks(range(len(arms))); a3.set_xticklabels(arms, fontsize=7.5)
+    a3.set_yticks([1, 2, 3, 4]); a3.set_yticklabels(["1st", "2nd", "3rd", "4th"], fontsize=7.5)
+    a3.set_ylim(4.45, 0.55)
+    a3.set_ylabel("rank on the arm (AP annotated)", fontsize=8)
+    a3.set_title("Q3  The top-ranked guard changes\nwith the benchmark", fontsize=8.8, loc="left")
 
-    # -- panel 3: the worked G0/D1 row -- how many benign rows each guard ranks ABOVE the violation
-    rows = [json.loads(ln) for ln in
-            (REPO / "mortgage-benchmark/benchmark/v1_hmda2022/public_test.jsonl").read_text().splitlines() if ln.strip()]
-    benign = [r["id"] for r in rows if r["quadrant"] == "G0D0"]
-    sc = {k: json.loads((REPO / f"mortgage-benchmark/out_eval/scores_{k}_base.json").read_text()) for k in KEYS}
-    above = lambda k, rid: sum(1 for b in benign if sc[k][b] > sc[k][rid])
-    coded = [above(k, "MGB-UD-00020") for k in KEYS]
-    named = [above(k, "MGB-FL-00028") for k in KEYS]
-    x = np.arange(len(KEYS)); w = 0.38
-    a3.bar(x - w / 2, coded, w, color=RED, alpha=0.85, label="coded proxy")
-    a3.bar(x + w / 2, named, w, color=GREEN, alpha=0.85, label="traits named")
-    a3.axhline(len(benign) / 2, color=SLATE, lw=0.9, ls="--", zorder=1,
-               label="median benign row")   # labelled in the legend, so no text can land on a bar
-    for xs, vals in ((x - w / 2, coded), (x + w / 2, named)):
-        for xi, v in zip(xs, vals):
-            a3.text(xi, v + 1.2, str(v), ha="center", va="bottom", fontsize=6.4)
-    a3.set_xticks(x); a3.set_xticklabels([SHORT[k] for k in KEYS], fontsize=6.8, rotation=18)
-    a3.set_ylim(0, len(benign) * 1.32)   # headroom so the legend clears the tallest bar
-    a3.set_yticks([0, 20, 40, 60])       # the scale tops out at the 65 benign rows, not at the ylim
-    a3.set_ylabel(f"benign rows ranked above\nthe violation (of {len(benign)})", fontsize=8.5)
-    a3.set_title("③ Coded, the violation ranks\nbelow the benign median", fontsize=9)
-    a3.tick_params(labelsize=8)
-    a3.legend(frameon=False, fontsize=6.2, loc="upper center", ncol=3, handlelength=1.0,
-              columnspacing=0.7, borderpad=0.1, handletextpad=0.4)
+    # -- Q4: the regime reversal. Both bars are (local guard - hosted) at a matched 5% budget, so
+    #    a bar to the right of zero is a local win and a bar to the left is a hosted win.
+    rep, rep_ci = _dec(H["HtwoAggDeltaTpr"]), _ci(H["HtwoAggDeltaTprCI"])
+    tr, tr_ci = -_dec(F["FrontierGainOverBase"]), [-x for x in reversed(_ci(F["FrontierGainOverBaseCI"]))]
+    bars = [("sources your manifest\nnames", rep, rep_ci, GREEN,
+             "tuned panel ahead\n(3 corpora, post hoc)"),
+            ("sources it does\nnot name", tr, tr_ci, BLUE,
+             "hosted ahead\n(vs. best small base)")]
+    for i, (_lab, v, ci, col, _note) in enumerate(bars):
+        y = 1 - i
+        a4.barh([y], [v], 0.42, color=col, alpha=0.85, zorder=2)
+        a4.errorbar([v], [y], xerr=[[v - ci[0]], [ci[1] - v]], fmt="none", ecolor=SLATE,
+                    elinewidth=1.0, capsize=2.5, zorder=4)
+        a4.text(v + (0.012 if v > 0 else -0.012), y + 0.26, f"{v:+.3f}", fontsize=7.8,
+                fontweight="bold", color=col, ha="left" if v > 0 else "right", va="bottom")
+        a4.text(v + (0.012 if v > 0 else -0.012), y - 0.30, _note, fontsize=6.2, color="#555",
+                ha="left" if v > 0 else "right", va="top")
+    a4.axvline(0, color="black", lw=0.9, zorder=3)
+    a4.set_yticks([1, 0]); a4.set_yticklabels([b[0] for b in bars], fontsize=7.5)
+    a4.set_xlim(-0.28, 0.28); a4.set_ylim(-0.78, 1.78)
+    a4.set_xlabel("$\\Delta$ recall at a matched 5% alarm budget\n(local guard $-$ hosted frontier)",
+                  fontsize=7.6)
+    a4.set_title("Q4  Which is better reverses\nwith the traffic", fontsize=8.8, loc="left")
+    a4.tick_params(labelsize=7.5)
+    a4.grid(axis="y", visible=False)
 
-    fig.subplots_adjust(left=0.085, right=0.985, top=0.84, bottom=0.20, wspace=0.48)
+    fig.subplots_adjust(left=0.105, right=0.975, top=0.905, bottom=0.10, wspace=0.42, hspace=0.62)
     fig.savefig(HERE / "fig_teaser.pdf", metadata={"CreationDate": None}); plt.close(fig)
 
 
+def _macros(name):
+    """Parse a generated macro file into {MacroName: raw body}, stripping $ and \\code{}."""
+    out = {}
+    for m in re.finditer(r"\\newcommand\{\\(\w+)\}\{(.*)\}\s*$", (GEN / name).read_text(), re.M):
+        out[m.group(1)] = m.group(2).replace("$", "").strip()
+    return out
+
+
+def _frontier_tpr():
+    """Parse tab:frontier -> {guard label: TPR@5%FPR}, keeping the table's own row order."""
+    rows, block = {}, None
+    for ln in (GEN / "frontier_table.tex").read_text().splitlines():
+        b = re.search(r"\\multicolumn\{8\}\{l\}\{\\emph\{(.*?)\}\}", ln)
+        if b:
+            block = b.group(1)
+            continue
+        m = re.match(r"\s*(?:\\textbf\{)?([\w.\-]+(?: \([\w.]+\))?)\}?\s*&\s*\d+\s*&\s*\.(\d+)\s*&", ln)
+        if m and block:
+            rows[(block, m.group(1).strip())] = float("0." + m.group(2))
+    return rows
+
+
+def _dec(s):
+    """'.896' / '0.830' / '+0.026' / '32' -> float, the way the macro files write them."""
+    s = s.strip().lstrip("+")
+    return float("0" + s) if s.startswith(".") else float(s)
+
+
+def _ci(s):
+    """'[+0.013, +0.157]' -> [0.013, 0.157]. Raises rather than guessing on an unexpected form."""
+    m = re.fullmatch(r"\[\s*([+-]?[\d.]+)\s*,\s*([+-]?[\d.]+)\s*\]", s.strip())
+    if not m:
+        raise ValueError(f"not an interval macro body: {s!r}")
+    return [_dec(m.group(1)), _dec(m.group(2))]
+
+
+def gap_ladder():
+    """One figure for Sec. 'what a frontier guardrail buys': every route we priced toward the hosted
+    model's recall, and the cascade that gets closest. Left panel = in-house routes at a matched 5%
+    false-alarm budget; right panel = the selective-escalation curve. Both read the committed
+    generated artifacts, so the figure cannot drift from tab:frontier / the cascade macros."""
+    F, C = _macros("frontier_macros.tex"), _macros("cascade_macros.tex")
+    T = _frontier_tpr()
+
+    def tpr(fragment, block_key):
+        for (blk, name), v in T.items():
+            if block_key in blk and name.startswith(fragment):
+                return v
+        raise KeyError(fragment)
+
+    hosted, base = _dec(F["FrontierBestTpr"]), _dec(F["FrontierBestBaseTpr"])
+    n_ens, big = F["FrontierEnsMembers"], F["FrontierBestOpenParams"]
+    routes = [
+        ("Tune the small guard\n(SFT, best of the four)",
+         max(tpr(n, "SFT (in-env)") for n in ("Qwen2.5-1.5B", "SmolLM2-1.7B", "SmolLM3-3B", "Qwen3-4B"))),
+        ("Buy a released guard\n(best of six)", max(v for (blk, _), v in T.items() if "Released" in blk)),
+        (f"Average all {n_ens} open guards\n(committee --- below its own best member)", _dec(F["FrontierEnsCommittee"])),
+        (f"Scale the base to {big}B\n(untuned {F['FrontierBestOpenName']})", _dec(F["FrontierBestOpenTpr"])),
+        ("Seed-ensemble that base's\nown five adapters", _dec(F["FrontierEnsBestSingle"])),
+        (f"Fit a stack over all {n_ens}\n(needs labelled in-domain data)", _dec(F["FrontierEnsStack"])),
+        ("Escalate the least-confident\n30% to the hosted model", _dec(C["CascadeThirty"])),
+    ]
+    labels = [r[0] for r in routes]
+    vals = [r[1] for r in routes]
+
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(11.0, 4.3), gridspec_kw={"width_ratios": [1.35, 1.0]})
+    y = list(range(len(vals)))[::-1]
+    cols = [GREEN if v > base else RED for v in vals]
+    ax.barh(y, vals, height=0.62, color=cols, alpha=0.9)
+    ax.axvline(base, color=GREY, lw=1.4, ls="--")
+    ax.axvline(hosted, color=BLUE, lw=1.6, ls="--")
+    ax.text(base, len(vals) - 0.35, f"best small base\n{base:.3f}", fontsize=7, color="#555",
+            ha="center", va="bottom")
+    ax.text(hosted, len(vals) - 0.35, f"hosted frontier\n{hosted:.3f}", fontsize=7, color=BLUE,
+            ha="center", va="bottom")
+    for yi, v in zip(y, vals):
+        pct = 100.0 * (v - base) / (hosted - base)
+        ax.text(v + 0.004, yi, f"{v:.3f}", va="center", fontsize=7.5,
+                color=GREEN if v > base else RED)
+        ax.text(v - 0.005, yi, f"{pct:+.0f}% of the gap", va="center", ha="right",
+                fontsize=6.8, color="white")
+    ax.set_yticks(y); ax.set_yticklabels(labels, fontsize=7.5)
+    ax.set_xlim(0.60, 0.93); ax.set_ylim(-0.7, len(vals) + 0.15)
+    ax.set_xlabel("recall at a matched 5% false-alarm budget (ExpGuard, 2,275 rows)")
+    ax.set_title("Nothing done in-house closes the frontier gap", fontsize=10)
+    ax.grid(axis="y", visible=False)
+
+    share = [0, 10, 20, 30]
+    curve = [_dec(C[k]) for k in ("CascadeLocalOnly", "CascadeTen", "CascadeTwenty", "CascadeThirty")]
+    bx.plot(share, curve, "-o", color=GREEN, lw=1.8, ms=5)
+    bx.axhline(hosted, color=BLUE, lw=1.6, ls="--")
+    bx.axhline(curve[0], color=GREY, lw=1.2, ls="--")
+    bx.fill_between([0, 30], curve[0], hosted, color=BLUE, alpha=0.06)
+    for s, v in zip(share, curve):
+        if s:
+            bx.annotate(f"{v:.3f}", (s, v), fontsize=7.5, color=GREEN,
+                        xytext=(0, 7), textcoords="offset points", ha="center")
+    bx.annotate("escalating 20% closes\nhalf the remaining gap", (20, curve[2]), fontsize=7, color="#555",
+                xytext=(6, -30), textcoords="offset points", ha="center")
+    bx.text(30.6, hosted - 0.0035, f"hosted frontier {hosted:.3f}", fontsize=7, color=BLUE,
+            va="top", ha="right")
+    bx.text(0.4, curve[0] + 0.0025, f"local only {curve[0]:.3f}", fontsize=7, color="#555",
+            va="bottom", ha="left")
+    bx.set_xlabel("share escalated to the hosted model (%)")
+    bx.set_ylabel("recall at the same 5% budget")
+    bx.set_xlim(-1.5, 31.5); bx.set_ylim(min(curve) - 0.022, hosted + 0.012)
+    bx.set_title("Escalating the uncertain slice does", fontsize=10)
+
+    fig.subplots_adjust(left=0.205, right=0.975, top=0.88, bottom=0.155, wspace=0.30)
+    fig.savefig(HERE / "fig_gap_ladder.pdf", metadata={"CreationDate": None}); plt.close(fig)
+
+
 def diagrams():
-    """Render the Graphviz flowcharts (.dot -> .png) if graphviz 'dot' is available; otherwise keep the
-    committed PNGs (data-split construction + the paired experimental design)."""
+    """Render the Graphviz flowcharts (.dot -> .png): the data-split construction, the paired
+    experimental design, and the mortgage-benchmark construction pipeline.
+
+    Deliberately NOT part of the byte-check. Graphviz raster output is not stable across graphviz
+    versions (glyph rasterisation and PNG chunk layout both move), so comparing these bytes would
+    fail on any machine with a different graphviz rather than on a real drift. Under
+    PAPER_FIG_DIR -- i.e. inside `reproduce.py --check` -- rendering is skipped and the committed
+    PNGs stand; the .dot sources are committed beside them so the diagrams are still auditable.
+    """
     import shutil, subprocess
+    if os.environ.get("PAPER_FIG_DIR"):
+        print("  [skip] diagrams: graphviz PNGs are not byte-stable across versions; "
+              "committed copies stand (sources: figures/*.dot)")
+        return
     dot = shutil.which("dot")
     if not dot:
         print("  [skip] diagrams: graphviz 'dot' not found; keeping committed PNGs")
         return
-    for name in ("data_splits", "experiment_design"):
-        src = HERE / f"{name}.dot"
+    # pipeline.dot was authored later than the other two and renders at a higher dpi: it carries
+    # five stages on one rank, so it is wide rather than tall and can afford the resolution.
+    for name, dpi in (("data_splits", 150), ("experiment_design", 150), ("pipeline", 170)):
+        src = SRC / f"{name}.dot"
         if src.exists():
-            subprocess.run([dot, "-Tpng", "-Gdpi=150", str(src), "-o", str(HERE / f"{name}.png")], check=True)
+            subprocess.run([dot, "-Tpng", f"-Gdpi={dpi}", str(src), "-o", str(HERE / f"{name}.png")],
+                           check=True)
 
 
 def adaptation_plane():
@@ -510,7 +680,7 @@ def ensembling_plane():
 def main():
     made = []
     for fn in (teaser, act1_percheckpoint, attractor, act3_composition, mortgage_quadrant, mortgage_baseline,
-               expguard_domains, prevalence, adaptation_plane, ensembling_plane, diagrams):
+               expguard_domains, prevalence, adaptation_plane, ensembling_plane, gap_ladder, diagrams):
         try:
             fn(); made.append(fn.__name__)
         except Exception as e:

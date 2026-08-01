@@ -16,7 +16,10 @@ import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "artifacts", "frontier_general_h2h", "h2h.json")
-GEN = os.path.join(ROOT, "papers", "unified-report", "generated")
+# PAPER_GEN_DIR lets papers/unified-report/reproduce.py --check emit into a scratch
+# directory and byte-compare, so verification never writes into the tracked tree.
+GEN = os.environ.get("PAPER_GEN_DIR") or os.path.join(
+    ROOT, "papers", "unified-report", "generated")
 
 D = json.load(open(SRC))
 META, S = D["meta"], D["sources"]
@@ -65,8 +68,9 @@ AGG = D["aggregate"]
 # aggregate below is fixed by the regime split rather than by any cell's result, which makes it a
 # sounder summary -- but it was chosen after the per-cell headline failed, so it is a post-hoc
 # descriptive summary, not a pre-specified test. The selected cell is still emitted because the
-# narrative uses it, but it is
-# emitted WITH its Holm-adjusted interval and labelled as selected wherever it appears.
+# narrative uses it, but it is emitted WITH the max-T simultaneous band over the twelve cells
+# (Holm controls the DECISIONS; it does not produce an interval) and labelled as selected
+# wherever it appears.
 best = None
 for s in REPRESENTED:
     if not S[s]["deltas_interpretable"]:
@@ -88,7 +92,7 @@ macros = [
     r"\newcommand{\HtwoNTransSources}{%d}" % len(TRANSFER),
     r"\newcommand{\HtwoRepSources}{%s}" % ", ".join(f"\\code{{{s.replace('_', chr(92) + '_')}}}"
                                                     for s in REPRESENTED),
-    # ---- the pre-specified aggregate: this is the claim-bearing number ----
+    # ---- the post-hoc descriptive aggregate; see selection_status in h2h.json ----
     r"\newcommand{\HtwoAggDeltaTpr}{%s}" % d3(AGG["d_tpr"]),
     r"\newcommand{\HtwoAggDeltaTprCI}{$[%+.3f, %+.3f]$}" % tuple(AGG["ci_tpr"]),
     r"\newcommand{\HtwoAggDeltaAp}{%s}" % d3(AGG["d_ap"]),
@@ -97,7 +101,7 @@ macros = [
     r"\newcommand{\HtwoNCells}{%d}" % AGG["n_cells"],
     r"\newcommand{\HtwoNSigNominal}{%d}" % AGG["n_significant_nominal"],
     r"\newcommand{\HtwoNSigHolm}{%d}" % AGG["n_significant_holm"],
-    # ---- the selected cell: exploratory, quoted with the adjusted interval ----
+    # ---- the selected cell: exploratory, quoted with the simultaneous band ----
     r"\newcommand{\HtwoBestName}{%s}" % LABEL[bmk],
     r"\newcommand{\HtwoBestSource}{\code{%s}}" % bs.replace("_", chr(92) + "_"),
     r"\newcommand{\HtwoBestN}{%d}" % S[bs]["n"],
@@ -107,8 +111,12 @@ macros = [
     r"\newcommand{\HtwoRefAuroc}{%.4f}" % S[bs]["guards"]["gpt-5.4__low"]["auroc"],
     r"\newcommand{\HtwoBestDeltaTpr}{%s}" % d3(bv["d_tpr"]),
     r"\newcommand{\HtwoBestDeltaTprCI}{$[%+.3f, %+.3f]$}" % tuple(bv["ci_tpr"]),
-    r"\newcommand{\HtwoBestDeltaTprHolm}{$[%+.3f, %+.3f]$}" % tuple(bv["ci_tpr_holm"]),
+    r"\newcommand{\HtwoBestDeltaTprHolm}{$[%+.3f, %+.3f]$}" % tuple(bv["ci_tpr_simultaneous"]),
     r"\newcommand{\HtwoBestHolmSig}{%s}" % ("true" if bv["holm_significant"] else "false"),
+    r"\newcommand{\HtwoBestPBoot}{%.3f}" % bv["p_boot"],
+    r"\newcommand{\HtwoBestPHolm}{%.3f}" % bv["p_holm_adj"],
+    r"\newcommand{\HtwoHolmFirstThreshold}{%.4f}" % bv["holm_threshold"],
+    r"\newcommand{\HtwoMaxTCrit}{%.2f}" % AGG["maxt_critical_value"],
     r"\newcommand{\HtwoBestDeltaAp}{%s}" % d3(bv["d_ap"]),
     r"\newcommand{\HtwoBestDeltaApCI}{$[%+.3f, %+.3f]$}" % tuple(bv["ci_ap"]),
     r"\newcommand{\HtwoNBoot}{%s}" % f"{META['n_boot']:,}",
@@ -116,6 +124,27 @@ macros = [
     r"\newcommand{\HtwoNSig}{%d}" % AGG["n_significant_nominal"],
     r"\newcommand{\HtwoNSftCells}{%d}" % AGG["n_cells"],
 ]
+
+# ---- weighting sensitivities, emitted rather than hand-typed ----
+# The prose used to carry these four numbers as literals, which is exactly the pattern that
+# went stale elsewhere in this report. They are now computed inside the same joint bootstrap
+# that produces the headline, so each one arrives with its own interval.
+WS = AGG.get("weighting_sensitivity", {})
+_WNAME = {"equal_source": "EqSource", "equal_cell": "EqCell",
+          "row_weighted": "RowW", "with_base_arms": "WithBase"}
+for _k, _tag in _WNAME.items():
+    if _k in WS:
+        macros += [
+            r"\newcommand{\HtwoAgg%sTpr}{%s}" % (_tag, d3(WS[_k]["d_tpr"])),
+            r"\newcommand{\HtwoAgg%sTprCI}{$[%+.3f, %+.3f]$}" % ((_tag,) + tuple(WS[_k]["ci_tpr"])),
+        ]
+SRS = AGG.get("sources_resampled_sensitivity", {})
+if SRS:
+    macros += [
+        r"\newcommand{\HtwoAggSrcResampledCI}{$[%+.3f, %+.3f]$}" % tuple(SRS["ci_tpr"]),
+        r"\newcommand{\HtwoAggSrcResampledExcludesZero}{%s}"
+        % ("true" if SRS["ci_tpr"][0] > 0 else "false"),
+    ]
 
 # xstest is the cleanest transfer contrast: the frontier reference against the best local guard.
 if "xstest" in S:
@@ -177,18 +206,24 @@ for g in FRONTIER:
 foot = (r"\bottomrule" "\n" r"\end{tabular}\\[3pt]{\footnotesize \textbf{Paired comparison} "
         r"against \HtwoRef{} on the rows both scored. Each delta is the mean over training seeds "
         r"of (guard $-$ reference), so it equals the arithmetic difference of the two tabulated "
-        r"values; the \HtwoNBoot{}-resample bootstrap resamples \emph{both} rows and seeds, so "
-        r"the intervals carry training-seed as well as row uncertainty. \textbf{Summary reported "
+        r"values; the \HtwoNBoot{}-resample bootstrap resamples \emph{both} near-duplicate "
+        r"evaluation families (\code{family\_id}, the same protocol as the rest of the report) "
+        r"and training seeds, so the intervals carry seed as well as row uncertainty. "
+        r"\textbf{Summary reported "
         r"(post hoc, descriptive --- added after the per-cell headline failed multiplicity, so "
         r"not pre-specified):} the equal-source, equal-checkpoint mean over the \HtwoNRepSources{} "
         r"represented sources is $\Delta$TPR@\HtwoBudget{}FPR $=$ \HtwoAggDeltaTpr{} "
         r"\HtwoAggDeltaTprCI{} and $\Delta$AP $=$ \HtwoAggDeltaAp{} \HtwoAggDeltaApCI{}, both "
-        r"excluding zero. Individual cells are \textbf{exploratory}: the largest "
+        r"excluding zero --- \emph{conditional on these three sources}; drawing sources with "
+        r"replacement instead gives \HtwoAggSrcResampledCI{}, which does not. Individual cells "
+        r"are \textbf{exploratory}: the largest "
         r"(\HtwoBestName{} SFT on \HtwoBestSource{}, $n=\HtwoBestN$, \HtwoBestDeltaTpr{}) is "
         r"selected as the maximum of \HtwoNCells{}, so its nominal \HtwoBestDeltaTprCI{} is "
-        r"post-selection; Holm-adjusted it is \HtwoBestDeltaTprHolm{}. \HtwoNSigNominal{} of "
-        r"\HtwoNCells{} cells clear zero nominally and \HtwoNSigHolm{} survive the familywise "
-        r"correction. The "
+        r"post-selection; the max-$T$ simultaneous band over the \HtwoNCells{} cells "
+        r"($c=\HtwoMaxTCrit$) is \HtwoBestDeltaTprHolm{}. \HtwoNSigNominal{} of "
+        r"\HtwoNCells{} cells clear zero nominally and \HtwoNSigHolm{} survive a Holm step-down "
+        r"on the bootstrap $p$-values (smallest $p=\HtwoBestPBoot$ against a first threshold of "
+        r"$\alpha/12=\HtwoHolmFirstThreshold$). The "
         r"\code{jailbreakbench} column carries no deltas: the reference's own TPR there is "
         r"tie-collapsed (\textdagger), so differences against it are uninterpretable. Per-source "
         r"$n$ is small (67--451 rows), so these intervals are wide and no per-cell ordering "

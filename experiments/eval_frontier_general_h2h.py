@@ -28,9 +28,25 @@ benchmarks/registry/distribution.yaml, so nothing here persists prompt text: the
 read only to derive the two digests and a binary label, and the artifact stores digests,
 scores and metrics. Run it from the repo root.
 
+Two input paths, because the live one depends on files that are not in the repository.
+`gpt-baseline/raw/` (per-row provider predictions) and `data/benchmarks/full/` (the corpus
+that carries the text needed to derive the join) are both gitignored, so a clean checkout
+could not reconstruct any number here -- the central head-to-head result was less
+reproducible than the secondary tables. The join is therefore materialised once, as a
+text-free per-row artifact, and committed:
+
+    LIVE     gpt-baseline/raw + data/benchmarks/full  ->  frontier_rows.json (rewritten)
+    OFFLINE  frontier_rows.json + the committed score parquet  (no corpus, no raw, no network)
+
+The offline path is what `papers/unified-report/reproduce.py` runs, so h2h.json and both
+emitted TeX files are now byte-checkable from committed inputs alone. Labels and evaluation
+families come from the committed parquet in BOTH paths (the live path asserts the corpus
+agrees row-for-row), so the two cannot silently diverge.
+
 Writes:
-  artifacts/frontier_general_h2h/h2h.json          -- every cell, plus provenance
-  artifacts/frontier_general_h2h/join_audit.json   -- id-join coverage per source
+  artifacts/frontier_general_h2h/h2h.json           -- every cell, plus provenance
+  artifacts/frontier_general_h2h/join_audit.json    -- id-join coverage per source
+  artifacts/frontier_general_h2h/frontier_rows.json -- text-free per-row evidence (live path only)
 """
 from __future__ import annotations
 
@@ -54,6 +70,8 @@ MANIFESTS = os.path.join(ROOT, "artifacts", "paper_a_sft_v2", "manifests")
 RAW = os.path.join(ROOT, "gpt-baseline", "raw")
 CORPUS = os.path.join(ROOT, "data", "benchmarks", "full")
 OUT = os.path.join(ROOT, "artifacts", "frontier_general_h2h")
+ROWS = os.path.join(OUT, "frontier_rows.json")
+GPT_SUMMARY = os.path.join(ROOT, "gpt-baseline", "summary.json")
 
 # Matches papers/unified-report/frontier.py: recall at a common false-alarm budget, because
 # the two sides sit at very different self-chosen operating points.
@@ -132,11 +150,33 @@ def mean_over_seeds(per_seed: list[dict]) -> dict:
     return out
 
 
-def paired_delta(arms, b, y, n_boot: int = N_BOOT) -> dict:
+def family_clusters(fam) -> list:
+    """Row-index groups for the family-aware bootstrap: one entry per `family_id` value.
+
+    The rest of the report resamples near-duplicate evaluation families rather than rows,
+    because two paraphrases of one prompt are not two independent observations. This function
+    supplies the same clusters here; an earlier version of this script resampled bare rows and
+    so used a different uncertainty protocol from every other interval in the paper. The
+    numerical effect is small on the near-singleton sources (toxicchat has 438 clusters over
+    451 rows) and real on the clustered ones (jailbreakbench: 84 over 120).
+    """
+    order = {}
+    for i, f in enumerate(fam):
+        order.setdefault(str(f), []).append(i)
+    return [np.asarray(v, int) for _, v in sorted(order.items())]
+
+
+def resample_clusters(clusters, rng) -> np.ndarray:
+    take = rng.integers(0, len(clusters), len(clusters))
+    return np.concatenate([clusters[t] for t in take])
+
+
+def paired_delta(arms, b, y, clusters, n_boot: int = N_BOOT) -> dict:
     """Paired bootstrap of (guard - reference), consistent with the tabulated metric.
 
     `arms` is a LIST of score vectors -- one per training seed for an SFT guard, or a single
-    vector for a base guard.
+    vector for a base guard. `clusters` are the family-id row groups resampled by the
+    bootstrap (see `family_clusters`).
 
     Why a list, and not the mean of those vectors: the tables report Paper A's convention,
     metric-per-seed then averaged (`mean_over_seeds`). An earlier version of this function was
@@ -147,16 +187,21 @@ def paired_delta(arms, b, y, n_boot: int = N_BOOT) -> dict:
     makes the point estimate identically equal to (tabulated guard metric - reference metric),
     so a reader can always check the arithmetic on the page.
 
-    The interval resamples BOTH rows and seeds. Seeds are resampled with replacement because
-    the five adapters are draws of one recipe, so training-seed variance belongs inside the
-    interval; the old version held the averaged vector fixed and so reported row uncertainty
-    only. For a single-arm guard the seed dimension is degenerate and only rows are resampled.
+    The interval resamples BOTH evaluation families and seeds. Seeds are resampled with
+    replacement because the five adapters are draws of one recipe, so training-seed variance
+    belongs inside the interval; the old version held the averaged vector fixed and so reported
+    row uncertainty only. For a single-arm guard the seed dimension is degenerate and only
+    families are resampled.
     """
     arms = [np.asarray(a, float) for a in arms]
     b, y = np.asarray(b, float), np.asarray(y, int)
     ok = ~np.isnan(b)
     for a in arms:
         ok &= ~np.isnan(a)
+    keep = np.flatnonzero(ok)
+    remap = {int(j): i for i, j in enumerate(keep)}
+    clusters = [np.array([remap[int(j)] for j in c if int(j) in remap], int) for c in clusters]
+    clusters = [c for c in clusters if c.size]
     arms = [a[ok] for a in arms]
     b, y = b[ok], y[ok]
     n_arm = len(arms)
@@ -175,7 +220,7 @@ def paired_delta(arms, b, y, n_boot: int = N_BOOT) -> dict:
     rng = np.random.default_rng(BOOT_SEED)
     bt, bap = [], []
     for _ in range(n_boot):
-        idx = rng.integers(0, len(y), len(y))
+        idx = resample_clusters(clusters, rng)
         if y[idx].min() == y[idx].max():
             continue
         picks = rng.integers(0, n_arm, n_arm) if n_arm > 1 else [0]
@@ -188,7 +233,11 @@ def paired_delta(arms, b, y, n_boot: int = N_BOOT) -> dict:
 
     return {"n": int(len(y)), "n_arms": n_arm, "d_tpr": float(obs[0]), "ci_tpr": pct(bt),
             "d_ap": float(obs[1]), "ci_ap": pct(bap), "n_boot": int(len(bt)),
-            "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled"}
+            # retained so the multiplicity block can compute real percentile p-values rather
+            # than a |delta|/width proxy; popped before the artifact is written
+            "_draws_tpr": [float(x) for x in bt],
+            "estimand": "mean over seeds of (guard - reference); evaluation families and "
+                        "seeds both resampled"}
 
 
 # ──────────────────────────────────────────────────────────────── joining
@@ -239,46 +288,159 @@ def corpus_index(source: str) -> tuple[dict, dict]:
     return rid2norm, norm2label
 
 
-def frontier_scores(config: str, source: str, rid2norm: dict) -> dict:
-    """content_sha256 -> self-reported 0-100 risk, for the rows the provider answered."""
+def frontier_scores(config: str, source: str, rid2norm: dict) -> tuple[dict, dict]:
+    """(content_sha256 -> self-reported 0-100 risk, parse/failure tally) from the raw run.
+
+    Rows the provider failed on are never imputed as a negative -- they are dropped and
+    counted, and the count travels into the committed artifact so a reader can see how much
+    of the join is missing rather than inferring it from a coverage number.
+    """
     path = os.path.join(RAW, f"{config}__{source}.jsonl")
+    tally = {"records": 0, "ok": 0, "not_ok": 0, "unjoined_rid": 0}
     if not os.path.isfile(path):
-        return {}
+        return {}, tally
     out = {}
     for line in open(path):
         rec = json.loads(line)
+        tally["records"] += 1
         if not rec.get("ok"):
+            tally["not_ok"] += 1
             continue  # transport failure or a provider 400: never imputed as a negative
+        tally["ok"] += 1
         norm = rid2norm.get(rec["rid"])
-        if norm is not None:
+        if norm is None:
+            tally["unjoined_rid"] += 1
+        else:
             out[norm] = float(rec["raw"]["risk"])
+    return out, tally
+
+
+# ──────────────────────────────────────────────────────── text-free per-row evidence
+
+
+def _panel_rows(local, splits: tuple[str, ...]) -> dict:
+    """source -> (ids, gold, family_id) from the COMMITTED score parquet.
+
+    Both input paths read labels and evaluation families from here, never from the corpus, so
+    the offline reconstruction cannot drift from the live run on anything but the provider
+    scores themselves.
+    """
+    out = {}
+    for source in SOURCES:
+        loc = local[(local.source == source) & (local.split.isin(splits))]
+        if loc.empty:
+            continue
+        ids = sorted(set(loc.content_sha256))
+        one = loc.drop_duplicates("content_sha256").set_index("content_sha256")
+        out[source] = (ids,
+                       one.gold.reindex(ids).to_numpy(int),
+                       [str(f) for f in one.family_id.reindex(ids)])
     return out
+
+
+def build_rows_live(panel: dict) -> dict:
+    """Join gpt-baseline/raw against the corpus and materialise the text-free evidence package.
+
+    Requires the two gitignored trees. Asserts the corpus label agrees with the parquet gold
+    on every joined row; a disagreement means the two sides no longer denote the same row and
+    must not be papered over.
+    """
+    prov = {}
+    if os.path.isfile(GPT_SUMMARY):
+        s = json.load(open(GPT_SUMMARY))
+        prov = {"run_id": s.get("run_id"), "finished_at": s.get("finished_at"),
+                "mock": bool(s.get("mock")), "max_attempts": s.get("max_attempts")}
+    try:
+        sys.path.insert(0, os.path.join(ROOT, "gpt-baseline"))
+        import tasks as GT  # noqa: E402
+        prov["instruction_digest_prompt_safety"] = GT.instruction_digest("prompt_safety")
+    except Exception:
+        prov["instruction_digest_prompt_safety"] = None
+
+    payload = {
+        "schema": 1,
+        "purpose": "text-free per-row evidence for the frontier/local head-to-head: the "
+                   "provider's 0-100 risk per content digest. Holds no prompt text. Labels and "
+                   "evaluation families are NOT stored here -- they come from the committed "
+                   "score parquet, so there is one source of truth for them.",
+        "frontier_configs": list(FRONTIER),
+        "frontier_reference": FRONTIER_REF,
+        "provider_run": prov,
+        "join": "gpt rid=sha256(text)[:16] -> content_sha256=sha256(normalize_text(text))",
+        "sources": {},
+    }
+    for source, (ids, gold, _fam) in panel.items():
+        rid2norm, norm2label = corpus_index(source)
+        for i, k in enumerate(ids):
+            if k in norm2label and norm2label[k] != int(gold[i]):
+                raise AssertionError(
+                    f"{source}: corpus label disagrees with the committed parquet gold at {k}")
+        scores, tallies = {}, {}
+        for c in FRONTIER:
+            sc, tally = frontier_scores(c, source, rid2norm)
+            scores[c] = [(float(sc[k]) if k in sc else None) for k in ids]
+            tally["joined_panel_rows"] = int(sum(1 for k in ids if k in sc))
+            tallies[c] = tally
+        payload["sources"][source] = {
+            "ids": list(ids),
+            "corpus_rows_labelled": len(rid2norm),
+            "scores": scores,
+            "provider_rows": tallies,
+        }
+    return payload
+
+
+def load_rows(panel: dict, *, prefer_live: bool = True) -> tuple[dict, str]:
+    """(payload, path_taken). Live when the gitignored inputs are present, else the artifact."""
+    have_live = os.path.isdir(RAW) and os.path.isdir(CORPUS) and all(
+        os.path.isfile(os.path.join(CORPUS, f"{s}.jsonl")) for s in panel)
+    if prefer_live and have_live:
+        return build_rows_live(panel), "live"
+    if not os.path.isfile(ROWS):
+        raise SystemExit(
+            f"[h2h] neither the live inputs ({RAW}, {CORPUS}) nor the committed per-row "
+            f"artifact ({ROWS}) is available; cannot compute.")
+    payload = json.load(open(ROWS))
+    for source, (ids, _g, _f) in panel.items():
+        stored = payload["sources"].get(source, {}).get("ids")
+        if stored != list(ids):
+            raise SystemExit(
+                f"[h2h] {source}: committed per-row artifact does not align with the score "
+                f"parquet ({len(stored or [])} ids vs {len(ids)}); regenerate it from the "
+                f"live inputs.")
+    return payload, "artifact"
 
 
 # ──────────────────────────────────────────────────────────────── main
 
 
-def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
+def compute(splits: tuple[str, ...], *, prefer_live: bool = True) -> tuple[dict, dict, dict]:
     reg = manifest_regime()
     local = pd.read_parquet(SCORES)
     local = local[local.source.isin(SOURCES)]
+    panel = _panel_rows(local, splits)
+    rows, path_taken = load_rows(panel, prefer_live=prefer_live)
     results, audit = {}, {}
     arm_store: dict = {}   # source -> cell -> (arms, ref vector, y) for the aggregate boot
+    fam_store: dict = {}   # source -> family-id row clusters (aligned to the arm_store rows)
 
     for source in SOURCES:
-        rid2norm, norm2label = corpus_index(source)
-        loc = local[(local.source == source) & (local.split.isin(splits))]
-        if loc.empty:
+        if source not in panel:
             continue
-        ids = sorted(set(loc.content_sha256))
-        y = np.array([norm2label[i] for i in ids], int)
-        gpt_raw = {c: frontier_scores(c, source, rid2norm) for c in FRONTIER}
+        ids, y, fam = panel[source]
+        y = np.asarray(y, int)
+        loc = local[(local.source == source) & (local.split.isin(splits))]
+        rowrec = rows["sources"][source]
+        gpt_raw = {c: {k: v for k, v in zip(ids, rowrec["scores"].get(c, []))
+                       if v is not None}
+                   for c in FRONTIER}
 
         audit[source] = {
-            "corpus_rows_labelled": len(rid2norm),
+            "corpus_rows_labelled": rowrec.get("corpus_rows_labelled"),
             "panel_rows": len(ids),
             "panel_splits": sorted(loc.split.unique()),
-            "joined": {c: int(sum(i in s for i in ids)) for c, s in gpt_raw.items()},
+            "joined": {c: len(s) for c, s in gpt_raw.items()},
+            "provider_rows": rowrec.get("provider_rows", {}),
             "prevalence": float(y.mean()),
         }
 
@@ -311,22 +473,31 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
         # of where its tie block fell, not a comparison. Mark the whole source rather than
         # publish deltas that cannot be read (jailbreakbench is the live case).
         ref_degenerate = bool(guards[FRONTIER_REF].get("degenerate_tpr"))
+        clusters = family_clusters(fam)
         deltas = {}
+        mats_by_cell = {}
         for mk in sorted(loc.model_key.unique()):
             for cond in ("base", "sft"):
                 sub = loc[(loc.model_key == mk) & (loc.condition == cond)]
                 if sub.empty:
                     continue
-                mats = [sub[sub.seed == s].set_index("content_sha256").score_raw
-                        .reindex(ids).to_numpy(float) for s in sorted(sub.seed.unique())]
-                deltas[f"{mk}__{cond}"] = paired_delta(mats, ref, y)
-                # keep the aligned arrays: the aggregate estimand needs to resample the same
-                # rows across every cell of a source, which per-cell summaries cannot support
-                okm = ~np.isnan(ref)
-                for a in mats:
-                    okm &= ~np.isnan(a)
-                arm_store.setdefault(source, {})[f"{mk}__{cond}"] = (
+                mats_by_cell[f"{mk}__{cond}"] = [
+                    sub[sub.seed == s].set_index("content_sha256").score_raw
+                    .reindex(ids).to_numpy(float) for s in sorted(sub.seed.unique())]
+        for name, mats in mats_by_cell.items():
+            deltas[name] = paired_delta(mats, ref, y, clusters)
+        # The joint estimands (aggregate, max-T band) must resample the SAME rows across every
+        # cell of a source in a replicate, so they need one common mask rather than each cell's
+        # own. Take the intersection: rows the reference and every cell scored.
+        okm = ~np.isnan(ref)
+        for mats in mats_by_cell.values():
+            for a in mats:
+                okm &= ~np.isnan(a)
+        if okm.any():
+            for name, mats in mats_by_cell.items():
+                arm_store.setdefault(source, {})[name] = (
                     [a[okm] for a in mats], ref[okm], y[okm])
+            fam_store[source] = family_clusters([f for f, keep in zip(fam, okm) if keep])
 
         results[source] = {
             "regime": reg["regime"].get(source, "unknown"),
@@ -338,99 +509,156 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
             "deltas_interpretable": not ref_degenerate,
         }
 
-    # ── multiplicity, and one aggregate that is not chosen by its own result ────────────
+    # ── one joint bootstrap for every multi-cell statement ─────────────────────────────
     # The headline used to be the LARGEST significant per-cell delta out of the represented
     # SFT cells, with its nominal interval printed unadjusted. That is a post-selection
     # interval: scanning twelve cells and reporting the winner's 95% CI overstates it however
-    # many of the twelve are individually significant. Two things fix it. (1) An aggregate
-    # estimand -- the equal-source, equal-checkpoint mean delta over represented sources --
-    # which is fixed in advance and does not depend on which cell wins. (2) Holm-adjusted
-    # per-cell intervals, so any single cell that is still quoted is quoted honestly.
+    # many of the twelve are individually significant.
+    #
+    # Everything below now comes from ONE set of bootstrap replicates over the represented
+    # sources, which is what makes the pieces mutually consistent. Per replicate: resample
+    # `family_id` clusters within each source; draw ONE seed-slot vector per checkpoint and
+    # reuse it across every source. An earlier version violated both of those. It redrew seed
+    # indices independently inside each source/checkpoint loop, even though seeds 42-46 are the
+    # same five training runs everywhere, which broke the pairing that carries most of the
+    # covariance; and it resampled bare rows rather than the family clusters the rest of the
+    # report resamples. It also iterated the same three sources in every replicate while
+    # describing the result as if sources were sampled -- here sources are FIXED by default
+    # (the estimand is conditional on these three, which is all a purposive choice of three
+    # supports) and `resample_sources` reports the unconditional version as a sensitivity.
     rep = [s for s, r in results.items()
-           if r["regime"] == "represented" and r["deltas_interpretable"]]
+           if r["regime"] == "represented" and r["deltas_interpretable"] and s in arm_store]
     sft_cells = [(s, g, results[s]["deltas_vs_frontier_ref"][g])
                  for s in rep for g in sorted(results[s]["deltas_vs_frontier_ref"])
                  if g.endswith("__sft")]
-
-    # Holm step-down on the bootstrap two-sided p-value proxy: the smallest alpha at which the
-    # interval would still exclude zero is bounded by how far the nearer bound sits from zero,
-    # so rank by |delta| / half-width and adjust the family of m tests.
     m = len(sft_cells)
-    scored = []
-    for s, g, d in sft_cells:
-        lo, hi = d["ci_tpr"]
-        half = (hi - lo) / 2 if hi == hi and lo == lo else float("nan")
-        z = abs(d["d_tpr"]) / half if half and half == half and half > 0 else 0.0
-        scored.append((z, s, g, d))
-    scored.sort(key=lambda t: -t[0])
-    for rank, (z, s, g, d) in enumerate(scored):
-        # Holm: the k-th largest test is compared at alpha/(m-k); widen the interval by the
-        # ratio of the adjusted to the nominal critical value (normal approximation).
-        alpha_adj = 0.05 / max(m - rank, 1)
-        from math import sqrt
-        # z_{1-alpha/2} for the adjusted vs nominal level, via a rational approximation good
-        # to ~1e-4 over the range we need (alpha in [0.05/12, 0.05]).
-        def zcrit(alpha):
-            p = 1 - alpha / 2
-            t = sqrt(-2.0 * __import__("math").log(1 - p))
-            return t - ((0.010328 * t + 0.802853) * t + 2.515517) / \
-                       (((0.001308 * t + 0.189269) * t + 1.432788) * t + 1.0)
-        widen = zcrit(alpha_adj) / zcrit(0.05)
-        lo, hi = d["ci_tpr"]
-        mid = d["d_tpr"]
-        d["ci_tpr_holm"] = [mid - (mid - lo) * widen, mid + (hi - mid) * widen]
-        d["holm_rank"] = rank + 1
-        d["holm_alpha"] = alpha_adj
-        d["holm_significant"] = bool(d["ci_tpr_holm"][0] > 0)
-        d["holm_family_size"] = m
+    cell_index = {(s, g): i for i, (s, g, _) in enumerate(sft_cells)}
+    cells_by_source = {s: [g for g in sorted(arm_store[s]) if g.endswith("__sft")] for s in rep}
+    base_by_source = {s: [g for g in sorted(arm_store[s]) if g.endswith("__base")] for s in rep}
+    ckpts = sorted({g for s in rep for g in cells_by_source[s] + base_by_source[s]})
+    n_seed = max((len(arm_store[s][g][0]) for s in rep for g in cells_by_source[s]), default=1)
 
-    # The aggregate needs its own interval, not just a point estimate, or it cannot carry a
-    # claim either. Hierarchical bootstrap: within each represented source resample rows and
-    # seeds, average over that source's checkpoints, then average over sources -- one draw of
-    # the whole estimand per replicate, with sources drawn jointly so the mean is coherent.
-    def aggregate_boot(key):
-        rng2 = np.random.default_rng(BOOT_SEED + 1)
-        obs_per_source, draws = [], []
-        for s in rep:
-            cells = [g for g in sorted(arm_store[s]) if g.endswith("__sft")]
+    def _cell_delta(s, g, idx, seed_pick, key):
+        arms, ref_v, yv = arm_store[s][g]
+        yy = yv[idx]
+        if yy.min() == yy.max():
+            return None
+        if key == "d_tpr":
+            r = tpr_at_fpr(ref_v[idx], yy)
+            per = [tpr_at_fpr(arms[q][idx], yy) - r for q in seed_pick if q < len(arms)]
+        else:
+            r = average_precision(ref_v[idx], yy)
+            per = [average_precision(arms[q][idx], yy) - r for q in seed_pick if q < len(arms)]
+        return float(np.mean(per)) if per else None
+
+    def _replicate(key, srcs, idx_by_source, seed_pick):
+        """All per-cell deltas for one replicate, plus the four weightings of them."""
+        per_cell, per_source, row_w, with_base = {}, [], [], []
+        for s in srcs:
             vals = []
-            for g in cells:
-                arms, ref_v, yv = arm_store[s][g]
-                r_t, r_a = tpr_at_fpr(ref_v, yv), average_precision(ref_v, yv)
-                per = [(tpr_at_fpr(a, yv) - r_t) if key == "d_tpr"
-                       else (average_precision(a, yv) - r_a) for a in arms]
-                vals.append(float(np.mean(per)))
-            obs_per_source.append(float(np.mean(vals)))
-        obs = float(np.mean(obs_per_source))
+            for g in cells_by_source[s]:
+                v = _cell_delta(s, g, idx_by_source[s], seed_pick[g], key)
+                if v is None:
+                    return None
+                per_cell[(s, g)] = v
+                vals.append(v)
+            allv = list(vals)
+            for g in base_by_source[s]:
+                v = _cell_delta(s, g, idx_by_source[s], [0], key)
+                if v is not None:
+                    allv.append(v)
+            per_source.append(float(np.mean(vals)))
+            row_w.append((float(np.mean(vals)), len(idx_by_source[s])))
+            with_base.append(float(np.mean(allv)))
+        flat = list(per_cell.values())
+        n_tot = sum(w for _, w in row_w) or 1
+        return {
+            "per_cell": per_cell,
+            "equal_source": float(np.mean(per_source)),
+            "equal_cell": float(np.mean(flat)),
+            "row_weighted": float(sum(v * w for v, w in row_w) / n_tot),
+            "with_base_arms": float(np.mean(with_base)),
+        }
 
+    ident = {s: np.arange(len(arm_store[s][cells_by_source[s][0]][2])) for s in rep}
+    all_seeds = {g: list(range(n_seed)) for g in ckpts}
+    point = {k: _replicate(k, rep, ident, all_seeds) for k in ("d_tpr", "d_ap")}
+
+    def joint_draws(key, resample_sources=False):
+        rng2 = np.random.default_rng(BOOT_SEED + 1)
+        agg = {w: [] for w in ("equal_source", "equal_cell", "row_weighted", "with_base_arms")}
+        cellmat = []
         for _ in range(N_BOOT):
-            per_source = []
-            ok = True
-            for s in rep:
-                cells = [g for g in sorted(arm_store[s]) if g.endswith("__sft")]
-                arms0, ref0, y0 = arm_store[s][cells[0]]
-                idx = rng2.integers(0, len(y0), len(y0))
-                if y0[idx].min() == y0[idx].max():
-                    ok = False
-                    break
-                vals = []
-                for g in cells:
-                    arms, ref_v, yv = arm_store[s][g]
-                    yy = yv[idx]
-                    r_t, r_a = tpr_at_fpr(ref_v[idx], yy), average_precision(ref_v[idx], yy)
-                    picks = rng2.integers(0, len(arms), len(arms)) if len(arms) > 1 else [0]
-                    per = [(tpr_at_fpr(arms[p][idx], yy) - r_t) if key == "d_tpr"
-                           else (average_precision(arms[p][idx], yy) - r_a) for p in picks]
-                    vals.append(float(np.mean(per)))
-                per_source.append(float(np.mean(vals)))
-            if ok:
-                draws.append(float(np.mean(per_source)))
-        ci = ([float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))]
-              if draws else [float("nan")] * 2)
-        return obs, ci, len(draws)
+            srcs = (list(rng2.choice(rep, size=len(rep), replace=True))
+                    if resample_sources else list(rep))
+            idx_by_source = {s: resample_clusters(fam_store[s], rng2) for s in set(srcs)}
+            seed_pick = {g: rng2.integers(0, n_seed, n_seed) for g in ckpts}
+            r = _replicate(key, srcs, idx_by_source, seed_pick)
+            if r is None:
+                continue
+            for w in agg:
+                agg[w].append(r[w])
+            if not resample_sources:
+                cellmat.append([r["per_cell"][(s, g)] for s, g, _ in sft_cells])
+        return agg, (np.asarray(cellmat, float) if cellmat else np.zeros((0, m)))
 
-    d_tpr_obs, d_tpr_ci, nb = aggregate_boot("d_tpr")
-    d_ap_obs, d_ap_ci, _ = aggregate_boot("d_ap")
+    tpr_agg, tpr_cells = joint_draws("d_tpr")
+    ap_agg, _ = joint_draws("d_ap")
+    tpr_agg_src, _ = joint_draws("d_tpr", resample_sources=True)
+    ap_agg_src, _ = joint_draws("d_ap", resample_sources=True)
+
+    def pctl(v):
+        return ([float(np.percentile(v, 2.5)), float(np.percentile(v, 97.5))]
+                if len(v) else [float("nan")] * 2)
+
+    # ── multiplicity: a real Holm step-down on real p-values ────────────────────────────
+    # The previous procedure ranked cells by |delta| / half-CI-width, assigned alpha/(m-k),
+    # then WIDENED each percentile bound by the ratio of two NORMAL critical values and called
+    # the result a Holm-adjusted interval. Three things were wrong with that and one was not.
+    # Wrong: the |delta|/width ranking is not the p-value ranking; a normal rescale of an
+    # asymmetric percentile interval is a normal approximation, not a bootstrap interval; and
+    # there was no step-down stopping, so a cell could be declared significant while a
+    # smaller-p cell was not. Not wrong: alpha/(m-k) IS Holm's ladder. Omitting the stopping
+    # rule was anti-conservative, so the published "0 of 12 survive" could only have been too
+    # generous -- and a correct procedure agrees with it.
+    for _, _, d in sft_cells:
+        draws = np.asarray(d.pop("_draws_tpr", []), float)
+        if draws.size:
+            frac = float((draws <= 0).mean())
+            d["p_boot"] = float(min(1.0, 2 * min(frac, 1 - frac)))
+        else:
+            d["p_boot"] = float("nan")
+    order = sorted(range(m), key=lambda k: sft_cells[k][2]["p_boot"])
+    still_rejecting, running = True, 0.0
+    for step, k in enumerate(order):
+        d = sft_cells[k][2]
+        d["holm_threshold"] = 0.05 / (m - step)
+        d["holm_rank"] = step + 1
+        d["holm_family_size"] = m
+        still_rejecting = still_rejecting and (d["p_boot"] <= d["holm_threshold"])
+        d["holm_significant"] = bool(still_rejecting)
+        running = max(running, min(1.0, d["p_boot"] * (m - step)))  # monotone adjusted p
+        d["p_holm_adj"] = float(running)
+
+    # A SIMULTANEOUS band for any cell the narrative quotes, from the joint draws rather than
+    # from a normal rescale: standardise each cell by its own bootstrap sd, take the max |t|
+    # over the m cells within each replicate, and use the 95th percentile of that maximum.
+    # This is the max-T analogue of "adjusted interval" and it is the honest object; Holm
+    # controls the error rate of the DECISIONS and does not itself produce intervals.
+    if tpr_cells.shape[0] > 1:
+        sd = tpr_cells.std(axis=0, ddof=1)
+        centred = tpr_cells - tpr_cells.mean(axis=0)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            tstat = np.abs(np.where(sd > 0, centred / np.where(sd > 0, sd, 1.0), 0.0))
+        c_maxt = float(np.percentile(tstat.max(axis=1), 95.0))
+    else:
+        sd, c_maxt = np.full(m, float("nan")), float("nan")
+    for i, (_s, _g, d) in enumerate(sft_cells):
+        d["sd_boot_tpr"] = float(sd[i]) if np.isfinite(sd[i]) else float("nan")
+        half = c_maxt * float(sd[i]) if np.isfinite(c_maxt) and np.isfinite(sd[i]) else float("nan")
+        d["ci_tpr_simultaneous"] = [d["d_tpr"] - half, d["d_tpr"] + half]
+        # keep the old key so downstream emitters do not break, now pointing at the valid band
+        d["ci_tpr_holm"] = d["ci_tpr_simultaneous"]
 
     aggregate = {
         "estimand": "equal-source, equal-checkpoint mean paired delta (panel SFT - "
@@ -442,13 +670,30 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
                             "it must not be described as such. Only a summary frozen before a fresh "
                             "cohort is scored can carry a confirmatory frontier claim.",
         "sources": rep,
+        "sources_fixed": True,
         "n_cells": m,
-        "n_boot": nb,
-        "d_tpr": d_tpr_obs, "ci_tpr": d_tpr_ci,
-        "d_ap": d_ap_obs, "ci_ap": d_ap_ci,
-        "significant": bool(d_tpr_ci[0] > 0),
-        "n_significant_holm": sum(1 for _, _, _, d in scored if d["holm_significant"]),
-        "n_significant_nominal": sum(1 for _, _, _, d in scored if d["ci_tpr"][0] > 0),
+        "n_boot": len(tpr_agg["equal_source"]),
+        "d_tpr": point["d_tpr"]["equal_source"], "ci_tpr": pctl(tpr_agg["equal_source"]),
+        "d_ap": point["d_ap"]["equal_source"], "ci_ap": pctl(ap_agg["equal_source"]),
+        "significant": bool(pctl(tpr_agg["equal_source"])[0] > 0),
+        "n_significant_holm": sum(1 for _, _, d in sft_cells if d["holm_significant"]),
+        "n_significant_nominal": sum(1 for _, _, d in sft_cells if d["ci_tpr"][0] > 0),
+        "maxt_critical_value": c_maxt,
+        # every reasonable weighting of the same twelve cells, so the reader can see how much
+        # of the headline is the weighting choice rather than the data
+        "weighting_sensitivity": {
+            w: {"d_tpr": point["d_tpr"][w], "ci_tpr": pctl(tpr_agg[w]),
+                "d_ap": point["d_ap"][w], "ci_ap": pctl(ap_agg[w])}
+            for w in ("equal_source", "equal_cell", "row_weighted", "with_base_arms")
+        },
+        # and the unconditional version, which is a different and much weaker claim
+        "sources_resampled_sensitivity": {
+            "note": "sources drawn with replacement from the three represented sources; with a "
+                    "purposive choice of three this is reported only to show how little a "
+                    "source-population claim would be supported by, and is not the headline",
+            "ci_tpr": pctl(tpr_agg_src["equal_source"]),
+            "ci_ap": pctl(ap_agg_src["equal_source"]),
+        },
     }
 
     meta = {
@@ -457,12 +702,26 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
         "splits": list(splits),
         "n_boot": N_BOOT,
         "boot_seed": BOOT_SEED,
-        "delta_estimand": "mean over seeds of (guard - reference), rows and seeds resampled; "
-                          "equals (tabulated guard metric - reference metric) by construction",
-        "multiplicity": f"Holm across the {m} represented-source SFT cells; per-cell nominal "
-                        "intervals are exploratory, ci_tpr_holm is the adjusted interval",
+        "delta_estimand": "mean over seeds of (guard - reference), evaluation families and "
+                          "seeds resampled; equals (tabulated guard metric - reference metric) "
+                          "by construction",
+        "uncertainty": "family-aware: the bootstrap resamples family_id clusters, the same "
+                       "protocol as every other interval in the report, not bare rows",
+        "multiplicity": (
+            f"Holm step-down over the {m} represented-source SFT cells on two-sided percentile-"
+            "bootstrap p-values (p_boot -> p_holm_adj, holm_significant). ci_tpr is the NOMINAL "
+            "per-cell interval and is exploratory; ci_tpr_simultaneous (aliased as ci_tpr_holm) "
+            "is a max-T simultaneous band over the same family, computed from joint draws -- "
+            "Holm controls decisions, so the band is max-T rather than 'Holm-adjusted'."),
+        "joint_bootstrap": (
+            "one set of replicates drives the aggregate, its weighting sensitivities and the "
+            "max-T band: family clusters resampled within each source, ONE seed-slot vector per "
+            "checkpoint reused across sources, sources held fixed unless stated"),
         "local_scores": os.path.relpath(SCORES, ROOT),
-        "frontier_predictions": os.path.relpath(RAW, ROOT),
+        "frontier_predictions": os.path.relpath(ROWS, ROOT),
+        "frontier_predictions_upstream": os.path.relpath(RAW, ROOT),
+        "input_path": path_taken,
+        "provider_run": rows.get("provider_run", {}),
         "trained_sources": reg["trained_sources"],
         "join": "gpt rid=sha256(text)[:16] -> content_sha256=sha256(normalize_text(text))",
         "text_free": "all five sources are text_free_only in the distribution ledger; "
@@ -470,7 +729,10 @@ def compute(splits: tuple[str, ...]) -> tuple[dict, dict]:
         "flavor": "retrospective, estimation-only -- these rows and this panel were inspected "
                   "during development; not a preregistered or confirmatory comparison",
     }
-    return {"meta": meta, "aggregate": aggregate, "sources": results}, audit
+    for r in results.values():
+        for d in r["deltas_vs_frontier_ref"].values():
+            d.pop("_draws_tpr", None)
+    return {"meta": meta, "aggregate": aggregate, "sources": results}, audit, rows
 
 
 def main() -> None:
@@ -478,14 +740,23 @@ def main() -> None:
     ap.add_argument("--splits", nargs="+", default=["id_test", "transfer_test"],
                     help="panel splits to score (default excludes calibration)")
     ap.add_argument("--out", default=OUT)
+    ap.add_argument("--offline", action="store_true",
+                    help="ignore gpt-baseline/raw and the corpus; recompute from the committed "
+                         "text-free per-row artifact only (what reproduce.py runs)")
     args = ap.parse_args()
 
-    payload, audit = compute(tuple(args.splits))
+    payload, audit, rows = compute(tuple(args.splits), prefer_live=not args.offline)
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "h2h.json"), "w") as fh:
         json.dump(payload, fh, indent=2, sort_keys=True)
     with open(os.path.join(args.out, "join_audit.json"), "w") as fh:
         json.dump(audit, fh, indent=2, sort_keys=True)
+    if payload["meta"]["input_path"] == "live":
+        # refresh the committed evidence package whenever the gitignored inputs were available,
+        # so the offline path can never silently fall behind the live one
+        with open(os.path.join(args.out, "frontier_rows.json"), "w") as fh:
+            json.dump(rows, fh, indent=2, sort_keys=True)
+        print(f"wrote {os.path.join(args.out, 'frontier_rows.json')} (text-free per-row evidence)")
 
     for source, r in payload["sources"].items():
         print(f"\n=== {source}  [{r['regime']}]  n={r['n']}  prev={r['prevalence']:.3f} ===")

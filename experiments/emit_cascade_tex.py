@@ -37,7 +37,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 A = os.path.join(ROOT, "artifacts", "expguard_external")
-GEN = os.path.join(ROOT, "papers", "unified-report", "generated")
+# PAPER_GEN_DIR lets papers/unified-report/reproduce.py --check emit into a scratch
+# directory and byte-compare, so verification never writes into the tracked tree.
+GEN = os.environ.get("PAPER_GEN_DIR") or os.path.join(
+    ROOT, "papers", "unified-report", "generated")
 
 FPR_BUDGET = 0.05
 LOCAL = "scores_smollm3_3b_base"     # the report's inline candidate

@@ -1,4 +1,4 @@
-\section{Interlude (Act~I, revisited): adapting released guards --- an analysis-preregistered starting-type study}
+\section{Q1b. Does it hit guards that are \emph{already} guards? (analysis-preregistered)}
 \label{sec:adaptation}
 
 Acts~I--II characterize what fine-tuning does to \emph{general} instruction checkpoints, and Act~III ranks
@@ -33,13 +33,35 @@ against the real tokenizer at a decision-position fidelity check before scoring;
 frozen Paper~A binary manifest, LoRA recipe, and optimizer. We report macro-AP (mean over benchmark
 sources) on the RAW logit margin, on represented (\texttt{id\_test}) and held-out (\texttt{transfer})
 splits, as a within-checkpoint change vs.\ the \emph{same} unmodified checkpoint (the KL reference is
-that checkpoint). Each statistic H is an equal-weight mean over the six \emph{model} families; its
+that checkpoint).
+
+\paragraph{Which panel each statistic is computed over, and a correction.} RQ1 and RQ2 are registered
+over the \emph{purpose-built} panel: \AdaNCheckpointsPB{} released guards spanning
+\AdaNFamiliesPB{} model families (gemma, granite, llama, mistral, qwen). The general panel
+(\AdaNCheckpointsGen{} checkpoints, \AdaNFamiliesGen{} families) is a separate block, and the
+registered contrast between them is $\Gamma$. Earlier revisions of this section did not compute it that
+way. The analyzer built \emph{one} panel over all \AdaNCheckpoints{} checkpoints and grouped it by model
+family, which placed Qwen2.5-1.5B and Qwen3-4B in the same \code{qwen} family as Qwen3Guard-Gen-0.6B and
+Qwen3Guard-Gen-4B --- so every published H was a six-family \emph{mixed}-panel statistic and estimated a
+different quantity from the registered one. The same taxonomy is what previously made $\Gamma$
+indeterminate, since a family spanning both starting types cannot sit on either side of it. The
+analyzer now carries \code{starting\_type} through to the panel and the numbers below are the registered
+purpose-built-panel estimands; the superseded mixed-panel values are kept beside them
+(\Cref{sec:adaptation-license}) rather than deleted.
+
+Each statistic H is an equal-weight mean over the model families \emph{of its panel}; its
 one-sided $97.5\%$ lower bound comes from a 10{,}000-resample bootstrap that resamples near-duplicate
-\emph{evaluation row families} (\code{family\_id}; 3{,}170 clusters over 3{,}308 rows) and training seeds while
+\emph{evaluation row families} (\code{family\_id}) and training seeds while
 holding model \emph{and benchmark-source} identity fixed, Bonferroni-split
-across the two research questions (familywise $\alpha=0.05$). Because benchmark identity is held fixed,
-these bounds carry evaluation-row and seed uncertainty only --- not between-benchmark or
-between-model-family uncertainty.
+across the two research questions (familywise $\alpha=0.05$). $\Gamma$ rides the same replicates, so it
+is a paired difference rather than a difference of two independent bootstraps. Because benchmark
+identity is held fixed, these bounds carry evaluation-row and seed uncertainty only --- not
+between-benchmark or between-model-family uncertainty. One count belongs here because an earlier
+revision reported the wrong one. The study \emph{scores} $3{,}308$ rows per condition, but the two
+analysed regimes are \code{id\_test} and \code{transfer\_test} only, so the bootstrap resamples the
+\AdaNEvalFamilies{} \code{family\_id} clusters of the $2{,}257$ rows those two splits contain --- not
+the $3{,}170$ clusters of the full scored set, which is what an earlier revision quoted. The
+calibration and single-class stress splits are scored but not analysed here.
 
 \input{generated/tab_adaptation_gen}
 
@@ -58,31 +80,43 @@ LoRA-resistance.}
 \label{fig:adaptation-plane}
 \end{figure}
 
-\subsection{RQ1: ordinary SFT specializes released guards too (supported)}
+\subsection{RQ1: ordinary SFT specializes released guards too}
 \label{sec:adaptation-rq1}
 \noindent
-Across the panel, our SFT protocol raised represented-source macro-AP by \AdaHGain{} (equal-family mean;
-LCB $\AdaHGainLCB>0$) while the gain was concentrated relative to held-out transfer (H\_conc \AdaHConc,
-LCB $\AdaHConcLCB>0$), with the preregistered criterion $\text{LCB}(\text{H\_gain})>0$ and
-$\text{LCB}(\text{H\_conc})>0$ both met. \Cref{tab:adaptation} and \Cref{fig:adaptation-plane} show the pattern is not a general-model
+On the registered purpose-built panel, our SFT protocol raised represented-source macro-AP by
+\AdaHGain{} (equal-family mean; LCB \AdaHGainLCB) while the gain was concentrated relative to held-out
+transfer (H\_conc \AdaHConc, LCB \AdaHConcLCB), so the registered criterion
+$\text{LCB}(\text{H\_gain})>0$ and $\text{LCB}(\text{H\_conc})>0$ is met.
+\Cref{tab:adaptation} and \Cref{fig:adaptation-plane} show the pattern is not a general-model
 artifact: the released guards move the same way --- SFT buys represented ranking (e.g.\ ShieldGemma-2B
 $+0.212$, Granite-Guard-2B $+0.139$) at a held-out cost (equal-family held-out change under SFT
 \AdaHheldSFT). Fine-tuning a released guard on your data specializes it toward your sources, at a
-bound-confirmed transfer cost, exactly as it does a general checkpoint.
+transfer cost, exactly as it does a general checkpoint.
 
-\subsection{RQ2: KL-SFT retains transfer, but is \emph{not} a free improvement (not supported)}
+\textbf{We report that the criterion is met; we do not report RQ1 as ``supported.''} The two are not
+the same thing here, and the difference is the whole reason this subsection is worded as it is. A
+confirmatory verdict would require a protocol that was actually followed, and four things went wrong
+with this one, each stated in full below: the claim registry is \code{dev\_nonfinal} and no lock binds
+it; no checkpoint has a passing preflight, so the eligibility gate never ran; a degenerate cell was
+retained against that gate; and the panel split reported here was written \emph{after} the outcomes were
+known, to repair an analyzer computing the wrong estimand. Any one of those is enough to disqualify a
+confirmatory reading. Read this as an analysis-preregistered fixed-panel \emph{estimate} whose decision
+rule happens to be met --- which is a weaker and more accurate thing to say.
+
+\subsection{RQ2: KL-SFT retains transfer, but is \emph{not} a free improvement}
 \label{sec:adaptation-rq2}
 \noindent
-KL-SFT did preserve held-out transfer relative to SFT (H\_preserve \AdaHPreserve, LCB $\AdaHPreserveLCB>0$):
+KL-SFT did preserve held-out transfer relative to SFT (H\_preserve \AdaHPreserve, LCB \AdaHPreserveLCB):
 in \Cref{tab:adaptation} every KL-SFT held-out delta on the nine \emph{informative} checkpoints is less
 negative (or more positive) than its SFT counterpart; on the degenerate Llama-Guard-3-1B cell both are
 exactly zero. But the represented-source \emph{cost} of that retention, H\_cost \AdaHCost, has
-LCB \AdaHCostLCB, which does not clear the preregistered non-inferiority margin of $-\AdaMargin$ --- so
-the second criterion fails and RQ2 is \textbf{not supported}. KL-SFT trades represented-source adaptation
+LCB \AdaHCostLCB, which does not clear the registered non-inferiority margin of $-\AdaMargin$ --- so
+the second criterion fails. KL-SFT trades represented-source adaptation
 gain for transfer retention; on this panel it is a genuine trade, not a free lunch. This is a more
-cautious verdict than the general-checkpoint KL control of \Cref{sec:actI-klsft} (where the represented
+cautious reading than the general-checkpoint KL control of \Cref{sec:actI-klsft} (where the represented
 cost was smaller), and the locked-criterion design reports it as such rather than reading the favorable
-direction as a win.
+direction as a win. The same four caveats apply: this is a failed criterion on an estimate, not a
+falsified confirmatory hypothesis.
 
 \subsection{What this does and does not license}
 \label{sec:adaptation-license}
@@ -96,10 +130,15 @@ fixed-panel summary, not a population estimate.
 
 \paragraph{The Llama-Guard cell is a harness artifact, and it dilutes every number here.}
 One checkpoint, Llama-Guard-3-1B, shows exactly zero movement under both SFT and KL-SFT
-(\Cref{tab:adaptation}) --- one unique score across all $36{,}388$ scored cells
-($3{,}308$ rows $\times$ eleven conditions). \textbf{The cause is not a
+(\Cref{tab:adaptation}), because \emph{every one of its eleven conditions is a single constant}: the
+unmodified arm returns $-0.125$ on all $3{,}308$ rows (sd $0$), and each tuned seed returns one
+constant of its own, always $-0.125$, $0$ or $+0.125$. So its macro-AP equals the source base rates in
+every cell and no adaptation can move it. (An earlier revision said ``one unique score across all
+$36{,}388$ scored cells.'' That was wrong as stated --- across the eleven conditions the committed
+parquet holds three distinct values --- though the consequence is the same, since the constancy that
+makes the cell uninformative is \emph{within} each condition.) \textbf{The cause is not a
 property of that model.} It was two independent harness bugs, diagnosed after this study was scored
-and described in full in \Cref{sec:actIV}: the native template rendered its conversation
+and described in full in \Cref{sec:llama-guard-harness}: the native template rendered its conversation
 wrapper with the user turn missing while still satisfying every marker, and the verdict was read at a
 prompt position that carries the distribution over a two-newline prefix rather than over
 \code{safe}/\code{unsafe}. Its output head is intact and both decision tokens carry full-norm rows. An
@@ -107,52 +146,75 @@ earlier version of this section attributed the null cell to that pruned, embeddi
 explanation is superseded and wrong. The cell measures our instrument, not the guard.
 
 Two consequences follow, and both are deviations from the protocol as written rather than results.
-First, the cell is retained in the equal-family means as a zero contribution, so \emph{every} estimand
-in this section is diluted by exactly $6/5 = 1.2\times$: dropping the null family would move
-$H_{\mathrm{gain}}$ from \AdaHGain{} to $+0.208$, $H_{\mathrm{conc}}$ from \AdaHConc{} to $+0.286$,
-$H_{\mathrm{preserve}}$ from \AdaHPreserve{} to $+0.059$, and $H_{\mathrm{cost}}$ from \AdaHCost{} to
-$-0.043$. Because the null family contributes identically zero in \emph{every} bootstrap replicate, each
-equal-family statistic is exactly $5/6$ of its five-family value replicate by replicate, so the
-registered bounds rescale by exactly $6/5$ without any rerun: $H_{\mathrm{gain}}$ LCB
-$0.129\!\to\!0.155$, $H_{\mathrm{conc}}$ $0.189\!\to\!0.227$, $H_{\mathrm{preserve}}$
-$0.035\!\to\!0.042$, $H_{\mathrm{cost}}$ $-0.060\!\to\!-0.072$, and the held-out SFT upper bound
-$-0.047\!\to\!-0.057$. RQ1 stays supported and RQ2 still fails, and fails harder. So this cannot
-manufacture support: it makes RQ1 harder to clear and makes RQ2's failure look milder than it is. Both verdicts
-therefore stand, and the reported magnitudes are conservative --- but they are one sixth ($16.7\%$) smaller than the
-five-family values, which is stated here rather than left for a reader to derive. Second, the study's
+First, the cell is retained in the equal-family means as a zero contribution, so each of the four
+\emph{purpose-built-panel} H statistics is diluted by exactly \AdaNullDilution{} --- that panel has
+\AdaNFamiliesPB{} families of which \AdaNFamiliesPBValid{} carry a signal. (The general-panel
+statistics contain no null family and are undiluted; $\Gamma$, being a difference of the two, inherits
+the dilution only through its purpose-built term.) Dropping the null family
+would move $H_{\mathrm{gain}}$ from \AdaHGain{} to \AdaHGainDropNull, $H_{\mathrm{conc}}$ from
+\AdaHConc{} to \AdaHConcDropNull, $H_{\mathrm{preserve}}$ from \AdaHPreserve{} to
+\AdaHPreserveDropNull, and $H_{\mathrm{cost}}$ from \AdaHCost{} to \AdaHCostDropNull. Because
+Llama-Guard's unmodified, SFT and KL macro-APs are identical under \emph{any} family weighting, its
+contribution is identically zero in every bootstrap replicate too, so each bound rescales by the same
+exact factor without a rerun: $H_{\mathrm{gain}}$ LCB \AdaHGainLCB$\to$\AdaHGainLCBDropNull,
+$H_{\mathrm{conc}}$ \AdaHConcLCB$\to$\AdaHConcLCBDropNull, $H_{\mathrm{preserve}}$
+\AdaHPreserveLCB$\to$\AdaHPreserveLCBDropNull, $H_{\mathrm{cost}}$
+\AdaHCostLCB$\to$\AdaHCostLCBDropNull. The RQ1 criterion stays met and the RQ2 criterion still fails,
+and fails harder. So this cannot manufacture support: it makes RQ1 harder to clear and makes RQ2's
+failure look milder than it is. The reported magnitudes are therefore conservative --- but they are
+smaller than the informative-family values by that factor, which is stated here rather than left for a
+reader to derive. (An earlier revision quoted this dilution as $6/5$, which was the factor for the
+\emph{mixed} six-family panel; on the registered purpose-built panel the denominator is different, and
+these figures are now emitted by the analyzer rather than typed.) Second, the study's
 own eligibility rule (proposal \S4.3) requires each checkpoint's verdict likelihoods to be
 \emph{nonconstant}; a degenerate cell fails that test, so under the rule as written this checkpoint
 should have been excluded rather than retained at zero. Retaining it is the conservative choice, but it
 is a departure from a preregistered criterion and not an application of one.
 
-\paragraph{The pooled starting-type interaction is not reported.} The protocol also preregisters a
+\paragraph{The pooled starting-type interaction, now computed.} The protocol also registers a
 fixed-panel interaction $\Gamma$ --- the equal-family mean movement of purpose-built families minus
-that of general families (proposal \S6.3). It was not computed, and the claim registry's
-\code{stop\_narrow\_gates} fallback does authorize omitting it, conditional on fewer than three
-purpose-built families passing preflight. That condition cannot be evaluated either way, because
-\emph{no} checkpoint has a passing preflight: all ten files in
-\code{artifacts/starting\_type\_adaptation\_v1/preflight/} record \code{eligible: false} with
+that of general families (proposal \S6.3). Two earlier revisions of this paragraph gave two different
+wrong accounts of why it was missing. It was not a protocol indeterminacy: proposal \S6.3 already
+prescribes that ``the two Qwen \emph{purpose-built} sizes contribute one Qwen-family value,'' which
+separates them from the general Qwen checkpoints, so $\Gamma$ was computable as registered all along.
+It was an analysis-code deviation --- the single pooled \code{qwen} family --- and it is now repaired.
+$\Gamma_{\mathrm{gain}}$ is \AdaGammaGain{} \AdaGammaGainCI, $\Gamma_{\mathrm{conc}}$ is
+\AdaGammaConc{} \AdaGammaConcCI, $\Gamma_{\mathrm{preserve}}$ is \AdaGammaPreserve{}
+\AdaGammaPreserveCI, and $\Gamma_{\mathrm{cost}}$ is \AdaGammaCost{} \AdaGammaCostCI{} (equal-family
+means over \AdaNFamiliesPB{} purpose-built and \AdaNFamiliesGen{} general families, on the same
+replicates as everything above). Two things must be said about it. It is a \emph{descriptive
+fixed-panel} interaction: checkpoints are not randomly assigned to a starting type, so this is a
+blocked comparison of two particular sets of models, not a causal effect of being purpose-built. And it
+is computed on \AdaNFamiliesPB{} and \AdaNFamiliesGen{} families respectively, one of the purpose-built ones being
+the null Llama cell, so its interval is wide by construction and a single family can move it.
+
+The registry's \code{stop\_narrow\_gates} fallback would have authorized omitting $\Gamma$, conditional
+on fewer than three purpose-built families passing preflight --- but that condition cannot be evaluated
+either way, because \emph{no} checkpoint has a passing preflight: all ten files in
+\code{artifacts/}\allowbreak\code{starting\_type\_adaptation\_v1/}\allowbreak\code{preflight/} record
+\code{eligible: false} with
 \code{finalization\_status: nonfinal}, and the two training-dependent checks --- including
 \code{smoke\_adapter\_only\_finite}, the one that implements the nonconstant-margin rule --- are
 \code{skipped} with \code{reason: include\_training=False}. So the eligibility gate was never run for
 any checkpoint, not merely violated for one. An earlier version of this paragraph asserted that five
-purpose-built families passed preflight; the committed artifacts contradict that and it was wrong. The operative obstacle is a deviation in the analysis code, not an indeterminacy in the protocol. The
-committed analysis places Qwen2.5-1.5B, Qwen3-4B, Qwen3Guard-Gen-0.6B and Qwen3Guard-Gen-4B in a
-single \code{qwen} family, and a family spanning both starting types cannot sit on either side of
-$\Gamma$. But the protocol already prescribes the split: proposal \S6.3 states that ``the two Qwen
-\emph{purpose-built} sizes contribute one Qwen-family value,'' which separates them from the general
-Qwen checkpoints. So $\Gamma$ was computable as registered and the single-family taxonomy is what made
-it indeterminate --- the reverse of what an earlier version of this paragraph claimed. No $\Gamma$ is
-quoted here because no bootstrap for it was ever run, which is a gap in execution rather than in the
-registration. What this report supports is therefore per-checkpoint and per-family movement, not a pooled
-cross-type contrast.
+purpose-built families passed preflight; the committed artifacts contradict that and it was wrong.
+
+\paragraph{The superseded mixed-panel numbers, for the record.} Every H in the two revisions before
+this one was computed over a single six-family panel pooling both starting types:
+$H_{\mathrm{gain}}$ \AdaMixedHGain{} (LCB \AdaMixedHGainLCB), $H_{\mathrm{conc}}$ \AdaMixedHConc{}
+(LCB \AdaMixedHConcLCB), $H_{\mathrm{preserve}}$ \AdaMixedHPreserve, $H_{\mathrm{cost}}$
+\AdaMixedHCost. Those are not the registered RQ1/RQ2 estimand and should not be cited as such; they are
+printed here so a reader comparing against an earlier PDF can see exactly what changed and by how much.
+The general panel alone gives $H_{\mathrm{gain}}$ \AdaGenHGain{} and $H_{\mathrm{conc}}$ \AdaGenHConc,
+which is the other half of $\Gamma$.
 
 \begin{takeaway}{Adapting a released guard}
 Every purpose-built checkpoint that carried a valid signal specialized under SFT exactly as the general
-checkpoints did (RQ1, bound-confirmed): represented ranking up, transfer down. This is a
-\emph{per-checkpoint} statement --- the pooled purpose-built-versus-general contrast was preregistered
-but is not reported (above), so ``just like a general model'' is a description of the individual cells,
-not a measured interaction. KL-SFT buys the transfer back but charges represented AP beyond the
-non-inferiority margin (RQ2 not supported) --- treat it as a tradeoff dial, not a free upgrade, and
-re-measure both splits on your own data.
+checkpoints did: represented ranking up, transfer down, with the registered RQ1 criterion met on the
+purpose-built panel. It is an \emph{estimate}, not a confirmed finding --- the registry is unlocked, no
+preflight passed, and the panel split was repaired after the outcomes were known. KL-SFT buys the
+transfer back but charges represented AP beyond the non-inferiority margin, so the RQ2 criterion fails
+--- treat it as a tradeoff dial, not a free upgrade, and re-measure both splits on your own data. The
+pooled purpose-built-versus-general contrast $\Gamma$ is now reported, but as a descriptive blocked
+comparison over few families, not as a starting-type effect.
 \end{takeaway}

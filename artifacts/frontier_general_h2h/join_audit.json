@@ -13,7 +13,51 @@
     "panel_splits": [
       "id_test"
     ],
-    "prevalence": 0.4968553459119497
+    "prevalence": 0.4968553459119497,
+    "provider_rows": {
+      "gpt-5.4-mini__high": {
+        "joined_panel_rows": 159,
+        "not_ok": 0,
+        "ok": 262,
+        "records": 262,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__low": {
+        "joined_panel_rows": 159,
+        "not_ok": 0,
+        "ok": 262,
+        "records": 262,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__medium": {
+        "joined_panel_rows": 159,
+        "not_ok": 0,
+        "ok": 262,
+        "records": 262,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__high": {
+        "joined_panel_rows": 159,
+        "not_ok": 0,
+        "ok": 262,
+        "records": 262,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__low": {
+        "joined_panel_rows": 159,
+        "not_ok": 0,
+        "ok": 262,
+        "records": 262,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__medium": {
+        "joined_panel_rows": 159,
+        "not_ok": 0,
+        "ok": 262,
+        "records": 262,
+        "unjoined_rid": 0
+      }
+    }
   },
   "jailbreakbench": {
     "corpus_rows_labelled": 200,
@@ -29,7 +73,51 @@
     "panel_splits": [
       "transfer_test"
     ],
-    "prevalence": 0.5
+    "prevalence": 0.5,
+    "provider_rows": {
+      "gpt-5.4-mini__high": {
+        "joined_panel_rows": 120,
+        "not_ok": 0,
+        "ok": 200,
+        "records": 200,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__low": {
+        "joined_panel_rows": 120,
+        "not_ok": 65,
+        "ok": 199,
+        "records": 264,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__medium": {
+        "joined_panel_rows": 120,
+        "not_ok": 0,
+        "ok": 200,
+        "records": 200,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__high": {
+        "joined_panel_rows": 120,
+        "not_ok": 2,
+        "ok": 199,
+        "records": 201,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__low": {
+        "joined_panel_rows": 120,
+        "not_ok": 0,
+        "ok": 200,
+        "records": 200,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__medium": {
+        "joined_panel_rows": 120,
+        "not_ok": 0,
+        "ok": 200,
+        "records": 200,
+        "unjoined_rid": 0
+      }
+    }
   },
   "prompt_injections": {
     "corpus_rows_labelled": 116,
@@ -45,7 +133,51 @@
     "panel_splits": [
       "id_test"
     ],
-    "prevalence": 0.40298507462686567
+    "prevalence": 0.40298507462686567,
+    "provider_rows": {
+      "gpt-5.4-mini__high": {
+        "joined_panel_rows": 67,
+        "not_ok": 0,
+        "ok": 116,
+        "records": 116,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__low": {
+        "joined_panel_rows": 67,
+        "not_ok": 0,
+        "ok": 116,
+        "records": 116,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__medium": {
+        "joined_panel_rows": 67,
+        "not_ok": 0,
+        "ok": 116,
+        "records": 116,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__high": {
+        "joined_panel_rows": 67,
+        "not_ok": 0,
+        "ok": 116,
+        "records": 116,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__low": {
+        "joined_panel_rows": 67,
+        "not_ok": 0,
+        "ok": 116,
+        "records": 116,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__medium": {
+        "joined_panel_rows": 67,
+        "not_ok": 0,
+        "ok": 116,
+        "records": 116,
+        "unjoined_rid": 0
+      }
+    }
   },
   "toxicchat": {
     "corpus_rows_labelled": 4972,
@@ -61,7 +193,51 @@
     "panel_splits": [
       "id_test"
     ],
-    "prevalence": 0.458980044345898
+    "prevalence": 0.458980044345898,
+    "provider_rows": {
+      "gpt-5.4-mini__high": {
+        "joined_panel_rows": 451,
+        "not_ok": 0,
+        "ok": 4972,
+        "records": 4972,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__low": {
+        "joined_panel_rows": 451,
+        "not_ok": 0,
+        "ok": 4972,
+        "records": 4972,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__medium": {
+        "joined_panel_rows": 451,
+        "not_ok": 0,
+        "ok": 4972,
+        "records": 4972,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__high": {
+        "joined_panel_rows": 451,
+        "not_ok": 0,
+        "ok": 4972,
+        "records": 4972,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__low": {
+        "joined_panel_rows": 451,
+        "not_ok": 1,
+        "ok": 4972,
+        "records": 4973,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__medium": {
+        "joined_panel_rows": 451,
+        "not_ok": 0,
+        "ok": 4972,
+        "records": 4972,
+        "unjoined_rid": 0
+      }
+    }
   },
   "xstest": {
     "corpus_rows_labelled": 450,
@@ -77,6 +253,50 @@
     "panel_splits": [
       "transfer_test"
     ],
-    "prevalence": 0.5
+    "prevalence": 0.5,
+    "provider_rows": {
+      "gpt-5.4-mini__high": {
+        "joined_panel_rows": 240,
+        "not_ok": 0,
+        "ok": 450,
+        "records": 450,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__low": {
+        "joined_panel_rows": 240,
+        "not_ok": 0,
+        "ok": 450,
+        "records": 450,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4-mini__medium": {
+        "joined_panel_rows": 240,
+        "not_ok": 0,
+        "ok": 450,
+        "records": 450,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__high": {
+        "joined_panel_rows": 240,
+        "not_ok": 0,
+        "ok": 450,
+        "records": 450,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__low": {
+        "joined_panel_rows": 240,
+        "not_ok": 0,
+        "ok": 450,
+        "records": 450,
+        "unjoined_rid": 0
+      },
+      "gpt-5.4__medium": {
+        "joined_panel_rows": 240,
+        "not_ok": 0,
+        "ok": 450,
+        "records": 450,
+        "unjoined_rid": 0
+      }
+    }
   }
 }

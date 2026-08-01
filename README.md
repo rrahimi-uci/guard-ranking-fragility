@@ -1,4 +1,4 @@
-# The Safety-Guard Benchmark Chooses the Winner
+# Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards
 
 Auditable experiments, papers, and benchmark artifacts for understanding how compact
 prompt-safety **guards** specialize, transfer, compose, and behave in high-compliance domains.
@@ -22,19 +22,27 @@ transfer loss belongs to the *unregularized* recipe rather than to fine-tuning a
 **analysis-preregistered** study — ten checkpoints across six model families, six of them released vendor
 guards — asks whether the same tradeoff hits models that are *already* purpose-built guards. Its claim
 registry was committed before any score existed, and it is the one place in the program where a
-preregistered criterion is reported as **failed**. RQ1 — ordinary SFT specializes released guards too — is
-**supported**: represented-source macro-AP rises **+0.174** (LCB **+0.129**), concentrated relative to
-held-out transfer. RQ2 — is KL-SFT *free*? — is **not supported**: it does retain transfer, but at a
-represented-source cost of **−0.036** (LCB **−0.060**), which does not clear the preregistered **−0.02**
-non-inferiority margin. Treat β as a tradeoff dial, not a default.
+preregistered criterion is reported as **failed**. On the registered purpose-built panel (6 released
+guards, 5 model families), the RQ1 criterion — ordinary SFT specializes released guards too — is
+**met**: represented-source macro-AP rises **+0.111** (LCB **+0.070**), concentrated relative to
+held-out transfer (**+0.183**, LCB **+0.137**). The RQ2 criterion — is KL-SFT *free*? — **fails**: it
+does retain transfer (**+0.047**, LCB **+0.032**), but at a represented-source cost of **−0.034**
+(LCB **−0.062**), which does not clear the preregistered **−0.02** non-inferiority margin. Treat β as a
+tradeoff dial, not a default.
+
+Two things about those numbers, because earlier revisions of this README got both wrong. They are the
+**registered purpose-built-panel** estimands; two prior revisions published the six-family *mixed*-panel
+values (+0.174 / LCB +0.129) as if they were the registered ones, which was a different quantity — the
+analyzer pooled general and purpose-built checkpoints under one `qwen` family. And the outcome is a
+**criterion met**, not a confirmed finding: the registry is `dev_nonfinal` and unlocked, no preflight
+passed, and the panel split was repaired after the outcomes were known.
 
 The **[unified research report](papers/unified-report/unified_report.pdf)** is the synthesis:
-*The Safety-Guard Benchmark Chooses the Winner: Measuring, Tuning, and Composing Small Safety Guards in
-High-Compliance Regulated Domains.* One entry point (below) regenerates and byte-checks the covered
-tables and figures from committed per-row scores — and prints the coverage it did *not* achieve, because
-that coverage is partial: 12 of the 24 generated artifacts the report `\input`s are byte-checked in any
-environment, 4 need the lock-pinned analysis environment, and 8 are committed outputs of their own
-locked analyses that are not yet wired into the byte-check.
+*Benchmark Gains Do Not Guarantee Transfer: Fine-Tuning Small Language Model Safety Guards.* Run
+`make -C papers/unified-report verify` to recompute the report's generated tables and figures into a
+scratch directory and byte-check them against the committed artifacts. The harness reports its own
+coverage: **28 of 32** generated inputs verify in the standard environment, the remaining **4**
+(Act I's tables and macros) require the lock-pinned analysis environment, and **0** are uncovered.
 
 **Study state lives in one place.** [`studies/registry.yaml`](studies/registry.yaml) is the
 normative record of every study's state, evidence tier, contract class, and how to verify it.
@@ -130,8 +138,8 @@ Gated datasets (ExpGuard) need a Hugging Face token; copy [.env.example](.env.ex
 no GPU, no network — and prints what it could *not* cover:**
 
 ```bash
-make -C papers/unified-report reproduce         # regenerate the covered generated/ tables + figures/
-make -C papers/unified-report reproduce-check    # + assert byte-identity with the committed copies
+make -C papers/unified-report regenerate  # rewrite generated tables and figures from committed scores
+make -C papers/unified-report verify      # recompute in scratch and assert byte-identity; no tree writes
 ```
 
 `reproduce.py` dispatches to each study and re-derives the exact LaTeX the report `\input`s:
@@ -145,12 +153,10 @@ make -C papers/unified-report reproduce-check    # + assert byte-identity with t
 | Act III — ExpGuard (finance/health/law) | `artifacts/expguard_external/scores_*.json` | `eval_expguard_external.py --from-scores` |
 | Latency (P50/P90/P99) | `artifacts/paper_a_sft_v2/scores/scores.parquet` | per-row `latency_ms`, no GPU |
 
-**Coverage is partial and the harness says so rather than implying completeness.** Of the 24 generated
-artifacts the report `\input`s, **12 are byte-checked** by this command, **4** require the lock-pinned
-environment (the Act I tables and the `\Rep*`/`\Transfer*` macros), and **8** — the adaptation, KL-SFT,
-ensembling and mortgage-composition tables — are committed outputs of their own locked analyses that are
-not yet wired in. The command exits nonzero unless every covered artifact verifies, and it asserts that
-those three counts *partition* the inputs exactly, so an artifact cannot fall out of the tally unnoticed.
+**Coverage is explicit and complete at the analysis-artifact tier.** Of the 32 generated inputs the
+report `\input`s, **28 are byte-checked** in the standard environment, **4** require the lock-pinned Act I
+environment, and **0** are uncovered. `make verify-heavy` additionally re-derives the head-to-head JSON
+offline with the full 2,000-replicate bootstrap before comparing it with the committed artifact.
 
 **Reproduce Paper A on its own (no GPU)** from the released v2 cache — the strict
 [LOCK.json](artifacts/paper_a_sft_v2/LOCK.json), text-free
@@ -220,8 +226,8 @@ The build asserts its own float numbering against the built PDF — it reads eve
 "Table 4" means the same table in both editions. That check earned its place immediately: it caught
 four tables that pandoc had silently degraded into `<br>`-separated text because of `@{}` column
 padding, and eleven figures that were invisible because pandoc emits `<embed>`, not `<img>`, for a
-PDF graphic. Current state: 22 tables, 16 figures, 10 numbered equations, 224 cross-references,
-0 mismatches.
+PDF graphic. The builder emits the current float and cross-reference counts and fails on any mismatch,
+so the documentation does not carry a second hand-maintained count that can go stale.
 
 ---
 

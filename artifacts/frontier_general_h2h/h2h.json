@@ -1,39 +1,112 @@
 {
   "aggregate": {
     "ci_ap": [
-      0.014013486887735368,
-      0.0720656313382141
+      0.014504369555239548,
+      0.07195934962453986
     ],
     "ci_tpr": [
-      0.008255401570925771,
-      0.16296815716945617
+      0.012635844934082804,
+      0.156664595013113
     ],
     "d_ap": 0.038955437032457685,
     "d_tpr": 0.08332789770140712,
     "estimand": "equal-source, equal-checkpoint mean paired delta (panel SFT - gpt-5.4 / low) over represented sources",
+    "maxt_critical_value": 3.0703341933822057,
     "n_boot": 2000,
     "n_cells": 12,
     "n_significant_holm": 0,
-    "n_significant_nominal": 4,
-    "prespecified": "fixed by the regime split, not chosen by which cell is largest -- this replaces a headline that was selected on its own result",
+    "n_significant_nominal": 3,
+    "selection_status": "POST HOC. This aggregate did not exist before the per-cell headline failed multiplicity; it was added in the same revision that discovered the failure. It is a better summary than the maximum of twelve because it does not depend on which cell wins, but it is not pre-specified, and it must not be described as such. Only a summary frozen before a fresh cohort is scored can carry a confirmatory frontier claim.",
     "significant": true,
     "sources": [
       "prompt_injections",
       "toxicchat",
       "jailbreak_classification"
-    ]
+    ],
+    "sources_fixed": true,
+    "sources_resampled_sensitivity": {
+      "ci_ap": [
+        0.0005221259294946059,
+        0.10815778061674246
+      ],
+      "ci_tpr": [
+        -0.019398901485349167,
+        0.22030936561561557
+      ],
+      "note": "sources drawn with replacement from the three represented sources; with a purposive choice of three this is reported only to show how little a source-population claim would be supported by, and is not the headline"
+    },
+    "weighting_sensitivity": {
+      "equal_cell": {
+        "ci_ap": [
+          0.014504369555239548,
+          0.07195934962453986
+        ],
+        "ci_tpr": [
+          0.012635844934082808,
+          0.15666459501311303
+        ],
+        "d_ap": 0.03895543703245769,
+        "d_tpr": 0.08332789770140712
+      },
+      "equal_source": {
+        "ci_ap": [
+          0.014504369555239548,
+          0.07195934962453986
+        ],
+        "ci_tpr": [
+          0.012635844934082804,
+          0.156664595013113
+        ],
+        "d_ap": 0.038955437032457685,
+        "d_tpr": 0.08332789770140712
+      },
+      "row_weighted": {
+        "ci_ap": [
+          0.001336105814609676,
+          0.041105654904193184
+        ],
+        "ci_tpr": [
+          -0.03127645086479179,
+          0.11218381489439704
+        ],
+        "d_ap": 0.0198031439462174,
+        "d_tpr": 0.04940556607705613
+      },
+      "with_base_arms": {
+        "ci_ap": [
+          -0.15097622145885783,
+          -0.08627017572160002
+        ],
+        "ci_tpr": [
+          -0.32077489441047147,
+          -0.1786806898344085
+        ],
+        "d_ap": -0.12276317418476514,
+        "d_tpr": -0.2644784850893822
+      }
+    }
   },
   "meta": {
     "boot_seed": 20260730,
-    "delta_estimand": "mean over seeds of (guard - reference), rows and seeds resampled; equals (tabulated guard metric - reference metric) by construction",
+    "delta_estimand": "mean over seeds of (guard - reference), evaluation families and seeds resampled; equals (tabulated guard metric - reference metric) by construction",
     "flavor": "retrospective, estimation-only -- these rows and this panel were inspected during development; not a preregistered or confirmatory comparison",
     "fpr_budget": 0.05,
-    "frontier_predictions": "gpt-baseline/raw",
+    "frontier_predictions": "artifacts/frontier_general_h2h/frontier_rows.json",
+    "frontier_predictions_upstream": "gpt-baseline/raw",
     "frontier_reference": "gpt-5.4 / low",
+    "input_path": "live",
     "join": "gpt rid=sha256(text)[:16] -> content_sha256=sha256(normalize_text(text))",
+    "joint_bootstrap": "one set of replicates drives the aggregate, its weighting sensitivities and the max-T band: family clusters resampled within each source, ONE seed-slot vector per checkpoint reused across sources, sources held fixed unless stated",
     "local_scores": "artifacts/paper_a_sft_v2/scores/scores.parquet",
-    "multiplicity": "Holm across the 12 represented-source SFT cells; per-cell nominal intervals are exploratory, ci_tpr_holm is the adjusted interval",
+    "multiplicity": "Holm step-down over the 12 represented-source SFT cells on two-sided percentile-bootstrap p-values (p_boot -> p_holm_adj, holm_significant). ci_tpr is the NOMINAL per-cell interval and is exploratory; ci_tpr_simultaneous (aliased as ci_tpr_holm) is a max-T simultaneous band over the same family, computed from joint draws -- Holm controls decisions, so the band is max-T rather than 'Holm-adjusted'.",
     "n_boot": 2000,
+    "provider_run": {
+      "finished_at": "2026-07-29 04:04 UTC",
+      "instruction_digest_prompt_safety": "7a2bef7b8ef4509f",
+      "max_attempts": 6,
+      "mock": false,
+      "run_id": "7f56d431ecdb"
+    },
     "splits": [
       "id_test",
       "transfer_test"
@@ -43,7 +116,8 @@
       "jailbreak_classification",
       "prompt_injections",
       "toxicchat"
-    ]
+    ],
+    "uncertainty": "family-aware: the bootstrap resamples family_id clusters, the same protocol as every other interval in the report, not bare rows"
   },
   "sources": {
     "jailbreak_classification": {
@@ -51,163 +125,191 @@
       "deltas_vs_frontier_ref": {
         "qwen25_15b__base": {
           "ci_ap": [
-            -0.5138727321556901,
-            -0.31939842383817374
+            -0.5184976685977437,
+            -0.3045291515183223
           ],
           "ci_tpr": [
-            -0.9866666666666667,
+            -0.9861158675799088,
             -0.7682634480454396
           ],
           "d_ap": -0.4236265553106434,
           "d_tpr": -0.9240506329113924,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 159,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen25_15b__sft": {
           "ci_ap": [
-            0.0024998419671779467,
-            0.029390692165691804
+            0.0024152063063313687,
+            0.0294356416325972
           ],
           "ci_tpr": [
             0.0,
-            0.19775404370909985
+            0.20471323529411758
           ],
           "ci_tpr_holm": [
-            -0.022628366234063106,
-            0.24877426562086977
+            -0.09047462391533212,
+            0.2119936112571042
+          ],
+          "ci_tpr_simultaneous": [
+            -0.09047462391533212,
+            0.2119936112571042
           ],
           "d_ap": 0.013349424717435254,
           "d_tpr": 0.060759493670886046,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.0071428571428571435,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 6,
+          "holm_rank": 5,
           "holm_significant": false,
+          "holm_threshold": 0.00625,
           "n": 159,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.059,
+          "p_holm_adj": 0.5,
+          "sd_boot_tpr": 0.04925656559217169
         },
         "qwen3_4b__base": {
           "ci_ap": [
-            -0.08927744005313976,
-            -0.013358275674400141
+            -0.08934898360698525,
+            -0.012126104528701935
           ],
           "ci_tpr": [
-            -0.558147085472667,
-            -0.025974025974025983
+            -0.5584686147186146,
+            -0.014074860119621873
           ],
           "d_ap": -0.04465666764898457,
           "d_tpr": -0.3670886075949368,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 159,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen3_4b__sft": {
           "ci_ap": [
-            0.002646110237993894,
-            0.029644148912927052
+            0.0020715043080450964,
+            0.02926289030904568
           ],
           "ci_tpr": [
-            0.002564102564102597,
-            0.20792992656058729
+            0.0,
+            0.20467187002229997
           ],
           "ci_tpr_holm": [
-            -0.02442289151388019,
-            0.2620618756483843
+            -0.08415931456357059,
+            0.2259314664623047
+          ],
+          "ci_tpr_simultaneous": [
+            -0.08415931456357059,
+            0.2259314664623047
           ],
           "d_ap": 0.01344205583019158,
           "d_tpr": 0.07088607594936705,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.00625,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 5,
+          "holm_rank": 4,
           "holm_significant": false,
+          "holm_threshold": 0.005555555555555556,
           "n": 159,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.051,
+          "p_holm_adj": 0.5,
+          "sd_boot_tpr": 0.05049788744401905
         },
         "smollm2_17b__base": {
           "ci_ap": [
-            -0.6949093720944053,
-            -0.5591617976311157
+            -0.7038700118559893,
+            -0.5596061915216385
           ],
           "ci_tpr": [
-            -0.989010989010989,
-            -0.784083230958231
+            -0.9885057471264368,
+            -0.7856950844854071
           ],
           "d_ap": -0.6361041267446891,
           "d_tpr": -0.9240506329113924,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 159,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm2_17b__sft": {
           "ci_ap": [
-            0.0016575940913265326,
-            0.028683697151049802
+            0.0011213693390723656,
+            0.028572415369715394
           ],
           "ci_tpr": [
-            -0.006902709359605923,
-            0.1975624999999997
+            -0.010129827977929209,
+            0.20262820512820479
           ],
           "ci_tpr_holm": [
-            -0.03031250332977982,
-            0.2448936546066821
+            -0.09778452438090175,
+            0.21930351172267382
+          ],
+          "ci_tpr_simultaneous": [
+            -0.09778452438090175,
+            0.21930351172267382
           ],
           "d_ap": 0.012487847774726002,
           "d_tpr": 0.060759493670886025,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.008333333333333333,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
           "holm_rank": 7,
           "holm_significant": false,
+          "holm_threshold": 0.008333333333333333,
           "n": 159,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.136,
+          "p_holm_adj": 0.8160000000000001,
+          "sd_boot_tpr": 0.05163738149205821
         },
         "smollm3_3b__base": {
           "ci_ap": [
-            -0.5773339861219564,
-            -0.37952572333347023
+            -0.5795273195069583,
+            -0.3744797640801698
           ],
           "ci_tpr": [
-            -0.967032967032967,
-            -0.7368238304093568
+            -0.9625,
+            -0.7288075060532687
           ],
           "d_ap": -0.49097811695444044,
           "d_tpr": -0.8987341772151899,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 159,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm3_3b__sft": {
           "ci_ap": [
-            0.0026643193055165327,
-            0.02850324121844312
+            0.002351611949700723,
+            0.028579177942979435
           ],
           "ci_tpr": [
-            0.004485115255415278,
-            0.1926239316239315
+            0.0020526315789473775,
+            0.1977325581395346
           ],
           "ci_tpr_holm": [
-            -0.020949086547683363,
-            0.2452031375236597
+            -0.08272905552825431,
+            0.21437462514850736
+          ],
+          "ci_tpr_simultaneous": [
+            -0.08272905552825431,
+            0.21437462514850736
           ],
           "d_ap": 0.012924389735867648,
           "d_tpr": 0.06582278481012653,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.005555555555555556,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 4,
+          "holm_rank": 3,
           "holm_significant": false,
+          "holm_threshold": 0.005,
           "n": 159,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.05,
+          "p_holm_adj": 0.5,
+          "sd_boot_tpr": 0.04838295474758718
         }
       },
       "guards": {
@@ -338,128 +440,128 @@
       "deltas_vs_frontier_ref": {
         "qwen25_15b__base": {
           "ci_ap": [
-            -0.18814820435535679,
-            0.015600724642102465
+            -0.1986842392695573,
+            0.01166210228399439
           ],
           "ci_tpr": [
-            -0.7547884505431676,
-            0.5938100961538458
+            -0.765625,
+            0.5882835101253614
           ],
           "d_ap": -0.09039788975393015,
           "d_tpr": 0.1,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 120,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen25_15b__sft": {
           "ci_ap": [
-            -0.24347010410513278,
-            -0.014877948389731747
+            -0.23459139979461832,
+            -0.016688186148626563
           ],
           "ci_tpr": [
-            -0.7939038461538461,
-            0.4316798846431141
+            -0.7967754736303124,
+            0.4187984913793101
           ],
           "d_ap": -0.13114249240902348,
           "d_tpr": 0.11666666666666665,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 120,
           "n_arms": 5,
           "n_boot": 2000
         },
         "qwen3_4b__base": {
           "ci_ap": [
-            -0.0012911932928413722,
-            0.10462984670075025
+            -0.0026583825320040414,
+            0.10360368512215859
           ],
           "ci_tpr": [
-            -0.09836065573770492,
-            0.8806159878573234
+            -0.08622563718140935,
+            0.8813559322033898
           ],
           "d_ap": 0.04691286415450868,
           "d_tpr": 0.7666666666666667,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 120,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen3_4b__sft": {
           "ci_ap": [
-            -0.2040864601817943,
-            0.012384819943228865
+            -0.19818714815167512,
+            0.008250432668280806
           ],
           "ci_tpr": [
-            -0.7390539291217257,
-            0.5033362068965517
+            -0.7333333333333333,
+            0.487729705619982
           ],
           "d_ap": -0.09459998578479396,
           "d_tpr": 0.15666666666666668,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 120,
           "n_arms": 5,
           "n_boot": 2000
         },
         "smollm2_17b__base": {
           "ci_ap": [
-            -0.0928903338712705,
-            0.05422466068058969
+            -0.09340884862715008,
+            0.05500707767602822
           ],
           "ci_tpr": [
-            -0.4591081477856619,
-            0.6818362193362192
+            -0.472773497688752,
+            0.6825595238095237
           ],
           "d_ap": -0.018007157296777487,
           "d_tpr": 0.5,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 120,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm2_17b__sft": {
           "ci_ap": [
-            -0.1466083209395845,
-            0.029837977872119767
+            -0.14774123209751647,
+            0.029320757747617526
           ],
           "ci_tpr": [
-            -0.5942049689440994,
-            0.5416704545454545
+            -0.607325284090909,
+            0.5458028545941122
           ],
           "d_ap": -0.054127829927302896,
           "d_tpr": 0.26666666666666666,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 120,
           "n_arms": 5,
           "n_boot": 2000
         },
         "smollm3_3b__base": {
           "ci_ap": [
-            -0.02779210203798802,
-            0.08824036974615514
+            -0.031077182448229445,
+            0.08641078334089626
           ],
           "ci_tpr": [
-            -0.19306860902255643,
-            0.8392857142857143
+            -0.1724512743628186,
+            0.822630164119977
           ],
           "d_ap": 0.025780211388013674,
           "d_tpr": 0.6666666666666667,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 120,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm3_3b__sft": {
           "ci_ap": [
-            -0.1690229873195167,
-            0.020088695076316252
+            -0.16257214300387687,
+            0.018073717057255183
           ],
           "ci_tpr": [
-            -0.6000806451612903,
-            0.569262295081967
+            -0.6143596059113301,
+            0.5482786429365962
           ],
           "d_ap": -0.06608324527124369,
           "d_tpr": 0.33666666666666667,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 120,
           "n_arms": 5,
           "n_boot": 2000
@@ -593,163 +695,191 @@
       "deltas_vs_frontier_ref": {
         "qwen25_15b__base": {
           "ci_ap": [
-            -0.48020601980076966,
-            -0.1552573048651107
+            -0.46627879919973936,
+            -0.15372771253026948
           ],
           "ci_tpr": [
-            -0.8387419354838709,
-            -0.42307692307692313
+            -0.8333333333333334,
+            -0.43478260869565216
           ],
           "d_ap": -0.32634456844713133,
           "d_tpr": -0.6666666666666666,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 67,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen25_15b__sft": {
           "ci_ap": [
-            0.03178969175767619,
-            0.19282375527849596
+            0.032056951926922275,
+            0.19613079129594244
           ],
           "ci_tpr": [
-            0.042785714285714274,
-            0.39048701298701294
+            0.04165948275862066,
+            0.38948684210526313
           ],
           "ci_tpr_holm": [
-            -0.033228387640025725,
-            0.47502405992872326
+            -0.07160402685155676,
+            0.4864188416663716
+          ],
+          "ci_tpr_simultaneous": [
+            -0.07160402685155676,
+            0.4864188416663716
           ],
           "d_ap": 0.10330012949979686,
           "d_tpr": 0.20740740740740743,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.004166666666666667,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
           "holm_rank": 1,
           "holm_significant": false,
+          "holm_threshold": 0.004166666666666667,
           "n": 67,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.011,
+          "p_holm_adj": 0.132,
+          "sd_boot_tpr": 0.09087331107484817
         },
         "qwen3_4b__base": {
           "ci_ap": [
-            -0.21931126538503942,
-            0.031234285090075357
+            -0.2072607339132826,
+            0.026355128678812983
           ],
           "ci_tpr": [
-            -0.6669117647058824,
+            -0.6666666666666667,
             0.0
           ],
           "d_ap": -0.0810472995432161,
           "d_tpr": -0.4444444444444444,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 67,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen3_4b__sft": {
           "ci_ap": [
-            0.025787275022647074,
-            0.17686529738616827
+            0.026092684332005022,
+            0.17740070013184905
           ],
           "ci_tpr": [
-            -0.05413127413127413,
-            0.33333333333333326
+            -0.04523915461624027,
+            0.3310398706896552
           ],
           "ci_tpr_holm": [
-            -0.13832683971029777,
-            0.4165440615146657
+            -0.14931254288745874,
+            0.4307940243689402
+          ],
+          "ci_tpr_simultaneous": [
+            -0.14931254288745874,
+            0.4307940243689402
           ],
           "d_ap": 0.09200786103466987,
           "d_tpr": 0.14074074074074075,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.005,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 3,
+          "holm_rank": 6,
           "holm_significant": false,
+          "holm_threshold": 0.0071428571428571435,
           "n": 67,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.109,
+          "p_holm_adj": 0.763,
+          "sd_boot_tpr": 0.09446961319500007
         },
         "smollm2_17b__base": {
           "ci_ap": [
-            -0.6215150162028656,
-            -0.314607361183383
+            -0.6178334239033909,
+            -0.31872054369657654
           ],
           "ci_tpr": [
-            -0.8928571428571429,
-            -0.5172413793103449
+            -0.8824095022624434,
+            -0.5184865900383143
           ],
           "d_ap": -0.49449929993727765,
           "d_tpr": -0.7407407407407407,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 67,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm2_17b__sft": {
           "ci_ap": [
-            0.028418448551098204,
-            0.19072427234958433
+            0.030165742560402307,
+            0.1909780283420599
           ],
           "ci_tpr": [
-            0.025,
-            0.3619312169312167
+            0.03571428571428577,
+            0.36003225806451594
           ],
           "ci_tpr_holm": [
-            -0.040073945931754534,
-            0.4476819798960636
+            -0.10226313486347671,
+            0.4430038756042175
+          ],
+          "ci_tpr_simultaneous": [
+            -0.10226313486347671,
+            0.4430038756042175
           ],
           "d_ap": 0.09984287439500279,
           "d_tpr": 0.1703703703703704,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.004545454545454546,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
           "holm_rank": 2,
           "holm_significant": false,
+          "holm_threshold": 0.004545454545454546,
           "n": 67,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.016,
+          "p_holm_adj": 0.176,
+          "sd_boot_tpr": 0.08879603589129842
         },
         "smollm3_3b__base": {
           "ci_ap": [
-            -0.37094567723597954,
-            -0.04312656372068105
+            -0.359667096136708,
+            -0.043678744710165474
           ],
           "ci_tpr": [
-            -0.8260869565217391,
-            -0.20829741379310368
+            -0.8076923076923077,
+            -0.18490338164251366
           ],
           "d_ap": -0.21004129713504383,
           "d_tpr": -0.6666666666666666,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 67,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm3_3b__sft": {
           "ci_ap": [
-            0.0023335266321392787,
-            0.16000599517257766
+            0.00422480407972299,
+            0.15764687101644947
           ],
           "ci_tpr": [
-            -0.18832941176470583,
-            0.3103448275862069
+            -0.1733333333333334,
+            0.3066923076923076
           ],
           "ci_tpr_holm": [
-            -0.25462324047731144,
-            0.35445364007065944
+            -0.25894443796894306,
+            0.4811666601911653
+          ],
+          "ci_tpr_simultaneous": [
+            -0.25894443796894306,
+            0.4811666601911653
           ],
           "d_ap": 0.07452732710257189,
           "d_tpr": 0.11111111111111113,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.016666666666666666,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 10,
+          "holm_rank": 8,
           "holm_significant": false,
+          "holm_threshold": 0.01,
           "n": 67,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.343,
+          "p_holm_adj": 1.0,
+          "sd_boot_tpr": 0.12052614659266454
         }
       },
       "guards": {
@@ -880,163 +1010,191 @@
       "deltas_vs_frontier_ref": {
         "qwen25_15b__base": {
           "ci_ap": [
-            -0.24011249327811335,
-            -0.12271324254618891
+            -0.23995763812156645,
+            -0.11960508954883847
           ],
           "ci_tpr": [
-            -0.663420177383592,
-            -0.33172302486818656
+            -0.6666666666666666,
+            -0.32662795844507514
           ],
           "d_ap": -0.1782529815937831,
           "d_tpr": -0.5169082125603865,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 451,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen25_15b__sft": {
           "ci_ap": [
-            -0.005823273039915291,
-            0.045491333980920666
+            -0.006130102062052328,
+            0.047133529319763806
           ],
           "ci_tpr": [
-            -0.06231942540987772,
-            0.12605632397925243
+            -0.06286105675146766,
+            0.12910684671878697
           ],
           "ci_tpr_holm": [
-            -0.09213441726011046,
-            0.14791213129944134
+            -0.13150976423049887,
+            0.2242633874189045
+          ],
+          "ci_tpr_simultaneous": [
+            -0.13150976423049887,
+            0.2242633874189045
           ],
           "d_ap": 0.018293181723813157,
           "d_tpr": 0.046376811594202816,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.0125,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 9,
+          "holm_rank": 11,
           "holm_significant": false,
+          "holm_threshold": 0.025,
           "n": 451,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.521,
+          "p_holm_adj": 1.0,
+          "sd_boot_tpr": 0.05793720312535299
         },
         "qwen3_4b__base": {
           "ci_ap": [
-            -0.08672976784909817,
-            -0.008284253866591039
+            -0.08577733593905791,
+            -0.008820424918525862
           ],
           "ci_tpr": [
-            -0.3904799107142857,
-            -0.03589285714285715
+            -0.39906103286384975,
+            -0.03239936125965545
           ],
           "d_ap": -0.04626695304194184,
           "d_tpr": -0.15458937198067635,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 451,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen3_4b__sft": {
           "ci_ap": [
-            -0.008726925624390813,
-            0.042796465524196185
+            -0.008022301406038575,
+            0.045806840682322526
           ],
           "ci_tpr": [
-            -0.06233286242121279,
-            0.1303862555355091
+            -0.06733548354835482,
+            0.13427333609500136
           ],
           "ci_tpr_holm": [
-            -0.09860769711694557,
-            0.15465247049099284
+            -0.12399326475048665,
+            0.2302734579872015
+          ],
+          "ci_tpr_simultaneous": [
+            -0.12399326475048665,
+            0.2302734579872015
           ],
           "d_ap": 0.016941195539881826,
           "d_tpr": 0.05314009661835743,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.01,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 8,
+          "holm_rank": 10,
           "holm_significant": false,
+          "holm_threshold": 0.016666666666666666,
           "n": 451,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.518,
+          "p_holm_adj": 1.0,
+          "sd_boot_tpr": 0.057691883102053546
         },
         "smollm2_17b__base": {
           "ci_ap": [
-            -0.40744451404796894,
-            -0.27781065195368215
+            -0.40592727109132326,
+            -0.2752209278382886
           ],
           "ci_tpr": [
-            -0.7872340425531915,
-            -0.5528846153846154
+            -0.7758107353875171,
+            -0.5525046002862399
           ],
           "d_ap": -0.3406874703819386,
           "d_tpr": -0.6521739130434783,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 451,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm2_17b__sft": {
           "ci_ap": [
-            -0.027450679396192213,
-            0.03239047772703367
+            -0.0285853556416552,
+            0.032949839351100775
           ],
           "ci_tpr": [
-            -0.17156756444341692,
-            0.06932028917177431
+            -0.1685243055555556,
+            0.07139673913043429
           ],
           "ci_tpr_holm": [
-            -0.17156756444341692,
-            0.06932028917177431
+            -0.22577337732466912,
+            0.18712603432949998
+          ],
+          "ci_tpr_simultaneous": [
+            -0.22577337732466912,
+            0.18712603432949998
           ],
           "d_ap": 0.0010353895646919575,
           "d_tpr": -0.01932367149758456,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.05,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 12,
+          "holm_rank": 9,
           "holm_significant": false,
+          "holm_threshold": 0.0125,
           "n": 451,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.4610000000000001,
+          "p_holm_adj": 1.0,
+          "sd_boot_tpr": 0.06724014156897512
         },
         "smollm3_3b__base": {
           "ci_ap": [
-            -0.19094656279656153,
-            -0.0953834539181736
+            -0.1896532933368143,
+            -0.09312379106306505
           ],
           "ci_tpr": [
-            -0.5495542663081929,
-            -0.2641392096123159
+            -0.5540034043121287,
+            -0.2526854007316262
           ],
           "d_ap": -0.14127608808476555,
           "d_tpr": -0.39130434782608703,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 451,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm3_3b__sft": {
           "ci_ap": [
-            -0.0196263088765723,
-            0.040327981921559924
+            -0.020447946100728497,
+            0.0411391512700086
           ],
           "ci_tpr": [
-            -0.08891156462585027,
-            0.12330255875147451
+            -0.08827062374245473,
+            0.12316352448284891
           ],
           "ci_tpr_holm": [
-            -0.10625394883025421,
-            0.1364273287542452
+            -0.15210420111773026,
+            0.21587231705975923
+          ],
+          "ci_tpr_simultaneous": [
+            -0.15210420111773026,
+            0.21587231705975923
           ],
           "d_ap": 0.00931356747084342,
           "d_tpr": 0.03188405797101448,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
-          "holm_alpha": 0.025,
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "holm_family_size": 12,
-          "holm_rank": 11,
+          "holm_rank": 12,
           "holm_significant": false,
+          "holm_threshold": 0.05,
           "n": 451,
           "n_arms": 5,
-          "n_boot": 2000
+          "n_boot": 2000,
+          "p_boot": 0.7,
+          "p_holm_adj": 1.0,
+          "sd_boot_tpr": 0.05992450577051606
         }
       },
       "guards": {
@@ -1167,128 +1325,128 @@
       "deltas_vs_frontier_ref": {
         "qwen25_15b__base": {
           "ci_ap": [
-            -0.2801908620150371,
-            -0.11535543242642644
+            -0.262563264645071,
+            -0.12574746564723566
           ],
           "ci_tpr": [
-            -0.9249999999999999,
-            -0.48459677419354846
+            -0.922415463779738,
+            -0.49988938053097404
           ],
           "d_ap": -0.1969387792944428,
           "d_tpr": -0.8,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 240,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen25_15b__sft": {
           "ci_ap": [
-            -0.17666810445952813,
-            -0.07491730186224975
+            -0.16150996500121098,
+            -0.08180778195744254
           ],
           "ci_tpr": [
-            -0.6652248875562219,
-            -0.26216568517170663
+            -0.6527365245374095,
+            -0.27830482456140365
           ],
           "d_ap": -0.12205371889164207,
           "d_tpr": -0.48,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 240,
           "n_arms": 5,
           "n_boot": 2000
         },
         "qwen3_4b__base": {
           "ci_ap": [
-            -0.026439972909407104,
-            -0.003133979523178966
+            -0.024782528121338188,
+            -0.002698596532608674
           ],
           "ci_tpr": [
-            -0.13821763602251416,
-            0.00870348609479035
+            -0.1428571428571428,
+            0.015751156105486767
           ],
           "d_ap": -0.013136874642046825,
           "d_tpr": -0.050000000000000044,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 240,
           "n_arms": 1,
           "n_boot": 2000
         },
         "qwen3_4b__sft": {
           "ci_ap": [
-            -0.14312229731622308,
-            -0.047759232457538145
+            -0.1326891759886544,
+            -0.0525438523837284
           ],
           "ci_tpr": [
-            -0.5183668032786884,
-            -0.21781721835075513
+            -0.5361894257703083,
+            -0.23469043283373034
           ],
           "d_ap": -0.0894112396888624,
           "d_tpr": -0.37666666666666665,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 240,
           "n_arms": 5,
           "n_boot": 2000
         },
         "smollm2_17b__base": {
           "ci_ap": [
-            -0.13447399348189365,
-            -0.046541260115622984
+            -0.12621649986085848,
+            -0.04693588687001304
           ],
           "ci_tpr": [
-            -0.635593220338983,
-            -0.21662190082644653
+            -0.6141732283464567,
+            -0.21424353205849295
           ],
           "d_ap": -0.08569999264275852,
           "d_tpr": -0.3916666666666667,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 240,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm2_17b__sft": {
           "ci_ap": [
-            -0.08979204030682976,
-            -0.02989535092168429
+            -0.08486563577490586,
+            -0.031984976034613324
           ],
           "ci_tpr": [
-            -0.4434193313953489,
-            -0.1495949552916055
+            -0.4328458460365854,
+            -0.15335839598997503
           ],
           "d_ap": -0.05635969813833215,
           "d_tpr": -0.2666666666666667,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 240,
           "n_arms": 5,
           "n_boot": 2000
         },
         "smollm3_3b__base": {
           "ci_ap": [
-            -0.029742804635438744,
-            -0.005366618292541385
+            -0.02857799292625609,
+            -0.005617307322552166
           ],
           "ci_tpr": [
-            -0.19999999999999996,
-            -0.014922609176340466
+            -0.19169956140350874,
+            -0.016256884343036977
           ],
           "d_ap": -0.016156008790734644,
           "d_tpr": -0.09999999999999998,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 240,
           "n_arms": 1,
           "n_boot": 2000
         },
         "smollm3_3b__sft": {
           "ci_ap": [
-            -0.13940743117555598,
-            -0.0555274237006021
+            -0.12590924877233325,
+            -0.059340031589768
           ],
           "ci_tpr": [
-            -0.5660931965761512,
-            -0.21620143581081086
+            -0.5448845825021373,
+            -0.2327578369905956
           ],
           "d_ap": -0.09221459062547015,
           "d_tpr": -0.3783333333333333,
-          "estimand": "mean over seeds of (guard - reference); rows and seeds both resampled",
+          "estimand": "mean over seeds of (guard - reference); evaluation families and seeds both resampled",
           "n": 240,
           "n_arms": 5,
           "n_boot": 2000

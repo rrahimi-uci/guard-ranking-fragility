@@ -1,4 +1,4 @@
-\section{Fine-tuning specializes a guard: a large represented gain that does not transfer (Act~I)}
+\section{Q1. Do benchmark gains transfer? Not reliably --- this panel specializes}
 \label{sec:actI}
 
 The first act answers the most basic question a practitioner has after fine-tuning a guard:
@@ -195,7 +195,7 @@ This is the honest form of the operating-point result, and it is the one the res
 $+0.06$ recall gain in \Cref{tab:sensitivity} is an artifact of comparing at unequal alarm rates. It needs
 no GPU and no pinned environment --- matching false-alarm rates is ranking arithmetic on the same
 committed \code{score\_raw} and \code{gold} columns every other covered artifact uses, so it is
-regenerated and byte-checked by \code{make reproduce} (\Cref{sec:repro}); the emitter reproduces every
+regenerated and byte-checked by \code{make verify} (\Cref{sec:repro}); the emitter reproduces every
 published row of \Cref{tab:sensitivity} exactly before adding the matched column, which is how we know the
 two tables read the same underlying scores. Earlier drafts described this reconstruction as a
 \emph{direction} that required the lock-pinned environment. That was wrong on both counts, and the
@@ -214,7 +214,8 @@ Note that this \code{HarmBench} drop needs no threshold caveat at all: the tuned
 FPR), so it is dominated --- worse on both axes at once, not traded off. Equalising the budget only
 widens the gap, to \MatchedHarmSft{} against the base's \MatchedHarmBase{} (\Cref{tab:matchedfpr}).
 
-\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{6pt}
+% tabcolsep was 6pt, which pushed this generated tabular 4.7pt past the text block.
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{4.5pt}
 \caption{Act I --- per-benchmark paired deltas (upper) and the calibration-targeted $5\%$ FPR operating
 point plus single-class stress diagnostics (lower). Generated from the lock-bound scores.}
 \label{tab:sensitivity}
@@ -286,7 +287,7 @@ capture this environment term, so they are narrower than a full reproduction wou
 \KLTakeaway
 \end{takeaway}
 
-\subsection{The deployment base rate also chooses the winner}
+\subsection{The deployment base rate re-spaces the ranking}
 \label{sec:actI-prevalence}
 
 One more axis quietly co-produces the score, and it is not the model at all: the \emph{prevalence} of
@@ -303,7 +304,7 @@ model runs are needed, only the committed per-row scores.
 
 \begin{figure}[htbp]\centering
 \includegraphics[width=0.82\linewidth]{fig_prevalence.pdf}
-\caption{\textbf{The prevalence also chooses the winner} (measured: \Cref{eq:ap-prevalence} applied to the
+\caption{\textbf{The prevalence re-spaces the ranking} (measured: \Cref{eq:ap-prevalence} applied to the
 four base guards' committed transfer ROC, macro-averaged over the transfer sources). As unsafe prompts get
 rarer, every guard's AP falls --- the strongest ranker (Qwen3-4B) drops from $0.94$ at balance to
 $\approx0.56$ at $1\%$ prevalence, and the guard that ends lowest (Qwen2.5-1.5B) from $0.82$ to $0.11$ --- \emph{and} the
@@ -314,8 +315,8 @@ lower half re-orders (see text).}
 Two consequences follow, both recomputed exactly from the committed scores. First, the balanced AP is an
 \emph{optimistic} reading of deployed precision: SmolLM3-3B's base transfer ranking scores $\mathrm{AP}=0.91$
 on a balanced pool but only $\approx0.51$ at $1\%$ prevalence (\Cref{fig:prevalence}). Second --- and this is
-the thesis again, now at the metric's own prior --- \textbf{low prevalence collapses and re-spaces the
-ranking}. The extremes are stable (Qwen3-4B stays first, SmolLM2 and Qwen2.5 stay in the lower half at every
+the same lesson at the metric's own prior, though it is a re-spacing rather than a benchmark gain that
+fails to transfer --- \textbf{low prevalence collapses and re-spaces the ranking}. The extremes are stable (Qwen3-4B stays first, SmolLM2 and Qwen2.5 stay in the lower half at every
 prevalence), but the \emph{lower two re-order}: Qwen2.5-1.5B edges SmolLM2-1.7B at balance ($0.82$ vs.\ $0.79$)
 yet falls behind it once positives are rare ($0.11$ vs.\ $0.21$ at $1\%$), because a scarce positive class
 re-expands exactly the low-recall precision differences the balanced pool compresses. This is a re-spacing and

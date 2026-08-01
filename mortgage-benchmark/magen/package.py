@@ -56,7 +56,10 @@ def public_index(rows: list[Row]) -> dict[str, Any]:
 DATA_CARD = """# Mortgage Guardrail Benchmark — Data Card
 
 **Version:** {version}
-**Built:** deterministic (seed {seed}) by the agentic HMDA-grounded generator in this folder.
+**Built:** by the agentic HMDA-grounded generator in this folder under seed {seed}. The seed fixes
+sampling and split assignment, but the generation calls run at nonzero temperature (default 0.7,
+`magen/llm.py`), so a rebuild reproduces the *design* and the splits, **not** the exact row text.
+Treat the committed JSONL as the artifact of record.
 
 ## What this is
 A request-screening benchmark for a mortgage-specific safety guardrail. Each row is one
@@ -71,7 +74,13 @@ grounding uses aggregate/de-identified fields only.
   recipes. `contains_real_pii=false` is a hard schema constant.
 - Labels are **policy-card-consistent, not legally authoritative**. `legal_review_status`
   records this. Confirmatory fair-lending claims require the SME-adjudicated subset (not yet done).
-- The `private_test` split is **sealed**: it is not in this bundle; only its text-free index is.
+- The `private_test` split is **held out by convention, not sealed**. This builder writes it outside
+  the distributable bundle (only its text-free index goes in), but that is a property of the bundle,
+  not of a release: in v1 the committed release directory was assembled by hand and *does* include
+  `private_test.jsonl` with full text, and the GPT baseline has already scored it. Before treating
+  this split as unseen, verify whether the file is committed and whether anything has scored it.
+- Isolation is at the `content_family` level only. Pairs (`pair_id`) were **not** a grouping key, so
+  a protected pair can span two splits; check this directly rather than assuming pair isolation.
 
 ## Splits
 {splits}
@@ -80,7 +89,8 @@ grounding uses aggregate/de-identified fields only.
 {license}
 
 ## Reproduce
-See the folder README. `make all` rebuilds the whole benchmark from the frozen design + seed.
+See the folder README. There is no `make all` target; the build is driven by the `magen` pipeline
+steps documented there, and see the determinism note above before expecting byte-identical output.
 """
 
 
@@ -108,15 +118,24 @@ def package(rows: list[Row], out_dir: str, *, version: str, seed: int,
     write_json(idx, os.path.join(dist_dir, "public_index.json"))
 
     # data card, schema pointer, sources, manifest, checksums
+    # NOT "sealed". The v1 release committed private_test.jsonl with full text and the GPT
+    # baseline has already scored it, so the split is held out by convention only. Saying
+    # "sealed" here is what put that word into the data card and the composition table.
     splits_tbl = "\n".join(f"- `{k}`: {v} rows" for k, v in written.items()) + \
-        (f"\n- `private_test` (sealed, not distributed): {len(sealed)} rows" if sealed else "")
+        (f"\n- `private_test` (held out by convention, NOT sealed --- verify whether the file "
+         f"is committed before treating it as unseen): {len(sealed)} rows" if sealed else "")
     with open(os.path.join(dist_dir, "DATA_CARD.md"), "w") as fh:
         fh.write(DATA_CARD.format(version=version, seed=seed, splits=splits_tbl,
                                   license=license_note))
     write_json(sources, os.path.join(dist_dir, "SOURCES.json"))
 
     manifest = {"version": version, "seed": seed, "n_rows": len(rows),
-                "distributed_splits": written, "sealed_rows": len(sealed),
+                "distributed_splits": written,
+                "held_out_by_convention_rows": len(sealed),
+                "held_out_note": "NOT a sealed cohort: in v1 this split is committed with text "
+                                 "and has already been scored. Kept as a named split only.",
+                # legacy key, retained so older readers do not silently get 0
+                "sealed_rows": len(sealed),
                 "public_index": "public_index.json"}
     write_json(manifest, os.path.join(dist_dir, "MANIFEST.json"))
 

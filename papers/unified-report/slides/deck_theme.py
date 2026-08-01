@@ -1,10 +1,13 @@
-"""The deck design system, extracted from the redesigned decks and shared by every generator.
+"""The deck design system, shared by every generator.
 
 Single source of truth for both PowerPoint generators (`make_deck.py`, `make_exec_deck.py`)
 and both figure generators (`make_slide_figures.py`, `make_exec_figures.py`). The tokens below
-were read out of `safety_guard_benchmark_deck_redesigned.pptx` and
-`safety_guard_exec_deck_redesigned.pptx`, which use an identical palette and type scale -- so
-they belong in one module rather than being duplicated four times and drifting.
+were originally read out of two hand-designed decks (`*_redesigned.pptx`) which used an
+identical palette and type scale, so they belonged in one module rather than being duplicated
+four times and drifting. Those two files have since been deleted: this module IS the redesign
+now, and keeping hand-edited copies beside code-generated ones meant shipping decks with a
+withdrawn title and pre-correction numbers. Recover them from git history if the tokens ever
+need re-deriving.
 
 The design is a dark system. Two properties are load-bearing and easy to break:
 

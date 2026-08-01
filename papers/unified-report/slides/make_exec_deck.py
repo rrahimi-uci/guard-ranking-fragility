@@ -303,7 +303,8 @@ p = para(tf, first=True, space_after=0)
 run(p, "Reza Rahimi, PhD", size=12.5, bold=True, color=INK)
 tf = tbox(s, M, Inches(6.32), Inches(7.70), Inches(0.28))
 p = para(tf, first=True, space_after=0)
-run(p, "Full method, intervals and limitations: the technical report and research deck",
+run(p, "Full method, intervals and limitations: “Benchmark Gains Do Not Guarantee Transfer: "
+       "Fine-Tuning Small Language Model Safety Guards” — the technical report and research deck",
     size=10.5, color=SLATE)
 d.notes(s, """
 Ninety seconds on this slide. The framing sentence is: we need a safety guardrail in front of
@@ -480,12 +481,19 @@ statcard(s, M + cw + Inches(0.40), y + Inches(0.10), cw, Inches(1.62),
          "guard there is an UNTUNED base -- tuning is what costs us the position.",
          color=ACCENT)
 
+# This callout used to recommend escalating on UNFAMILIARITY "not on how unsure the local guard
+# sounds". That is a router we never built: the only cascade measured anywhere in this programme
+# escalates by rank distance to the local guard's own decision line -- a margin router -- and it is
+# what slide 3 recommends and slide 8 prices. Recommending the untested alternative here
+# contradicted both the deck and the report, so the callout now recommends what was measured and
+# names the alternative as untested.
 callout(s, M, y + Inches(1.92), CW, Inches(1.20), "the sourcing rule this implies",
         "The gap is not a ceiling a bigger local model would break through -- it is the price "
         "of the regime. So the question is not “can a small guard match the frontier” but "
         "“what share of our traffic can we describe in a training manifest”. Self-host that "
-        "share; escalate on UNFAMILIARITY, not on how unsure the local guard sounds, because "
-        "margin-based routing spends the hosted budget exactly where we are already right.",
+        "share and escalate the rest by how near the local guard sits to its own decision line "
+        "-- the router we measured. Routing on UNFAMILIARITY instead is the more attractive idea "
+        "and we did not test it: treat it as the next experiment, not as the plan.",
         color=GREEN)
 
 d.notes(s, f"""

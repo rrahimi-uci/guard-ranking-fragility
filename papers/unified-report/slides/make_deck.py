@@ -1,14 +1,13 @@
 #!/usr/bin/env python
-"""Build the 15-slide presentation for "The Safety-Guard Benchmark Chooses the Winner".
+"""Build the research presentation for "Benchmark Gains Do Not Guarantee Transfer".
 
 Every figure comes from slides/assets/ (built by make_slide_figures.py from the same
 committed generated/*.tex artifacts the report \\inputs), and every number quoted in
-the slide text is the number in the report. Fonts are Georgia (headings) + Arial
-(body): both ship with Office on macOS and Windows, so the deck renders identically
-off this machine.
+the slide text is the number in the report. The deck requests Cambria (headings) and
+Calibri (body), with the documented figure-font fallback in deck_theme.py.
 
 Run:  python slides/make_deck.py       (from papers/unified-report/)
-Out:  slides/safety_guard_benchmark_deck.pptx   (16:9, 15 slides, speaker notes)
+Out:  slides/safety_guard_benchmark_deck.pptx   (16:9, 21 slides, speaker notes)
 """
 # ruff: noqa: E741
 #   `l` as a left-coordinate parameter is the convention used across every geometry helper
@@ -39,10 +38,19 @@ import frontier_numbers as FN  # noqa: E402
 # paper, and a missing figure fails the build instead of printing a stale number.
 F = FN.load()
 HT = FN.load_h2h()
+# The adaptation slide used to hard-code +0.174 / +0.129 / -0.036 / -0.060. Those were the
+# MIXED six-family panel values; the analyzer now computes the registered purpose-built-panel
+# estimand, so the slide reads the macro file instead of restating a superseded number.
+A = {k: FN.signed(FN.bare(v)) for k, v in FN.load_adaptation().items()}
+# The teaser (2 dp) and pilot macros, for the Figure-1 panel captions -- the same 2-dp forms the
+# figure itself prints, so the caption and the panel cannot show different roundings. Read, not
+# typed: the three Act-labelled captions this replaced had +0.32 / -0.06 hard-coded.
+F0 = {k: FN.signed(FN.bare(v)) for k, v in FN.load_named("teaser_macros.tex").items()}
+MF = {k: FN.signed(FN.bare(v)) for k, v in FN.load_named("pilot_macros.tex").items()}
 b = FN.bare
 
 # ------------------------------------------------------------------- identity
-# Every token comes from deck_theme, which was extracted from the redesigned decks. Do not
+# Every token comes from deck_theme, which is the deck design system. Do not
 # hand-write a colour or a point size in this file: add it to the theme instead, so the
 # benchmark deck, the exec deck and both figure generators cannot drift apart.
 import deck_theme as T  # noqa: E402
@@ -91,7 +99,7 @@ CW = W - 2 * M                         # content width
 BODY_TOP = Inches(T.BODY_Y)
 BODY_BOT = Inches(6.70)
 
-TITLE_SHORT = "The Safety-Guard Benchmark Chooses the Winner"
+TITLE_SHORT = "Benchmark Gains Do Not Guarantee Transfer"
 REPO = "github.com/rrahimi-uci/safety-guard-dynamics"
 
 
@@ -379,13 +387,14 @@ run(p, "JAZZX AI   ·   RESEARCH REPORT   ·   JULY 2026", size=10.5, bold=True,
 
 tf = tbox(s, M, Inches(1.76), Inches(9.4), Inches(1.80))
 p = para(tf, first=True, space_after=0, line_spacing=1.02)
-run(p, "The Safety-Guard Benchmark\nChooses the Winner", size=T.SZ_TITLE_HERO,
+run(p, "Benchmark Gains Do Not Guarantee Transfer:\nFine-Tuning Small Language Model Safety Guards",
+    size=T.SZ_TITLE_HERO,
     bold=True, color=INK, font=SERIF)
 
 tf = tbox(s, M, Inches(3.76), Inches(8.4), Inches(0.80))
 p = para(tf, first=True, space_after=0, line_spacing=1.24)
-run(p, "Measuring, tuning, and composing small safety guards\nin high-compliance "
-       "regulated domains", size=T.SZ_SUBTITLE, color=MUTED)
+run(p, "Paired same-checkpoint evidence across represented and held-out traffic",
+    size=T.SZ_SUBTITLE, color=MUTED)
 
 # Three stat cards, not accent bars: filled cards on the raised surface.
 for i, (v, c) in enumerate([("4 checkpoints × 5 seeds", "paired, same-manifest panel"),
@@ -412,7 +421,7 @@ p = para(tf, first=True, align=PP_ALIGN.RIGHT, space_after=0)
 run(p, REPO, size=10.5, bold=True, color=DATA)
 tf = tbox(s, Inches(7.00), Inches(6.54), Inches(5.61), Inches(0.28))
 p = para(tf, first=True, align=PP_ALIGN.RIGHT, space_after=0)
-run(p, "make reproduce (covered tables)  ·  frozen benchmark v1_hmda2022",
+run(p, "make verify (generated artifacts)  ·  frozen benchmark v1_hmda2022",
     size=9.5, color=SLATE)
 
 d.notes(s, """
@@ -446,15 +455,18 @@ callout(s, M, y + Inches(2.42), CW, Inches(1.02), "Why a leaderboard cannot see 
 
 tf = tbox(s, M, y + Inches(3.70), CW, Inches(0.5))
 p = para(tf, first=True, space_after=0)
-run(p, "Three questions on one fixed panel:   ", size=11.5, bold=True, color=INK)
-run(p, "Does fine-tuning transfer?", size=11.5, color=BLUE, bold=True)
+# The same four questions, in the same words, as the report's section titles and Table 1.
+run(p, "Four questions on one fixed panel:   ", size=11.5, bold=True, color=INK)
+run(p, "Do benchmark gains transfer?", size=11.5, color=BLUE, bold=True)
 run(p, "   ·   ", size=11.5, color=SLATE)  # RULE is a border token: invisible as text
-run(p, "Can we recover it without retraining?", size=11.5, color=GREEN, bold=True)
+run(p, "Can transfer be recovered without retraining?", size=11.5, color=GREEN, bold=True)
 run(p, "   ·   ", size=11.5, color=SLATE)  # RULE is a border token: invisible as text
 run(p, "Does one score cover a regulated domain?", size=11.5, color=GOLD, bold=True)
+run(p, "   ·   ", size=11.5, color=SLATE)
+run(p, "Should you run a small guard at all?", size=11.5, color=ACCENT, bold=True)
 
 d.notes(s, """
-Open here, not on the method. All three numbers are from Table 3 and Figure 8 of the
+Open here, not on the method. All three numbers are from Table 4 and Figure 8 of the
 report and are recomputed from committed per-row scores.
 
 The 17.0% is the POOLED transfer false-positive rate; the benchmark-macro rate goes
@@ -471,39 +483,50 @@ point as a caveat — it is measured, and it is Table 4.
 # ------------------------------------------------------------- 3 · one figure
 s = d.blank()
 y = d.header(s, "One figure",
-             "Three acts, one thesis: the benchmark co-produces the verdict")
-picture(s, "teaser", M, y - Inches(0.06), CW, Inches(3.52))
+             "Four questions, four answers — the benchmark co-produces the verdict")
+picture(s, "teaser", M, y - Inches(0.06), CW, Inches(3.30))
 
-lab = [("Act I", "Fine-tuning specializes: +0.32 represented, −0.06 transfer, "
-                 "pooling per-checkpoint effects from +0.04 to −0.15.", BLUE),
-       ("Act II / III", "The same four bases rank differently on every arm — the "
-                        "top-ranked mortgage guard is not the top-ranked finance/health/law guard.", GOLD),
-       ("Act III", "Coded as a proxy, the fair-lending violation ranks below the "
-                   "benign median for all four; named outright, three of four rank it above nearly "
-                   "all — two different rows, not a controlled pair.", GREEN)]
-cw = Inches(3.86)
+# One caption per panel, in panel order, so the strip reads left to right as Q1..Q4. This used
+# to be three Act-labelled captions under a three-panel strip; the report is organised around
+# four questions now and its Figure 1 has one panel each, so the deck follows.
+lab = [("Q1", f"Tuning buys the benchmark: {F0['TeaserRepDelta']} represented, "
+               f"{F0['TeaserTransferDelta']} transfer — and at an equal alarm budget the "
+               f"transfer-recall gain reverses on all four.", BLUE),
+       ("Q2", f"Averaging a base with its own adapter recovers {MF['PilotTransferDeltaSFT']} "
+              f"of that transfer, for one extra inference pass and no retraining.", GREEN),
+       ("Q3", "The same four bases rank differently on every arm — the top-ranked "
+              "mortgage guard is not the top-ranked finance/health/law guard.", GOLD),
+       ("Q4", f"Which is better reverses with the traffic: hosted ahead by "
+              f"{FN.signed(b(F['GainOverBase']))} off-manifest, the tuned panel ahead by "
+              f"{FN.signed(b(HT['AggDeltaTpr']))} on sources it names.", ACCENT)]
+cw = Inches(2.83)
 for i, (k, t, col) in enumerate(lab):
-    x = M + (cw + Inches(0.29)) * i
-    rect(s, x, y + Inches(3.62), Pt(2.4), Inches(0.92), fill=col)
-    tf = tbox(s, x + Inches(0.16), y + Inches(3.62), cw - Inches(0.2), Inches(0.95))
+    x = M + (cw + Inches(0.20)) * i
+    rect(s, x, y + Inches(3.40), Pt(2.4), Inches(1.10), fill=col)
+    tf = tbox(s, x + Inches(0.14), y + Inches(3.40), cw - Inches(0.18), Inches(1.14))
     p = para(tf, first=True, space_after=2, line_spacing=1.0)
     run(p, k, size=11.5, bold=True, color=col, spc=80)
-    p = para(tf, space_after=0, line_spacing=1.15)
-    run(p, t, size=11, color=SLATE)
+    p = para(tf, space_after=0, line_spacing=1.12)
+    run(p, t, size=9.8, color=SLATE)
 
-tf = tbox(s, M, y + Inches(4.66), CW, Inches(0.3))
+tf = tbox(s, M, y + Inches(4.68), CW, Inches(0.3))
 p = para(tf, first=True, space_after=0)
-run(p, "Point estimates with overlapping domain-arm CIs: the claim is that the "
-       "leaderboard's answer moves, not that the ordering is resolved.", size=11,
-    italic=True, color=MUTED)
+run(p, "Point estimates with overlapping domain-arm CIs, and Q4's left bar is post hoc: the "
+       "claim is that the leaderboard's answer moves, not that the ordering is resolved.",
+    size=11, italic=True, color=MUTED)
 
 d.notes(s, """
-This is the whole report in one image; the rest of the talk says why each panel matters.
+This is the whole report in one image, one panel per question, and it is the same Figure 1
+the report opens with — Table 1 there states these four answers with their estimands and
+evidence tiers. The rest of the talk derives them left to right.
 
-Panel 2 is the honest one — those are point estimates and five of the six pairwise
-mortgage CI comparisons overlap. The claim is NOT "SmolLM3 is the best domain guard."
-The claim is that the identity of the winner depends on which benchmark you ask, which
-is a statement about the measuring instrument, not about the models.
+Two panels need the honest qualifier said out loud. Q3 is point estimates, and five of the
+six pairwise mortgage CI comparisons overlap: the claim is NOT "SmolLM3 is the best domain
+guard," it is that the identity of the winner depends on which benchmark you ask — a
+statement about the measuring instrument, not about the models. And Q4's left bar (the
+tuned panel ahead on sources it names) is a POST HOC summary over three purposively chosen
+corpora that does not survive reweighting; the right bar, hosted ahead off-manifest, is the
+sturdier of the two. Do not let the reversal be heard as "small guards beat the frontier."
 """)
 
 # ---------------------------------------------------------------- 4 · method
@@ -672,7 +695,7 @@ guard catches LESS THAN HALF of what its own untuned base catches off-source.
 
 Two things to have ready. It needs no GPU and no pinned environment — matching false-alarm
 rates is ranking arithmetic on the same committed score_raw/gold columns — so it is
-regenerated and byte-checked by `make reproduce` like any other covered artifact. And the
+regenerated and byte-checked by `make verify` like any other covered artifact. And the
 direction is stable across the three quantile conventions we tried (panel mean -0.300 to
 -0.290), so it is not an artifact of one tie-breaking rule.
 
@@ -693,7 +716,7 @@ near-balanced pool. The next slide is what happens when you serve real traffic i
 # ------------------------------------------------------------ 8 · prevalence
 s = d.blank()
 y = d.header(s, "Act I  ·  the deployment base rate",
-             "The prevalence you serve also chooses the winner",
+             "The prevalence you serve re-spaces the ranking",
              "Every AP so far is measured on a balanced pool. Real inbound traffic is overwhelmingly benign.")
 picture(s, "prevalence", M, y - Inches(0.06), Inches(6.95), Inches(4.30), align="left")
 
@@ -759,9 +782,10 @@ callout(s, M, y + Inches(3.32), cw, Inches(1.16), "What it recovers",
         "model in memory, no base retraining, no extra inference pass.",
         color=GREEN, body_size=12)
 callout(s, M + cw + Inches(0.30), y + Inches(3.32), cw, Inches(1.16), "What it charges",
-        "Represented macro-AP falls −0.035 here. In the preregistered ten-checkpoint "
-        "study the same trade costs −0.036, whose lower bound (−0.060) fails the −0.02 "
-        "non-inferiority margin: RQ2 NOT SUPPORTED.", color=ACCENT, body_size=12)
+        f"Represented macro-AP falls −0.035 here. In the analysis-preregistered "
+        f"ten-checkpoint study the same trade costs {A['HCost']}, whose lower bound "
+        f"({A['HCostLCB']}) fails the −{A['Margin']} non-inferiority margin: RQ2 criterion "
+        f"NOT met.", color=ACCENT, body_size=12)
 
 d.notes(s, """
 β = 0 reproduces vanilla SFT exactly, so this is a strict one-knob generalization of the
@@ -805,10 +829,11 @@ tf = box.text_frame
 tf.vertical_anchor = MSO_ANCHOR.MIDDLE
 tf.margin_left, tf.margin_right = Inches(0.24), Inches(0.16)
 p = para(tf, first=True, space_after=4)
-run(p, "RQ1  ·  SUPPORTED", size=12, bold=True, color=GREEN, spc=90)
+run(p, "RQ1  ·  CRITERION MET", size=12, bold=True, color=GREEN, spc=90)
 p = para(tf, space_after=0)
-run(p, "SFT raises represented macro-AP +0.174 (LCB +0.129) and the gain is concentrated "
-       "relative to held-out (+0.239, LCB +0.189). Both preregistered criteria met.",
+run(p, f"SFT raises represented macro-AP {A['HGain']} (LCB {A['HGainLCB']}) and the gain is "
+       f"concentrated relative to held-out ({A['HConc']}, LCB {A['HConcLCB']}). Both "
+       f"registered criteria are met on the purpose-built panel.",
     size=11.5, color=INK)
 
 box = rect(s, rx, y + Inches(1.42), rw, Inches(1.30), fill=TINT[ACCENT], radius=0.04,
@@ -818,10 +843,11 @@ tf = box.text_frame
 tf.vertical_anchor = MSO_ANCHOR.MIDDLE
 tf.margin_left, tf.margin_right = Inches(0.24), Inches(0.16)
 p = para(tf, first=True, space_after=4)
-run(p, "RQ2  ·  NOT SUPPORTED", size=12, bold=True, color=ACCENT, spc=90)
+run(p, "RQ2  ·  CRITERION FAILS", size=12, bold=True, color=ACCENT, spc=90)
 p = para(tf, space_after=0)
-run(p, "KL-SFT does preserve transfer (+0.049, LCB +0.035) — but its represented cost "
-       "(−0.036, LCB −0.060) misses the −0.02 margin. A genuine trade, not a free lunch.",
+run(p, f"KL-SFT does preserve transfer ({A['HPreserve']}, LCB {A['HPreserveLCB']}) — but its "
+       f"represented cost ({A['HCost']}, LCB {A['HCostLCB']}) misses the −{A['Margin']} margin. "
+       f"A genuine trade, not a free lunch.",
     size=11.5, color=INK)
 
 bullets(s, rx, y + Inches(2.90), rw, Inches(1.5), [
@@ -831,10 +857,10 @@ bullets(s, rx, y + Inches(2.90), rw, Inches(1.5), [
     # artifact (two rendering/read-position bugs), not a property of that model.
     ("One null cell — our bug, not their model.", "Llama-Guard-3-1B returned one score for "
      "every row: two harness bugs, since fixed. Retained at zero, which dilutes every number "
-     "here by 1.2x and only makes the verdicts harder to reach."),
+     f"here by {A['NullDilution']} and only makes the verdicts harder to reach."),
 ], size=11.5, gap=9)
 
-d.notes(s, """
+d.notes(s, f"""
 This is the one analysis-preregistered piece in the report, and it is the strongest
 evidence tier for the specialization claim, so lean on it.
 
@@ -847,8 +873,8 @@ Bonferroni-split across the two research questions, familywise alpha 0.05, 10,00
 resample bootstrap over evaluation row families and training seeds.
 
 Three terms on this slide, in plain words, in case the room is not a stats room. LCB is a
-one-sided interval end: "+0.174, LCB +0.129" means the estimate is +0.174 and it stayed
-above +0.129 in 97.5% of the redraws, so "LCB > 0" demands that even the pessimistic end
+one-sided interval end: "{A['HGain']}, LCB {A['HGainLCB']}" means the estimate is {A['HGain']}
+and it stayed above {A['HGainLCB']} in 97.5% of the redraws, so "LCB > 0" demands that even the pessimistic end
 still be a gain. A NON-INFERIORITY MARGIN is how much you agreed IN ADVANCE to lose on one
 axis to win on another — here −0.02 — which is stricter than "did it get worse?", because
 a noisy result fails it rather than passing by default. A BONFERRONI SPLIT means two

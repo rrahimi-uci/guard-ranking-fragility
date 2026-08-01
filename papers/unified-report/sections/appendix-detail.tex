@@ -41,8 +41,9 @@ load-bearing test --- and it still lands at slope $-1.05$. Either way the eye-ca
 \emph{where the endpoints sit}: $A_T\approx0.81$ is largely a property of the \emph{(training manifest,
 benchmark)} pair --- to the precision of the small residuals below, the base model has largely dropped out
 of the equation, and the post-SFT score is \emph{largely determined by} the manifest and the benchmark
-rather than by which checkpoint you started from. This is the strongest form of the paper's thesis:
-after SFT, the benchmark and the manifest largely choose the score. Second, the \emph{small residuals} around the
+rather than by which checkpoint you started from. This is the mechanism behind the title's claim:
+after SFT the score is largely a property of the (manifest, benchmark) pair, so a gain measured on that
+pair says correspondingly little about any other. Second, the \emph{small residuals} around the
 endpoint (at most $0.027$ on transfer): these measure how much of a base's identity survives the fine-tune,
 and are arguably a more honest per-checkpoint quantity than $\Delta$ itself. LoRA only adds a low-rank
 correction in the base's own features, so full base-independence is approximate by construction --- the
@@ -116,12 +117,19 @@ realism; the banding and marginal sampling buy privacy.
 
 \subsection{The agentic construction pipeline}
 
-\begin{figure}[p]\centering
-\includegraphics[width=0.92\linewidth,height=0.82\textheight,keepaspectratio]{pipeline.png}
-\caption{The agentic mortgage-benchmark construction pipeline: real HMDA records $\to$ de-identified
-banded fact sheets $\to$ plan / ground / generate / adversarially-mutate / rubric-bound-judge $\to$
-accept-iff the judged label matches the planned target $\to$ provenance + family-isolated split $\to$
-the frozen \texttt{v1\_hmda2022} release scored by the evaluator.}
+\begin{figure}[htbp]\centering
+\includegraphics[width=\linewidth]{pipeline.png}
+\caption{\textbf{The agentic mortgage-benchmark construction pipeline.} Real HMDA records $\to$
+de-identified banded fact sheets $\to$ the five-stage loop (plan / ground / generate /
+adversarially mutate / rubric-bound judge), run once per coverage cell $\to$ accept-iff the judged
+label matches the planned target $\to$ provenance and decontamination $\to$ the
+\texttt{content\_family}-isolated split $\to$ the frozen \texttt{v1\_hmda2022} release, scored by the
+evaluator. The two red nodes are the release's two stated defects, drawn rather than only written:
+pairs were never a grouping key, so one protected pair crosses a split, and \texttt{private\_test} is
+committed with text and already spent rather than sealed (\Cref{sec:actIV-mortgage-composition}). An
+earlier version of this figure was a committed PNG with no source that still labelled that slice
+``sealed''; it is now rendered from \code{figures/pipeline.dot} by the figure harness, so it cannot
+drift from the prose again.}
 \label{fig:pipeline}
 \end{figure}
 \label{sec:actIV-mortgage-pipeline}
@@ -152,8 +160,8 @@ assigned label matches the target the planner set for that cell; otherwise the r
 dropped. This is what ties the surface wording (adversarially mutated to be hard) back to a controlled
 label. Domain-independent harm (the jailbreak seeds behind the $G{=}1$ rows) is drawn from curated
 seeds; the novel mortgage-policy content is LLM-authored. Accepted rows then pass provenance and
-decontamination, a family-isolated train/dev/test split plus a committed 95-row confirmatory slice that is
-\emph{not} sealed (\Cref{sec:actIV}), and are published
+decontamination, a \code{content\_family}-isolated train/dev/test split plus a committed 95-row extra
+slice that is \emph{not} sealed and has already been spent (\Cref{sec:actIV}), and are published
 as the frozen \code{v1\_hmda2022} release --- the object the reproducible harness scores.
 
 Each row is built around exactly one \textbf{trap} --- the tactic that makes its label hard to read

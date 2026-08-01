@@ -1,4 +1,4 @@
-\section{General safety $\neq$ domain compliance: the HMDA-grounded Mortgage benchmark (Act~III)}
+\section{Q3. Does a general-safety score cover a regulated domain? No}
 \label{sec:actIV}\label{sec:actIV-mortgage}
 
 This is the strongest form of the report's thesis. In a regulated domain a general-safety benchmark
@@ -59,7 +59,8 @@ verdict is exactly what lets us pull the G0/D1 stratum out and score a guard on 
 
 \Cref{tab:composition} gives the full breakdown of the frozen \code{v1\_hmda2022} release: 994 rows,
 all synthetic. It is split \emph{family-isolated} into train (604), dev (149), and public-test (146),
-plus a 95-row confirmatory slice; ``family-isolated'' means rows sharing a
+plus a 95-row extra slice (called ``confirmatory'' and ``sealed'' in earlier versions of this report
+and in the data card --- it is neither, see the corrections below); ``family-isolated'' means rows sharing a
 \code{content\_family} are grouped and sent as a whole to \emph{either} train or test, never split.
 That invariant holds exactly (0 of 958 content families span splits), but it is narrower than the
 guarantee the phrase suggests: grouping is by \code{content\_family} only, so a near-twin that the
@@ -144,7 +145,9 @@ therefore also report the gap on the raw margin scale $s(x)=z_{\text{unsafe}}-z_
 exactly from the committed probabilities by $s=\log\!\big(p/(1{-}p)\big)$
 (\Cref{tab:baseline}). On that scale Qwen3-4B's mean gap is $0.797$ log-odds ---
 a $2.1$--$2.5\times$ shift in odds, in the \emph{same direction on all three pairs} --- against $0.102$
-for SmolLM2-1.7B and $0.151$ for SmolLM3-3B. Cross-model logit scales are not guaranteed comparable, so
+for SmolLM2-1.7B and $0.151$ for SmolLM3-3B, and just below Qwen2.5-1.5B's $0.84$. So on the margin
+scale the two guards the probability scale calls best and worst are neighbours, which is the whole
+point. Cross-model logit scales are not guaranteed comparable, so
 we do not rank guards on the margin either; the defensible statement is narrower and sufficient:
 \textbf{$\Delta_{\mathrm{context}}$ on the probability scale cannot be compared across guards whose
 score distributions differ by six orders of magnitude, and Qwen3-4B is not invariant on the scale this
@@ -190,7 +193,8 @@ not survive its own robustness checks, and we report it as a negative methodolog
 guard ranking. Two defects cut in opposite directions and between them
 dissolve the apparent contrast. \textbf{(1)} Qwen3-4B's
 $\Delta_{\mathrm{context}} = 0.000$ is the saturation artifact of \Cref{sec:actIV-mortgage-pairs}: on the
-raw margin its gap is $0.797$ log-odds, the largest of the three unsaturated-comparable guards, so it is
+raw margin its gap is $0.797$ log-odds --- the second largest on the panel, just behind
+Qwen2.5-1.5B's $0.84$ and roughly $5$--$8\times$ the two SmolLM checkpoints' --- so it is
 \emph{not} the most invariant guard. \textbf{(2)} Qwen2.5-1.5B's headline
 $\Delta_{\mathrm{context}} = 0.183$ is carried almost entirely by one pair: its three per-pair gaps are
 $0.018$, $0.022$ and $0.508$, and the $0.508$ pair is \code{PAIR-0020\#1}, a placeholder contrast

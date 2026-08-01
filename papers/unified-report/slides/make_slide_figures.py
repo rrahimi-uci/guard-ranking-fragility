@@ -242,16 +242,24 @@ SHORT = {"Qwen2.5-1.5B": "Qwen2.5\n1.5B", "SmolLM2-1.7B": "SmolLM2\n1.7B",
 
 # =============================================================== FIGURE BUILDERS
 def fig_teaser():
-    """Three panels: the split, the rank flip, the missed violation."""
-    # 4.4in, not 4.1: panel 3 carries a footnote below its x-axis, and tight_layout would
-    # otherwise pay for it by shortening all three panels -- which pushed panel 2's "1st"
-    # row annotations up into its own title.
-    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.4))
+    """Four panels, keyed Q1..Q4 to the report's Table 1 -- the same figure as the paper's Figure 1.
 
-    # -- panel 1: represented gain vs transfer change, with the 20 seeds ---------
+    This was three panels for the three "acts" (the split, the rank flip, the missed violation).
+    The report is now organised around four questions and its Figure 1 has one panel each, so this
+    slide follows: covering Q1 and Q3 twice while omitting Q2 and Q4 made the deck and the paper
+    disagree about the headline structure. The missed-violation panel moves to its own slide, where
+    it can carry the caveat that its two rows are not a controlled pair.
+
+    Q2 and Q4 read the generated macro files rather than hard-coded numbers -- the old panel 3 had
+    its eight counts typed in, which is exactly the drift this module exists to prevent.
+    """
+    fig, axes = plt.subplots(1, 4, figsize=(16.4, 4.3))
+
+    # -- Q1: represented gain vs transfer change, with the 20 seeds ---------------
     ax = axes[0]
     mac = macros("results_macros_gen.tex")
     rep_d, tr_d = float(mac["RepDelta"]), float(mac["TransferDelta"])
+    mfpr = macros("matched_fpr_macros.tex")
     seeds = seed_rows()
     ax.bar([0], [rep_d], 0.62, color=BLUE, zorder=3)
     ax.bar([1], [tr_d], 0.62, color=ORANGE, zorder=3)
@@ -267,17 +275,43 @@ def fig_teaser():
     # left of the bar, not below it: the seed cloud occupies the space under the bar
     ax.text(0.60, tr_d, f"{tr_d:+.2f}", ha="right", va="center", color=ORANGE,
             fontsize=19, fontweight="bold", zorder=5)
+    ax.text(0.985, 0.97, f"at an equal alarm budget\ntransfer recall "
+                         f"{mfpr['MatchedTransferBase']}$\\to${mfpr['MatchedTransferSft']}",
+            transform=ax.transAxes, ha="right", va="top", fontsize=10, color=RED, style="italic")
     ax.set_xlim(-0.48, 1.48)
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["represented\n(trained-on)", "transfer\n(held-out)"], fontsize=12)
     ax.set_ylabel("base $\\to$ SFT $\\Delta$ macro-AP", fontsize=12)
     ax.set_ylim(-0.30, 0.62)
-    ax.set_title("Tuning buys the benchmark,\nnot transfer", fontsize=13.5,
+    ax.set_title("Q1  The benchmark gain\ndoes not transfer", fontsize=13.5,
                  fontweight="bold", color=INK, pad=10)
     tidy(ax)
 
-    # -- panel 2: the top-ranked guard changes with the benchmark ---------------
+    # -- Q2: what a retraining-free base+adapter average recovers on transfer -----
     ax = axes[1]
+    pil = macros("pilot_macros.tex")
+    dec = lambda s: float(("0" + s) if s.startswith(".") else s.lstrip("+"))  # noqa: E731
+    vals = [dec(pil["PilotBaseTransfer"]), dec(pil["PilotSFTTransfer"]),
+            dec(pil["PilotCompositionTransfer"])]
+    ax.bar(range(3), vals, 0.58, color=[SLATE, ORANGE, GREEN], zorder=3)
+    for i2, v in enumerate(vals):
+        ax.text(i2, v + 0.003, f"{v:.3f}", ha="center", va="bottom", fontsize=13,
+                fontweight="bold", color=INK, zorder=5)
+    ax.annotate("", xy=(2, vals[2] - 0.004), xytext=(1, vals[1] + 0.004),
+                arrowprops=dict(arrowstyle="->", color=GREEN, lw=2.2), zorder=6)
+    ax.text(1.66, (vals[1] + vals[2]) / 2 - 0.011, f"{pil['PilotTransferDeltaSFT']}\nvs. SFT",
+            ha="right", va="top", fontsize=11.5, fontweight="bold", color=GREEN, zorder=6)
+    ax.axhline(vals[0], color=SLATE, lw=1.4, ls="--", zorder=2)
+    ax.set_xticks(range(3))
+    ax.set_xticklabels(["base", "SFT", "base +\nadapter"], fontsize=12)
+    ax.set_ylim(0.77, 0.91)
+    ax.set_ylabel("transfer macro-AP", fontsize=12)
+    ax.set_title("Q2  Composition recovers most\nof it, without retraining", fontsize=13.5,
+                 fontweight="bold", color=INK, pad=10)
+    tidy(ax)
+
+    # -- Q3: the top-ranked guard changes with the benchmark ---------------------
+    ax = axes[2]
     prim = {r[0]: r[4] for r in primary_rows()}          # transfer base AP
     mort = {r[0]: r[2] for r in mortgage_rows()}          # AP.D
     expg = {r[0]: r[1] for r in expguard_rows()}          # AP all
@@ -302,44 +336,41 @@ def fig_teaser():
     ax.set_yticks([1, 2, 3, 4])
     ax.set_yticklabels(["1st", "2nd", "3rd", "4th"])
     ax.invert_yaxis()
-    ax.set_title("The top-ranked guard\nchanges with the benchmark", fontsize=13.5,
+    ax.set_title("Q3  The top-ranked guard\nchanges with the benchmark", fontsize=13.5,
                  fontweight="bold", color=INK, pad=10)
     tidy(ax, ygrid=False)
     ax.grid(axis="y", visible=True)
 
-    # -- panel 3: the violation ranked below the benign median ------------------
-    ax = axes[2]
-    coded = {"Qwen2.5-1.5B": 46, "SmolLM2-1.7B": 57, "SmolLM3-3B": 65, "Qwen3-4B": 44}
-    named = {"Qwen2.5-1.5B": 1, "SmolLM2-1.7B": 7, "SmolLM3-3B": 0, "Qwen3-4B": 15}
-    x = np.arange(4)
-    labels = ["Q2.5-1.5B", "SL2-1.7B", "SL3-3B", "Q3-4B"]
-    keys = ["Qwen2.5-1.5B", "SmolLM2-1.7B", "SmolLM3-3B", "Qwen3-4B"]
-    ax.bar(x - 0.20, [coded[k] for k in keys], 0.38, color=RED, label="coded proxy", zorder=3)
-    ax.bar(x + 0.20, [named[k] for k in keys], 0.38, color=GREEN, label="traits named", zorder=3)
-    for i, k in enumerate(keys):
-        ax.text(i - 0.20, coded[k] + 1.5, coded[k], ha="center", fontsize=10.5,
-                fontweight="bold", color=RED)
-        ax.text(i + 0.20, named[k] + 1.5, named[k], ha="center", fontsize=10.5,
-                fontweight="bold", color=GREEN)
-    ax.axhline(32.5, color=INK, ls="--", lw=1.4, zorder=4)
-    ax.text(3.45, 34.5, "median\nbenign row", ha="right", va="bottom", fontsize=10,
-            color=INK, style="italic")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=11)
-    ax.set_ylabel("benign rows ranked above\nthe violation (of 65)", fontsize=11.5)
-    ax.set_ylim(0, 78)
-    ax.legend(loc="upper left", fontsize=11, ncols=1)
-    ax.set_title("Coded, the violation ranks\nbelow the benign median", fontsize=13.5,
+    # -- Q4: the regime reversal, both bars as (local - hosted) -------------------
+    ax = axes[3]
+    h2h, fro = macros("h2h_macros.tex"), macros("frontier_macros.tex")
+    ci = lambda s: [dec(x) for x in re.findall(r"[+-]?[\d.]+", s)]  # noqa: E731
+    rep_v, rep_c = dec(h2h["HtwoAggDeltaTpr"]), ci(h2h["HtwoAggDeltaTprCI"])
+    tr_v = -dec(fro["FrontierGainOverBase"])
+    tr_c = [-x for x in reversed(ci(fro["FrontierGainOverBaseCI"]))]
+    for y, v, c, col, note in ((1, rep_v, rep_c, GREEN, "tuned panel ahead"),
+                               (0, tr_v, tr_c, BLUE, "hosted ahead")):
+        ax.barh([y], [v], 0.40, color=col, zorder=3)
+        ax.errorbar([v], [y], xerr=[[v - c[0]], [c[1] - v]], fmt="none", ecolor=INK,
+                    elinewidth=1.8, capsize=5, zorder=5)
+        side = 1 if v > 0 else -1
+        ax.text(v + 0.014 * side, y + 0.25, f"{v:+.3f}", fontsize=15, fontweight="bold",
+                color=col, ha="left" if v > 0 else "right", va="bottom", zorder=6)
+        ax.text(v + 0.014 * side, y - 0.28, note, fontsize=10.5, color=SLATE, style="italic",
+                ha="left" if v > 0 else "right", va="top", zorder=6)
+    ax.axvline(0, color=INK, lw=1.6, zorder=4)
+    ax.set_yticks([1, 0])
+    ax.set_yticklabels(["sources your\nmanifest names", "sources it\ndoes not name"], fontsize=12)
+    ax.set_xlim(-0.28, 0.28)
+    ax.set_ylim(-0.75, 1.75)
+    ax.set_xlabel("$\\Delta$ recall at a matched 5% budget\n(local guard $-$ hosted frontier)",
+                  fontsize=11.5)
+    ax.set_title("Q4  Which is better reverses\nwith the traffic", fontsize=13.5,
                  fontweight="bold", color=INK, pad=10)
-    # The two arms are DIFFERENT rows, not a controlled protected-trait swap: they differ in
-    # fact sheet, domain, cited cards and request type, and v1 contains no protected pair on
-    # which a violation is scored. Stated on the panel so the bars cannot be read as a
-    # measured surface-form effect.
-    ax.text(0.5, -0.205, "different rows — not a controlled pair", transform=ax.transAxes,
-            ha="center", va="top", fontsize=10, color=RED, style="italic")
-    tidy(ax)
+    tidy(ax, ygrid=False)
+    ax.grid(axis="x", visible=True)
 
-    fig.tight_layout(w_pad=2.4)
+    fig.tight_layout(w_pad=2.2)
     save(fig, "teaser")
 
 

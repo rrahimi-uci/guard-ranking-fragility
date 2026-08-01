@@ -132,12 +132,19 @@ def _cell(sub, fam_index, score_col):
     }
 
 
+def resolve_type_map(registry_path):
+    """starting_key -> starting_type ('general' | 'purpose_built'), from the study registry."""
+    import starting_type_common as S
+    reg = S.load_registry(registry_path)
+    return {k: v.get("starting_type") for k, v in reg["checkpoints"].items()}
+
+
 def build_panel(df, *, represented_split=DEFAULT_REPRESENTED_SPLIT,
                 heldout_split=DEFAULT_HELDOUT_SPLIT, primary_beta=DEFAULT_PRIMARY_BETA,
-                family_map):
+                family_map, type_map=None):
     """Return (panel, families) where
 
-        panel[key] = {"model_family": str,
+        panel[key] = {"model_family": str, "starting_type": str,
                       regime: {"sources": [...], "seeds": [...],
                                "unmodified": {source: cell},
                                "sft": {seed: {source: cell}},
@@ -175,7 +182,17 @@ def build_panel(df, *, represented_split=DEFAULT_REPRESENTED_SPLIT,
             raise ScoreSchemaError(
                 f"no model family for starting key {key!r}; supply --registry or a family_map")
         d_key = df[df[key_col].astype(str) == key]
-        entry = {"model_family": str(mf)}
+        # Starting type is carried per checkpoint so the registered panels can be separated.
+        # It was previously dropped on the floor, which is what let a single `qwen` family span
+        # both panels and made every H a mixed-panel statistic (see `_subpanel`).
+        stype = None if type_map is None else type_map.get(key)
+        if stype is None and "starting_type" in d_key.columns and not d_key.empty:
+            vals = sorted(set(d_key["starting_type"].astype(str)))
+            if len(vals) != 1:
+                raise ScoreSchemaError(
+                    f"checkpoint {key!r} carries more than one starting_type: {vals}")
+            stype = vals[0]
+        entry = {"model_family": str(mf), "starting_type": str(stype or "unknown")}
         for regime, split in regime_split.items():
             d_reg = d_key[d_key["split"] == split]
             u = d_reg[d_reg["adaptation"] == "unmodified"]
@@ -275,6 +292,39 @@ def _eqfam_mean(fam_dict_regime):
     return float(np.mean(vals)) if vals else float("nan")
 
 
+def subpanel(panel, starting_type):
+    """The checkpoints of one registered panel ('general' or 'purpose_built').
+
+    RQ1 and RQ2 are registered over "the entire preregistered complete purpose-built panel"
+    (proposal Sec 3), and the normative contract keeps the two panels separate. The committed
+    analysis nevertheless built ONE panel over every checkpoint and grouped it by model family,
+    which put Qwen2.5-1.5B and Qwen3-4B (general) in the same `qwen` family as
+    Qwen3Guard-Gen-0.6B and -4B (purpose-built). Every H it reported was therefore a
+    six-family MIXED-panel statistic and not the registered estimand -- and the same taxonomy
+    is what made the registered Gamma interaction indeterminate, since a family spanning both
+    starting types cannot sit on either side of it. Splitting here fixes both at once.
+    """
+    return {k: v for k, v in panel.items() if v.get("starting_type") == starting_type}
+
+
+def _H_over(per_ck, panel_subset):
+    """The five H statistics over one set of checkpoints, equal-weighted by model family."""
+    if not panel_subset:
+        return {k: float("nan") for k in
+                ("H_gain", "H_conc", "H_preserve", "H_cost", "H_held_sft")}
+    sub = {k: per_ck[k] for k in panel_subset}
+    d_sft = _family_means(sub, panel_subset, "delta_sft")
+    P = _family_means(sub, panel_subset, "P")
+    conc = {f: d_sft["represented"][f] - d_sft["heldout"][f] for f in d_sft["represented"]}
+    return {
+        "H_gain": _eqfam_mean(d_sft["represented"]),
+        "H_conc": _eqfam_mean(conc),
+        "H_preserve": _eqfam_mean(P["heldout"]),
+        "H_cost": _eqfam_mean(P["represented"]),
+        "H_held_sft": _eqfam_mean(d_sft["heldout"]),
+    }
+
+
 def compute_hypotheses(panel, *, weights=None, seed_pick_by_key=None):
     """Return per-checkpoint, per-family, and the four (+ held-out SFT) H statistics for ONE draw.
 
@@ -304,6 +354,14 @@ def compute_hypotheses(panel, *, weights=None, seed_pick_by_key=None):
     h_preserve = _eqfam_mean(fam_P["heldout"])
     h_cost = _eqfam_mean(fam_P["represented"])
 
+    # The registered panels, kept separate, plus the registered interaction. Gamma is the
+    # equal-family purpose-built movement minus the equal-family general movement (proposal
+    # Sec 6.3) -- computable exactly as registered once the Qwen family is split by starting
+    # type, which is what `subpanel` does.
+    pb, gen = subpanel(panel, "purpose_built"), subpanel(panel, "general")
+    H_pb, H_gen = _H_over(per_ck, pb), _H_over(per_ck, gen)
+    gamma = {f"Gamma_{k.removeprefix('H_')}": H_pb[k] - H_gen[k] for k in H_pb}
+
     return {
         "per_checkpoint": per_ck,
         "per_family": {
@@ -316,6 +374,9 @@ def compute_hypotheses(panel, *, weights=None, seed_pick_by_key=None):
             "H_gain_norm": h_gain_norm, "H_conc_norm": h_conc_norm,
             "H_held_sft_norm": h_held_sft_norm,
         },
+        "H_purpose_built": H_pb,
+        "H_general": H_gen,
+        "Gamma": gamma,
     }
 
 
@@ -356,7 +417,15 @@ def bootstrap(panel, families, *, reps=DEFAULT_BOOT_REPS, rng_seed=DEFAULT_RNG_S
     n_seeds = {k: len(panel[k]["represented"]["seeds"]) for k in keys}
     stat_names = ["H_gain", "H_conc", "H_preserve", "H_cost", "H_held_sft",
                   "H_gain_norm", "H_conc_norm", "H_held_sft_norm"]
+    # The registered panels and the registered interaction ride the SAME replicates, so their
+    # bounds are mutually consistent and Gamma is a paired difference rather than a difference
+    # of two independently bootstrapped numbers.
+    sub_names = ["H_gain", "H_conc", "H_preserve", "H_cost", "H_held_sft"]
+    gamma_names = [f"Gamma_{s.removeprefix('H_')}" for s in sub_names]
     samples = {s: np.empty(reps) for s in stat_names}
+    sub_samples = {"purpose_built": {s: np.empty(reps) for s in sub_names},
+                   "general": {s: np.empty(reps) for s in sub_names}}
+    gamma_samples = {g: np.empty(reps) for g in gamma_names}
     total_redraw = 0
     for rep in range(reps):
         redraws = 0
@@ -369,9 +438,14 @@ def bootstrap(panel, families, *, reps=DEFAULT_BOOT_REPS, rng_seed=DEFAULT_RNG_S
             if redraws > max_redraw:
                 raise RuntimeError("bootstrap: exceeded redraw cap (score panel too sparse?)")
         seed_pick = {k: rng.integers(0, max(1, n_seeds[k]), size=n_seeds[k]) for k in keys}
-        H = compute_hypotheses(panel, weights=w, seed_pick_by_key=seed_pick)["H"]
+        draw = compute_hypotheses(panel, weights=w, seed_pick_by_key=seed_pick)
         for s in stat_names:
-            samples[s][rep] = H[s]
+            samples[s][rep] = draw["H"][s]
+        for s in sub_names:
+            sub_samples["purpose_built"][s][rep] = draw["H_purpose_built"][s]
+            sub_samples["general"][s][rep] = draw["H_general"][s]
+        for g in gamma_names:
+            gamma_samples[g][rep] = draw["Gamma"][g]
 
     def summarize(arr):
         arr = arr[np.isfinite(arr)]
@@ -392,6 +466,9 @@ def bootstrap(panel, families, *, reps=DEFAULT_BOOT_REPS, rng_seed=DEFAULT_RNG_S
         "redraws": int(total_redraw),
         "rejected_fraction": (float(total_redraw / (reps + total_redraw)) if reps else 0.0),
         "stats": {s: summarize(samples[s]) for s in stat_names},
+        "stats_purpose_built": {s: summarize(sub_samples["purpose_built"][s]) for s in sub_names},
+        "stats_general": {s: summarize(sub_samples["general"][s]) for s in sub_names},
+        "stats_gamma": {g: summarize(gamma_samples[g]) for g in gamma_names},
     }
 
 
@@ -430,10 +507,29 @@ RQ2_CLAIMS = {
 }
 
 
-def claim_checks(boot, *, margin=NONINF_MARGIN, primary_beta=DEFAULT_PRIMARY_BETA):
+CONFIRMATORY_STATUS = (
+    "NOT CONFIRMATORY. The gates below are evaluated on the registered purpose-built panel, but "
+    "four protocol deviations prevent the outcome from carrying a confirmatory verdict: the claim "
+    "registry is finalization_status=dev_nonfinal and no LOCK binds it; all ten preflight "
+    "artifacts record eligible=false, with the training-dependent checks (including the "
+    "nonconstant-margin rule) skipped, so the eligibility gate never ran; the degenerate "
+    "Llama-Guard cell was retained against that rule; and this panel-split analysis was itself "
+    "written AFTER the outcomes were known, to repair an analyzer that computed a different "
+    "estimand. Read every number here as an analysis-preregistered fixed-panel ESTIMATE."
+)
+
+
+def claim_checks(boot, *, margin=NONINF_MARGIN, primary_beta=DEFAULT_PRIMARY_BETA,
+                 stats_key="stats_purpose_built", panel_label="purpose_built"):
     """Evaluate the RQ1/RQ2 gates and select interpretation strings PURELY from locked bound
-    predicates. This function reads only bootstrap bounds -- never a point estimate sign."""
-    st = boot["stats"]
+    predicates. This function reads only bootstrap bounds -- never a point estimate sign.
+
+    `stats_key` selects which panel's bounds the gates read. The registered estimand is the
+    purpose-built panel (proposal Sec 3: "the entire preregistered complete purpose-built
+    panel"); the mixed six-family panel that earlier revisions gated on is retained under a
+    separate key so the superseded numbers stay auditable rather than disappearing.
+    """
+    st = boot[stats_key]
     p_gain = st["H_gain"]["lcb975_one_sided"] > 0.0
     p_conc = st["H_conc"]["lcb975_one_sided"] > 0.0
     p_preserve = st["H_preserve"]["lcb975_one_sided"] > 0.0
@@ -452,6 +548,8 @@ def claim_checks(boot, *, margin=NONINF_MARGIN, primary_beta=DEFAULT_PRIMARY_BET
     return {
         "primary_beta": float(primary_beta),
         "non_inferiority_margin_m": float(margin),
+        "estimand_panel": panel_label,
+        "confirmatory_status": CONFIRMATORY_STATUS,
         "multiplicity": (
             "Bonferroni across the two RQ families: one-sided 97.5% per-family lower bounds control "
             "familywise alpha = 0.05."),
@@ -497,15 +595,33 @@ def _movement_vectors(per_checkpoint, panel):
     return out
 
 
-def analyze(df, *, family_map, represented_split=DEFAULT_REPRESENTED_SPLIT,
+def _panel_families(panel, stype=None):
+    return sorted({v["model_family"] for v in panel.values()
+                   if stype is None or v.get("starting_type") == stype})
+
+
+def analyze(df, *, family_map, type_map=None, represented_split=DEFAULT_REPRESENTED_SPLIT,
             heldout_split=DEFAULT_HELDOUT_SPLIT, primary_beta=DEFAULT_PRIMARY_BETA,
             reps=DEFAULT_BOOT_REPS, rng_seed=DEFAULT_RNG_SEED):
     panel, families = build_panel(
         df, represented_split=represented_split, heldout_split=heldout_split,
-        primary_beta=primary_beta, family_map=family_map)
+        primary_beta=primary_beta, family_map=family_map, type_map=type_map)
     point = compute_hypotheses(panel)
     boot = bootstrap(panel, families, reps=reps, rng_seed=rng_seed)
-    checks = claim_checks(boot, primary_beta=primary_beta)
+    # The registered gates read the purpose-built panel. The mixed-panel evaluation is kept
+    # beside it under an explicit name because earlier revisions of this report published it as
+    # if it were the registered result; deleting it would hide the correction rather than make it.
+    checks = claim_checks(boot, primary_beta=primary_beta,
+                          stats_key="stats_purpose_built", panel_label="purpose_built")
+    checks_general = claim_checks(boot, primary_beta=primary_beta,
+                                  stats_key="stats_general", panel_label="general")
+    checks_mixed = claim_checks(boot, primary_beta=primary_beta,
+                                stats_key="stats", panel_label="mixed_all_checkpoints")
+    checks_mixed["superseded"] = (
+        "This is the six-family MIXED panel (general and purpose-built checkpoints pooled, with "
+        "one `qwen` family spanning both starting types). It is NOT the registered RQ1/RQ2 "
+        "estimand and was published as such in error; it is retained only so the correction is "
+        "auditable.")
     return {
         "analysis_code_version": ANALYSIS_CODE_VERSION,
         "config": {
@@ -513,18 +629,30 @@ def analyze(df, *, family_map, represented_split=DEFAULT_REPRESENTED_SPLIT,
             "primary_beta": float(primary_beta), "non_inferiority_margin_m": NONINF_MARGIN,
             "bootstrap_reps": reps, "rng_seed": rng_seed,
             "metric": "macro-AP over benchmark sources; RAW logit margin; tie-aware AP",
-            "model_families": sorted({v["model_family"] for v in panel.values()}),
-            "n_checkpoints": len(panel), "n_eval_families": len(families),
+            "model_families": _panel_families(panel),
+            "model_families_purpose_built": _panel_families(panel, "purpose_built"),
+            "model_families_general": _panel_families(panel, "general"),
+            "n_checkpoints": len(panel),
+            "n_checkpoints_purpose_built": len(subpanel(panel, "purpose_built")),
+            "n_checkpoints_general": len(subpanel(panel, "general")),
+            "n_eval_families": len(families),
+            "registered_primary_panel": "purpose_built",
         },
         "point_estimates": {
             "H": point["H"],
+            "H_purpose_built": point["H_purpose_built"],
+            "H_general": point["H_general"],
+            "Gamma": point["Gamma"],
             "per_family": point["per_family"],
             "per_checkpoint": {
                 k: {r: point["per_checkpoint"][k][r] for r in REGIMES} for k in panel},
+            "starting_type": {k: v["starting_type"] for k, v in panel.items()},
             "movement_vectors": _movement_vectors(point["per_checkpoint"], panel),
         },
         "bootstrap": boot,
         "claim_checks": checks,
+        "claim_checks_general_panel": checks_general,
+        "claim_checks_mixed_panel_superseded": checks_mixed,
         "panel_conditional_limitation": PANEL_CONDITIONAL_LIMITATION,
     }
 
@@ -572,6 +700,8 @@ def make_synthetic_scores(*, kl_equals_sft_heldout=False, kl_beta=DEFAULT_PRIMAR
     # 4 checkpoints across 3 model families (famQ has two checkpoints -> exercises within-family mean)
     checkpoints = [("ckptQ1", "famQ"), ("ckptQ2", "famQ"), ("ckptR", "famR"), ("ckptS", "famS")]
     family_map = {k: f for k, f in checkpoints}
+    STYPE = {"ckptQ1": "purpose_built", "ckptQ2": "purpose_built",
+             "ckptR": "purpose_built", "ckptS": "general"}
     splits = {"represented": DEFAULT_REPRESENTED_SPLIT, "heldout": DEFAULT_HELDOUT_SPLIT}
     sources = {"represented": ["src_rep_a", "src_rep_b"], "heldout": ["src_held_a", "src_held_b"]}
     # per-condition class separation (higher -> higher AP)
@@ -599,7 +729,9 @@ def make_synthetic_scores(*, kl_equals_sft_heldout=False, kl_beta=DEFAULT_PRIMAR
                             "source": src, "split": split, "gold": int(gold[i]),
                             "family_id": fam[i],
                             "starting_model_key": key, "model_revision": "synthetic",
-                            "starting_type": "purpose_built", "adaptation": adaptation,
+                            # one checkpoint is `general` so the fixture exercises the panel
+                            # split and the Gamma interaction, not just the pooled path
+                            "starting_type": STYPE[key], "adaptation": adaptation,
                             "condition_id": f"{key}:{adaptation}:{seed}",
                             "seed": int(seed), "kl_beta": beta,
                             "adapter_sha256": None if adaptation == "unmodified" else f"ad-{key}-{seed}",
@@ -666,14 +798,35 @@ def _self_test(reps=400):
     print(f"  [ok] beta=0 identity: H_preserve==0 exactly, RQ2 supported="
           f"{res0['claim_checks']['RQ2']['supported']}")
 
+    # --- the registered panels are separated, and Gamma is computable ---
+    # This is the defect that made every published H a mixed-panel statistic: the analyzer built
+    # one panel over all checkpoints and grouped by model family, so a family spanning both
+    # starting types pooled them. Assert the split is real and that the gates read the
+    # purpose-built panel, which is what proposal Sec 3 registers.
+    pe = res["point_estimates"]
+    assert set(pe["starting_type"].values()) == {"purpose_built", "general"}, pe["starting_type"]
+    assert res["config"]["model_families_purpose_built"] == ["famQ", "famR"], res["config"]
+    assert res["config"]["model_families_general"] == ["famS"], res["config"]
+    assert pe["H_purpose_built"]["H_gain"] != pe["H_general"]["H_gain"]
+    for k, v in pe["Gamma"].items():
+        assert math.isfinite(v), (k, v)
+    assert abs(pe["Gamma"]["Gamma_gain"]
+               - (pe["H_purpose_built"]["H_gain"] - pe["H_general"]["H_gain"])) < 1e-12
+    assert res["claim_checks"]["estimand_panel"] == "purpose_built"
+    assert "superseded" in res["claim_checks_mixed_panel_superseded"]
+    gb = res["bootstrap"]["stats_gamma"]
+    assert set(gb) == {f"Gamma_{s}" for s in ("gain", "conc", "preserve", "cost", "held_sft")}, gb
+    print("  [ok] registered panels separated; Gamma computed and bootstrapped on shared draws")
+
     # --- interpretation is predicate-driven: forcing predicates flips wording deterministically ---
-    fake_boot = {"stats": {
+    flat = {
         "H_gain": {"lcb975_one_sided": -1.0, "ucb975_one_sided": 1.0},
         "H_conc": {"lcb975_one_sided": -1.0, "ucb975_one_sided": 1.0},
         "H_preserve": {"lcb975_one_sided": -1.0, "ucb975_one_sided": 1.0},
         "H_cost": {"lcb975_one_sided": -1.0, "ucb975_one_sided": 1.0},
         "H_held_sft": {"lcb975_one_sided": -1.0, "ucb975_one_sided": 1.0},
-    }}
+    }
+    fake_boot = {"stats": flat, "stats_purpose_built": flat, "stats_general": flat}
     c = claim_checks(fake_boot)
     assert c["RQ1"]["supported"] is False and c["RQ1"]["interpretation"] == RQ1_NOT_SUPPORTED
     assert c["RQ2"]["supported"] is False
@@ -709,16 +862,30 @@ def main(argv=None):
 
     df = load_scores(args.scores)
     family_map = resolve_family_map(args.registry)
+    type_map = resolve_type_map(args.registry)
     results = analyze(
-        df, family_map=family_map, represented_split=args.represented_split,
+        df, family_map=family_map, type_map=type_map,
+        represented_split=args.represented_split,
         heldout_split=args.heldout_split, primary_beta=args.primary_beta,
         reps=args.reps, rng_seed=args.rng_seed)
     checks = results["claim_checks"]
-    print(f"[analyze-sta] families={results['config']['model_families']} "
-          f"checkpoints={results['config']['n_checkpoints']} "
-          f"eval_families={results['config']['n_eval_families']}")
+    cfg = results["config"]
+    print(f"[analyze-sta] families={cfg['model_families']} "
+          f"checkpoints={cfg['n_checkpoints']} eval_families={cfg['n_eval_families']}")
+    print(f"[analyze-sta] REGISTERED panel = purpose_built: "
+          f"{cfg['n_checkpoints_purpose_built']} checkpoints, "
+          f"families={cfg['model_families_purpose_built']}")
+    print(f"[analyze-sta] general panel: {cfg['n_checkpoints_general']} checkpoints, "
+          f"families={cfg['model_families_general']}")
     print(f"[analyze-sta] RQ1 supported={checks['RQ1']['supported']}: {checks['RQ1']['interpretation']}")
     print(f"[analyze-sta] RQ2 supported={checks['RQ2']['supported']}: {checks['RQ2']['interpretation']}")
+    g = results["point_estimates"]["Gamma"]
+    gb = results["bootstrap"]["stats_gamma"]
+    print("[analyze-sta] Gamma (purpose-built minus general, registered interaction):")
+    for k in sorted(g):
+        print(f"               {k:18s} {g[k]:+.4f}  "
+              f"[{gb[k]['ci95_two_sided'][0]:+.4f}, {gb[k]['ci95_two_sided'][1]:+.4f}]")
+    print(f"[analyze-sta] {checks['confirmatory_status']}")
     if args.out:
         write_results(args.out, results)
         print(f"[analyze-sta] wrote results.json + claim_checks.json to {args.out}")

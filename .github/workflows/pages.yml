@@ -2,18 +2,24 @@ name: pages
 
 # GitHub Pages deployment for the HTML edition of the unified report.
 #
-# It is wired, tested, and CURRENTLY REFUSES TO DEPLOY. Serving this page publicly is
-# verbatim redistribution of the one v1_hmda2022 benchmark row its case study quotes, and
-# that source is still local_only with permits_redistribution unknown. The repository's rule
-# is per source, not per file -- the distinction that cost a full history rewrite -- so the
-# gate asks the ledger about the sources this artifact declares, and refuses on silence.
+# It is wired, tested, and the licence gate NOW OPENS: v1_hmda2022 is recorded in
+# benchmarks/registry/distribution.yaml as CC BY 4.0 with redistribution_decision
+# publish_text, so `tools/pages_authorized.py` authorizes the artifact and the page carries
+# the case study unredacted. It previously refused, because that source was local_only with
+# permits_redistribution unknown. The repository's rule is per source, not per file -- the
+# distinction that cost a full history rewrite -- so the gate asks the ledger about the
+# sources this artifact declares, and still refuses on silence for any future source.
 #
-# To publish: record the licensing decision in benchmarks/registry/distribution.yaml after
-# the review it requires. The gate then opens by itself; nothing here needs editing, and
-# nothing here decides the licence.
+# Nothing here decides a licence. If a new source enters the page with an unresolved
+# licence, the gate closes again by itself.
 #
-# Deliberately `workflow_dispatch` only. A push trigger would paint every commit red for a
-# policy state that is expected, and would put a publication attempt one merge away.
+# Still deliberately `workflow_dispatch` only, and that is now a choice about publication
+# rather than about policy: the gate no longer blocks, so a push trigger would put a live
+# deployment one merge away. Publishing stays an explicit, deliberate action.
+#
+# The PDF is deliberately not staged (tests/test_pages_gate.py enforces it): the page's
+# text probes cannot see inside a PDF, so serving one would be exposure the quotation
+# budget could not audit. Link to the repository copy instead.
 
 on:
   workflow_dispatch:

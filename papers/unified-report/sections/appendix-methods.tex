@@ -2,7 +2,7 @@
 \section{The shared experimental setup}
 \label{sec:setup}
 
-Every study in this report reuses one fixed, purposively chosen panel of four checkpoints and one
+The paired studies in this report --- SFT, composition, and the zero-shot domain baselines --- reuse one fixed, purposively chosen panel of four checkpoints and one
 frozen, decontaminated $1{,}200$-row training manifest, scored by the identical single-token
 $z_{\text{unsafe}}-z_{\text{safe}}$ head (\Cref{eq:score}) and the same tie-aware macro-AP, under
 fail-closed provenance \emph{locks} that bind the data, code, and software versions and refuse to run
@@ -155,7 +155,7 @@ represented-source test; the transfer and stress sets are never seen in fine-tun
 regulated-domain benchmarks. All sources are consumed by pinned identifier, revision, and content hash;
 ``rows'' are the counts \emph{used here}, not necessarily the full upstream release.}
 \label{tab:datasets}
-\begin{tabular}{@{}p{0.40\linewidth} p{0.30\linewidth} p{0.12\linewidth} c@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.40\linewidth} >{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.12\linewidth} c@{}}
 \toprule
 Dataset (source) & Native task / label & Rows used & Ref. \\
 \midrule
@@ -250,6 +250,22 @@ Bernoulli negatives, so it is a pooled diagnostic, not a family-aware production
 resulting operating-point rates appear in \Cref{tab:sensitivity} (Act~I) and \Cref{tab:pilot-operating}
 (Act~II).
 
+\paragraph{Matched-FPR points are ROC summaries, not deployable thresholds.}
+\label{sec:matched-fpr-limits}
+Three tables in this report --- \Cref{tab:matchedfpr}, \Cref{tab:frontier} and \Cref{tab:h2h} --- place
+every guard at a common $5\%$ false-alarm budget so that recalls are comparable. That budget is located
+by taking a quantile of the \emph{evaluated} negatives and then measuring recall on the \emph{same}
+rows. This is a legitimate and standard way to read a pair of ROC curves at one point, and the paired
+bootstrap re-estimates that functional inside every replicate, so the intervals are internally
+consistent. It is \emph{not} a threshold a production system could use, because placing it requires the
+labels the system is trying to predict. The distinction matters because it changes what the number
+means: ``TPR at an empirical matched-FPR ROC point'' is a statement about \emph{ranking quality} at a
+comparable alarm rate, whereas a deployment claim would require the threshold to be fixed on a disjoint
+calibration set, frozen, and then reported with its \emph{realized} FPR and TPR on untouched acceptance
+rows. Only the calibration-only operating point above does that, and only for Acts~I--II. No
+matched-FPR figure anywhere in this report should be read as an achievable deployment operating point,
+and none of the deployment guidance in \Cref{tab:guidelines} rests on one.
+
 \subsection{The composition protocol}
 \label{sec:setup-composition}
 
@@ -270,7 +286,9 @@ unit is one incoming request carrying two independent labels, general-safety $G$
 (\Cref{sec:bg-mortgage}). Requests are grounded in de-identified, banded HMDA fact sheets --- never
 verbatim records --- through an agentic pipeline that plans, grounds, generates, adversarially mutates,
 and rubric-bound-judges each item, accepting it only if its assigned label matches the target, before a
-provenance-tracked, family-isolated split into the frozen release (\Cref{fig:pipeline}). The benchmark
+provenance-tracked, \code{content\_family}-isolated split into the frozen release (\Cref{fig:pipeline};
+that grouping key is narrower than pair-level isolation, and one protected pair does cross a split ---
+\Cref{sec:actIV-mortgage-composition}). The benchmark
 has $994$ rows over four $G\times D$ quadrants --- G0/D0 ($450$), G0/D1 ($502$), G1/D1 ($42$), and G1/D0
 ($0$, empty by construction) --- with the load-bearing \textbf{G0/D1} stratum (reads safe, is a
 violation) the largest. It spans seven content strata (fair-lending $204$, fraud $112$, UDAAP $90$,

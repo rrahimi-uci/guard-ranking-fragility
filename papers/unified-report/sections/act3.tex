@@ -1,4 +1,4 @@
-\section{Recover transfer without retraining: output-space composition (Act~II)}
+\section{Q2. Can transfer be recovered without retraining? Output-space composition}
 \label{sec:actIII}
 
 Act I left us with an uncomfortable asymmetry. Supervised fine-tuning (SFT) buys a large,
@@ -126,7 +126,9 @@ back under two points of represented ranking to buy back roughly eight points of
 Against the untuned base, the aggregate transfer gain is smaller and its interval is closer to
 zero, $\PilotTransferDeltaBase$ [$\PilotTransferDeltaBaseLow,\PilotTransferDeltaBaseHigh$]:
 composition edges past the base \emph{on average}, but only for $\PilotNTransferPositiveVsBase$ of
-the four checkpoints individually. All intervals here are descriptive paired percentile-bootstrap
+the four checkpoints individually --- and that interval resamples rows and seeds only, so the edge sits
+inside the $0.015$--$0.029$ reproduction envelope measured in \Cref{sec:actI-klsft} and the
+vs.-base direction is \emph{unresolved}. All intervals here are descriptive paired percentile-bootstrap
 ranges under the retrospective, estimation-only regime (\PilotEvidenceStatus{}), conditional on
 this fixed panel --- not significance tests and not population claims.
 
