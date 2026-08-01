@@ -282,20 +282,41 @@ def adapt(*, ckpt: dict, contract_name: str, train_rows, method: str, beta: floa
             # CE delegated to parent (num_items_in_batch grad-accum normalization) so beta==0 == SFT
             # exactly; add beta * KL(pi_theta || pi_reference) on supervised verdict positions, with
             # the reference = the same starting checkpoint via disable_adapter().
+            _kl_sum = 0.0
+            _kl_n = 0
             def compute_loss(self, model, inputs, return_outputs=False, **kw):
                 ce_loss, outputs = super().compute_loss(model, inputs, return_outputs=True, **kw)
                 shift_logits = outputs.logits[:, :-1, :]
                 mask = inputs["labels"][:, 1:] != -100
+                # Deterministic anchor. disable_adapter() drops the LoRA delta but stays in
+                # training mode, so the base architecture's OWN dropout still fires. On this
+                # panel that is not hypothetical: ibm-granite/granite-guardian-3.1-2b ships
+                # attention_dropout=0.1, so one of the five purpose-built families was anchored
+                # to a stochastic reference. Force eval mode for the reference forward only.
+                was_training = model.training
                 with torch.no_grad():
-                    with model.disable_adapter():
-                        ref = model(input_ids=inputs["input_ids"],
-                                    attention_mask=inputs["attention_mask"]).logits
+                    model.eval()
+                    try:
+                        with model.disable_adapter():
+                            ref = model(input_ids=inputs["input_ids"],
+                                        attention_mask=inputs["attention_mask"]).logits
+                    finally:
+                        if was_training:
+                            model.train()
                 logp = F.log_softmax(shift_logits[mask].float(), dim=-1)
                 logp_ref = F.log_softmax(ref[:, :-1, :][mask].float(), dim=-1)
                 kl = (logp.exp() * (logp - logp_ref)).sum(-1).mean()
                 self._kl_running = float(kl.detach())
+                KLTrainer._kl_sum += self._kl_running
+                KLTrainer._kl_n += 1
                 loss = ce_loss + float(beta) * kl
                 return (loss, outputs) if return_outputs else loss
+
+            def log(self, logs, *a, **k):
+                if KLTrainer._kl_n:
+                    logs = {**logs, "kl": KLTrainer._kl_sum / KLTrainer._kl_n}
+                    KLTrainer._kl_sum, KLTrainer._kl_n = 0.0, 0
+                return super().log(logs, *a, **k)
 
         args = TrainingArguments(
             output_dir=out_dir, per_device_train_batch_size=per_dev,
@@ -310,7 +331,10 @@ def adapt(*, ckpt: dict, contract_name: str, train_rows, method: str, beta: floa
         trainer = cls(model=model, args=args, train_dataset=ds, data_collator=_collate(tok))
         trainer.train()
         if method == "kl_sft":
-            meta["final_kl"] = getattr(trainer, "_kl_running", None)
+            meta["final_kl"] = getattr(trainer, "_kl_running", None)   # last micro-batch (legacy)
+            meta["kl_curve"] = [{"step": h.get("step"), "kl": h.get("kl")}
+                                for h in trainer.state.log_history if "kl" in h]
+            meta["kl_reference_mode"] = "eval"
 
         adir = os.path.join(out_dir, "adapter")
         model.save_pretrained(adir)

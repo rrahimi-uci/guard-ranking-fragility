@@ -552,6 +552,51 @@ def matched_fpr(results, check):
             results[name] = "regenerated"
 
 
+def low_fpr_region(results, check):
+    """Act I and the KL control re-read over FPR [0, .05] (see low_fpr.py).
+
+    Same committed columns as `matched_fpr`, one extra (`family_id`, for the paired bootstrap)
+    and one extra input (the KL score parquets). The bootstrap is 2,000 replicates over four
+    checkpoints x two regimes x three metrics, which is the slowest covered artifact in this
+    harness -- a few minutes on a laptop. It is still pure arithmetic on committed scores: no
+    GPU, no network, no pinned environment.
+    """
+    sp = REPO / "artifacts/paper_a_sft_v2/scores/scores.parquet"
+    kl_dir = REPO / "artifacts/klsft_v1/scores"
+    if not sp.exists():
+        results["tab_lowfpr_gen.tex"] = "PENDING (scores.parquet missing)"
+        return
+    import pandas as pd
+
+    import low_fpr as LF
+
+    cols = ["split", "source", "gold", "model_key", "condition", "seed", "score_raw", "family_id"]
+    res = LF.compute(pd.read_parquet(sp, columns=cols))
+    emitted = [("tab_lowfpr_gen.tex", LF.emit_table(None, res)),
+               ("lowfpr_macros.tex", LF.emit_macros(None, res))]
+
+    kl_files = sorted(kl_dir.glob("klsft_scores_*.parquet")) if kl_dir.exists() else []
+    if kl_files:
+        frames = {}
+        for p in kl_files:
+            d = pd.read_parquet(p, columns=["split", "source", "gold", "model_key", "seed",
+                                            "kl_beta", "score_raw"])
+            frames[str(d["model_key"].iloc[0])] = d
+        res_kl = LF.compute_kl(frames)
+        emitted += [("tab_lowfpr_kl_gen.tex", LF.emit_kl_table(res_kl)),
+                    ("lowfpr_kl_macros.tex", LF.emit_kl_macros(res_kl))]
+    else:
+        results["tab_lowfpr_kl_gen.tex"] = "PENDING (klsft scores missing)"
+
+    for name, tex in emitted:
+        dst = GEN / name
+        if check and dst.exists():
+            results[name] = "OK (byte-identical)" if dst.read_text() == tex else "DRIFT!"
+        else:
+            dst.write_text(tex)
+            results[name] = "regenerated"
+
+
 def frontier(results, check):
     """Frontier-vs-local ExpGuard comparison (see frontier.py for the threshold rule).
 
@@ -595,8 +640,8 @@ def main(argv=None) -> int:
 
     GEN.mkdir(exist_ok=True)
     results: dict[str, str] = {}
-    for fn in (paper_a, paper_b, mortgage, expguard, frontier, sftsft, matched_fpr, latency,
-               teaser_macros, adaptation, ensembling, cascade, h2h, klsft,
+    for fn in (paper_a, paper_b, mortgage, expguard, frontier, sftsft, matched_fpr, low_fpr_region,
+               latency, teaser_macros, adaptation, ensembling, cascade, h2h, klsft,
                mortgage_composition, figures):
         try:
             fn(results, args.check)
