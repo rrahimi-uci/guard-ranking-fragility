@@ -207,8 +207,12 @@ def fig_tax(rows):
     ax.set_ylim(-0.75, len(pts) - 0.25)
     ax.set_xlim(-0.32, 0.70)
     ax.set_xticks([])
-    ax.set_xlabel("Change in accuracy after fine-tuning  (AP points)\n"
-                  "rows ordered weakest base (top) to strongest base (bottom)",
+    # Name the panel on the axis, not only in the slide subtitle. These bars are macro-AP on
+    # the internal Act I panel plus the scale ladder; the deck also carries an ExpGuard
+    # matched-budget result on the same slide, and the two must never be read as one series.
+    ax.set_xlabel("Change in ranking accuracy after fine-tuning  (macro-AP points)\n"
+                  "our own internal panel · rows ordered weakest base (top) to strongest "
+                  "base (bottom)",
                   fontsize=10, color=SECOND, labelpad=10)
     # A real legend, not spatial labels: colour carries which measure, the side of the
     # zero rule carries the sign. Spatial labels broke on SmolLM2, whose unfamiliar-traffic

@@ -725,7 +725,11 @@ def fig_prevalence():
     order = ["qwen3_4b", "smollm3_3b", "smollm2_17b", "qwen25_15b"]
     pretty = {"qwen25_15b": "Qwen2.5-1.5B", "smollm2_17b": "SmolLM2-1.7B",
               "smollm3_3b": "SmolLM3-3B", "qwen3_4b": "Qwen3-4B"}
-    cols = {"qwen25_15b": BLUE, "smollm2_17b": ORANGE, "smollm3_3b": GREEN, "qwen3_4b": RED}
+    # Key off MODEL_COLOR rather than restating a local palette. The local one used ORANGE for
+    # SmolLM2, which is the same salmon family as Qwen3-4B's RED -- and those two are plotted at
+    # opposite ends of this chart, so on a projector they read as one series and destroy the
+    # "the lower two swap" point the slide is built around. MODEL_COLOR exists for exactly this.
+    cols = {mk: MODEL_COLOR[name] for mk, name in pretty.items()}
 
     def ap_prev(frame, prev):
         aps = []

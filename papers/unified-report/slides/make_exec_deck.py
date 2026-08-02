@@ -356,10 +356,14 @@ callout(s, M + cw + Inches(0.4), y + Inches(0.06), cw, Inches(1.80),
         "Public guard leaderboards score general web-safety prompts. Our exposure is "
         "regulated-domain advice, where the same words are safe or unsafe depending on who "
         "is asking and what was promised.", color=BLUE)
+# NOT "on our own terms". ExpGuard is a third-party, expert-annotated set -- which is the
+# strength of the evidence, and the phrase invited a legal or risk stakeholder to hear
+# "we evaluated on company traffic", which is the opposite of what happened.
 callout(s, M + cw + Inches(0.4), y + Inches(2.04), cw, Inches(1.80),
-        "so we measured on our own terms",
-        "Expert-annotated finance, healthcare and law prompts; every guard scored on "
-        "identical rows; catch rates compared only at a matched 5% false-alarm budget.",
+        "so we measured on external, expert-annotated prompts",
+        "Third-party expert-annotated finance, healthcare and law prompts — not our own "
+        "traffic and not our own labels; every guard scored on identical rows; catch rates "
+        "compared only at a matched 5% false-alarm budget.",
         color=GREEN)
 d.notes(s, """
 Purpose of this slide: establish that this is a sourcing decision with four binding
@@ -374,7 +378,13 @@ alone.
 If asked why not just trust published guard benchmarks: because they measure general web
 safety, and our failure mode is regulated-domain advice where context decides the label. We
 have direct evidence in the technical report that guard rankings reorder when the benchmark
-changes -- that is the report's title finding.
+changes. Name that correctly if you quote it: the report's TITLE finding is that a gain on a
+represented benchmark does not establish transfer. The ranking reorder across benchmarks is
+the corollary, and it is the one that bears on a sourcing decision.
+
+Be exact about "our own terms" if anyone in legal or risk pushes on the second callout. The
+evaluation ran on a third-party, expert-annotated set. No company traffic, no borrower data,
+and no labels we produced ourselves left this building or entered the benchmark.
 """)
 
 # ──────────────────────────────────────────────────────── 3 · the recommendation
@@ -398,6 +408,9 @@ statcard(s, M + cw3 + Inches(0.3), y + Inches(2.72), cw3, Inches(1.50), "51%",
          "of the accuracy gap to hosted, closed", color=GREEN)
 statcard(s, M + 2 * (cw3 + Inches(0.3)), y + Inches(2.72), cw3, Inches(1.50), "80%",
          "of prompts never leave our network", color=BLUE)
+# ONE notes call. There were two, and `notes()` assigns rather than appends, so the second
+# silently discarded the first -- the deck shipped without the lane walkthrough, and with a
+# notes block whose numbers derive none of the three figures on the slide.
 d.notes(s, f"""
 This is the slide. If they remember one thing, it is that the question was posed wrongly: it
 is not in-house versus outsource, it is which requests go out.
@@ -408,38 +421,46 @@ when the in-house guard is confident, a second opinion changes nothing, so payin
 waste. Lane 2 is the whole game -- the band around the in-house guard's decision line, where it
 is genuinely unsure, and where the hosted model's advantage actually lives.
 
-The three numbers are one measurement, not three: escalating the least-confident 20% of traffic
-recovers 51% of the accuracy gap while 80% of prompts never leave. Slide 6 has the curve, and it
-is smooth -- you can dial the escalated share to whatever your legal and budget constraints
-allow rather than choosing an architecture.
+WHERE THE THREE NUMBERS COME FROM, because they are one measurement and not three, and because
+the obvious interval to quote is the wrong one:
+  - 51% = ({b(CA['Twenty'])} - {b(CA['LocalOnly'])}) / ({F['BestTpr']} - {b(CA['LocalOnly'])}),
+    i.e. the SmolLM3-3B inline guard against {F['BestName']} at a matched 5% budget, with the
+    least-confident fifth escalated. The gap being closed is {F['GainOverBase']} -- that pair.
+    Computed on the underlying scores that is 51.1%; do the same sum with the three-decimal
+    published values and you get 50.5%. Rounding, not a discrepancy -- same for the 64% on
+    slide 8.
+  - The {F['GainOverOpen']} {F['GainOverOpenCI']} figure is a DIFFERENT pair (hosted against
+    {F['BestOpenName']}, our strongest open guard) and belongs on the next slide. Do not quote
+    it as the interval behind 51%.
+  - 20% and 80% are the same dial read two ways: escalate one request in five, four in five
+    never leave the network.
+
+Slide 8 has the curve, and it is smooth -- you can dial the escalated share to whatever your
+legal and budget constraints allow rather than choosing an architecture.
+
+The other figures, precisely, for anyone who asks:
+  - {F['Slowdown']}x is median-to-median: about {F['BestMedianMs']} ms hosted against
+    10-25 ms for a small guard on our own GPU.
+  - ${F['BestCost']} per thousand prompts is billed tokens at public list prices, and it
+    excludes the GPU you already own on the self-hosted side. It is an estimate, not an
+    invoice. We have not amortised our own side; say so rather than improvising a number.
 
 If asked "why not escalate everything": you would get the full {FN.pct(F['BestTpr'])}, and you
 would also send every borrower prompt to a third party, pay ${F['BestCost']} per thousand, and
 put {F['BestMedianMs']} ms on every request. Lane 1 forbids it anyway for the traffic we care
 most about.
 
-If asked "why not escalate nothing": that is the {FN.pct(F['BestOpenTpr'])} floor, and it means
-knowingly missing about one unsafe prompt in ten that we could have caught.
-""")
-d.notes(s, f"""
-This is the slide to spend time on. Everything after it is evidence.
-
-The three numbers, precisely, for anyone who asks:
-  - catch-rate gap {F['GainOverOpen']} at a matched 5% false-alarm rate, 95% interval
-    {F['GainOverOpenCI']} -- the interval excludes zero, so this is not noise.
-  - {F['Slowdown']}x is median-to-median: about {F['BestMedianMs']} ms hosted against
-    10-25 ms for a small guard on our own GPU.
-  - ${F['BestCost']} per thousand prompts is billed tokens at public list prices, and it
-    excludes the GPU you already own on the self-hosted side. It is an estimate, not an
-    invoice.
+If asked "why not escalate nothing": that is the {FN.pct(b(CA['LocalOnly']))} floor for the
+inline 3B guard, and it means knowingly missing about one unsafe prompt in ten that we could
+have caught.
 
 The recommendation is deliberately a split, not a winner. If pushed for one answer: hosted,
 because the accuracy difference is the largest single effect anywhere in this study. But the
 regulated path is exactly where we cannot take it, which is why the split is the honest answer
 rather than a hedge.
 
-Third bullet matters for planning. Someone will propose "just fine-tune ours" or "just use a
-bigger one". Both were tested. Neither worked. Slides 5 and 6.
+Someone will propose "just fine-tune ours" or "just use a bigger one". Both were tested.
+Neither worked. Slides 6 and 7.
 """)
 
 # ─────────────────────────────────────────────────────── 4 · what hosted buys
@@ -483,8 +504,11 @@ anything we produced ourselves. We did not grade our own homework here.
 # preference. Numbers come from h2h_macros.tex via frontier_numbers.load_h2h(), the same
 # anti-drift contract the rest of the frontier material uses.
 s = d.blank()
+# "our own guard" -> "our own TUNED guards". The qualifier is load-bearing, not stylistic:
+# include the base arms in the same aggregate and the advantage reverses to -0.264, excluding
+# zero in the opposite direction. The body text always said "tuned"; the headline did not.
 y = d.header(s, "but better at what",
-             "On traffic we can describe in advance, our own guard already wins",
+             "On traffic we can describe in advance, our own tuned guards already win",
              "Same five corpora, same " + b(HT['Budget']) + " false-alarm budget, "
              "split by whether the source was in our training manifest")
 
@@ -512,7 +536,7 @@ statcard(s, M + cw + Inches(0.40), y + Inches(0.10), cw, Inches(1.62),
 # what slide 3 recommends and slide 8 prices. Recommending the untested alternative here
 # contradicted both the deck and the report, so the callout now recommends what was measured and
 # names the alternative as untested.
-callout(s, M, y + Inches(1.92), CW, Inches(1.20), "the sourcing rule this implies",
+callout(s, M, y + Inches(1.86), CW, Inches(1.14), "the sourcing rule this implies",
         "The gap is not a ceiling a bigger local model would break through -- it is the price "
         "of the regime. So the question is not “can a small guard match the frontier” but "
         "“what share of our traffic can we describe in a training manifest”. Self-host that "
@@ -520,6 +544,16 @@ callout(s, M, y + Inches(1.92), CW, Inches(1.20), "the sourcing rule this implie
         "-- the router we measured. Routing on UNFAMILIARITY instead is the more attractive idea "
         "and we did not test it: treat it as the next experiment, not as the plan.",
         color=GREEN)
+# The weighting that reverses the sign belongs ON the slide, not only in the notes. It is what
+# converts "run a small guard in-house on describable traffic" into "run a small guard we have
+# TUNED on a manifest of that traffic" -- a funded project with a maintenance burden, which the
+# room has to price before it approves lane 1.
+callout(s, M, y + Inches(3.10), CW, Inches(0.94), "what the advantage is a property of",
+        "Include the untuned base arms in the same average and it reverses to "
+        + b(HT['AggWithBaseTpr']) + " " + b(HT['AggWithBaseTprCI']) + " — excluding zero in "
+        "the OPPOSITE direction. So this is not “small guards beat hosted models”; it is "
+        "“guards we have tuned on a manifest of that traffic do”. Lane 1 is therefore a "
+        "standing tuning programme, not a default configuration.", color=ACCENT)
 
 d.notes(s, f"""
 This is the slide that changes the recommendation, so do not rush it.
@@ -546,6 +580,17 @@ these three manifests, not that they would on any manifest we might write next. 
 to characterise our own traffic before assuming the advantage transfers to it, not a reason to
 discount the split recommendation, which also rests on residency and cost.
 
+The report tabulates four defensible weightings of these twelve cells and only two of them
+support a positive advantage at all. Weighting sources by row count roughly halves it, to
+{b(HT['AggRowWTpr'])} {b(HT['AggRowWTprCI'])}, which straddles zero. And the one on the red
+callout is the one to keep in view: include the BASE arms alongside the tuned ones and the
+aggregate becomes {b(HT['AggWithBaseTpr'])} {b(HT['AggWithBaseTprCI'])}, excluding zero in the
+opposite direction. That is not a statistical footnote, it is a budget consequence. The
+represented-source advantage is a property of TUNED guards specifically -- the specialization
+finding from slide 6 seen from the other side -- so lane 1 is "run a small guard we have tuned
+on a manifest of our own traffic, and keep tuning it", which is a funded workstream with a
+maintenance burden. Price that before approving lane 1.
+
 Represented sources here are {b(HT['RepSources'])}. Held-out sources are the ones we never
 trained on, and there the hosted model leads.
 
@@ -561,29 +606,50 @@ hosted capacity only for the rest.
 
 # ────────────────────────────────────────────────── 5 · tuning did not close it
 s = d.blank()
+# The subtitle used to say "change in CATCH RATE" over a chart whose axis says AP points and
+# whose values are macro-AP on our own internal panel, while the notes narrated a third
+# quantity (ExpGuard matched-budget recall) and called the chart "external". Three
+# measurements, one label. The report is emphatic that the three flavors are never pooled, so
+# the slide now names the one it plots and keeps the external result in its own labelled place.
 y = d.header(s, "route one: fine-tune ours", "Fine-tuning did not close the gap, and on "
              "unfamiliar traffic it usually made things worse",
-             f"Change in catch rate after fine-tuning, across "
-             f"{F['SftNumTotal']} models · {F['NSeeds']} training runs each")
+             f"Change in ranking accuracy after fine-tuning (macro-AP), on our own internal "
+             f"{F['SftNumTotal']}-checkpoint panel · {F['NSeeds']} training runs each")
 picture(s, "exec_tax", M, y - Inches(0.06), Inches(8.15), Inches(4.20), align="left")
-callout(s, M + Inches(8.45), y + Inches(0.02), CW - Inches(8.45), Inches(2.00),
+callout(s, M + Inches(8.45), y + Inches(0.02), CW - Inches(8.45), Inches(2.18),
         "the pattern behind it",
-        "Fine-tuning teaches a model the traffic you trained it on and costs it accuracy on "
-        "traffic you did not. Read the chart downward: the blue gain shrinks steadily as the "
-        "starting model gets stronger. The red cost is not as orderly — it turns from a gain "
-        "into a loss and stays there, because every tuned model lands on much the same "
-        "finishing accuracy.", color=ACCENT)
-callout(s, M + Inches(8.45), y + Inches(2.20), CW - Inches(8.45), Inches(1.72),
-        "planning consequence",
-        f"Budgeting a tuning project to close a vendor gap is not supported here. The best "
-        f"tuned result anywhere ({FN.pct(F['BestSftTpr'])}) still loses to hosted "
-        f"({FN.pct(F['BestTpr'])}). And the cost is larger than the average metric shows: "
-        f"scored only inside the 5% false-alarm budget we would actually run at, the held-out "
-        f"loss is about {FN.bare(LFP['LowFprTransAmplification'])}x bigger.", color=AMBER)
+        "Fine-tuning teaches a model the traffic you trained on and costs it accuracy on "
+        "traffic you did not. Read downward: the blue gain shrinks steadily as the base gets "
+        "stronger. The red cost is less orderly — it turns from a gain into a loss and stays "
+        "there, because every tuned model lands on much the same finishing accuracy.",
+        color=ACCENT)
+# The external result gets its own labelled home here rather than being narrated over the
+# chart. It is a different instrument on different rows -- catch rate at a matched budget on
+# expert-annotated prompts, not macro-AP on our panel -- and the report never pools the two.
+callout(s, M + Inches(8.45), y + Inches(2.34), CW - Inches(8.45), Inches(2.12),
+        "different measurement, same verdict",
+        f"On the external expert-annotated prompts — catch rate at a matched 5% budget, never "
+        f"pooled with the chart — {F['SftNumHurt']} of {F['SftNumTotal']} checkpoints got "
+        f"worse. So budgeting a tuning project to close the vendor gap is not supported: the "
+        f"best tuned result anywhere ({FN.pct(F['BestSftTpr'])}) still loses to hosted "
+        f"({FN.pct(F['BestTpr'])}).", color=AMBER)
 d.notes(s, f"""
-The headline is the sign split, not the average. If you quote only the mean change
-({F['SftMeanDelta']}) you will mislead the room -- it is a small number sitting on top of
-swings from {F['SftWorstDelta']} to {F['SftBestDelta']}.
+KEEP THE TWO MEASUREMENTS APART, because this slide carries both and the report never pools
+them. The CHART is macro-AP -- average ranking quality over the whole score list -- measured on
+our own internal {F['SftNumTotal']}-checkpoint panel, the same panel the research was run on.
+The blue callout is a different instrument: catch rate at a matched 5% false-alarm budget on
+the EXTERNAL expert-annotated prompts. Both say fine-tuning does not close the gap. Neither is
+a restatement of the other, and averaging them would be a mistake.
+
+On the external measurement the headline is the sign split, not the average. If you quote only
+the mean change ({F['SftMeanDelta']}) you will mislead the room -- it is a small number sitting
+on top of swings from {F['SftWorstDelta']} to {F['SftBestDelta']}, and
+{F['SftNumHurt']} of {F['SftNumTotal']} checkpoints moved the wrong way.
+
+One more number for this slide if the room asks how much worse it is where we would actually
+run: read only inside the 5% false-alarm budget, the held-out loss on the internal panel is
+about {FN.bare(LFP['LowFprTransAmplification'])}x bigger than the average metric shows. That is
+the internal panel again, not the external set.
 
 Mechanism, in plain terms: fine-tuning on a fixed set of sources specialises the model to
 those sources. It buys a lot of accuracy on traffic that looks like the training data and
@@ -599,8 +665,10 @@ fall, not evidence that better models specialise harder. The planning consequenc
 either way: above a strong starting point, tuning buys very little and still charges close to
 full price.
 
-This is the central finding of the underlying research, reproduced here on external
-expert-annotated data rather than on our own panel, which is a harder test.
+This is the central finding of the underlying research. The chart is that finding on the panel
+it was measured on; the blue callout is the same pattern recurring on external expert-annotated
+data, which is the harder test. Say which one you are quoting -- an earlier version of this
+slide described the chart itself as the external result, and it is not.
 
 If asked "did you tune it badly": five independent training runs per model, one recipe, and
 the same recipe that produces large gains on in-distribution traffic. The gains are real; they
@@ -683,39 +751,67 @@ numerical reasons. The figure stops at 50% because past that you have outsourced
 the upper rule shows where full escalation lands.
 
 Cost is linear in the escalated share, so a fifth of the traffic is a fifth of the bill.
+
+One rounding note, in case someone has the technical report open beside this. The chart
+computes "% of the gap closed" from the raw cascade curve; the report's own gap-ladder figure
+computes it from the committed three-decimal values (.856, .787, .896) and therefore prints
++63% at the 30% point where this chart prints 64%. Same measurement, 63.3% against 63.5%, and
+the difference is which side of the rounding the inputs sit on. Say that rather than
+improvising -- the three annotated points here are internally consistent with each other.
 """)
 
 # ────────────────────── 8 · if nothing may leave: combining what we already have
 s = d.blank()
 y = d.header(s, "if nothing may leave", "Combining our own guards helps a little. It does not "
              "reach the hosted model",
-             f"Every option below priced against our strongest single in-house guard "
-             f"({FN.pct(F['EnsBestSingle'])}), with what each costs per request")
+             f"Priced against our strongest single in-house guard ({FN.pct(F['EnsBestSingle'])}) "
+             f"— which is itself a five-seed average — with what each costs per request")
+# Two corrections live in these rows. (1) The .834 "best single guard" IS the 32B's five
+# tuned adapters averaged, so it costs five calls, not one -- and row 2's +0.026 is the
+# mechanism that produced it, not a gain to stack on top of it. Reading rows 1 and 2 together
+# as "83% + 0.026" gives ~86%, which appears nowhere in the report and would beat the fitted
+# 18-guard stack. (2) The cascade row starts from the 3B inline guard at .787, not from this
+# row: the measured move is 79% -> 84%, not 83% -> 84%.
 rows = [["Option", "Catch rate", "Cost per request", "Verdict"],
-        ["Best single in-house guard", FN.pct(F["EnsBestSingle"]), "1 model call",
-         ("the baseline", SLATE)],
-        ["Average the 5 tuning runs of one guard",
-         f"{F['EnsSeedGain']} on top", "already paid for", ("worth doing", GREEN)],
+        [f"Best single in-house guard — the {F['BestOpenName']}'s 5 tuned adapters, averaged",
+         FN.pct(F["EnsBestSingle"]), "5 model calls", ("the baseline below", SLATE)],
+        ["Seed-averaging — the mechanism behind that row, not an addition to it",
+         f"{F['EnsSeedGain']} over one tuned seed", "no new training",
+         ("worth doing", GREEN)],
         [f"Average all {F['EnsMembers']} guards equally", FN.pct(F["EnsCommittee"]),
          f"{F['EnsMembers']} model calls", ("worse than one", ACCENT)],
         [f"Weighted blend of all {F['EnsMembers']}", FN.pct(F["EnsStack"]),
          f"{F['EnsMembers']} calls + labelled data", ("best in-house", BLUE)],
-        ["Escalate the uncertain 20% instead", FN.pct(CA["Twenty"]), "1.2 model calls",
+        ["Escalate the uncertain 20% — from the 3B inline guard",
+         f"{FN.pct(b(CA['LocalOnly']))} → {FN.pct(CA['Twenty'])}", "1.2 model calls",
          ("nearly matches, far cheaper", BLUE)]]
-table(s, M, y + Inches(0.04), CW, rows, [0.34, 0.17, 0.26, 0.23], row_h=Inches(0.56))
-callout(s, M, y + Inches(3.44), CW, Inches(1.00), "the finding that matters for planning",
+table(s, M, y + Inches(0.04), CW, rows, [0.35, 0.19, 0.23, 0.23], row_h=Inches(0.54))
+callout(s, M, y + Inches(3.32), CW, Inches(1.16), "the finding that matters for planning",
         f"Escalating one request in five gets within about a point of the {F['EnsMembers']}-model "
         f"blend ({FN.pct(CA['Twenty'])} vs {FN.pct(F['EnsStack'])}) at a fifteenth of the compute "
-        f"and with no labelled data to collect. Ensembling is the right answer only when nothing "
-        f"may leave at all; then it is the in-house ceiling, worth about a quarter of the gap.",
+        f"and with no labelled data to collect — measured on top of the 3B inline guard; a "
+        f"cascade over a larger inline guard was never measured. Ensembling is the right answer "
+        f"only when nothing may leave at all; then it is the in-house ceiling, worth about a "
+        f"quarter of the gap.",
         color=AMBER)
 d.notes(s, f"""
 This slide exists because "just ensemble the small models" is the most common suggestion in the
 room, and it deserves a measured answer rather than an opinion.
 
-Row by row. Averaging the five tuning runs of a single guard is free -- the adapters already
-exist -- and it reliably adds about {F['EnsSeedGain']}. Do that regardless; it is also how the
-tuned 32B recovers what fine-tuning cost it.
+Two things about the top two rows, because they are easy to misread and an earlier version of
+this table invited exactly that. First, the {FN.pct(F['EnsBestSingle'])} baseline is NOT a
+single forward pass: the strongest single open configuration we hold is the {F['BestOpenName']}
+with its five tuned adapters averaged, so it is five model calls. Second, row 2's
+{F['EnsSeedGain']} is measured against a SINGLE TUNED SEED of the same checkpoint, and it is
+what produced row 1 -- it is not a gain to add on top of it. Concretely on the
+{F['BestOpenName']}: {F['EnsBestSingle']} for the seed ensemble against 0.830 for its own
+untuned base, i.e. +0.004 over the base and about +0.026 over one of its own tuned seeds.
+Adding {F['EnsSeedGain']} to {FN.pct(F['EnsBestSingle'])} would produce a number that beats the
+fitted {F['EnsMembers']}-guard stack and appears nowhere in the report.
+
+"No new training" is the honest cost entry for row 2: the adapters already exist, so it costs
+no GPU time to CREATE. It is not free to RUN -- averaging five adapters is five forward passes
+per request, in a deck whose whole argument is per-request latency and cost.
 
 Averaging all {F['EnsMembers']} guards equally is WORSE than just using the best one
 ({F['EnsCommittee']} against {F['EnsBestSingle']}). With members that differ this much in
@@ -731,22 +827,113 @@ which means it is exploiting error structure that may not survive a change of tr
 
 The last row is the point: escalating the uncertain fifth reaches {FN.pct(CA['Twenty'])} against the
 blend's {FN.pct(F['EnsStack'])} -- it does NOT beat the blend, it very nearly matches it for a
-sixteenth of the compute and no labelled data. If challenged on this, the honest line is that
-the blend is still the in-house ceiling; escalation is the cheaper route to almost the same place.
-An earlier version of this slide printed 87% here and claimed escalation beat the blend, which
-reversed the ordering. So ensembling is not the route -- unless lane 1 applies and nothing
-may leave, in which case it is the in-house ceiling and worth building.
+fifteenth of the compute ({F['EnsMembers']} calls against 1.2) and no labelled data. If
+challenged on this, the honest line is that the blend is still the in-house ceiling; escalation
+is the cheaper route to almost the same place. An earlier version of this slide printed 87%
+here and claimed escalation beat the blend, which reversed the ordering. So ensembling is not
+the route -- unless lane 1 applies and nothing may leave, in which case it is the in-house
+ceiling and worth building.
+
+Be precise about what that last row was measured ON TOP OF, because the table would otherwise
+read as "escalation adds one point to our best in-house guard". It does not. It was measured
+with the SmolLM3-3B inline guard underneath it, moving {b(CA['LocalOnly'])} to
+{b(CA['Twenty'])} -- five points, not one. A cascade sitting on top of a 32B inline guard is a
+combination that does not exist anywhere in the report, and an engineer who plans around
+"83% to 84%" will build something we never measured.
+
+One in-house repair the table cannot carry, if someone asks whether there is anything else:
+averaging a base with its own adapter recovers +0.076 of transfer ranking for one extra pass
+and no retraining. That is the cheapest in-house repair in the research -- but it is measured
+in macro-AP on the internal panel, not as catch rate at a matched budget on these rows, so it
+cannot be dropped into this table without breaking the same-rows, same-budget premise that
+makes the table comparable at all. Offer it as a next measurement, not as a fifth row.
+""")
+
+# ───────────────────────────── 8b · the lane we cannot escalate, and its evidence
+# The deck recommends an architecture built around lane 1 -- borrower-bearing traffic that
+# cannot lawfully leave, and therefore cannot be escalated -- and until now said nothing about
+# how well the in-house guard actually does on it. The report has a purpose-built instrument
+# for exactly that traffic and its findings are unflattering. Saying so does not weaken the
+# recommendation (there is no lawful alternative for that traffic); it makes the last slide's
+# "build the domain instrument" ask a consequence of a measurement rather than an aspiration.
+# Figures are from the frozen v1_hmda2022 mortgage benchmark and its zero-shot baseline table.
+s = d.blank()
+y = d.header(s, "the lane we cannot escalate",
+             "On the one lane where nothing may leave, we have the least evidence our guard "
+             "works",
+             "Measured on the instrument we built for exactly that traffic: 994 dual-labelled "
+             "mortgage rows, scored zero-shot")
+cw3 = (CW - Inches(0.6)) / 3
+statcard(s, M, y + Inches(0.06), cw3, Inches(1.62), "502 of 994",
+         "rows that read safe to a general safety guard and still solicit a compliance "
+         "violation. The largest non-benign block, by design — this is the payload.",
+         color=ACCENT, value_size=21)
+statcard(s, M + cw3 + Inches(0.3), y + Inches(0.06), cw3, Inches(1.62), "0.85  vs  0.555",
+         "best zero-shot ranking of policy violations, against the chance floor a coin flip "
+         "already scores. The whole band is 0.12–0.30 above chance.",
+         color=ACCENT, value_size=21)
+statcard(s, M + 2 * (cw3 + Inches(0.3)), y + Inches(0.06), cw3, Inches(1.62),
+         "below the median",
+         "where all four guards rank the worked violation, against the benign inquiries in "
+         "its own split. One of them ranks it below every single one.",
+         color=ACCENT, value_size=21)
+cw2 = (CW - Inches(0.45)) / 2
+callout(s, M, y + Inches(1.86), cw2, Inches(1.66),
+        "and we cannot even give you an operating point",
+        "The fixed 5%-false-alarm threshold on this benchmark is not reportable: its count of "
+        "caught violations swung by more than 50 rows across library versions of one quantile "
+        "routine. That is itself a finding about threshold transfer in this domain — but it "
+        "means there is no number here to plan a deployment against.", color=ACCENT)
+callout(s, M + cw2 + Inches(0.45), y + Inches(1.86), cw2, Inches(1.66),
+        "this does not change the recommendation — it prices it",
+        "There is no lawful alternative for borrower-bearing traffic, so lane 1 stands. What "
+        "changes is what we owe it: the domain instrument on the last slide stops being a "
+        "nice-to-have and becomes the direct consequence of a measurement we already have. "
+        "Labels here are LLM-judge against written policy cards, not counsel-reviewed.",
+        color=GREEN)
+d.notes(s, """
+Do not skip this slide to save time, and do not let it be discovered in Q&A instead. The whole
+architecture is built around lane 1, lane 1 is the lane where escalation is unavailable by
+construction, and this is the only evidence we have about how the in-house guard behaves there.
+
+The four facts, in the order they land hardest. The G0/D1 stratum -- reads safe to a general
+guard, is a mortgage-policy violation -- is 502 of 994 rows, which is the point of the
+benchmark rather than an accident of sampling. Threshold-free ranking of those violations tops
+out at 0.85 against a 0.555 chance floor set by the split's own base rate (81 of 146 rows are
+policy-positive), so the observed band is 0.12 to 0.30 above chance, not 0.85 worth of skill.
+On the worked row, all four zero-shot guards rank a coded redlining-by-proxy request below the
+median benign mortgage inquiry in the same split, and one of them ranks it below all 65. And
+the fixed operating point is deliberately not tabulated, because its catch count moved by more
+than 50 rows across library versions of a quantile routine -- knife-edge on clustered scores.
+
+The tone to take: this is the instrument working. We built a measuring stick for the traffic we
+care most about, held it to the same standard as the guards, and it says the guards miss the
+payload. That is a reason to fund the instrument, not a reason to distrust the recommendation --
+there is no lawful alternative for prompts carrying borrower data, so the choice on that lane
+was never between a good option and a better one.
+
+Scope it honestly if a compliance function is in the room: these labels are LLM-judge against
+written policy cards with self-consistency checks, no subject-matter-expert adjudication, no
+human agreement statistic, and the public-test split is a single 146-row set. It surfaces guard
+behaviour. It certifies nothing, and it licenses no fair-lending conclusion.
 """)
 
 # ──────────────────────────────────────────────────── 9 · what it costs to host
 s = d.blank()
-y = d.header(s, "what hosted costs", "The accuracy is real. So is the bill, the latency, and "
-             "the loss of control",
+# The refusal finding is the strongest non-obvious point in the deck -- a compliance control
+# that intermittently declines to answer, non-reproducibly, for reasons the operator cannot
+# inspect or appeal -- and it was a footnote on a costs slide. It is now the headline, and the
+# invoice costs are the supporting table rather than the other way round.
+y = d.header(s, "what hosted costs",
+             "The bill and the latency are the easy part. The control sometimes declines to "
+             "answer",
              "Four costs, three of which do not appear on an invoice")
 cw = (CW - Inches(0.45)) / 2
 rows = [["", "Self-hosted small", "Hosted frontier"],
         ["Median latency", "10–25 ms", f"~{F['BestMedianMs']} ms"],
-        ["Cost per 1k prompts", "GPU you own", f"${F['BestCost']}"],
+        # "GPU you own" is the honest entry and it is not a price. We have not amortised our
+        # own side; the notes carry that answer rather than leaving it to be improvised.
+        ["Cost per 1k prompts", "GPU you own — not amortised", f"${F['BestCost']} list"],
         ["Prompt leaves our network", "no", "yes"],
         ["We choose the alarm rate", "exactly", "approximately"]]
 table(s, M, y + Inches(0.10), cw, rows, [0.44, 0.28, 0.28])
@@ -776,7 +963,14 @@ Cost: billed tokens at public list prices. It excludes the amortised GPU on the 
 side, which is exactly why the comparison is about where to spend rather than a like-for-like
 price.
 
-The refusal finding is the one to say slowly. We saw a set of prompts refused by the provider's
+Somebody will ask "so what does OURS cost per thousand?" -- have the honest answer ready rather
+than improvising one. We have not amortised it. What we can quote is the physical measurement
+behind it: batched per-row inference at batch 16 on a single A100, 10-25 ms per call at P50, so
+a thousand prompts is on the order of tens of seconds of one GPU. Turning that into a unit
+price needs a utilisation assumption and a capital-recovery period that finance owns, not us.
+Offer to come back with a number rather than inventing one at the table.
+
+The refusal finding is the one to say slowly, and it is now the headline of this slide. We saw a set of prompts refused by the provider's
 own input filter before the model ever saw them, and the refusals were not reproducible --
 different runs, different outcomes, no row refused every time. For a control that has to be
 auditable, "sometimes declines, for reasons we cannot inspect or appeal" is a compliance
@@ -836,7 +1030,8 @@ bullets(s, M, y + Inches(0.06), CW, Inches(3.2), [
      "and our own research shows guard rankings reorder when the benchmark changes."),
     ("It is prompt-only. ", "We judged incoming prompts, not the assistant's replies, and not "
      "the harder mortgage-compliance question of whether a specific answer breaks a specific "
-     "rule."),
+     "rule — which, as slide 10 shows, is the lane where our own instrument says the guards "
+     "miss the payload."),
     ("Vendor behaviour is a moving target. ", "Model versions change under you. The "
      "self-hosted side is pinned to an exact revision and reproduces indefinitely; the hosted "
      "side does not."),
@@ -856,7 +1051,7 @@ bullets(s, M, y + Inches(0.06), CW, Inches(3.2), [
      "whole score ranking. Re-scored inside the budget the direction is unchanged and the "
      f"effect is {FN.bare(LFP['LowFprTransAmplification'])}x larger — so treat average-metric "
      "results from elsewhere as understating what you would see in production."),
-], size=12.5)
+], size=12.2, gap=8)
 callout(s, M, y + Inches(3.35), CW, Inches(1.08), "what would change the recommendation",
         "A regulated-domain benchmark that scores whole answers against specific rules, with "
         "expert adjudication. That is the instrument we do not have, and building it is the "
@@ -895,24 +1090,35 @@ bullets(s, M, y + Inches(0.06), cw, Inches(3.3), [
     ("Next · stop the tuning workstream as a gap-closer. ", "Keep it only for rescuing weak "
      "models. Redirect the effort."),
     ("Then · build the domain instrument. ", "A mortgage-compliance benchmark that scores "
-     "whole answers against specific rules, with expert adjudication."),
+     "whole answers against specific rules, with expert adjudication. Slide 10 is why: on the "
+     "lane we cannot escalate, the instrument we have says the guards miss the payload."),
 ], size=13.5, gap=10)
-callout(s, M + cw + Inches(0.45), y + Inches(0.06), cw, Inches(1.55),
+callout(s, M + cw + Inches(0.45), y + Inches(0.06), cw, Inches(1.20),
         "the cheapest item is the refusal one",
         "It costs a policy change, and it closes a case where an unsafe prompt currently "
         "receives no verdict at all.", color=GREEN)
-callout(s, M + cw + Inches(0.45), y + Inches(1.79), cw, Inches(1.85),
-        "the one that needs a decision from this room",
+callout(s, M + cw + Inches(0.45), y + Inches(1.36), cw, Inches(1.32),
+        "decision one — a legal call, not a technical one",
         "Whether borrower-bearing prompts may leave our network at all. That single answer "
-        "decides how much of our traffic can use the more accurate option, and it is a legal "
-        "call rather than a technical one.", color=ACCENT)
+        "decides how much of our traffic can use the more accurate option.", color=ACCENT)
+# Slide 8 correctly frames the escalated share as a standing tradeoff between the legal
+# ceiling and the budget rather than a one-time architecture choice. A standing tradeoff needs
+# a standing owner, and naming one is the second thing only this room can settle.
+callout(s, M + cw + Inches(0.45), y + Inches(2.84), cw, Inches(1.32),
+        "decision two — who owns the dial",
+        "The escalated share is not set once. Someone has to own moving it as the legal "
+        "ceiling and the budget move, and to review it on a schedule.", color=ACCENT)
 d.notes(s, """
 Two minutes. The first two items need no budget. The third frees capacity. The fourth is the
 only one that asks for money.
 
-Push for a decision on the right-hand callout before the meeting ends -- whether prompts
-containing borrower information may go to a third-party API. Everything about the split
-architecture depends on that answer, and it is not ours to make.
+Push for BOTH decisions before the meeting ends. The first is whether prompts containing
+borrower information may go to a third-party API; everything about the split architecture
+depends on that answer, and it is not ours to make. The second is who owns the escalation dial
+once it exists -- slide 8 shows the escalated share is a smooth tradeoff between the legal
+ceiling and the budget, which means it is a standing decision with a standing owner rather than
+an architecture we choose once and forget. If nobody owns it, it will sit at whatever we set on
+day one until an incident moves it.
 
 The refusal item is the one to insist on regardless of the rest. Today, when the provider
 declines to evaluate a prompt, our pipeline records no verdict. That is indistinguishable from
