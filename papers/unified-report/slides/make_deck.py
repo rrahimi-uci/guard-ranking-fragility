@@ -55,6 +55,10 @@ A = {k: FN.signed(FN.bare(v)) for k, v in FN.load_adaptation().items()}
 # typed: the three Act-labelled captions this replaced had +0.32 / -0.06 hard-coded.
 F0 = {k: FN.signed(FN.bare(v)) for k, v in FN.load_named("teaser_macros.tex").items()}
 MF = {k: FN.signed(FN.bare(v)) for k, v in FN.load_named("pilot_macros.tex").items()}
+# Reproducibility coverage, for the contributions slide. The abstract's numbers are stronger
+# than "one command that prints what it did not cover", and printing them is the deck's own
+# style: name the gap first. Read, not typed, like everything else on these slides.
+RP = {k: FN.bare(v) for k, v in FN.load_named("repro_macros.tex").items()}
 b = FN.bare
 
 # ------------------------------------------------------------------- identity
@@ -476,7 +480,12 @@ gap = Inches(0.29)
 cards = [
     ("4.3%  →  17.0%", "Pooled false alarms on unseen traffic — nearly four times the benign traffic blocked, after a fine-tune that raised represented macro-AP by +0.32.", ACCENT),
     ("78.0%  →  60.0%", "Recall on HarmBench, from the same fine-tune: the hardest attacks, the exact content the guard was built to stop.", ACCENT),
-    ("below all 65", "A coded fair-lending violation ranked below every benign mortgage inquiry in the split — zero-shot, before any tuning at all.", ACCENT),
+    # NOT "a coded fair-lending violation ... ranked below every benign inquiry". The worked row
+    # (MGB-UD-00020) is coded udaap/deceptive -- redlining-by-proxy plus adverse-action reason
+    # masking -- and only ONE of the four guards ranks it below all 65 benign rows (SmolLM3-3B;
+    # the others are 46, 57 and 44 of 65). Slide 14 always said this correctly; this compressed
+    # version drifted. Both halves are fixed here.
+    ("below all 65", "On SmolLM3-3B's ordering, a coded redlining-by-proxy violation ranked below every benign mortgage inquiry in the split — and all four guards ranked it below the median. Zero-shot, before any tuning.", ACCENT),
 ]
 for i, (v, c, col) in enumerate(cards):
     statcard(s, M + (cw + gap) * i, y, cw, Inches(2.16), v, c, color=col, value_size=27)
@@ -499,6 +508,15 @@ run(p, "Does one score cover a regulated domain?", size=11.5, color=GOLD, bold=T
 run(p, "   ·   ", size=11.5, color=SLATE)
 run(p, "Should you run a small guard at all?", size=11.5, color=ACCENT, bold=True)
 
+# The deck's trust-purchasing moment is slide 15 ("we built a fairness gate and it failed its own
+# audit"), which is a long way to make a room wait. One line here buys attention for the twenty
+# slides in between, and it is the deck's own stated style to name the failure first.
+tf = tbox(s, M, y + Inches(4.28), CW, Inches(0.30))
+p = para(tf, first=True, space_after=0)
+run(p, "And one we did not want:  ", size=11, bold=True, color=ACCENT_SOFT)
+run(p, "we built a fairness probe to audit the guards, and it does not survive its own audit "
+       "(slide 15). The negatives are in here too.", size=11, italic=True, color=MUTED)
+
 d.notes(s, """
 Open here, not on the method. All three numbers are from the report's Act I operating-point table
 (per-benchmark deltas and the 5%-FPR point) and its worked G0/D1 case-study figure and are recomputed from committed per-row scores.
@@ -512,6 +530,13 @@ If someone objects that transfer recall does rise (51.7% -> 58.1%), that is the 
 question and the answer is on slide 7: the rise is bought with alarms. Equalize the
 alarm budget and it reverses to 21.7% on all four checkpoints. Do not concede the
 point as a caveat — it is measured, and it is the report's matched-false-alarm-budget table.
+Do carry the report's own qualifier with it, every time you say it: that is an ROC point
+read at a common alarm budget, NOT a threshold a production system could place, because the
+quantile is read off the same labelled negatives the recall is then measured on. Slide 7 has
+the full form of the caveat.
+
+Also flag the fairness-probe line at the bottom before you move on. It costs five seconds and
+it changes how the room hears the next twenty slides: this is a deck that reports what failed.
 """)
 
 # ------------------------------------------------------------- 3 · one figure
@@ -528,8 +553,14 @@ lab = [("Q1", f"Tuning buys the benchmark: {F0['TeaserRepDelta']} represented, "
                f"transfer-recall gain reverses on all four.", BLUE),
        ("Q2", f"Averaging a base with its own adapter recovers {MF['PilotTransferDeltaSFT']} "
               f"of that transfer, for one extra inference pass and no retraining.", GREEN),
+       # The AP·D values printed in the panel (0.85/0.79/0.73/0.67) are only 0.12-0.30 above
+       # the split's own chance floor -- 81 of 146 public-test rows are D-positive, so a random
+       # ranker already scores 0.555. Unqualified, 0.85 reads as a competent guard and quietly
+       # argues against this deck's Act III thesis; with the floor stated it argues for it.
        ("Q3", "The same four bases rank differently on every arm — the top-ranked "
-              "mortgage guard is not the top-ranked finance/health/law guard.", GOLD),
+              "mortgage guard is not the top-ranked finance/health/law guard. Read AP·D "
+              "against the split's 0.555 chance floor: the band is 0.12–0.30 above chance.",
+        GOLD),
        ("Q4", f"Which is better reverses with the traffic: hosted ahead by "
               f"{FN.signed(b(F['GainOverBase']))} off-manifest, the tuned panel ahead by "
               f"{FN.signed(b(HT['AggDeltaTpr']))} on sources it names.", ACCENT)]
@@ -711,15 +742,20 @@ picture(s, "operating", M, y - Inches(0.10), Inches(8.05), Inches(4.24), align="
 
 rx = M + Inches(8.34)
 rw = CW - Inches(8.34)
-callout(s, rx, y - Inches(0.04), rw, Inches(1.62), "The deployment cost",
+callout(s, rx, y - Inches(0.10), rw, Inches(1.62), "The deployment cost",
         "The specialized guard catches more of what it trained on, raises more false "
         "alarms on what it didn't, and misses more hard attacks. A leaderboard computed "
         "on represented sources advertises only the first.", color=ACCENT, body_size=12)
 
-bullets(s, rx, y + Inches(1.80), rw, Inches(2.5), [
+bullets(s, rx, y + Inches(1.60), rw, Inches(2.5), [
+    # The paper attaches one qualifier to this number everywhere it prints it (abstract, the
+    # matched-budget table's caption, the operational-limits appendix), and it is the qualifier
+    # the deck's own framing -- "no GPU, ranking arithmetic on committed scores" -- most invites
+    # a listener to forget. Carry it on the slide, not only in the notes.
     ("At an equal alarm budget, the gain reverses.", "The +6.4 pt rise is realized at 15.5% "
      "macro-FPR against the base's 8.1%. Match the budget and transfer recall goes "
-     "51.7% → 21.7%, HarmBench 78.0% → 20.3% — worse on all four."),
+     "51.7% → 21.7%, HarmBench 78.0% → 20.3% — worse on all four. An ROC point at a common "
+     "budget, not a threshold you could place in production."),
     ("Off-distribution is not the explanation.", "OR-Bench is also unseen and stays flat "
      "at ~12%, so this is not a blanket increase in caution."),
     ("The threshold did not transfer.", "The cutoff that looked safe in calibration is "
@@ -734,7 +770,7 @@ bullets(s, rx, y + Inches(1.80), rw, Inches(2.5), [
      f"and transfer {LFP['LowFprTransApDelta']} → "
      f"{LFP['LowFprTransPAucDelta']} "
      f"({LFP['LowFprTransAmplification']}×)."),
-], size=11, gap=8)
+], size=10.5, gap=7)
 
 d.notes(s, """
 The lower block of the chart is the fair comparison, and it is the one to spend time on.
@@ -744,6 +780,15 @@ budget column of the report's matched-false-alarm-budget table) and re-read the 
 merely shrink — it reverses, on all four checkpoints and on both instruments: transfer
 recall 0.517 -> 0.217, HarmBench recall 0.780 -> 0.203. At an equal budget the tuned
 guard catches LESS THAN HALF of what its own untuned base catches off-source.
+
+Say the qualifier in the same breath as the number, every time, because it is the one a reader
+who has the report open will raise. This is a RETROSPECTIVE ROC POINT, NOT A DEPLOYABLE
+THRESHOLD: the matching quantile is read off the same labelled negatives the recall is then
+measured on, so a production system without labels could not place it. Read the row as "recall
+at an empirical matched-FPR ROC point"; the report's operational-limits appendix says what a
+deployable version would need. This does not soften the finding — the comparison at unequal
+alarm rates was never a comparison of discriminative power in the first place — but it does
+stop "no GPU, no retraining" being heard as "so you could ship it on Monday".
 
 Two things to have ready. It needs no GPU and no pinned environment — matching false-alarm
 rates is ranking arithmetic on the same committed score_raw/gold columns — so it is
@@ -886,7 +931,10 @@ different execution environment — this arm is effectively a REPEAT of Act I. I
 land on the same number: transfer macro-AP differs by 0.014 / 0.009 / 0.009 / 0.029, a
 mean of 0.015 and a worst case of 0.029. That is a noise floor the report now states.
 Effects at or below it should be read as unresolved — composition's +0.017 edge over the
-BASE, and KL β=1.0's +0.004 for SmolLM2. The big effects are safe: +0.32 represented, the
+BASE, and KL β=1.0's +0.005 for SmolLM2. (That cell is +0.005 in the operating-region table,
+which computes it from the underlying scores; the §3.7 prose rounds the two 3-dp AP columns
+first and prints +0.004. Same cell, and either way it sits inside the envelope — quote the
+table value if anyone has both open.) The big effects are safe: +0.32 represented, the
 -0.300 matched-budget collapse, composition's +0.076 over SFT. The bootstrap intervals
 resample rows and seeds; they do NOT capture this environment term, so they are narrower
 than a full reproduction would be. Volunteer this if someone asks how repeatable the
@@ -895,7 +943,15 @@ pipeline is — it is a stronger answer than a confidence interval.
 
 # ------------------------------------------------------- 10 · confirmatory study
 s = d.blank()
-y = d.header(s, "Preregistered  ·  10 checkpoints, 6 model families",
+# The kicker names the PANEL the four H statistics are computed over, not the grid they were
+# collected on. RQ1/RQ2 are registered over the purpose-built panel (6 released guards, 5
+# families); the 10-checkpoint / 6-family grid is the full design, and the general block is a
+# separate estimand. The report devotes a subsection to this because an earlier revision
+# computed the Hs on the mixed six-family panel and got different numbers.
+s_kicker = (f"Preregistered  ·  {FN.plain(A['NCheckpointsPB'])} released guards, "
+            f"{FN.plain(A['NFamiliesPB'])} families "
+            f"(within a {FN.plain(A['NCheckpoints'])}-checkpoint grid)")
+y = d.header(s, s_kicker,
              "Released, purpose-built guards specialize too",
              "Estimands, decision rules, non-inferiority margin and interpretation wording were committed to a claim registry before any score existed")
 picture(s, "adapt_plane", M, y - Inches(0.06), Inches(7.75), Inches(4.10), align="left")
@@ -945,12 +1001,29 @@ bullets(s, rx, y + Inches(2.90), rw, Inches(1.5), [
 
 d.notes(s, f"""
 This is the one analysis-preregistered piece in the report, and it is the strongest
-evidence tier for the specialization claim, so lean on it.
+evidence tier for the specialization claim, so lean on it — but lean on it with all four
+disqualifiers said out loud, not two. This is the highest-risk moment in the deck: the slide
+says CRITERION MET, which is the report's own wording, and the report is careful that "the
+criterion is met" is NOT "RQ1 is supported".
 
-Two limits to state honestly if pressed. It is preregistered on the ANALYSIS, not blind
-on the DATA — it re-scores the same 3,308 rows as Acts I-II. And the registry declares
-itself dev_nonfinal, so it is not bound to a release lock. The uninspected-cohort half
-of that discipline remains future work.
+Four things went wrong with this protocol, and the report says any ONE of them disqualifies a
+confirmatory reading. (1) The claim registry is dev_nonfinal and no lock binds it. (2) NO
+checkpoint has a passing preflight, so the eligibility gate never actually ran. (3) A
+degenerate cell was retained against that gate — the Llama-Guard null cell on the slide.
+(4) The panel split reported here was written AFTER the outcomes were known, to repair an
+analyzer that was computing the wrong estimand. Volunteer (2) and (4) in particular; they are
+the two the deck used to leave unspoken, and they are the two a careful reader will find.
+
+Say the panel out loud too, because the kicker now names it and it is the thing the correction
+in (4) was about. The four H statistics are computed over the REGISTERED PURPOSE-BUILT PANEL —
+{FN.plain(A['NCheckpointsPB'])} released guards spanning {FN.plain(A['NFamiliesPB'])} families.
+The {FN.plain(A['NCheckpoints'])}-checkpoint, {FN.plain(A['NFamilies'])}-family grid is the
+full design; the general block is a separate estimand and the registered contrast between the
+two is Gamma. An earlier revision pooled them into one six-family panel and published
+H_gain +0.174 / H_conc +0.239 for a quantity that was not the registered one.
+
+It is also preregistered on the ANALYSIS, not blind on the DATA — it re-scores the same 3,308
+rows as Acts I-II. The uninspected-cohort half of that discipline remains future work.
 
 Bonferroni-split across the two research questions, familywise alpha 0.05, 10,000-
 resample bootstrap over evaluation row families and training seeds.
@@ -990,14 +1063,20 @@ bullets(s, rx, y + Inches(1.10), rw, Inches(2.3), [
      "checkpoints — reliable as a repair for a guard you already tuned."),
     ("−0.019 represented.", "[−0.031, −0.010]. Gives back under two points of represented "
      "ranking to buy roughly eight points of transfer."),
-    ("Best worst-regime scorer.", "min(represented, transfer) = 0.883, beating the base's "
-     "0.658 and SFT's 0.807."),
+    # "promotable" is load-bearing and is the paper's own word: the dev-visible logit-average
+    # ablation reaches 0.891, nominally better, and is excluded only because it was visible
+    # during development. Claiming the unqualified superlative invites a correction that costs
+    # more than the word does.
+    ("Best worst-regime promotable scorer.", "min(represented, transfer) = 0.883, beating the "
+     "base's 0.658 and SFT's 0.807."),
 ], size=11.5, gap=9)
 
-callout(s, rx, y + Inches(3.50), rw, Inches(1.02), "Recovery, not dominance",
+callout(s, rx, y + Inches(3.34), rw, Inches(1.44), "Recovery, not dominance",
         "Against the untuned base the four deltas are heterogeneous: +0.067, +0.036, "
-        "−0.003, −0.030. For the strongest base you'd have been better off never tuning.",
-        color=ORANGE, body_size=11.5)
+        "−0.003, −0.030 — for the strongest base, better never to have tuned. And the +0.017 "
+        "aggregate edge over base sits inside the 0.015–0.029 reproduction envelope: "
+        "unresolved, not merely small.",
+        color=ORANGE, body_size=11.0)
 
 d.notes(s, """
 Cost is honest: two forward passes per input, roughly doubling inference relative to a
@@ -1011,6 +1090,16 @@ recovery; a direct WiSE-FT rescoring control is a stated gap.
 The equal weights were fixed BEFORE looking at any transfer result. A convex-weight
 variant at alpha=0.95 was visible during development and is reported only as a
 non-promotable ablation, precisely so the operator is not a disguised fit to the test set.
+
+Say "promotable" and then say why, because the handicap reads as rigor rather than as a hedge.
+The logit-average ablation reaches a worst-regime 0.891 — nominally better than composition's
+0.883 — and it is excluded from the comparison purely because it was dev-visible. We are
+reporting the best operator we are ENTITLED to promote, not the best number we produced.
+
+One more clause the slide now carries: composition lands nominally above the base on transfer
+(0.883 vs 0.866), but +0.017 is inside the 0.015-0.029 reproduction envelope from the KL
+control's beta=0 arm, so that edge is UNRESOLVED rather than small. The +0.076 over SFT is
+comfortably outside it and is the claim to defend.
 """)
 
 # ------------------------------------------------------ 12 · the control
@@ -1028,11 +1117,17 @@ bullets(s, rx, y - Inches(0.04), rw, Inches(1.5), [
      "three; the gap widens monotonically with base strength."),
 ], size=12, gap=10)
 
-tf = tbox(s, rx, y + Inches(1.72), rw, Inches(0.3))
-p = para(tf, first=True, space_after=0)
+# The table below is the report's REALIZED TRANSFER operating points. Unlabelled, and sitting
+# next to a callout that compares against "the 5% target", the rates read as represented-source
+# numbers -- which would make the whole point of the slide unreadable.
+tf = tbox(s, rx, y + Inches(1.62), rw, Inches(0.38))
+p = para(tf, first=True, space_after=1)
 run(p, "AND RANKING IS NOT CALIBRATION", size=11, bold=True, color=ACCENT, spc=110)
+p = para(tf, space_after=0)
+run(p, "realized transfer operating points, after calibrating each guard to a 5% FPR target",
+    size=9, italic=True, color=SLATE)
 
-rows = [["Guard", "Macro TPR", "Macro FPR", "Pooled FPR"],
+rows = [["Guard  (transfer)", "Macro TPR", "Macro FPR", "Pooled FPR"],
         ["Untuned base", "0.517", "0.081", "0.043"],
         ["SFT adapter", "0.581", ("0.155", ACCENT, True), ("0.170", ACCENT, True)],
         ["Base + SFT", ("0.639", GREEN, True), "0.114", "0.091"]]
@@ -1115,16 +1210,22 @@ p = para(tf, space_after=0)
 run(p, "No slur, no jailbreak, no injection — and honoring it commits redlining, proxy "
        "discrimination and adverse-action masking.", size=11, color=SLATE)
 
-bullets(s, rx, y + Inches(1.56), rw, Inches(2.0), [
+bullets(s, rx, y + Inches(1.50), rw, Inches(2.0), [
     ("G0/D1 is the payload.", "502 rows a general guard rates safe that nonetheless "
      "solicit a compliance violation. The largest non-benign block, by design."),
     ("Two labels, not one merged verdict.", "That is exactly what lets us pull the "
      "safe-looking stratum out and score a guard on it alone."),
     ("Nested, not crossed, in v1.", "G1/D0 came out empty — a stated limitation, so "
      "orthogonality is shown on three quadrants, not four."),
-], size=11.5, gap=9)
+    # AP·D must never appear in this deck without its floor: 81 of the 146 public-test rows are
+    # D-positive, so a random ranker already scores 0.555 and the observed 0.67-0.85 band is
+    # only 0.12-0.30 above chance. Unqualified it reads as competence and argues against Act III.
+    ("Read AP·D against 0.555, not against 0.", "81 of the 146 public-test rows are "
+     "D-positive, so chance already scores 0.555. The zero-shot band is 0.67–0.85 — "
+     "0.12–0.30 above chance."),
+], size=11.0, gap=7)
 
-callout(s, rx, y + Inches(3.62), rw, Inches(0.88), "A measuring stick, not a legal finding",
+callout(s, rx, y + Inches(3.78), rw, Inches(0.86), "A measuring stick, not a legal finding",
         "Labels are LLM-judge and policy-card-consistent — no compliance lawyer signed the "
         "24 cards. The benchmark surfaces guard behavior; it certifies nothing.",
         color=SLATE, body_size=11.5)
@@ -1324,7 +1425,12 @@ y = d.header(s, "External reference point",
 rows = [["Guard", "TPR@5%FPR", "AP", "Where it runs"],
         [f"{F['BestName']}", (F["BestTpr"], ACCENT, True), F["BestAp"], "hosted API"],
         [f"{F['BestOpenName']} base", (F["BestOpenTpr"], GREEN, True), ".9633", "self-hosted"],
-        [f"{F['BestSftName']} SFT", (F["BestSftTpr"], INK, True), ".9563", "self-hosted"],
+        # "SFT (in-env)" is the report's label for every tuned row in this act, and it is not
+        # cosmetic: the Act I release adapters were lost with an ephemeral runner, so these rows
+        # are the KL-SFT beta=0 arm -- same LOCK contract and train manifest, different
+        # adapter_sha256. Slide 9's notes explain the mechanism; the table has to carry the name.
+        [f"{F['BestSftName']} SFT (in-env)", (F["BestSftTpr"], INK, True), ".9563",
+         "self-hosted"],
         [f"{F['BestBaseName']} base", (F["BestBaseTpr"], INK, True), ".9561", "self-hosted"]]
 datatable(s, M, y - Inches(0.02), Inches(6.5), rows, [1.30, 0.95, 0.80, 1.00],
           size=11, head_size=10, row_h=Inches(0.50), head_h=Inches(0.40))
@@ -1371,9 +1477,15 @@ and harder task, and nothing about serving cost -- the previous slide has that.
 
 # ------------------------------------------- 18 · why you cannot close the gap
 s = d.blank()
-y = d.header(s, "Two routes that do not work",
-             "Tuning does not close it, and neither does scale",
-             "Both tested on the same rows, at the same matched false-alarm budget")
+# Retitled around the slide's own conclusion. "Tuning does not close it, and neither does
+# scale" is the setup -- true, and already carried by the kicker. The news, and the thing the
+# report retracted an earlier behavioural claim in order to say, is that the endpoint is what
+# is regular: every tuned checkpoint lands in the same transfer band whatever its base. That
+# was buried in the bottom callout.
+y = d.header(s, "Two routes that do not work  ·  tuning, and scale",
+             "What is regular is the endpoint, not the tax",
+             "Both tested on the same rows, at the same matched false-alarm budget  ·  every "
+             "tuned row is SFT (in-env): same recipe and manifest, a distinct execution")
 cw = (CW - Inches(0.42)) / 2
 bullets(s, M, y - Inches(0.02), cw, Inches(2.5), [
     (f"Tuning: {F['SftNumHurt']} of {F['SftNumTotal']} checkpoints got worse.",
@@ -1406,7 +1518,7 @@ datatable(s, rx, y - Inches(0.02), CW - cw - Inches(0.42), rows,
 # what is regular is the ENDPOINT every tuned checkpoint lands on, not a tendency of capable
 # bases to specialize harder. Earlier builds asserted the behavioural version.
 callout(s, M, y + Inches(2.66), CW, Inches(1.06),
-        "The tax tracks the distance to the endpoint",
+        "Ordered by base strength, only one half of the trade is monotone",
         f"Ordered by base strength the represented gain decays monotonically — but the "
         f"transfer cost does not: Qwen3-4B pays −0.150 from a .885 base, more than Qwen3-8B "
         f"(−0.101 from .905) or {F['ScaleTunedName']} "
@@ -1579,7 +1691,8 @@ bullets(s, rx, y - Inches(0.02), rw, Inches(3.3), [
      "against other models hides the transfer cost; a recall compared at unequal alarm "
      f"rates hides its sign. Price it in the 5% region: "
      f"{LFP['LowFprTransPAucDelta']} pAUC, not "
-     f"{LFP['LowFprTransApDelta']} AP."),
+     f"{LFP['LowFprTransApDelta']} AP. Matched-budget is an ROC point, not a threshold "
+     f"you can place — compare with it, do not ship it."),
     ("Treat KL-β as a dial, not a default.", "It buys transfer at a real represented cost "
      f"that failed our preregistered margin — in the 5% region, "
      f"{LFPK['LowFprKlTransPAucDelta']} for "
@@ -1590,9 +1703,9 @@ bullets(s, rx, y - Inches(0.02), rw, Inches(3.3), [
      "target regime — and quote AP at your prevalence, not at balance."),
     ("In a regulated domain, build the instrument.", "A dual-labeled domain set plus an "
      "invariance check — and audit the gate as hard as the guards."),
-], size=11.5, gap=8)
+], size=11.5, gap=7)
 
-callout(s, rx, y + Inches(3.76), rw, Inches(1.14), "Scope, stated plainly",
+callout(s, rx, y + Inches(3.90), rw, Inches(1.08), "Scope, stated plainly",
         "Retrospective estimation on a fixed four-checkpoint panel with an inspected "
         "manifest; only the adaptation study is preregistered. Mortgage labels are "
         "LLM-judge, not counsel-reviewed. No causal, universal, deployment, or "
@@ -1629,15 +1742,19 @@ bullets(s, M, y - Inches(0.02), cw, Inches(3.1), [
      "identical rows, split by represented vs held-out. That is what turns a leaderboard "
      "delta into an attributable one \u2014 three results here exist only because of it."),
     ("The matched-alarm-budget read.", "Cheap, almost never done, and it reverses a "
-     "headline: transfer recall 0.517 \u2192 0.217 at an equal false-alarm budget. Ranking "
-     "arithmetic on committed scores \u2014 no GPU, no retraining."),
+     "headline: transfer recall 0.517 \u2192 0.217 at an equal false-alarm budget \u2014 an ROC "
+     "point at a common budget, not a deployable threshold. Ranking arithmetic on committed "
+     "scores \u2014 no GPU, no retraining."),
     ("Negative results kept as results.", "The preregistered study fails its own second "
-     "criterion. The fairness probe we built fails its own audit. An accidental repeat "
-     "gave us a measured reproduction noise floor that bounds our own small effects."),
+     "criterion. The fairness probe we built fails its own audit. And an accidental repeat "
+     "of Act I gave us a measured reproduction noise floor \u2014 0.015 mean, 0.029 worst \u2014 "
+     "which we then turned on our own small effects."),
     ("A released instrument.", "v1_hmda2022 \u2014 994 dual-labeled rows, CC BY 4.0 \u2014 plus "
      "text-free per-row scores and one command that regenerates the covered tables and "
-     "prints the coverage it did NOT achieve."),
-], size=11.5, gap=9)
+     f"prints the coverage it did NOT achieve: {RP['ReproNVerified']} of "
+     f"{RP['ReproNInputs']} generated artifacts byte-checked in any environment, "
+     f"{RP['ReproNEnvGated']} needing the pinned lock, {RP['ReproNUncovered']} uncovered."),
+], size=11.5, gap=8)
 
 rx = M + cw + Inches(0.34)
 tf = tbox(s, rx, y - Inches(0.06), cw, Inches(0.3))
@@ -1651,8 +1768,11 @@ bullets(s, rx, y + Inches(0.34), cw, Inches(2.8), [
      "report it. Below it, nothing is resolvable."),
     ("3 \u00b7 Decompose the transfer loss", "per source \u2014 free, on committed scores \u2014 then "
      "a diversity ladder at a fixed row budget."),
+    # NOT "the 39 unscored protected pairs": 3 of the 39 sit in public-test and were scored --
+    # they are the n=3 behind slide 15's \u0394context numbers. The roadmap item is that all 39 are
+    # legitimate evaluation data for zero-shot guards, reported separately from the three.
     ("4 \u00b7 Finish the mortgage instrument", "SME adjudication, the empty G1/D0 quadrant, "
-     "and the 39 unscored protected pairs."),
+     "and the 36 protected pairs outside public-test."),
     ("5 \u00b7 Close the loop to the policy source", "supply the policy explicitly, and route "
      "an observably invalid packet to review."),
 ], size=11, gap=8)
@@ -1662,19 +1782,32 @@ callout(s, rx, y + Inches(3.30), cw, Inches(1.02), "The through-line",
         "survived did so because some check was built to fail first.",
         color=GREEN, body_size=11.5)
 
-d.notes(s, """
+d.notes(s, f"""
 Close here, not on the decision guide. Two minutes, and do not read the columns aloud.
 
 The left column is the answer to "what did you actually do." Lead with the paired estimand,
 because it is the cheap methodological point that costs a reader nothing to adopt and changes
 what their own numbers mean. Then the matched-alarm-budget read: that is the result to be
 remembered, and the reason to say it out loud is that it is nearly free and it reverses a
-headline. If you only get one sentence, use that one.
+headline. If you only get one sentence, use that one — and put the qualifier inside the same
+sentence, because it is what makes the sentence survive contact with the report. It is an ROC
+point read at a common alarm budget on labelled negatives, not a threshold a production system
+could place. Cheap to compute, decisive as a comparison, and not shippable as a rule.
 
 The third bullet is the one that earns trust in a research audience. We preregistered a
 criterion and failed it. We built a fairness probe and it did not survive its own audit. We
 found a reproduction noise floor by accident and then used it against our own small effects.
-Say plainly that the noise floor is a tooling problem before it is a science problem.
+Say plainly that the noise floor is a tooling problem before it is a science problem — and that
+it is the most interesting methodological byproduct here: an effect-size ceiling nobody set out
+to measure, which then disqualified two of our own results (composition's +0.017 over base, KL
+beta=1.0's +0.005 on SmolLM2).
+
+The reproducibility numbers on the fourth bullet are worth saying rather than gesturing at:
+{RP['ReproNVerified']} of {RP['ReproNInputs']} generated artifacts byte-check in any
+environment, {RP['ReproNEnvGated']} need the pinned lock, {RP['ReproNUncovered']} are
+uncovered. Then name the one hole before anyone finds it: the specialization plane on slide 6
+ships as a committed PDF with NO generator in the harness, so it is neither regenerated nor
+compared. Naming that first is the deck's whole posture.
 
 On the right, items 1 and 2 are the honest ceiling of this work: retrospective on an inspected
 manifest, and an environment term the bootstrap intervals do not capture. Item 3 is the cheapest

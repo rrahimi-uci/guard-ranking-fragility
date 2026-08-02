@@ -4,7 +4,7 @@ Two decks are built from code, and only these two are current:
 
 - `safety_guard_benchmark_deck.pptx` — 21 slides, 16:9, speaker notes on every slide.
   The research talk.
-- `safety_guard_exec_deck.pptx` — 13 slides, 16:9. The guardrail-sourcing decision,
+- `safety_guard_exec_deck.pptx` — 14 slides, 16:9. The guardrail-sourcing decision,
   for a non-research audience.
 
 Both track the report *Safety Benchmark Gains Do Not Guarantee Safety Transfer: A Comprehensive Study of Fine-Tuning Small Language Model Safety Guards for High-Compliance and General Safety Domains*. Earlier hand-edited
@@ -20,7 +20,9 @@ report itself `\input`s, so a number in the deck cannot drift from a number in t
 ```bash
 cd papers/unified-report
 python slides/make_slide_figures.py   # generated/*.tex  ->  slides/assets/*.png
-python slides/make_deck.py            # assets + text    ->  the .pptx
+python slides/make_deck.py            # assets + text    ->  the research .pptx
+python slides/make_exec_figures.py    # committed scores ->  slides/assets/exec_*.png
+python slides/make_exec_deck.py       # assets + text    ->  the executive .pptx
 ```
 
 Requires `python-pptx`, `matplotlib`, `pillow`, and — for the prevalence curve only —
@@ -63,7 +65,7 @@ not guaranteed to be the same face.
 | 7 | Act I — the operating point, under both threshold rules | Act I per-benchmark/operating-point table; matched-false-alarm-budget table; low-FPR re-reading table |
 | 8 | Act I — the deployment base rate | prevalence curve; the AP(π₊) equation |
 | 9 | Act I — KL is a tradeoff dial | anti-forgetting (KL-SFT) control table |
-| 10 | Preregistered — released guards specialize too | adaptation movement-vector table; adaptation plane |
+| 10 | Preregistered — released guards specialize too (6 released guards, 5 families, within a 10-checkpoint grid) | adaptation movement-vector table; adaptation plane |
 | 11 | Act II — repair without retraining | composition fixed-panel summary table |
 | 12 | Act II — it is the base, not ensembling | per-checkpoint composition table; SFT+SFT equal-cost control |
 | 13 | Act III — general safety ≠ domain compliance | mortgage zero-shot baseline table; fairness-gate figure |
@@ -71,7 +73,7 @@ not guaranteed to be the same face.
 | 15 | Act III — two results we did not want | mortgage baseline and ExpGuard tables |
 | 16 | Why self-host | guard-latency and deployment-economics tables |
 | 17 | External reference point — the hosted frontier model | frontier-vs-local table |
-| 18 | Two routes that do not work: tuning and scale | scale-versus-tuning table; gap-ladder figure |
+| 18 | Two routes that do not work — what is regular is the endpoint, not the tax | scale-versus-tuning table; gap-ladder figure |
 | 19 | The gap is a regime, not a size | represented-vs-transfer head-to-head table; regime map |
 | 20 | What to do — gate candidates, not leaderboards | guidelines table; gating workflow figure |
 | 21 | What this contributes, and what would make it evidence | Conclusion |
@@ -97,7 +99,12 @@ Six limits are load-bearing enough that the deck states them on the slide, not o
 the notes. Slide 7 shows the operating point under **both** threshold rules, because a
 recall comparison at unequal false-alarm rates is not a comparison of discriminative
 power — at an equal budget Act I's apparent transfer-recall gain reverses on all four
-checkpoints. Slides 7, 9 and 20 also carry the FPR $[0,.05]$ re-read of that trade
+checkpoints. Wherever that reversal is quoted (slides 7, 20 and 21) the slide also carries
+the report's own qualifier on it: it is an **ROC point at a common alarm budget, not a
+deployable threshold**, because the matching quantile is read off the same labelled negatives
+the recall is then measured on. The deck's other framing of that result — ranking arithmetic
+on committed scores, no GPU, no retraining — is exactly what invites a listener to hear it as
+shippable, so the two travel together. Slides 7, 9 and 20 also carry the FPR $[0,.05]$ re-read of that trade
 (`lowfpr_macros.tex`, `lowfpr_kl_macros.tex`): macro-AP understates **both** halves, by
 2.1× on the represented gain and 3.0× on the transfer cost, and understates the KL dial
 asymmetrically (2.4× on what it buys, 6.2× on what it charges). Slide 3 carries the
@@ -109,7 +116,19 @@ an interval that includes zero, which is the honest statement of how far it trav
 reports health as *leaning* against a tie rather than resolved: four unadjusted paired
 comparisons, the interval clearing zero by +0.0026. And slide 9's notes carry the
 ≈0.015 mean / 0.029 worst-case reproduction noise floor measured by the KL control's
-β = 0 arm, which is what bounds every small effect quoted anywhere in the deck.
+β = 0 arm, which is what bounds every small effect quoted anywhere in the deck — slides 11
+and 21 now name the two of our own results it disqualifies (composition's `+0.017` over base,
+KL β = 1.0's `+0.005` on SmolLM2).
+
+Three more on-slide qualifiers were added after the deck audit, each because the number
+without it argues the opposite way. `AP·D` never appears without the split's own **0.555
+chance floor** (81/146 public-test rows are D-positive), so the 0.67–0.85 band reads as
+0.12–0.30 above chance rather than as competence — slide 3's Q3 caption and slide 13. Slide 12
+labels its operating-point table **realized transfer** points, since the same slide compares
+them against a 5% target and they would otherwise read as represented-source rates. And the
+exec deck's represented-source advantage carries the weighting that reverses it: include the
+untuned base arms and `+0.083` becomes `−0.264 [−0.321,−0.179]`, so the advantage is a property
+of *tuned* guards, which makes lane 1 a funded tuning programme rather than a configuration.
 
 Five claims the decks deliberately do **not** make, because the report withdrew or scoped
 them. That the hosted–local gap is *conservative* (coarse integer ties bound how finely the
@@ -123,3 +142,24 @@ zero is not evidence of no difference and no equivalence margin was registered, 
 differences too small to sign. And that SmolLM2's positive transfer delta is a deployment result:
 it is +0.040 on macro-AP and straddles zero inside the alarm budget, so slides 5–7 scope it to
 average ranking. Earlier builds of the decks asserted the first four.
+
+Four more the deck audit caught, all of them right numbers under a wrong label rather than
+wrong numbers. The worked `G0/D1` miss is coded **udaap/deceptive** — redlining-by-proxy plus
+adverse-action reason masking — and only **one of the four** guards ranks it below all 65 benign
+rows; all four rank it below the median, which is the claim tech slide 2 now makes. Exec slide 6
+plots **macro-AP on our own internal panel**, not catch rate and not the external set, so the
+external matched-budget result sits in its own labelled callout and the two are never pooled.
+The `.834` "strongest single in-house guard" on exec slide 9 **is itself a five-seed average**,
+so it costs five model calls and the `+0.026` seed-ensembling gain is the mechanism that
+produced it rather than a gain to stack on top of it — and the escalation row underneath it was
+measured over the **3B inline guard** (`.787 → .842`), not over that row. And the tuned rows in
+tech slides 17–18 are labelled **SFT (in-env)**: the Act I release adapters were lost with an
+ephemeral runner, so those rows are the KL-SFT β = 0 arm, same LOCK contract and manifest,
+different `adapter_sha256`.
+
+One place the two artifacts print different roundings of the same quantity, deliberately.
+Exec slide 8's cascade chart computes "% of the gap closed" from the raw curve and prints
+**64%** at the 30% point; the report's gap-ladder figure computes it from the committed 3-dp
+macros (`.856`, `.787`, `.896`) and prints **63%**. 63.5% against 63.3%. The deck keeps the
+full-precision form because its three annotated points are then internally consistent
+(30 / 51 / 64); the speaker notes carry the reconciliation.
